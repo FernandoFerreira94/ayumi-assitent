@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/feedback/EmptyState";
 import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
 import { listDay } from "@/features/appointments/core";
+import { listBlocks } from "@/features/blocks/core";
 import { getHours } from "@/features/hours/core";
 import { CopyButton } from "@/features/hours/CopyButton";
 import { freeSlots, weekdayOf } from "@/features/hours/slots";
@@ -24,11 +25,15 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
   const today = todayStr();
   const now = new Date();
 
-  const { services, week, busy } = await withTenant(tenantId, async (tx) => ({
-    services: await listServices(tx),
-    week: await getHours(tx),
-    busy: await listDay(tx, [dayRange(today)[0], dayRange(addDays(today, 6))[1]]),
-  }));
+  const { services, week, busy } = await withTenant(tenantId, async (tx) => {
+    const range: [Date, Date] = [dayRange(today)[0], dayRange(addDays(today, 6))[1]];
+    const [appts, blks] = await Promise.all([listDay(tx, range), listBlocks(tx, range)]);
+    return {
+      services: await listServices(tx),
+      week: await getHours(tx),
+      busy: [...appts, ...blks],
+    };
+  });
 
   if (services.length === 0) {
     return (

@@ -242,3 +242,44 @@ d("pendências (núcleo)", () => {
     expect(noG.unsynced).toHaveLength(0);
   });
 });
+
+d("bloqueios e pausas (núcleo)", () => {
+  it("bloqueia vagas, recusa conflito nos dois sentidos e remove", async () => {
+    const { withTenant } = await import("@/db/client");
+    const { insertAppointment } = await import("@/features/appointments/core");
+    const { insertBlock, listBlocks, removeBlock } = await import("@/features/blocks/core");
+    const { dayRange } = await import("@/lib/dates");
+    const admin = postgres(url!, { max: 1 });
+    await admin`truncate tenants cascade`;
+    const [{ id: T }] = await admin`insert into tenants (name) values ('Estúdio B2') returning id`;
+    const [{ id: S }] =
+      await admin`insert into services (tenant_id,name,duration_min,price_cents) values (${T},'Gel',60,10000) returning id`;
+    const [{ id: C }] =
+      await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Bia','+5511900004444') returning id`;
+    await admin.end();
+    const date = "2026-11-12";
+
+    const b = await withTenant(T, (tx) => insertBlock(tx, T, { date, start: "12:00", end: "13:00", reason: "Almoço" }));
+    expect(b.ok).toBe(true);
+    // agendar em cima do bloqueio é recusado; encostar é permitido
+    expect(
+      await withTenant(T, (tx) => insertAppointment(tx, T, { clientId: C, serviceId: S, date, time: "12:30" })),
+    ).toMatchObject({ ok: false, code: "SLOT_TAKEN" });
+    expect(
+      (await withTenant(T, (tx) => insertAppointment(tx, T, { clientId: C, serviceId: S, date, time: "13:00" }))).ok,
+    ).toBe(true);
+    // bloquear em cima de agendamento é recusado
+    expect(await withTenant(T, (tx) => insertBlock(tx, T, { date, start: "13:30", end: "14:00" }))).toMatchObject({
+      ok: false,
+      code: "HAS_APPOINTMENTS",
+    });
+
+    expect(await withTenant(T, (tx) => listBlocks(tx, dayRange(date)))).toHaveLength(1);
+    if (!b.ok) throw new Error("setup");
+    expect((await withTenant(T, (tx) => removeBlock(tx, b.data.id))).ok).toBe(true);
+    expect(await withTenant(T, (tx) => removeBlock(tx, b.data.id))).toMatchObject({ ok: false });
+    expect(
+      (await withTenant(T, (tx) => insertAppointment(tx, T, { clientId: C, serviceId: S, date, time: "12:00" }))).ok,
+    ).toBe(true);
+  });
+});

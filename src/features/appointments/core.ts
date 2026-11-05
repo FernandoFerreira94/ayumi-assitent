@@ -1,6 +1,7 @@
 import { and, asc, eq, gte, lt, ne } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { appointments, clients, services } from "@/db/schema";
+import { lockTenant, overlapsBlock } from "@/features/blocks/core";
 import { toInstant } from "@/lib/dates";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import type { AppointmentInput, Status } from "./schema";
@@ -20,6 +21,8 @@ export async function insertAppointment(
   if (!svc || !cli) return fail("VALIDATION", svc ? "clientId" : "serviceId");
   const startsAt = toInstant(input.date, input.time);
   const endsAt = new Date(startsAt.getTime() + svc.durationMin * 60_000);
+  await lockTenant(tx, tenantId);
+  if (await overlapsBlock(tx, startsAt, endsAt)) return fail("SLOT_TAKEN", "time");
   try {
     const row = await tx.transaction(async (sp) => {
       const [r] = await sp

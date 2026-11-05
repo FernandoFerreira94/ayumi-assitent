@@ -8,6 +8,9 @@ import { AppointmentCard } from "@/features/appointments/AppointmentCard";
 import { forecastCents, listDay } from "@/features/appointments/core";
 import { countPendencias, listPendencias } from "@/features/appointments/pendencias";
 import { isGoogleConnected } from "@/features/google/server";
+import { BlockCard } from "@/features/blocks/BlockCard";
+import { listBlocks } from "@/features/blocks/core";
+import { NewBlockSheet } from "@/features/blocks/NewBlockSheet";
 import { NewAppointmentSheet } from "@/features/appointments/NewAppointmentSheet";
 import { searchClients } from "@/features/clients/core";
 import { listServices } from "@/features/services/core";
@@ -25,7 +28,8 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
   const { tenantId } = await requireTenant();
 
   const google = await isGoogleConnected(tenantId);
-  const { rows, clients, services, pendencias } = await withTenant(tenantId, async (tx) => ({
+  const { rows, dayBlocks, clients, services, pendencias } = await withTenant(tenantId, async (tx) => ({
+    dayBlocks: await listBlocks(tx, dayRange(date)),
     pendencias: countPendencias(await listPendencias(tx, new Date(), google)),
     rows: await listDay(tx, dayRange(date)),
     clients: await searchClients(tx, ""),
@@ -74,31 +78,54 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
           <p className="text-xs font-bold uppercase tracking-wide text-muted">Previsto do dia</p>
           <p className="text-2xl font-bold">{formatBRL(forecastCents(rows))}</p>
         </div>
-        <NewAppointmentSheet
-          date={date}
-          clients={clients.map((c) => ({
-            id: c.id,
-            label: `${c.name} · ${maskPhone(c.phoneE164.replace(/^\+55/, ""))}`,
-          }))}
-          services={services.map((s) => ({ id: s.id, label: s.name, priceCents: s.priceCents }))}
-        />
+        <div className="flex gap-2">
+          <NewBlockSheet date={date} />
+          <NewAppointmentSheet
+            date={date}
+            clients={clients.map((c) => ({
+              id: c.id,
+              label: `${c.name} · ${maskPhone(c.phoneE164.replace(/^\+55/, ""))}`,
+            }))}
+            services={services.map((s) => ({ id: s.id, label: s.name, priceCents: s.priceCents }))}
+          />
+        </div>
       </div>
 
-      {rows.length === 0 ? (
+      {rows.length === 0 && dayBlocks.length === 0 ? (
         <EmptyState title="Dia livre" description="Nenhum atendimento neste dia. Toque em Agendar para criar um." />
       ) : (
         <ul className="grid gap-2">
-          {rows.map((r) => (
-            <AppointmentCard
-              key={r.id}
-              id={r.id}
-              time={formatTime(r.startsAt)}
-              clientName={r.clientName}
-              serviceName={r.serviceName}
-              price={formatBRL(r.priceCents)}
-              status={r.status}
-            />
-          ))}
+          {[
+            ...rows.map((r) => ({
+              at: r.startsAt,
+              node: (
+                <AppointmentCard
+                  key={r.id}
+                  id={r.id}
+                  time={formatTime(r.startsAt)}
+                  clientName={r.clientName}
+                  serviceName={r.serviceName}
+                  price={formatBRL(r.priceCents)}
+                  status={r.status}
+                />
+              ),
+            })),
+            ...dayBlocks.map((b) => ({
+              at: b.startsAt,
+              node: (
+                <BlockCard
+                  key={b.id}
+                  id={b.id}
+                  date={date}
+                  start={formatTime(b.startsAt)}
+                  end={formatTime(b.endsAt)}
+                  reason={b.reason}
+                />
+              ),
+            })),
+          ]
+            .sort((x, y) => x.at.getTime() - y.at.getTime())
+            .map((x) => x.node)}
         </ul>
       )}
     </PageShell>
