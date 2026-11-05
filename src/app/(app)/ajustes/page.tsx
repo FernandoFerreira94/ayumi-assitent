@@ -1,16 +1,41 @@
 import type { Metadata } from "next";
-import { EmptyState } from "@/components/feedback/EmptyState";
 import { PageShell } from "@/components/ui/PageShell";
+import { withTenant } from "@/db/client";
+import { listServices } from "@/features/services/core";
+import { NewServiceForm } from "@/features/services/NewServiceForm";
+import { formatBRL } from "@/lib/dates";
+import { requireTenant } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Ajustes" };
 
-export default function AjustesPage() {
+export default async function AjustesPage() {
+  const { tenantId } = await requireTenant();
+  const services = await withTenant(tenantId, (tx) => listServices(tx));
   return (
     <PageShell title="Ajustes">
-      <EmptyState
-        title="Configurações do estúdio"
-        description="Expediente, serviços, lembretes e conexões entram nesta tela."
-      />
+      <section aria-labelledby="servicos" className="grid gap-3">
+        <h2 id="servicos" className="px-1 text-sm font-bold uppercase tracking-wide text-muted">
+          Serviços
+        </h2>
+        {services.length === 0 ? (
+          <p className="px-1 text-sm font-semibold text-muted">Nenhum serviço ainda. Adicione o primeiro abaixo.</p>
+        ) : (
+          <ul className="grid gap-2">
+            {services.map((s) => (
+              <li
+                key={s.id}
+                className="flex items-center justify-between rounded-2xl border border-line bg-white px-4 py-3"
+              >
+                <span className="font-bold">{s.name}</span>
+                <span className="text-sm font-semibold text-muted">
+                  {s.durationMin} min · {formatBRL(s.priceCents)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <NewServiceForm />
+      </section>
     </PageShell>
   );
 }
