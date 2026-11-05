@@ -47,3 +47,8 @@ export async function syncAppointmentSafe(tenantId: string, appointmentId: strin
     return e instanceof GoogleAuthError ? "auth" : e instanceof GoogleApiError ? "failed" : "failed";
   }
 }
+
+export async function isGoogleConnected(tenantId: string): Promise<boolean> {
+  const acc = await ownerGoogleAccount(tenantId);
+  return !!acc && !!(acc.accessToken || acc.refreshToken);
+}

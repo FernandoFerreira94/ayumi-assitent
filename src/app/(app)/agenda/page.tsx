@@ -6,6 +6,8 @@ import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
 import { AppointmentCard } from "@/features/appointments/AppointmentCard";
 import { forecastCents, listDay } from "@/features/appointments/core";
+import { countPendencias, listPendencias } from "@/features/appointments/pendencias";
+import { isGoogleConnected } from "@/features/google/server";
 import { NewAppointmentSheet } from "@/features/appointments/NewAppointmentSheet";
 import { searchClients } from "@/features/clients/core";
 import { listServices } from "@/features/services/core";
@@ -22,7 +24,9 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
   const date = typeof d === "string" && isDateStr(d) ? d : today;
   const { tenantId } = await requireTenant();
 
-  const { rows, clients, services } = await withTenant(tenantId, async (tx) => ({
+  const google = await isGoogleConnected(tenantId);
+  const { rows, clients, services, pendencias } = await withTenant(tenantId, async (tx) => ({
+    pendencias: countPendencias(await listPendencias(tx, new Date(), google)),
     rows: await listDay(tx, dayRange(date)),
     clients: await searchClients(tx, ""),
     services: await listServices(tx),
@@ -33,6 +37,20 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
 
   return (
     <PageShell title={title} subtitle={formatDayTitle(date)}>
+      {pendencias > 0 ? (
+        <Link
+          href="/pendencias"
+          className="mb-3 flex min-h-11 items-center justify-between rounded-2xl bg-soft px-4 text-sm font-bold text-primary-text"
+        >
+          <span>Pendências para resolver</span>
+          <span
+            className="rounded-full bg-primary px-2.5 py-0.5 text-on-primary"
+            aria-label={`${pendencias} pendências`}
+          >
+            {pendencias}
+          </span>
+        </Link>
+      ) : null}
       <nav aria-label="Dias" className="mb-4 grid grid-cols-7 gap-1.5">
         {week.map((day) => {
           const sel = day === date;
