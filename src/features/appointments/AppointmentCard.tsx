@@ -2,8 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { notify } from "@/components/feedback/toast";
+import type { SyncResult } from "@/features/google/sync";
 import type { ActionResult } from "@/lib/errors";
 import { updateStatus } from "./actions";
+import { warnSync } from "./sync-warning";
 import type { Status } from "./schema";
 
 type Props = {
@@ -30,12 +32,13 @@ export function AppointmentCard({ id, time, clientName, serviceName, price, stat
   function change(next: Status, undoTo?: Status) {
     setBusy(next);
     start(async () => {
-      const res: ActionResult = await updateStatus(id, next);
+      const res: ActionResult<{ sync: SyncResult }> = await updateStatus(id, next);
       setBusy(null);
       if (!res.ok) {
         notify.error(res.code, () => change(next, undoTo));
         return;
       }
+      warnSync(res.data.sync);
       if (next === "cancelled" && undoTo) {
         notify.undoable("Agendamento cancelado", () => change(undoTo));
       } else {

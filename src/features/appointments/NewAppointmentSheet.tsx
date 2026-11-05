@@ -6,6 +6,7 @@ import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import { formatBRL } from "@/lib/dates";
 import { messageFor, type ActionResult } from "@/lib/errors";
+import { warnSync } from "./sync-warning";
 import { createAppointment } from "./actions";
 
 type Option = { id: string; label: string };
@@ -30,6 +31,7 @@ export function NewAppointmentSheet({
     const res = await createAppointment(prev, fd);
     if (res.ok) {
       notify.success("Agendamento criado");
+      warnSync(res.data.sync);
       setOpen(false);
     } else if (res.code !== "VALIDATION" && res.code !== "SLOT_TAKEN") notify.error(res.code);
     return res;

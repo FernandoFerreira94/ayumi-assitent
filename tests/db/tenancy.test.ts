@@ -156,3 +156,60 @@ d("expediente (núcleo)", () => {
     ).rejects.toThrow();
   });
 });
+
+d("sincronização com o Google (porta simulada)", () => {
+  it("cria, atualiza, apaga e não trava quando o Google falha", async () => {
+    const { withTenant } = await import("@/db/client");
+    const { insertAppointment, setStatus } = await import("@/features/appointments/core");
+    const { syncAppointment } = await import("@/features/google/sync");
+    const { GoogleAuthError, GoogleApiError } = await import("@/features/google/calendar");
+    const admin = postgres(url!, { max: 1 });
+    await admin`truncate tenants cascade`;
+    const [{ id: T }] = await admin`insert into tenants (name) values ('Estúdio G') returning id`;
+    const [{ id: S }] =
+      await admin`insert into services (tenant_id,name,duration_min,price_cents) values (${T},'Gel',60,10000) returning id`;
+    const [{ id: C }] =
+      await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Bia','+5511900002222') returning id`;
+    const eventOf = async (id: string) =>
+      (await admin`select google_event_id as e from appointments where id=${id}`)[0].e;
+
+    const calls: string[] = [];
+    const port = {
+      createEvent: async () => (calls.push("create"), "evt-1"),
+      updateEvent: async (id: string) => void calls.push(`update:${id}`),
+      deleteEvent: async (id: string) => void calls.push(`delete:${id}`),
+    };
+    const a = await withTenant(T, (tx) =>
+      insertAppointment(tx, T, { clientId: C, serviceId: S, date: "2026-11-12", time: "09:00" }),
+    );
+    if (!a.ok) throw new Error("setup");
+    const id = a.data.id;
+
+    expect(await withTenant(T, (tx) => syncAppointment(tx, null, id))).toBe("skipped");
+    expect(await withTenant(T, (tx) => syncAppointment(tx, port, id))).toBe("synced");
+    expect(await eventOf(id)).toBe("evt-1");
+    expect(await withTenant(T, (tx) => syncAppointment(tx, port, id))).toBe("synced");
+    await withTenant(T, (tx) => setStatus(tx, id, "cancelled"));
+    expect(await withTenant(T, (tx) => syncAppointment(tx, port, id))).toBe("synced");
+    expect(await eventOf(id)).toBeNull();
+    expect(calls).toEqual(["create", "update:evt-1", "delete:evt-1"]);
+
+    await withTenant(T, (tx) => setStatus(tx, id, "confirmed"));
+    const auth = {
+      ...port,
+      createEvent: async () => {
+        throw new GoogleAuthError("401");
+      },
+    };
+    const down = {
+      ...port,
+      createEvent: async () => {
+        throw new GoogleApiError("500");
+      },
+    };
+    expect(await withTenant(T, (tx) => syncAppointment(tx, auth, id))).toBe("auth");
+    expect(await withTenant(T, (tx) => syncAppointment(tx, down, id))).toBe("failed");
+    expect(await eventOf(id)).toBeNull();
+    await admin.end();
+  });
+});
