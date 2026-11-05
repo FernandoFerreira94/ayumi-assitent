@@ -132,3 +132,27 @@ d("agendamentos (núcleo)", () => {
     expect(forecastCents(rows)).toBe(12000);
   });
 });
+
+d("expediente (núcleo)", () => {
+  it("usa o padrão sem configuração e grava/lê o que foi salvo", async () => {
+    const { withTenant } = await import("@/db/client");
+    const { getHours, saveHours } = await import("@/features/hours/core");
+    const admin = postgres(url!, { max: 1 });
+    await admin`truncate tenants cascade`;
+    const [{ id: T }] = await admin`insert into tenants (name) values ('Estúdio H') returning id`;
+    await admin.end();
+
+    const def = await withTenant(T, (tx) => getHours(tx));
+    expect(def[0]).toBeNull();
+    expect(def[1]).toEqual({ opens: "09:00", closes: "18:00" });
+
+    const week = [null, { opens: "10:00", closes: "16:00" }, null, null, null, null, null];
+    await withTenant(T, (tx) => saveHours(tx, T, week));
+    expect(await withTenant(T, (tx) => getHours(tx))).toEqual(week);
+    await expect(
+      withTenant(T, (tx) =>
+        saveHours(tx, T, [null, { opens: "12:00", closes: "10:00" }, null, null, null, null, null]),
+      ),
+    ).rejects.toThrow();
+  });
+});
