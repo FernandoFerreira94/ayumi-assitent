@@ -43,3 +43,9 @@ Comando de release/deploy: `pnpm db:migrate` antes de `pnpm start`.
 - Tela para ligar/desligar lembretes e ajustar a antecedência (hoje fixo em 24 h).
 - Notificação push (chaves VAPID).
 - Puxar mudanças feitas direto no Google Agenda para o app (hoje a sincronização vai do app para o Google).
+
+## Avisos push (iPhone)
+1. Gerar chaves: `npx web-push generate-vapid-keys`.
+2. Variáveis no app **e** no worker: `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (também no build), `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (ex.: `mailto:voce@dominio.com`).
+3. No iPhone: instalar o app na tela de início (iOS 16.4+), abrir Ajustes > Avisos no celular > Ativar.
+4. O worker envia, todo dia às 09h (Brasília), um aviso se houver pendências.

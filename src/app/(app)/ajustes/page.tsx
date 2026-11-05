@@ -3,6 +3,7 @@ import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
 import { getHours } from "@/features/hours/core";
 import { HoursForm } from "@/features/hours/HoursForm";
+import { PushToggle } from "@/features/push/PushToggle";
 import { listServices } from "@/features/services/core";
 import { NewServiceForm } from "@/features/services/NewServiceForm";
 import { formatBRL } from "@/lib/dates";
@@ -40,6 +41,9 @@ export default async function AjustesPage() {
           </ul>
         )}
         <NewServiceForm />
+      </section>
+      <section aria-label="Avisos" className="mt-6">
+        <PushToggle publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
       </section>
       <section aria-label="Expediente" className="mt-6">
         <HoursForm week={week} />
