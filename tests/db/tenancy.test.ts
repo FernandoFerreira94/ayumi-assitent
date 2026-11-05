@@ -213,3 +213,32 @@ d("sincronização com o Google (porta simulada)", () => {
     await admin.end();
   });
 });
+
+d("pendências (núcleo)", () => {
+  it("separa o que fechar, confirmar e mandar ao Google", async () => {
+    const { withTenant } = await import("@/db/client");
+    const { listPendencias, countPendencias } = await import("@/features/appointments/pendencias");
+    const admin = postgres(url!, { max: 1 });
+    await admin`truncate tenants cascade`;
+    const [{ id: T }] = await admin`insert into tenants (name) values ('Estúdio P') returning id`;
+    const [{ id: S }] =
+      await admin`insert into services (tenant_id,name,duration_min,price_cents) values (${T},'Gel',60,10000) returning id`;
+    const [{ id: C }] =
+      await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Bia','+5511900003333') returning id`;
+    const mk = (start: string, end: string, status: string, ev: string | null) =>
+      admin`insert into appointments (tenant_id,client_id,service_id,starts_at,ends_at,price_cents,status,google_event_id) values (${T},${C},${S},${start},${end},10000,${status},${ev})`;
+    const now = new Date("2026-11-10T15:00:00Z");
+    await mk("2026-11-10T10:00:00Z", "2026-11-10T11:00:00Z", "confirmed", "e1"); // passou → fechar
+    await mk("2026-11-10T12:00:00Z", "2026-11-10T13:00:00Z", "done", "e2"); // concluído → nada
+    await mk("2026-11-11T10:00:00Z", "2026-11-11T11:00:00Z", "pending_confirmation", "e3"); // confirmar
+    await mk("2026-11-12T10:00:00Z", "2026-11-12T11:00:00Z", "confirmed", null); // sem Google
+    await mk("2026-11-13T10:00:00Z", "2026-11-13T11:00:00Z", "cancelled", null); // cancelado → nada
+    await admin.end();
+
+    const withG = await withTenant(T, (tx) => listPendencias(tx, now, true));
+    expect([withG.toClose.length, withG.toConfirm.length, withG.unsynced.length]).toEqual([1, 1, 1]);
+    expect(countPendencias(withG)).toBe(3);
+    const noG = await withTenant(T, (tx) => listPendencias(tx, now, false));
+    expect(noG.unsynced).toHaveLength(0);
+  });
+});
