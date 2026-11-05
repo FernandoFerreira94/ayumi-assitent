@@ -15,5 +15,6 @@ export default defineConfig({
     setupFiles: ["./tests/setup.ts"],
     include: ["tests/unit/**/*.test.{ts,tsx}", "tests/db/**/*.test.ts"],
     css: false,
+    fileParallelism: false, // testes de banco compartilham o mesmo Postgres
   },
 });
