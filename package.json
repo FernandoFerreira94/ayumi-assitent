@@ -14,8 +14,10 @@
     "db:migrate": "node scripts/migrate.mjs"
   },
   "dependencies": {
+    "better-auth": "^1.7.18",
     "drizzle-orm": "^0.45.4",
     "next": "16.4.5",
+    "pg": "^8.23.1",
     "postgres": "^4.0.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -32,6 +34,7 @@
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.8",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.2.1",

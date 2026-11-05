@@ -21,7 +21,7 @@ export default defineConfig({
   ],
   webServer: {
     command: "pnpm build && pnpm exec next start -p 3100",
-    url: "http://localhost:3100/agenda",
+    url: "http://localhost:3100/login",
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
   },
