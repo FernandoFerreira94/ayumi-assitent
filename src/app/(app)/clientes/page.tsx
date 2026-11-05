@@ -3,6 +3,7 @@ import { EmptyState } from "@/components/feedback/EmptyState";
 import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
 import { searchClients } from "@/features/clients/core";
+import { ImportSheet } from "@/features/contacts/ImportSheet";
 import { NewClientSheet } from "@/features/clients/NewClientSheet";
 import { maskPhone } from "@/lib/phone";
 import { requireTenant } from "@/lib/tenant";
@@ -28,6 +29,7 @@ export default async function ClientesPage({ searchParams }: PageProps<"/cliente
             className="min-h-11 w-full rounded-full border border-line bg-white px-4 text-base font-semibold outline-none focus:border-primary"
           />
         </form>
+        <ImportSheet />
         <NewClientSheet />
       </div>
       {list.length === 0 ? (
