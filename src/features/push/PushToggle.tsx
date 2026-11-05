@@ -68,8 +68,10 @@ export function PushToggle({ publicKey }: { publicKey: string | null }) {
         const sub = await reg.pushManager.getSubscription();
         if (sub) {
           const res = await unsubscribePush(sub.endpoint);
-          if (!res.ok) notify.error(res.code, disable);
-          return;
+          if (!res.ok) {
+            notify.error(res.code, disable);
+            return;
+          }
           await sub.unsubscribe();
         }
         setState("off");
