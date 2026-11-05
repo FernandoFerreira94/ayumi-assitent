@@ -71,6 +71,7 @@ export const appointments = pgTable(
     priceCents: integer("price_cents").notNull(),
     status: appointmentStatus("status").notNull().default("pending_confirmation"),
     googleEventId: text("google_event_id"),
+    reminderSentAt: timestamp("reminder_sent_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("appointments_tenant_start").on(t.tenantId, t.startsAt)],
