@@ -22,6 +22,8 @@ export default defineConfig({
   webServer: {
     command: "pnpm build && pnpm exec next start -p 3100",
     url: "http://localhost:3100/login",
+    // e-mails liberados para os testes de cadastro
+    env: { ALLOWED_EMAILS: "novo@e2e.test" },
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
   },
