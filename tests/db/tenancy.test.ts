@@ -97,3 +97,38 @@ d("clientes (núcleo)", () => {
     expect(await withTenant(T, (tx) => searchClients(tx, "zzz"))).toHaveLength(0);
   });
 });
+
+d("agendamentos (núcleo)", () => {
+  it("cria, bloqueia horário ocupado, lista o dia e calcula o previsto", async () => {
+    const { withTenant } = await import("@/db/client");
+    const { insertAppointment, listDay, forecastCents, setStatus } = await import("@/features/appointments/core");
+    const { dayRange } = await import("@/lib/dates");
+    const admin = postgres(url!, { max: 1 });
+    await admin`truncate tenants cascade`;
+    const [{ id: T }] = await admin`insert into tenants (name) values ('Estúdio D') returning id`;
+    const [{ id: S }] =
+      await admin`insert into services (tenant_id,name,duration_min,price_cents) values (${T},'Gel',90,12000) returning id`;
+    const [{ id: C }] =
+      await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Bia','+5511900001111') returning id`;
+    await admin.end();
+
+    const base = { clientId: C, serviceId: S, date: "2026-11-12" };
+    const a = await withTenant(T, (tx) => insertAppointment(tx, T, { ...base, time: "09:00" }));
+    expect(a.ok).toBe(true);
+    const clash = await withTenant(T, (tx) => insertAppointment(tx, T, { ...base, time: "10:00" }));
+    expect(clash).toMatchObject({ ok: false, code: "SLOT_TAKEN" });
+    const b = await withTenant(T, (tx) => insertAppointment(tx, T, { ...base, time: "10:30" }));
+    expect(b.ok).toBe(true);
+
+    let rows = await withTenant(T, (tx) => listDay(tx, dayRange("2026-11-12")));
+    expect(rows.map((r) => r.clientName)).toEqual(["Bia", "Bia"]);
+    expect(forecastCents(rows)).toBe(24000);
+    expect(await withTenant(T, (tx) => listDay(tx, dayRange("2026-11-13")))).toHaveLength(0);
+
+    if (!a.ok) throw new Error("unreachable");
+    await withTenant(T, (tx) => setStatus(tx, a.data.id, "cancelled"));
+    rows = await withTenant(T, (tx) => listDay(tx, dayRange("2026-11-12")));
+    expect(rows).toHaveLength(1);
+    expect(forecastCents(rows)).toBe(12000);
+  });
+});
