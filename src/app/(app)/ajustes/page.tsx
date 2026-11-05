@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
+import { getHours } from "@/features/hours/core";
+import { HoursForm } from "@/features/hours/HoursForm";
 import { listServices } from "@/features/services/core";
 import { NewServiceForm } from "@/features/services/NewServiceForm";
 import { formatBRL } from "@/lib/dates";
@@ -10,7 +12,10 @@ export const metadata: Metadata = { title: "Ajustes" };
 
 export default async function AjustesPage() {
   const { tenantId } = await requireTenant();
-  const services = await withTenant(tenantId, (tx) => listServices(tx));
+  const { services, week } = await withTenant(tenantId, async (tx) => ({
+    services: await listServices(tx),
+    week: await getHours(tx),
+  }));
   return (
     <PageShell title="Ajustes">
       <section aria-labelledby="servicos" className="grid gap-3">
@@ -35,6 +40,9 @@ export default async function AjustesPage() {
           </ul>
         )}
         <NewServiceForm />
+      </section>
+      <section aria-label="Expediente" className="mt-6">
+        <HoursForm week={week} />
       </section>
     </PageShell>
   );

@@ -1,4 +1,16 @@
-import { index, integer, pgEnum, pgTable, text, timestamp, unique, uuid, boolean } from "drizzle-orm/pg-core";
+import {
+  index,
+  smallint,
+  primaryKey,
+  integer,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+  uuid,
+  boolean,
+} from "drizzle-orm/pg-core";
 
 export const tenants = pgTable("tenants", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -73,3 +85,16 @@ export const blocks = pgTable("blocks", {
   endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
   reason: text("reason"),
 });
+
+export const workingHours = pgTable(
+  "working_hours",
+  {
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    weekday: smallint("weekday").notNull(),
+    opens: text("opens").notNull(),
+    closes: text("closes").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.tenantId, t.weekday] })],
+);
