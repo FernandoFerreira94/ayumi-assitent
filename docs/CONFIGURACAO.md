@@ -29,7 +29,15 @@ Comando de release/deploy: `pnpm db:migrate` antes de `pnpm start`.
 - Sem as variáveis da Evolution o worker sobe e apenas registra "reminders_skipped".
 - Lembrete sai 24 h antes do horário, uma única vez por agendamento; se o envio falha, tenta de novo na rodada seguinte.
 
-## 4. Ainda não construído (precisa de acesso externo para testar)
+## 4. Observabilidade e backup
+
+- **Healthcheck do Railway:** caminho `/api/health` (200 só se o banco responde).
+- **Sentry (opcional):** crie um projeto Next.js no Sentry e defina `SENTRY_DSN` (servidor) e `NEXT_PUBLIC_SENTRY_DSN` (navegador). Sem DSN fica desligado; os erros sempre saem como JSON nos logs do Railway.
+- **Backup diário:** crie um Bucket no Railway e um serviço **Cron** (mesmo repositório) com comando `pnpm backup` e agenda `0 6 * * *` (03:00 de Brasília). A imagem precisa do `pg_dump` (cliente PostgreSQL 16).
+  Variáveis: `DATABASE_URL`, `BACKUP_BUCKET`, `BACKUP_ENDPOINT`, `BACKUP_ACCESS_KEY_ID`, `BACKUP_SECRET_ACCESS_KEY`, opcionais `BACKUP_REGION` (padrão `auto`) e `BACKUP_KEEP_DAYS` (padrão 14).
+  Restaurar: baixe o `.sql.gz` e rode `gunzip -c arquivo.sql.gz | psql "$DATABASE_URL"` num banco vazio. **Faça um teste de restauração antes de confiar.**
+
+## 5. Ainda não construído (precisa de acesso externo para testar)
 
 - Receber respostas da cliente (confirmar/remarcar pelo WhatsApp) e o chat com foto: precisam do webhook da Evolution.
 - Tela para ligar/desligar lembretes e ajustar a antecedência (hoje fixo em 24 h).

@@ -2,9 +2,18 @@
 import { PgBoss } from "pg-boss";
 import { messagingFromEnv } from "@/features/messaging/evolution";
 import { runReminders } from "@/features/reminders/run";
+import { log as jlog } from "@/lib/log";
 
 const QUEUE = "send-reminders";
-const log = (o: Record<string, unknown>) => console.log(JSON.stringify({ time: new Date().toISOString(), ...o }));
+const log = ({
+  level,
+  msg,
+  ...rest
+}: {
+  level: "debug" | "info" | "warn" | "error";
+  msg: string;
+  [k: string]: unknown;
+}) => jlog(level, msg, rest);
 
 async function main() {
   const url = process.env.DATABASE_URL;
