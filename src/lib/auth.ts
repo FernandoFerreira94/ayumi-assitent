@@ -17,7 +17,7 @@ export const auth = betterAuth({
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
       // Agenda do Google: lê/escreve eventos; refresh token para sincronizar em segundo plano.
-      scope: ["https://www.googleapis.com/auth/calendar"],
+      scope: ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/contacts.readonly"],
       accessType: "offline",
       prompt: "consent",
     },

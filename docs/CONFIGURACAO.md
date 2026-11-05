@@ -49,3 +49,7 @@ Comando de release/deploy: `pnpm db:migrate` antes de `pnpm start`.
 2. Variáveis no app **e** no worker: `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (também no build), `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (ex.: `mailto:voce@dominio.com`).
 3. No iPhone: instalar o app na tela de início (iOS 16.4+), abrir Ajustes > Avisos no celular > Ativar.
 4. O worker envia, todo dia às 09h (Brasília), um aviso se houver pendências.
+
+## Importar clientes
+- Arquivo `.vcf`/`.csv`: funciona sem configurar nada. No iPhone: Contatos > selecionar > Compartilhar > salvar em Arquivos (ou exportar de planilha/Google Contatos).
+- Google Contatos: ative a **People API** no Google Cloud e inclua o escopo `contacts.readonly` na tela de consentimento. Quem já conectou o Google antes precisa sair e entrar de novo para dar a nova permissão.

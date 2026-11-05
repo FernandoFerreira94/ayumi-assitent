@@ -17,8 +17,8 @@ async function ownerGoogleAccount(tenantId: string): Promise<AccountRow | null> 
   return rows[0] ?? null;
 }
 
-/** Porta do Google Agenda do estúdio, renovando o token quando preciso. Null = Google não conectado. */
-export async function calendarForTenant(tenantId: string): Promise<CalendarPort | null> {
+/** Token de acesso do Google do estúdio, renovando quando preciso. Null = Google não conectado. */
+export async function googleAccessToken(tenantId: string): Promise<string | null> {
   const acc = await ownerGoogleAccount(tenantId);
   if (!acc || (!acc.accessToken && !acc.refreshToken)) return null;
   let token = acc.accessToken;
@@ -35,7 +35,13 @@ export async function calendarForTenant(tenantId: string): Promise<CalendarPort 
       sql`update account set "accessToken" = ${fresh.accessToken}, "accessTokenExpiresAt" = ${fresh.expiresAt.toISOString()}, "updatedAt" = now() where id = ${acc.id}`,
     );
   }
-  return googleCalendar(token!);
+  return token!;
+}
+
+/** Porta do Google Agenda do estúdio. Null = Google não conectado. */
+export async function calendarForTenant(tenantId: string): Promise<CalendarPort | null> {
+  const token = await googleAccessToken(tenantId);
+  return token ? googleCalendar(token) : null;
 }
 
 /** Versão para as Server Actions: nunca lança. */
