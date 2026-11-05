@@ -1,0 +1,212 @@
+@import "tailwindcss";
+
+/* Marca Lavanda Digital — tema sempre claro */
+:root {
+  --bg: #f8f7fc;
+  --page: #efecf8;
+  --surface: #ffffff;
+  --fg: #17142b;
+  --muted: #5a5670;
+  --line: #e6e2f3;
+  --primary: #6d4aff;
+  --primary-text: #5535e6;
+  --on-primary: #ffffff;
+  --soft: #eee9ff;
+  --accent: #ff8fb1;
+  --ok: #1c6b48;
+  --ok-bg: #ddf3e7;
+  --wait: #8a5a00;
+  --wait-bg: #fbefd5;
+  --fail: #b42318;
+  --fail-bg: #fde7e4;
+  --glass: rgba(255, 255, 255, 0.64);
+  --glass-line: rgba(255, 255, 255, 0.75);
+  --shadow: 0 12px 32px rgba(40, 24, 110, 0.16);
+  --spring: cubic-bezier(0.34, 1.45, 0.64, 1);
+  --ease: cubic-bezier(0.22, 0.8, 0.3, 1);
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-primary: var(--primary);
+  --color-primary-text: var(--primary-text);
+  --color-on-primary: var(--on-primary);
+  --color-soft: var(--soft);
+  --color-accent: var(--accent);
+  --color-ok: var(--ok);
+  --color-ok-bg: var(--ok-bg);
+  --color-wait: var(--wait);
+  --color-wait-bg: var(--wait-bg);
+  --color-fail: var(--fail);
+  --color-fail-bg: var(--fail-bg);
+  --font-sans: var(--font-quicksand), ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent);
+  outline-offset: 2px;
+}
+
+/* Barra inferior de vidro: 4 abas em pílula + botão + separado */
+.dock {
+  position: fixed;
+  left: 14px;
+  right: 14px;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  z-index: 20;
+  max-width: 520px;
+  margin-inline: auto;
+}
+.tabs {
+  position: relative;
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 6px;
+  border-radius: 999px;
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(24px) saturate(1.8);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8);
+  isolation: isolate;
+}
+.tabs .ind {
+  position: absolute;
+  z-index: -1;
+  top: 6px;
+  bottom: 6px;
+  left: 6px;
+  width: calc((100% - 12px) / 4);
+  border-radius: 999px;
+  background: var(--soft);
+  transform: translateX(calc(var(--i, 0) * 100%));
+  transition: transform 0.45s var(--spring);
+}
+.tab {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  padding: 7px 0 5px;
+  min-height: 50px;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.tab svg {
+  width: 23px;
+  height: 23px;
+  transition: transform 0.35s var(--spring);
+}
+.tab[aria-current="page"] {
+  color: var(--primary-text);
+  font-weight: 700;
+}
+.tab[aria-current="page"] svg {
+  transform: translateY(-1px) scale(1.06);
+}
+.fab {
+  width: 62px;
+  height: 62px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 0;
+  background: var(--primary);
+  color: var(--on-primary);
+  display: grid;
+  place-items: center;
+  box-shadow:
+    0 10px 24px rgba(109, 74, 255, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: transform 0.35s var(--spring);
+}
+.fab svg {
+  width: 28px;
+  height: 28px;
+}
+.fab:active {
+  transform: scale(0.92);
+}
+
+/* Skeleton com brilho suave */
+.skel {
+  background: linear-gradient(100deg, var(--soft) 30%, color-mix(in srgb, var(--soft) 40%, white) 50%, var(--soft) 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: 12px;
+}
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2.5px solid currentColor;
+  border-right-color: transparent;
+  animation: spin 0.8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skel,
+  .spin {
+    animation-duration: 3s;
+  }
+  .tabs .ind,
+  .tab svg,
+  .fab {
+    transition: none;
+  }
+}
+
+/* Toasts em vidro, botão Desfazer em lavanda (nunca preto) */
+.app-toast {
+  background: rgba(255, 255, 255, 0.86) !important;
+  border: 1px solid var(--glass-line) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 10px 30px rgba(40, 24, 110, 0.18) !important;
+  backdrop-filter: blur(30px) saturate(1.8);
+  -webkit-backdrop-filter: blur(30px) saturate(1.8);
+  color: var(--fg) !important;
+  font-family: var(--font-sans) !important;
+}
+.app-toast [data-button] {
+  background: var(--soft) !important;
+  color: var(--primary-text) !important;
+  font-weight: 700;
+  border-radius: 999px !important;
+}
