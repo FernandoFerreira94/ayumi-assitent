@@ -78,3 +78,22 @@ d("multitenancy e agenda (Postgres real)", () => {
     );
   });
 });
+
+d("clientes (núcleo)", () => {
+  it("cadastra, recusa telefone repetido e busca por nome/telefone", async () => {
+    const { withTenant } = await import("@/db/client");
+    const { insertClient, searchClients } = await import("@/features/clients/core");
+    const admin = postgres(url!, { max: 1 });
+    await admin`truncate tenants cascade`;
+    const [{ id: T }] = await admin`insert into tenants (name) values ('Estúdio C') returning id`;
+    await admin.end();
+
+    const a = await withTenant(T, (tx) => insertClient(tx, T, { name: "Ana Souza", phone: "+5511911112222" }));
+    expect(a.ok).toBe(true);
+    const dup = await withTenant(T, (tx) => insertClient(tx, T, { name: "Outra", phone: "+5511911112222" }));
+    expect(dup).toMatchObject({ ok: false, code: "PHONE_EXISTS", field: "phone" });
+    expect(await withTenant(T, (tx) => searchClients(tx, "ana"))).toHaveLength(1);
+    expect(await withTenant(T, (tx) => searchClients(tx, "(11) 91111"))).toHaveLength(1);
+    expect(await withTenant(T, (tx) => searchClients(tx, "zzz"))).toHaveLength(0);
+  });
+});
