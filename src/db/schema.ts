@@ -29,6 +29,7 @@ export const clients = pgTable(
     name: text("name").notNull(),
     phoneE164: text("phone_e164").notNull(),
     notes: text("notes"),
+    email: text("email"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [unique().on(t.tenantId, t.phoneE164)],

@@ -14,7 +14,7 @@ export async function insertClient(
     const row = await tx.transaction(async (sp) => {
       const [r] = await sp
         .insert(clients)
-        .values({ tenantId, name: input.name, phoneE164: input.phone, notes: input.notes })
+        .values({ tenantId, name: input.name, phoneE164: input.phone, email: input.email, notes: input.notes })
         .returning({ id: clients.id });
       return r;
     });

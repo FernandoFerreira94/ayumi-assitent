@@ -7,6 +7,13 @@ export const clientInput = z.object({
     .string()
     .transform((v) => toE164(v))
     .refine((v): v is string => v !== null, "Telefone inválido"),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .optional()
+    .transform((v) => v || undefined)
+    .refine((v) => v === undefined || z.email().safeParse(v).success, "E-mail inválido"),
   notes: z
     .string()
     .trim()
@@ -14,4 +21,4 @@ export const clientInput = z.object({
     .optional()
     .transform((v) => v || undefined),
 });
-export type ClientInput = { name: string; phone: string; notes?: string };
+export type ClientInput = { name: string; phone: string; email?: string; notes?: string };

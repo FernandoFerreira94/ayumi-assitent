@@ -68,6 +68,25 @@ export function NewClientSheet() {
                 </span>
               ) : null}
             </label>
+            <label className="grid gap-1 text-sm font-bold">
+              E-mail (opcional)
+              <input
+                name="email"
+                type="email"
+                inputMode="email"
+                autoComplete="off"
+                className={input}
+                aria-invalid={err?.field === "email"}
+              />
+              <span className="text-xs font-semibold text-muted">
+                Com e-mail, ela recebe o convite na agenda do Google.
+              </span>
+              {err?.field === "email" ? (
+                <span role="alert" className="text-xs text-primary-text">
+                  E-mail inválido
+                </span>
+              ) : null}
+            </label>
             <SubmitButton pendingLabel="Salvando…">Salvar</SubmitButton>
           </form>
         </Drawer.Content>

@@ -49,7 +49,9 @@ export function ImportSheet() {
   }
 
   function doImport() {
-    const chosen = (list ?? []).filter((c) => picked.has(c.phone)).map(({ name, phone }) => ({ name, phone }));
+    const chosen = (list ?? [])
+      .filter((c) => picked.has(c.phone))
+      .map(({ name, phone, email }) => ({ name, phone, email }));
     start(async () => {
       const res = await importSelected(chosen);
       if (!res.ok) return void notify.error(res.code, doImport);
