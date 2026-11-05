@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks -- `use` aqui é o callback de fixture do Playwright, não um hook do React */
 import { createHmac, randomUUID } from "node:crypto";
 import { test as base, expect } from "@playwright/test";
 import postgres from "postgres";
