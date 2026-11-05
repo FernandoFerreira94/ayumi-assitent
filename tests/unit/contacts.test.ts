@@ -39,6 +39,15 @@ describe("contatos: vcf", () => {
       { name: "Ana Souza", phone: "+5511911112222" },
     ]);
   });
+  it("guarda e-mail válido do contato", () => {
+    const r = parseVcf(
+      "BEGIN:VCARD\nFN:Bia Lima\nTEL:11 92222-3333\nEMAIL;TYPE=HOME:Bia@Mail.com\nEND:VCARD\nBEGIN:VCARD\nFN:Cris Dias\nTEL:11 93333-4444\nEMAIL:invalido\nEND:VCARD",
+    );
+    expect(r.candidates).toEqual([
+      { name: "Bia Lima", phone: "+5511922223333", email: "bia@mail.com" },
+      { name: "Cris Dias", phone: "+5511933334444" },
+    ]);
+  });
   it("conta ignorados (sem telefone ou inválido)", () => expect(r.ignored).toBe(2));
   it("detecta vcf pelo conteúdo", () => {
     expect(parseContactsFile("contatos.txt", VCF).candidates).toHaveLength(3);
@@ -60,6 +69,10 @@ describe("contatos: csv", () => {
     );
     expect(r.candidates.map((c) => c.phone)).toEqual(["+5511944445555", "+551133334444"]);
     expect(r.candidates[0].name).toBe("Joana Lima");
+  });
+  it("lê coluna de e-mail", () => {
+    const r = parseCsv("Nome,Telefone,E-mail\nBia,11 92222-3333,bia@mail.com");
+    expect(r.candidates[0].email).toBe("bia@mail.com");
   });
   it("sem linhas de dados", () => expect(parseCsv("Nome,Telefone").candidates).toEqual([]));
 });

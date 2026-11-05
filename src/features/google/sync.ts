@@ -23,6 +23,7 @@ export async function syncAppointment(tx: Tx, port: CalendarPort | null, appoint
       eventId: appointments.googleEventId,
       client: clients.name,
       phone: clients.phoneE164,
+      email: clients.email,
       service: services.name,
       tz: tenants.timezone,
     })
@@ -39,6 +40,7 @@ export async function syncAppointment(tx: Tx, port: CalendarPort | null, appoint
     startsAt: a.startsAt,
     endsAt: a.endsAt,
     timeZone: a.tz,
+    attendeeEmail: a.email ?? undefined,
   };
   try {
     if (a.status === "cancelled") {

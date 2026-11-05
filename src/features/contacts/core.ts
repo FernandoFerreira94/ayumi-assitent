@@ -26,7 +26,7 @@ export async function importClients(tx: Tx, tenantId: string, list: Candidate[])
   if (list.length === 0) return { created: 0, skipped: 0 };
   const rows = await tx
     .insert(clients)
-    .values(list.map((c) => ({ tenantId, name: c.name, phoneE164: c.phone })))
+    .values(list.map((c) => ({ tenantId, name: c.name, phoneE164: c.phone, email: c.email })))
     .onConflictDoNothing()
     .returning({ id: clients.id });
   return { created: rows.length, skipped: list.length - rows.length };

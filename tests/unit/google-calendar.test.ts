@@ -23,6 +23,15 @@ describe("cliente do Google Agenda", () => {
       timeZone: "America/Sao_Paulo",
     });
   });
+  it("convida a cliente e avisa os convidados", async () => {
+    const f = vi.fn().mockResolvedValue(res(200, { id: "e" }));
+    await googleCalendar("t", f as unknown as typeof fetch).createEvent({ ...ev, attendeeEmail: "m@x.com" });
+    const [url, init] = f.mock.calls[0];
+    expect(url).toContain("sendUpdates=all");
+    expect(JSON.parse(init.body).attendees).toEqual([{ email: "m@x.com" }]);
+    await googleCalendar("t", f as unknown as typeof fetch).createEvent(ev);
+    expect(JSON.parse(f.mock.calls[1][1].body).attendees).toBeUndefined();
+  });
   it("401 vira erro de autenticação e 500 vira erro de API", async () => {
     const auth = googleCalendar("t", vi.fn().mockResolvedValue(res(401)) as unknown as typeof fetch);
     await expect(auth.createEvent(ev)).rejects.toBeInstanceOf(GoogleAuthError);

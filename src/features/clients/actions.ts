@@ -12,6 +12,7 @@ export async function createClient(_prev: ActionResult<{ id: string }> | null, f
   const parsed = clientInput.safeParse({
     name: formData.get("name") ?? "",
     phone: formData.get("phone") ?? "",
+    email: formData.get("email") ?? undefined,
     notes: formData.get("notes") ?? undefined,
   });
   if (!parsed.success) return fail("VALIDATION", String(parsed.error.issues[0]?.path[0] ?? ""));

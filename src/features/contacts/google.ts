@@ -1,16 +1,20 @@
 import { GoogleApiError, GoogleAuthError } from "@/features/google/calendar";
 import { normalize, type Parsed } from "./parse";
 
-type Person = { names?: { displayName?: string }[]; phoneNumbers?: { value?: string }[] };
+type Person = {
+  names?: { displayName?: string }[];
+  phoneNumbers?: { value?: string }[];
+  emailAddresses?: { value?: string }[];
+};
 type Page = { connections?: Person[]; nextPageToken?: string };
 
 /** Lê os contatos do Google (People API). 401/403 = permissão ausente ou expirada: reconectar. */
 export async function fetchGoogleContacts(accessToken: string, fetchImpl: typeof fetch = fetch): Promise<Parsed> {
-  const raw: { name: string; phone: string }[] = [];
+  const raw: { name: string; phone: string; email?: string }[] = [];
   let pageToken: string | undefined;
   for (let page = 0; page < 20; page++) {
     const url = new URL("https://people.googleapis.com/v1/people/me/connections");
-    url.searchParams.set("personFields", "names,phoneNumbers");
+    url.searchParams.set("personFields", "names,phoneNumbers,emailAddresses");
     url.searchParams.set("pageSize", "1000");
     if (pageToken) url.searchParams.set("pageToken", pageToken);
     let res: Response;
@@ -25,8 +29,9 @@ export async function fetchGoogleContacts(accessToken: string, fetchImpl: typeof
     for (const p of body.connections ?? []) {
       const name = p.names?.[0]?.displayName ?? "";
       const phones = p.phoneNumbers ?? [];
+      const email = p.emailAddresses?.[0]?.value ?? "";
       if (phones.length === 0) raw.push({ name, phone: "" });
-      for (const ph of phones) raw.push({ name, phone: ph.value ?? "" });
+      for (const ph of phones) raw.push({ name, phone: ph.value ?? "", email });
     }
     pageToken = body.nextPageToken;
     if (!pageToken) break;

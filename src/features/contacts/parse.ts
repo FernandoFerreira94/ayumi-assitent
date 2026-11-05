@@ -1,12 +1,15 @@
 import { toE164 } from "@/lib/phone";
 
-export type Candidate = { name: string; phone: string };
+export type Candidate = { name: string; phone: string; email?: string };
 export type Parsed = { candidates: Candidate[]; ignored: number };
 
 export const MAX_CANDIDATES = 2000;
 
 /** Junta, tira duplicados por telefone e descarta sem nome ou com telefone inválido. */
-export function normalize(raw: { name: string; phone: string }[]): Parsed {
+type Raw = { name: string; phone: string; email?: string };
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function normalize(raw: Raw[]): Parsed {
   const seen = new Map<string, Candidate>();
   let ignored = 0;
   for (const r of raw) {
@@ -17,7 +20,8 @@ export function normalize(raw: { name: string; phone: string }[]): Parsed {
       continue;
     }
     if (seen.has(phone)) continue;
-    seen.set(phone, { name, phone });
+    const email = r.email?.trim().toLowerCase();
+    seen.set(phone, { name, phone, ...(email && EMAIL.test(email) ? { email } : {}) });
   }
   return { candidates: [...seen.values()].slice(0, MAX_CANDIDATES), ignored };
 }
@@ -27,7 +31,7 @@ const vcfUnescape = (s: string) => s.replace(/\\([,;nN\\])/g, (_, c: string) => 
 
 /** vCard 2.1/3.0/4.0: um contato pode ter vários telefones; cada um vira um candidato. */
 export function parseVcf(text: string): Parsed {
-  const raw: { name: string; phone: string }[] = [];
+  const raw: Raw[] = [];
   let ignoredNoPhone = 0;
   for (const card of unfold(text)
     .split(/BEGIN:VCARD/i)
@@ -36,6 +40,7 @@ export function parseVcf(text: string): Parsed {
     let fn = "";
     let n = "";
     const phones: string[] = [];
+    let email = "";
     for (const line of lines) {
       const i = line.indexOf(":");
       if (i < 0) continue;
@@ -48,9 +53,10 @@ export function parseVcf(text: string): Parsed {
       if (key === "FN") fn = vcfUnescape(value);
       else if (key === "N") n = value.split(";").filter(Boolean).reverse().join(" ");
       else if (key === "TEL") phones.push(value);
+      else if (key === "EMAIL" && !email) email = value;
     }
     if (phones.length === 0) ignoredNoPhone++;
-    for (const p of phones) raw.push({ name: fn || n, phone: p });
+    for (const p of phones) raw.push({ name: fn || n, phone: p, email });
   }
   const r = normalize(raw);
   return { ...r, ignored: r.ignored + ignoredNoPhone };
@@ -88,9 +94,11 @@ export function parseCsv(text: string): Parsed {
   const nameCols = idx(/^(nome|name|full name|nome completo|display name)$/);
   const given = idx(/^(first name|given name|primeiro nome)$/);
   const family = idx(/^(last name|family name|sobrenome)$/);
+  const emailCols = idx(/(e-?mail)/).filter((i) => !/type|label|tipo/.test(head[i]));
   const phoneCols = idx(/(telefone|celular|phone|mobile|whatsapp|tel)/).filter((i) => !/type|label|tipo/.test(head[i]));
-  const raw: { name: string; phone: string }[] = [];
+  const raw: Raw[] = [];
   for (const r of rows.slice(1)) {
+    const email = emailCols.map((i) => (r[i] ?? "").split(":::")[0].trim()).find(Boolean) ?? "";
     const name =
       (nameCols.length ? r[nameCols[0]] : "") ||
       [given[0] !== undefined ? r[given[0]] : "", family[0] !== undefined ? r[family[0]] : ""]
@@ -98,7 +106,7 @@ export function parseCsv(text: string): Parsed {
         .join(" ");
     for (const i of phoneCols) {
       // Google CSV junta vários telefones com " ::: "
-      for (const p of (r[i] ?? "").split(":::")) if (p.trim()) raw.push({ name: name ?? "", phone: p });
+      for (const p of (r[i] ?? "").split(":::")) if (p.trim()) raw.push({ name: name ?? "", phone: p, email });
     }
     if (!phoneCols.some((i) => (r[i] ?? "").trim())) raw.push({ name: name ?? "", phone: "" });
   }

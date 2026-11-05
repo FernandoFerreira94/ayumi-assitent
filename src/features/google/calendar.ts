@@ -5,6 +5,8 @@ export type CalendarEventInput = {
   startsAt: Date;
   endsAt: Date;
   timeZone: string;
+  /** E-mail da cliente: ela recebe o convite do Google. */
+  attendeeEmail?: string;
 };
 
 export interface CalendarPort {
@@ -19,12 +21,15 @@ export class GoogleAuthError extends Error {}
 export class GoogleApiError extends Error {}
 
 const BASE = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
+// avisa os convidados de criação, mudança e cancelamento
+const NOTIFY = "?sendUpdates=all";
 
 const body = (e: CalendarEventInput) => ({
   summary: e.summary,
   description: e.description,
   start: { dateTime: e.startsAt.toISOString(), timeZone: e.timeZone },
   end: { dateTime: e.endsAt.toISOString(), timeZone: e.timeZone },
+  ...(e.attendeeEmail ? { attendees: [{ email: e.attendeeEmail }] } : {}),
 });
 
 export function googleCalendar(accessToken: string, fetchImpl: typeof fetch = fetch): CalendarPort {
@@ -47,16 +52,16 @@ export function googleCalendar(accessToken: string, fetchImpl: typeof fetch = fe
 
   return {
     async createEvent(e) {
-      const r = await call("POST", BASE, body(e));
+      const r = await call("POST", BASE + NOTIFY, body(e));
       if (!r?.id) throw new GoogleApiError("sem id");
       return r.id;
     },
     async updateEvent(id, e) {
-      await call("PUT", `${BASE}/${encodeURIComponent(id)}`, body(e));
+      await call("PUT", `${BASE}/${encodeURIComponent(id)}${NOTIFY}`, body(e));
     },
     async deleteEvent(id) {
       // 404/410 = já não existe: objetivo cumprido
-      await call("DELETE", `${BASE}/${encodeURIComponent(id)}`, undefined, true);
+      await call("DELETE", `${BASE}/${encodeURIComponent(id)}${NOTIFY}`, undefined, true);
     },
   };
 }
