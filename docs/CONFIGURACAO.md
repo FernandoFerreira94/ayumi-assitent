@@ -22,8 +22,16 @@ O código já está pronto e testado com simulações. Falta configurar o que s�
 
 Comando de release/deploy: `pnpm db:migrate` antes de `pnpm start`.
 
-## 3. Ainda não construído (precisa de acesso externo para testar)
+## 3. Worker de lembretes (segundo serviço no Railway)
 
-- WhatsApp + lembretes (Evolution API no Railway, fila pg-boss).
+- Mesmo repositório, comando de start: `pnpm worker` (usa pg-boss no mesmo Postgres; roda a cada 5 minutos).
+- Variáveis: `DATABASE_URL` (igual ao app) + `EVOLUTION_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE`.
+- Sem as variáveis da Evolution o worker sobe e apenas registra "reminders_skipped".
+- Lembrete sai 24 h antes do horário, uma única vez por agendamento; se o envio falha, tenta de novo na rodada seguinte.
+
+## 4. Ainda não construído (precisa de acesso externo para testar)
+
+- Receber respostas da cliente (confirmar/remarcar pelo WhatsApp) e o chat com foto: precisam do webhook da Evolution.
+- Tela para ligar/desligar lembretes e ajustar a antecedência (hoje fixo em 24 h).
 - Notificação push (chaves VAPID).
 - Puxar mudanças feitas direto no Google Agenda para o app (hoje a sincronização vai do app para o Google).

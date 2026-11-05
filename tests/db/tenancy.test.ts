@@ -283,3 +283,54 @@ d("bloqueios e pausas (núcleo)", () => {
     ).toBe(true);
   });
 });
+
+d("lembretes (núcleo)", () => {
+  it("manda uma vez, não repete, devolve à fila se falhar e para se estiver offline", async () => {
+    const { withTenant } = await import("@/db/client");
+    const { sendReminders } = await import("@/features/reminders/core");
+    const { MessagingOfflineError, MessagingTransientError } = await import("@/features/messaging/port");
+    const admin = postgres(url!, { max: 1 });
+    await admin`truncate tenants cascade`;
+    const [{ id: T }] = await admin`insert into tenants (name) values ('Estúdio R') returning id`;
+    const [{ id: S }] =
+      await admin`insert into services (tenant_id,name,duration_min,price_cents) values (${T},'Gel',60,10000) returning id`;
+    const [{ id: C }] =
+      await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Bia Souza','+5511900005555') returning id`;
+    const mk = (start: string, end: string, status: string) =>
+      admin`insert into appointments (tenant_id,client_id,service_id,starts_at,ends_at,price_cents,status) values (${T},${C},${S},${start},${end},10000,${status})`;
+    const now = new Date("2026-11-10T15:00:00Z");
+    await mk("2026-11-11T10:00:00Z", "2026-11-11T11:00:00Z", "confirmed"); // dentro de 24h → manda
+    await mk("2026-11-13T10:00:00Z", "2026-11-13T11:00:00Z", "confirmed"); // longe → não
+    await mk("2026-11-11T12:00:00Z", "2026-11-11T13:00:00Z", "cancelled"); // cancelado → não
+    await mk("2026-11-10T10:00:00Z", "2026-11-10T11:00:00Z", "confirmed"); // já passou → não
+
+    const sent: string[] = [];
+    const ok = { sendText: async (to: string, t: string) => void sent.push(`${to}|${t}`) };
+    expect(await withTenant(T, (tx) => sendReminders(tx, ok, now))).toEqual({ sent: 1, failed: 0, offline: false });
+    expect(sent[0]).toContain("+5511900005555|Oi, Bia!");
+    // segunda rodada: nada novo
+    expect(await withTenant(T, (tx) => sendReminders(tx, ok, now))).toEqual({ sent: 0, failed: 0, offline: false });
+
+    // novo agendamento; falha temporária devolve à fila e a próxima rodada envia
+    await mk("2026-11-11T14:00:00Z", "2026-11-11T15:00:00Z", "pending_confirmation");
+    const flaky = {
+      sendText: async () => {
+        throw new MessagingTransientError("500");
+      },
+    };
+    expect(await withTenant(T, (tx) => sendReminders(tx, flaky, now))).toEqual({ sent: 0, failed: 1, offline: false });
+    expect(await withTenant(T, (tx) => sendReminders(tx, ok, now))).toMatchObject({ sent: 1, failed: 0 });
+
+    // offline: marca e para
+    await mk("2026-11-11T11:00:00Z", "2026-11-11T11:30:00Z", "confirmed");
+    await mk("2026-11-11T13:00:00Z", "2026-11-11T14:00:00Z", "confirmed");
+    const off = {
+      sendText: async () => {
+        throw new MessagingOfflineError("401");
+      },
+    };
+    expect(await withTenant(T, (tx) => sendReminders(tx, off, now))).toEqual({ sent: 0, failed: 2, offline: true });
+    expect(await withTenant(T, (tx) => sendReminders(tx, ok, now))).toMatchObject({ sent: 2 });
+    await admin.end();
+  });
+});
