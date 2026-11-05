@@ -1,6 +1,7 @@
 /** Catálogo único de erros: código → texto em português para a usuária. */
 export const ERROR_MESSAGES = {
   SLOT_TAKEN: "Esse horário acabou de ser ocupado. Escolha outro.",
+  HAS_APPOINTMENTS: "Há agendamentos nesse período. Cancele ou reagende antes de bloquear.",
   PHONE_EXISTS: "Este número já é de outra cliente.",
   GOOGLE_EXPIRED: "O acesso ao Google expirou. Reconecte para sincronizar.",
   WHATSAPP_OFFLINE: "O WhatsApp está desconectado. Reconecte para enviar mensagens.",
