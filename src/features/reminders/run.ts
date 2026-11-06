@@ -5,10 +5,17 @@ import type { MessagingPort } from "@/features/messaging/port";
 import { sendReminders, type ReminderRun } from "./core";
 
 /** Uma rodada para todos os estúdios. Erros de um estúdio não param os outros. */
-export async function runReminders(port: MessagingPort, now = new Date()): Promise<ReminderRun> {
-  const all = await getDb().select({ id: tenants.id }).from(tenants);
+export async function runReminders(
+  portFor: (instance: string) => MessagingPort | null,
+  now = new Date(),
+  fallbackInstance?: string,
+): Promise<ReminderRun> {
+  const all = await getDb().select({ id: tenants.id, instance: tenants.whatsappInstance }).from(tenants);
   const total: ReminderRun = { sent: 0, failed: 0, offline: false };
   for (const t of all) {
+    const instance = t.instance ?? fallbackInstance;
+    const port = instance ? portFor(instance) : null;
+    if (!port) continue; // estúdio sem WhatsApp conectado
     try {
       const r = await withTenant(t.id, (tx) => sendReminders(tx, port, now));
       total.sent += r.sent;

@@ -1,6 +1,6 @@
 // Processo separado do app (serviço "worker" no Railway): pnpm worker
 import { PgBoss } from "pg-boss";
-import { messagingFromEnv } from "@/features/messaging/evolution";
+import { messagingForInstance } from "@/features/messaging/evolution";
 import { runReminders } from "@/features/reminders/run";
 import { pushFromEnv } from "@/features/push/webpush";
 import { runPushPendencias } from "@/features/push/run";
@@ -27,9 +27,9 @@ async function main() {
   await boss.createQueue(QUEUE);
   await boss.schedule(QUEUE, "*/5 * * * *"); // a cada 5 minutos
   await boss.work(QUEUE, async () => {
-    const port = messagingFromEnv();
-    if (!port) return log({ level: "warn", msg: "reminders_skipped", reason: "Evolution não configurada" });
-    const r = await runReminders(port);
+    if (!process.env.EVOLUTION_URL || !process.env.EVOLUTION_API_KEY)
+      return log({ level: "warn", msg: "reminders_skipped", reason: "Evolution não configurada" });
+    const r = await runReminders((i) => messagingForInstance(i), new Date(), process.env.EVOLUTION_INSTANCE);
     log({ level: r.failed ? "warn" : "info", msg: "reminders_run", ...r });
   });
   await boss.createQueue(PUSH_QUEUE);

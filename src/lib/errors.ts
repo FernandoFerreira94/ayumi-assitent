@@ -4,6 +4,7 @@ export const ERROR_MESSAGES = {
   HAS_APPOINTMENTS: "Há agendamentos nesse período. Cancele ou reagende antes de bloquear.",
   PHONE_EXISTS: "Este número já é de outra cliente.",
   GOOGLE_EXPIRED: "O acesso ao Google expirou. Reconecte para sincronizar.",
+  WHATSAPP_UNAVAILABLE: "Não conseguimos falar com o WhatsApp agora. Tente de novo em instantes.",
   WHATSAPP_OFFLINE: "O WhatsApp está desconectado. Reconecte para enviar mensagens.",
   IMAGE_TOO_LARGE: "A imagem é grande demais. Tente uma foto menor.",
   NOT_ALLOWED: "Esta conta não tem acesso.",
