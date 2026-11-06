@@ -9,6 +9,11 @@ import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
 import { currentState, startPairing } from "./core";
 
+/** Registra o motivo técnico (sem segredos) para o erro genérico mostrado à usuária ser diagnosticável. */
+function logWaError(action: string, e: unknown) {
+  console.error(JSON.stringify({ level: "error", msg: "whatsapp_failed", action, err: e instanceof Error ? e.message : String(e) }));
+}
+
 async function tenantInstance(tenantId: string): Promise<string | null> {
   const [t] = await getDb().select({ i: tenants.whatsappInstance }).from(tenants).where(eq(tenants.id, tenantId));
   return t?.i ?? null;
@@ -20,7 +25,8 @@ export async function whatsappStatus(): Promise<ActionResult<{ state: WaState }>
   if (!admin) return fail("WHATSAPP_UNAVAILABLE");
   try {
     return ok({ state: await currentState(admin, await tenantInstance(tenantId)) });
-  } catch {
+  } catch (e) {
+    logWaError("status", e);
     return fail("WHATSAPP_UNAVAILABLE");
   }
 }
@@ -35,6 +41,7 @@ export async function startWhatsappPairing(phone: string): Promise<ActionResult<
     await getDb().update(tenants).set({ whatsappInstance: r.instance }).where(eq(tenants.id, tenantId));
     return ok({ pairingCode: r.pairingCode });
   } catch (e) {
+    logWaError("pairing", e);
     return fail(e instanceof WhatsAppAdminError ? "WHATSAPP_UNAVAILABLE" : "UNKNOWN");
   }
 }
@@ -48,7 +55,8 @@ export async function disconnectWhatsapp(): Promise<ActionResult> {
     if (instance) await admin.logout(instance);
     revalidatePath("/ajustes");
     return ok();
-  } catch {
+  } catch (e) {
+    logWaError("disconnect", e);
     return fail("WHATSAPP_UNAVAILABLE");
   }
 }
