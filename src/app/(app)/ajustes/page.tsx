@@ -3,11 +3,28 @@ import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
 import { getHours } from "@/features/hours/core";
 import { HoursForm } from "@/features/hours/HoursForm";
+import { adminFromEnv } from "@/features/messaging/evolution-admin";
 import { PushToggle } from "@/features/push/PushToggle";
+import { WhatsAppCard } from "@/features/whatsapp/WhatsAppCard";
+import { currentState } from "@/features/whatsapp/core";
 import { listServices } from "@/features/services/core";
 import { NewServiceForm } from "@/features/services/NewServiceForm";
 import { formatBRL } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
+import { getDb } from "@/db/client";
+import { tenants } from "@/db/schema";
+import { eq } from "drizzle-orm";
+
+async function waInitial(tenantId: string): Promise<"open" | "other" | "unavailable"> {
+  const admin = adminFromEnv();
+  if (!admin) return "unavailable";
+  try {
+    const [t] = await getDb().select({ i: tenants.whatsappInstance }).from(tenants).where(eq(tenants.id, tenantId));
+    return (await currentState(admin, t?.i ?? null)) === "open" ? "open" : "other";
+  } catch {
+    return "unavailable";
+  }
+}
 
 export const metadata: Metadata = { title: "Ajustes" };
 
@@ -17,6 +34,7 @@ export default async function AjustesPage() {
     services: await listServices(tx),
     week: await getHours(tx),
   }));
+  const wa = await waInitial(tenantId);
   return (
     <PageShell title="Ajustes">
       <section aria-labelledby="servicos" className="grid gap-3">
@@ -41,6 +59,9 @@ export default async function AjustesPage() {
           </ul>
         )}
         <NewServiceForm />
+      </section>
+      <section aria-label="WhatsApp" className="mt-6">
+        <WhatsAppCard initial={wa} />
       </section>
       <section aria-label="Avisos" className="mt-6">
         <PushToggle publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />

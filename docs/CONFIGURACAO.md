@@ -57,3 +57,6 @@ Comando de release/deploy: `pnpm db:migrate` antes de `pnpm start`.
 ## Deploy no Railway
 `railway.json` já define build (`pnpm build`), start com migração (`pnpm db:migrate && pnpm start`) e healthcheck em `/api/health`. O serviço worker usa o mesmo repositório, mas com Start Command `pnpm worker` (sobrescreva em Settings) e sem healthcheck.
 Variáveis do app: `DATABASE_URL` (`${{Postgres.DATABASE_URL}}`), `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` (a URL pública), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `ALLOWED_EMAILS`.
+
+## WhatsApp por estúdio
+Cada estúdio conecta o próprio número em **Ajustes > WhatsApp** (código de pareamento). O app cria a instância `studio-<id>` na Evolution. Variáveis no **app e no worker**: `EVOLUTION_URL` e `EVOLUTION_API_KEY` (a `AUTHENTICATION_API_KEY` da Evolution). `EVOLUTION_INSTANCE` virou opcional (instância de reserva para estúdios sem conexão pelo app).
