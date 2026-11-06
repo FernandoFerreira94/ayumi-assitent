@@ -55,7 +55,7 @@ Comando de release/deploy: `pnpm db:migrate` antes de `pnpm start`.
 - Google Contatos: ative a **People API** no Google Cloud e inclua o escopo `contacts.readonly` na tela de consentimento. Quem já conectou o Google antes precisa sair e entrar de novo para dar a nova permissão.
 
 ## Deploy no Railway
-`railway.json` já define build (`pnpm build`), start com migração (`pnpm db:migrate && pnpm start`) e healthcheck em `/api/health`. O serviço worker usa o mesmo repositório, mas com Start Command `pnpm worker` (sobrescreva em Settings) e sem healthcheck.
+`railway.json` já define build (`pnpm build`), start com migração (`pnpm db:migrate && pnpm start`) e healthcheck em `/api/health`. O serviço worker usa o mesmo repositório, mas com **Settings > Config-as-code > Railway Config File = `/railway.worker.json`** (start `pnpm worker`, sem healthcheck). Sem isso o `railway.json` do app valeria também para o worker.
 Variáveis do app: `DATABASE_URL` (`${{Postgres.DATABASE_URL}}`), `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` (a URL pública), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `ALLOWED_EMAILS`.
 
 ## WhatsApp por estúdio
