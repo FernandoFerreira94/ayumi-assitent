@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { tenants } from "@/db/schema";
 import type { MessagingPort } from "@/features/messaging/port";
@@ -8,7 +8,7 @@ import { reminderText } from "./text";
 
 export { reminderText } from "./text";
 
-export const REMINDER_WINDOW_HOURS = 24;
+export const DEFAULT_REMINDER_HOURS = 24;
 
 type Due = { id: string; tenantId: string; clientId: string; startsAt: Date; client: string; phone: string; service: string };
 
@@ -16,8 +16,8 @@ type Due = { id: string; tenantId: string; clientId: string; startsAt: Date; cli
  * Reserva (de forma atômica) os agendamentos que precisam de lembrete agora.
  * O UPDATE ... SKIP LOCKED garante que dois workers nunca peguem o mesmo agendamento.
  */
-export async function claimDue(tx: Tx, now: Date): Promise<Due[]> {
-  const until = new Date(now.getTime() + REMINDER_WINDOW_HOURS * 3600_000);
+export async function claimDue(tx: Tx, now: Date, hours = DEFAULT_REMINDER_HOURS): Promise<Due[]> {
+  const until = new Date(now.getTime() + hours * 3600_000);
   const rows = await tx.execute<{
     id: string;
     tenant_id: string;
@@ -67,7 +67,7 @@ export type ReminderRun = { sent: number; failed: number; offline: boolean };
  * e será tentado na próxima rodada; se o WhatsApp estiver offline, para na hora.
  */
 export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Promise<ReminderRun> {
-  const due = await claimDue(tx, now);
+  const due = await claimDue(tx, now, await getReminderHours(tx));
   if (due.length === 0) return { sent: 0, failed: 0, offline: false };
   // RLS: na transação do estúdio só a linha dele aparece
   const [salon] = await tx.select({ name: tenants.name, template: tenants.reminderTemplate }).from(tenants);
@@ -98,3 +98,9 @@ export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Pro
   await release(tx, failedIds);
   return { sent, failed: failedIds.length, offline };
 }
+
+export const getReminderHours = async (tx: Tx) =>
+  (await tx.select({ hours: tenants.reminderHours }).from(tenants))[0]?.hours ?? DEFAULT_REMINDER_HOURS;
+
+export const saveReminderHours = (tx: Tx, tenantId: string, hours: number) =>
+  tx.update(tenants).set({ reminderHours: hours }).where(eq(tenants.id, tenantId));
