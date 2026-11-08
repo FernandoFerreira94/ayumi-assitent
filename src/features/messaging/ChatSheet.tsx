@@ -133,7 +133,6 @@ export function ChatSheet({
     void deliver(id, body);
   }
 
-  let prevDay = "";
   return (
     <Root open={open} onOpenChange={setOpen}>
       <Drawer.Trigger className={triggerClassName}>{children}</Drawer.Trigger>
@@ -161,10 +160,10 @@ export function ChatSheet({
                 Não deu para carregar a conversa. Tentando de novo…
               </p>
             ) : null}
-            {(history ?? []).map((m) => {
+            {(history ?? []).map((m, i, all) => {
               const day = dayLabel(m.createdAt);
-              const sep = day !== prevDay;
-              prevDay = day;
+              // Separador de dia quando a mensagem anterior é de outro dia
+              const sep = i === 0 || day !== dayLabel(all[i - 1].createdAt);
               const out = m.direction === "out";
               return (
                 <div key={m.id} className="contents">
