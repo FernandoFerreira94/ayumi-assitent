@@ -26,11 +26,11 @@ test("tocar na cliente abre a conversa; sem WhatsApp, a mensagem fica como não 
 
 test("nas ações do agendamento também dá para mandar mensagem", async ({ page }) => {
   await page.goto("/servicos");
-  await page.getByRole("button", { name: "Novo serviço" }).click();
-  await page.getByLabel("Nome").fill("Alongamento");
-  await page.getByLabel("Valor (R$)").fill("150,00");
-  await page.getByRole("button", { name: "Salvar serviço" }).click();
-  await expect(page.getByText("Serviço adicionado")).toBeVisible();
+  await page.getByRole("button", { name: "Criar serviço" }).click();
+  await page.getByRole("dialog").getByRole("textbox", { name: "Nome", exact: true }).fill("Alongamento");
+  await page.getByRole("dialog").getByRole("textbox", { name: /Preço/ }).fill("150,00");
+  await page.getByRole("dialog").getByRole("button", { name: "Criar serviço" }).click();
+  await expect(page.getByText("Serviço criado")).toBeVisible();
   await page.goto("/clientes");
   await page.getByRole("button", { name: "Nova cliente" }).click();
   await page.getByLabel("Nome").fill("Joana Lima");
