@@ -43,7 +43,7 @@ export async function notifyPendencias(tx: Tx, port: PushPort, now: Date, google
   const subs = await tx.select().from(pushSubscriptions);
   for (const s of subs) {
     try {
-      await port.send(s, { title: "Assist Agent", body: pendenciasText(n), url: "/pendencias" });
+      await port.send(s, { title: "mimo", body: pendenciasText(n), url: "/pendencias" });
       run.sent++;
     } catch (e) {
       if (e instanceof PushGoneError) {

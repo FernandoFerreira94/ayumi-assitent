@@ -27,15 +27,8 @@ const HEAD: Record<View, [string, string]> = {
   signup: ["Criar sua conta", "Leva menos de 1 minuto."],
 };
 
-/** Cada toque na Bolha é a próxima reação desta lista, em ordem. */
-const REACTIONS = [
-  ["pulo", "Pulinho"],
-  ["gelatina", "Gelatina"],
-  ["piscadinha", "Piscadinha"],
-  ["coracoes", "Corações"],
-  ["bolhinhas", "Bolhinhas"],
-  ["rodopio", "Rodopio"],
-] as const;
+/** Cada toque no Mimo é a próxima reação desta lista, em ordem; só movimento, sem legenda. */
+const REACTIONS = ["pulo", "gelatina", "piscadinha", "coracoes", "bolhinhas", "rodopio"] as const;
 const REACT_MS = 1300;
 /** Quanto tempo a Bolha fica preocupada depois de um erro. */
 const WORRY_MS = 2200;
@@ -81,7 +74,7 @@ export function LoginForm() {
   const [typed, setTyped] = useState(0);
   const [showPass, setShowPass] = useState(false);
   const [strength, setStrength] = useState(passwordStrength(""));
-  const [reaction, setReaction] = useState<{ n: number; k: (typeof REACTIONS)[number][0] } | null>(null);
+  const [reaction, setReaction] = useState<{ n: number; k: (typeof REACTIONS)[number] } | null>(null);
   const taps = useRef(0);
 
   useEffect(() => {
@@ -112,7 +105,7 @@ export function LoginForm() {
 
   function tapMascot() {
     if (busy) return;
-    const [k] = REACTIONS[taps.current++ % REACTIONS.length];
+    const k = REACTIONS[taps.current++ % REACTIONS.length];
     setReaction({ n: taps.current, k });
   }
 
@@ -260,13 +253,8 @@ export function LoginForm() {
               ))}
             </span>
           ) : null}
-          {reaction ? (
-            <span key={`t${reaction.n}`} className="login-react-tag" aria-live="polite">
-              {REACTIONS.find(([k]) => k === reaction.k)?.[1]}
-            </span>
-          ) : null}
         </div>
-        <h1 className="mt-1 text-2xl font-bold">Assist Agent</h1>
+        <h1 className="font-brand mt-1 text-[2.25rem] leading-none text-brand">mimo</h1>
         <h2 className="mt-1.5 text-xl font-bold">{HEAD[view][0]}</h2>
         <p className="text-sm font-semibold text-muted">{HEAD[view][1]}</p>
       </div>

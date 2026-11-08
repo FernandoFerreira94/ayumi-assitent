@@ -23,7 +23,7 @@ self.addEventListener("fetch", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let data = { title: "Assist Agent", body: "", url: "/pendencias" };
+  let data = { title: "mimo", body: "", url: "/pendencias" };
   try {
     data = { ...data, ...event.data.json() };
   } catch {}
