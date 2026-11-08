@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { notify } from "@/components/feedback/toast";
 import { maskPhone } from "@/lib/phone";
+import { QrImage } from "./QrImage";
 import { disconnectWhatsapp, startWhatsappPairing, whatsappStatus } from "./actions";
 
 type View = "connected" | "disconnected" | "pairing" | "unavailable";
@@ -18,6 +19,7 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
   );
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
+  const [qr, setQr] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
   // Enquanto mostra o código, acompanha o estado até conectar (ou expirar).
@@ -53,6 +55,7 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
         return;
       }
       setCode(res.data.pairingCode);
+      setQr(res.data.qr);
       setView("pairing");
     });
   }
@@ -97,7 +100,8 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
   if (view === "pairing")
     return (
       <div className={`${box} grid gap-3`} aria-live="polite">
-        <p className="font-bold">Digite este código no WhatsApp</p>
+        <p className="font-bold">Escaneie o QR code ou digite o código</p>
+        {qr ? <QrImage value={qr} /> : null}
         <p
           className="text-center text-3xl font-bold tracking-[0.2em] text-primary-text"
           aria-label={`Código ${code.split("").join(" ")}`}
@@ -119,7 +123,7 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
         <ol className="list-decimal pl-5 text-sm font-semibold text-muted">
           <li>Abra o WhatsApp deste número.</li>
           <li>Toque em Configurações &gt; Aparelhos conectados &gt; Conectar um aparelho.</li>
-          <li>Escolha &quot;Conectar com número de telefone&quot; e digite o código.</li>
+          <li>Escaneie o QR code ou escolha &quot;Conectar com número de telefone&quot; e digite o código.</li>
         </ol>
         <p className="text-sm font-semibold text-muted">Aguardando a conexão…</p>
         <button type="button" className={btn} onClick={() => setView("disconnected")}>

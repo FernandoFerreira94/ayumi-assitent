@@ -50,8 +50,8 @@ describe("Evolution admin", () => {
     await expect(mk(vi.fn().mockResolvedValue(json(500))).create("a")).rejects.toBeInstanceOf(WhatsAppAdminError);
   });
   it("pede o código de pareamento com o número só em dígitos", async () => {
-    const f = vi.fn().mockResolvedValue(json(200, { pairingCode: "ABCD1234" }));
-    expect(await mk(f).pair("i", "+5511987654321")).toEqual({ pairingCode: "ABCD1234" });
+    const f = vi.fn().mockResolvedValue(json(200, { pairingCode: "ABCD1234", code: "2@qr" }));
+    expect(await mk(f).pair("i", "+5511987654321")).toEqual({ pairingCode: "ABCD1234", qr: "2@qr" });
     expect(f.mock.calls[0][0]).toBe("https://evo.test/instance/connect/i?number=5511987654321");
     await expect(mk(vi.fn().mockResolvedValue(json(200, {}))).pair("i", "+5511987654321")).rejects.toBeInstanceOf(
       WhatsAppAdminError,

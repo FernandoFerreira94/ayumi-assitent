@@ -5,7 +5,7 @@ export interface WhatsAppAdmin {
   /** Idempotente: se a instância já existe, segue. */
   create(instance: string): Promise<void>;
   /** Código de pareamento (8 caracteres) para digitar no WhatsApp > Aparelhos conectados. */
-  pair(instance: string, phoneE164: string): Promise<{ pairingCode: string }>;
+  pair(instance: string, phoneE164: string): Promise<{ pairingCode: string; qr: string | null }>;
   state(instance: string): Promise<WaState>;
   logout(instance: string): Promise<void>;
 }
@@ -44,9 +44,10 @@ export function evolutionAdmin(cfg: Config, fetchImpl: typeof fetch = fetch): Wh
     async pair(instance, phoneE164) {
       const res = await call("GET", `/instance/connect/${enc(instance)}?number=${phoneE164.replace(/\D/g, "")}`);
       if (!res.ok) throw new WhatsAppAdminError(String(res.status));
-      const body = (await res.json()) as { pairingCode?: string | null };
+      const body = (await res.json()) as { pairingCode?: string | null; code?: string | null };
       if (!body.pairingCode) throw new WhatsAppAdminError("sem código");
-      return { pairingCode: body.pairingCode };
+      // `code` é o texto do QR da mesma sessão de pareamento (vale para escanear ou para o código)
+      return { pairingCode: body.pairingCode, qr: body.code ?? null };
     },
     async state(instance) {
       const res = await call("GET", `/instance/connectionState/${enc(instance)}`);
