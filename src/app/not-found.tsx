@@ -10,7 +10,7 @@ export default function NotFound() {
         action={
           <Link
             href="/agenda"
-            className="grid min-h-12 place-items-center rounded-2xl bg-primary px-6 font-bold text-on-primary"
+            className="btn-tint grid min-h-12 place-items-center rounded-2xl px-6 font-bold"
           >
             Voltar para a agenda
           </Link>

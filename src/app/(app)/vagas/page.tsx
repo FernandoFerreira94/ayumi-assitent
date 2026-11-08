@@ -72,7 +72,7 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
             key={x.id}
             href={`/vagas?s=${x.id}`}
             aria-current={x.id === service.id ? "true" : undefined}
-            className={`min-h-11 shrink-0 rounded-full px-4 py-2.5 text-sm font-bold ${x.id === service.id ? "bg-primary text-on-primary" : "bg-white text-text"}`}
+            className={`min-h-11 shrink-0 rounded-full px-4 py-2.5 text-sm font-bold ${x.id === service.id ? "btn-tint" : "btn-glass"}`}
           >
             {x.name}
           </Link>
@@ -86,11 +86,13 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
         />
       ) : (
         <div className="grid gap-3">
+          {/* No topo: é a ação da tela, não precisa rolar a semana até achar */}
+          <CopyButton text={text} />
           {withSlots.map((d) => (
             <section
               key={d.date}
               aria-label={formatDayTitle(d.date)}
-              className="rounded-2xl border border-line bg-white px-4 py-3"
+              className="glass rounded-2xl px-4 py-3"
             >
               <h2 className="pb-2 text-sm font-bold capitalize">{formatDayTitle(d.date)}</h2>
               <ul className="flex flex-wrap gap-2">
@@ -102,7 +104,6 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
               </ul>
             </section>
           ))}
-          <CopyButton text={text} />
         </div>
       )}
     </PageShell>

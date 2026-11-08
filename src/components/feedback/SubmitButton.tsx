@@ -33,7 +33,7 @@ export function SubmitButton({ children, pendingLabel, pending, className = "", 
         type={rest.type ?? "submit"}
         disabled={busy || rest.disabled}
         aria-busy={busy}
-        className={`flex min-h-13 items-center justify-center gap-2 rounded-2xl bg-primary px-5 font-bold text-on-primary transition-transform active:scale-[0.97] disabled:opacity-70 ${className}`}
+        className={`flex min-h-13 items-center justify-center gap-2 btn-tint rounded-2xl px-5 font-bold disabled:opacity-70 ${className}`}
       >
         {busy ? <span className="spin" aria-hidden="true" /> : null}
         <span>{busy ? pendingLabel : children}</span>

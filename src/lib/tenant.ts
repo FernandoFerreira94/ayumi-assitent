@@ -12,5 +12,5 @@ export async function requireTenant() {
   );
   const tenantId = rows[0]?.tenant_id;
   if (!tenantId) redirect("/login?error=NOT_ALLOWED");
-  return { userId: session.user.id, tenantId };
+  return { userId: session.user.id, userName: session.user.name, tenantId };
 }

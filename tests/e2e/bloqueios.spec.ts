@@ -8,12 +8,14 @@ test("bloqueia um horário, mostra na agenda e remove com desfazer", async ({ pa
   await page.getByLabel("Motivo (opcional)").fill("Almoço");
   await page.getByRole("button", { name: "Bloquear", exact: true }).last().click();
   await expect(page.getByText("Horário bloqueado")).toBeVisible();
-  await expect(page.getByText("12:00–13:00")).toBeVisible();
-  await expect(page.getByText("Almoço", { exact: true })).toBeVisible();
+  const bloco = page.getByRole("button", { name: /Bloqueado · Almoço/ });
+  await expect(bloco).toContainText("12:00–13:00");
 
+  // Na linha do dia, tocar no bloco abre a folha com Remover
+  await bloco.click();
   await page.getByRole("button", { name: "Remover" }).click();
   await expect(page.getByText("Bloqueio removido")).toBeVisible();
-  await expect(page.getByText("Dia livre")).toBeVisible();
+  await expect(bloco).toHaveCount(0);
   await page.getByRole("button", { name: "Desfazer" }).click();
   await expect(page.getByText("12:00–13:00")).toBeVisible();
 });

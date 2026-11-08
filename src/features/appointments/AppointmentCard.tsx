@@ -47,9 +47,9 @@ export function AppointmentCard({ id, time, clientName, serviceName, price, stat
     });
   }
 
-  const btn = "min-h-11 rounded-full px-4 text-sm font-bold active:scale-[0.97] disabled:opacity-60";
+  const btn = "min-h-11 rounded-full px-4 text-sm font-bold disabled:opacity-60";
   return (
-    <li className="grid gap-2 rounded-2xl border border-line bg-white px-4 py-3" aria-busy={pending}>
+    <li className="glass grid gap-2 rounded-2xl px-4 py-3" aria-busy={pending}>
       <div className="flex items-baseline justify-between gap-3">
         <p className="font-bold">
           <span className="text-primary-text">{time}</span> · {clientName}
@@ -66,7 +66,7 @@ export function AppointmentCard({ id, time, clientName, serviceName, price, stat
               type="button"
               disabled={pending}
               onClick={() => change("confirmed")}
-              className={`${btn} bg-primary text-on-primary`}
+              className={`${btn} btn-tint`}
             >
               {busy === "confirmed" ? "Confirmando…" : "Confirmar"}
             </button>
@@ -75,7 +75,7 @@ export function AppointmentCard({ id, time, clientName, serviceName, price, stat
               type="button"
               disabled={pending}
               onClick={() => change("done")}
-              className={`${btn} bg-primary text-on-primary`}
+              className={`${btn} btn-tint`}
             >
               {busy === "done" ? "Salvando…" : "Concluir"}
             </button>
@@ -84,7 +84,7 @@ export function AppointmentCard({ id, time, clientName, serviceName, price, stat
             type="button"
             disabled={pending}
             onClick={() => change("no_show")}
-            className={`${btn} bg-soft text-primary-text`}
+            className={`${btn} btn-glass`}
           >
             {busy === "no_show" ? "Salvando…" : "Faltou"}
           </button>
@@ -92,7 +92,7 @@ export function AppointmentCard({ id, time, clientName, serviceName, price, stat
             type="button"
             disabled={pending}
             onClick={() => change("cancelled", status)}
-            className={`${btn} bg-soft text-primary-text`}
+            className={`${btn} btn-glass`}
           >
             {busy === "cancelled" ? "Cancelando…" : "Cancelar"}
           </button>

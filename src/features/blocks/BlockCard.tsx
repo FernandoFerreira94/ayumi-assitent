@@ -27,11 +27,14 @@ export function BlockCard({ id, date, start, end, reason }: Props) {
   }
 
   return (
-    <li
-      className="flex items-center justify-between gap-3 rounded-2xl border border-dashed border-line bg-soft px-4 py-3"
-      aria-busy={pending}
-    >
-      <div>
+    <li className="glass flex items-center gap-3 rounded-2xl px-4 py-3" aria-busy={pending}>
+      <span className="grid size-10 shrink-0 place-content-center rounded-full bg-soft/70 text-primary-text" aria-hidden="true">
+        <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round">
+          <rect x="5" y="10.5" width="14" height="10" rx="3" />
+          <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" />
+        </svg>
+      </span>
+      <div className="min-w-0 flex-1">
         <p className="font-bold">
           <span className="text-primary-text">
             {start}–{end}
@@ -44,7 +47,7 @@ export function BlockCard({ id, date, start, end, reason }: Props) {
         type="button"
         onClick={remove}
         disabled={pending}
-        className="min-h-11 rounded-full bg-white px-4 text-sm font-bold text-primary-text active:scale-[0.97] disabled:opacity-60"
+        className="btn-glass min-h-11 shrink-0 rounded-full px-4 text-sm font-bold disabled:opacity-60"
       >
         {pending ? "Removendo…" : "Remover"}
       </button>

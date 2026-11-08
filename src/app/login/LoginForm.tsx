@@ -19,7 +19,7 @@ export function authErrorText(code: string | null | undefined): string | null {
 }
 
 const input =
-  "min-h-13 w-full rounded-2xl border border-line bg-white px-4 text-base font-semibold outline-none focus:border-primary";
+  "min-h-13 w-full rounded-2xl border px-4 text-base font-semibold";
 
 export function LoginForm() {
   const router = useRouter();
@@ -96,12 +96,12 @@ export function LoginForm() {
         {mode === "criar" ? (
           <label className="grid gap-1 text-sm font-bold">
             Nome
-            <input name="name" autoComplete="name" className={input} />
+            <input name="name" autoComplete="name" placeholder="Como quer ser chamada" className={input} />
           </label>
         ) : null}
         <label className="grid gap-1 text-sm font-bold">
           E-mail
-          <input name="email" type="email" required autoComplete="email" inputMode="email" className={input} />
+          <input name="email" type="email" required autoComplete="email" inputMode="email" placeholder="voce@email.com" className={input} />
         </label>
         <label className="grid gap-1 text-sm font-bold">
           Senha
@@ -111,6 +111,7 @@ export function LoginForm() {
             required
             minLength={8}
             autoComplete={mode === "criar" ? "new-password" : "current-password"}
+            placeholder="Mínimo de 8 caracteres"
             className={input}
           />
         </label>

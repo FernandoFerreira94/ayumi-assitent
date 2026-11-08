@@ -7,8 +7,22 @@ import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
 import { syncAppointmentSafe } from "@/features/google/server";
 import type { SyncResult } from "@/features/google/sync";
+import { searchClients } from "@/features/clients/core";
+import { listServices } from "@/features/services/core";
 import { insertAppointment, setStatus } from "./core";
+import { bookingOptions, type BookingOptions } from "./options";
 import { appointmentInput, STATUSES } from "./schema";
+
+/** Opções da folha aberta pelo "Novo" do nav, que pode estar em qualquer tela. */
+export async function loadBookingOptions(): Promise<ActionResult<BookingOptions>> {
+  const { tenantId } = await requireTenant();
+  try {
+    const [clients, services] = await withTenant(tenantId, async (tx) => [await searchClients(tx, ""), await listServices(tx)] as const);
+    return ok(bookingOptions(clients, services));
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
 
 export async function createAppointment(_prev: ActionResult<{ id: string }> | null, formData: FormData) {
   const { tenantId } = await requireTenant();

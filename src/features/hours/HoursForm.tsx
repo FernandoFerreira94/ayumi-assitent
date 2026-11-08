@@ -12,7 +12,7 @@ const TIMES = Array.from({ length: 33 }, (_, i) => {
   const m = 6 * 60 + i * 30;
   return `${String(Math.floor(m / 60)).padStart(2, "0")}:${m % 60 ? "30" : "00"}`;
 });
-const sel = "min-h-11 rounded-xl border border-line bg-white px-2 text-sm font-semibold";
+const sel = "min-h-11 rounded-full border px-3 text-sm font-semibold";
 
 export function HoursForm({ week }: { week: Day[] }) {
   const [state, action] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
@@ -24,7 +24,7 @@ export function HoursForm({ week }: { week: Day[] }) {
   const badDay = state && !state.ok && state.code === "VALIDATION" ? Number(state.field) : null;
 
   return (
-    <form action={action} className="grid gap-3 rounded-3xl border border-line bg-white p-4">
+    <form action={action} className="glass grid gap-3 rounded-[1.75rem] p-5">
       <h2 className="font-bold">Expediente</h2>
       {NAMES.map((name, i) => {
         const d = week[i];
@@ -35,7 +35,7 @@ export function HoursForm({ week }: { week: Day[] }) {
                 type="checkbox"
                 name={`open-${i}`}
                 defaultChecked={!!d}
-                className="h-5 w-5 accent-[var(--primary)]"
+                className="check-round"
               />
               {name}
             </label>

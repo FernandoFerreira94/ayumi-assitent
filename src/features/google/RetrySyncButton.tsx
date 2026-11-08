@@ -19,7 +19,7 @@ export function RetrySyncButton({ id }: { id: string }) {
       onClick={run}
       disabled={pending}
       aria-busy={pending}
-      className="min-h-11 rounded-full bg-soft px-4 text-sm font-bold text-primary-text active:scale-[0.97] disabled:opacity-60"
+      className="btn-glass min-h-11 rounded-full px-4 text-sm font-bold disabled:opacity-60"
     >
       {pending ? "Enviando…" : "Enviar ao Google"}
     </button>

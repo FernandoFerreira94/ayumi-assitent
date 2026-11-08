@@ -16,11 +16,14 @@ test("cria serviço, cliente e agendamento; avisa conflito; cancela com desfazer
   await expect(page.getByText("Cliente cadastrada")).toBeVisible();
 
   await page.goto("/agenda");
-  await expect(page.getByText("Dia livre")).toBeVisible();
   const agendar = async (hora: string) => {
     await page.getByRole("button", { name: "Agendar", exact: true }).first().click();
-    await page.getByLabel("Cliente").selectOption({ index: 1 });
-    await page.getByLabel("Serviço").selectOption({ index: 1 });
+    // Seletores em lista por letra, como os contatos do iPhone
+    await page.getByRole("button", { name: "Cliente" }).click();
+    await expect(page.getByRole("region", { name: "M" })).toBeVisible();
+    await page.getByRole("button", { name: /Maria Silva/ }).click();
+    await page.getByRole("button", { name: "Serviço" }).click();
+    await page.getByRole("button", { name: /Alongamento/ }).click();
     await page.getByLabel("Horário").selectOption(hora);
     await page.getByRole("button", { name: "Agendar", exact: true }).last().click();
   };
@@ -28,15 +31,18 @@ test("cria serviço, cliente e agendamento; avisa conflito; cancela com desfazer
   await agendar("09:00");
   await expect(page.getByText("Agendamento criado")).toBeVisible();
   await expect(page.getByText("R$ 150,00").first()).toBeVisible();
-  await expect(page.getByText("09:00 · Maria Silva")).toBeVisible();
+  const bloco = page.getByRole("button", { name: /Maria Silva/ });
+  await expect(bloco).toBeVisible();
 
   await agendar("09:30");
   await expect(page.getByRole("alert").filter({ hasText: "Esse horário acabou de ser ocupado" })).toBeVisible();
   await page.keyboard.press("Escape");
 
+  // Na linha do dia, tocar no bloco abre as ações
+  await bloco.click();
   await page.getByRole("button", { name: "Cancelar" }).click();
   await expect(page.getByText("Agendamento cancelado")).toBeVisible();
-  await expect(page.getByText("Dia livre")).toBeVisible();
+  await expect(bloco).toHaveCount(0);
   await page.getByRole("button", { name: "Desfazer" }).click();
-  await expect(page.getByText("09:00 · Maria Silva")).toBeVisible();
+  await expect(bloco).toBeVisible();
 });

@@ -38,7 +38,7 @@ export function ErrorState({
           <button
             type="button"
             onClick={onRetry}
-            className="min-h-12 rounded-2xl bg-primary px-5 font-bold text-on-primary"
+            className="btn-tint min-h-12 rounded-2xl px-5 font-bold"
           >
             Tentar de novo
           </button>

@@ -91,7 +91,7 @@ export function PushToggle({ publicKey }: { publicKey: string | null }) {
   };
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-white px-4 py-3">
+    <div className="flex items-center justify-between gap-3 glass rounded-[1.75rem] px-5 py-4">
       <div>
         <p className="font-bold">Avisos no celular</p>
         <p className="text-sm font-semibold text-muted">{hint[state]}</p>
@@ -102,7 +102,7 @@ export function PushToggle({ publicKey }: { publicKey: string | null }) {
           onClick={state === "on" ? disable : enable}
           disabled={pending}
           aria-busy={pending}
-          className="min-h-11 shrink-0 rounded-full bg-soft px-4 text-sm font-bold text-primary-text active:scale-[0.97] disabled:opacity-60"
+          className="btn-glass min-h-11 shrink-0 rounded-full px-4 text-sm font-bold disabled:opacity-60"
         >
           {pending ? "Aguarde…" : state === "on" ? "Desativar" : "Ativar"}
         </button>

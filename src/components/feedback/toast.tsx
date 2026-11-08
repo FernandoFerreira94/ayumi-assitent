@@ -1,6 +1,7 @@
 "use client";
 
 import { toast, Toaster } from "sonner";
+import { Mascot } from "@/components/brand/Mascot";
 import { messageFor, type ErrorCode } from "@/lib/errors";
 
 /** Toast no topo, abaixo da Dynamic Island, em vidro. */
@@ -17,8 +18,9 @@ export function AppToaster() {
 }
 
 export const notify = {
-  success: (title: string, description?: string) => toast.success(title, { description }),
-  info: (title: string, description?: string) => toast.info(title, { description }),
+  success: (title: string, description?: string) =>
+    toast.success(title, { description, icon: <Mascot mood="happy" size={30} /> }),
+  info: (title: string, description?: string) => toast.info(title, { description, icon: <Mascot size={30} /> }),
   error: (code: ErrorCode | undefined, retry?: () => void) =>
     toast.error(messageFor(code), retry ? { action: { label: "Tentar de novo", onClick: retry } } : undefined),
   /** Ação destrutiva com Desfazer por 6 s. */

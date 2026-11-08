@@ -48,7 +48,7 @@ export default async function AjustesPage() {
             {services.map((s) => (
               <li
                 key={s.id}
-                className="flex items-center justify-between rounded-2xl border border-line bg-white px-4 py-3"
+                className="flex items-center justify-between glass rounded-full px-5 py-3.5"
               >
                 <span className="font-bold">{s.name}</span>
                 <span className="text-sm font-semibold text-muted">

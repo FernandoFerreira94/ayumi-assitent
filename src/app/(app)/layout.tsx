@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { OfflineBanner } from "@/components/feedback/OfflineBanner";
-import { Dock } from "@/components/nav/Dock";
+import { FanNav } from "@/components/nav/FanNav";
+import { NavSwitch } from "@/components/nav/NavSwitch";
+import { QuickBook } from "@/features/appointments/QuickBook";
 import { LoadingRegion, Skeleton } from "@/components/ui/Skeleton";
 import { requireSession } from "@/lib/session";
 
@@ -24,7 +26,13 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
       >
         <AuthGate>{children}</AuthGate>
       </Suspense>
-      <Dock />
+      {/* useSearchParams precisa de Suspense para o shell continuar estático */}
+      <Suspense fallback={<FanNav />}>
+        <NavSwitch />
+      </Suspense>
+      <Suspense fallback={null}>
+        <QuickBook />
+      </Suspense>
     </>
   );
 }
