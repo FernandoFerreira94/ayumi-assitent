@@ -59,6 +59,34 @@ export async function setStatus(tx: Tx, id: string, status: Status): Promise<Act
   }
 }
 
+/**
+ * Muda começo e fim de um atendimento (arrastar na agenda). Zera o lembrete enviado,
+ * para o worker mandar de novo com o horário novo.
+ */
+export async function moveAppointment(
+  tx: Tx,
+  tenantId: string,
+  id: string,
+  startsAt: Date,
+  endsAt: Date,
+): Promise<ActionResult> {
+  await lockTenant(tx, tenantId);
+  if (await overlapsBlock(tx, startsAt, endsAt)) return fail("SLOT_TAKEN", "time");
+  try {
+    const rows = await tx.transaction((sp) =>
+      sp
+        .update(appointments)
+        .set({ startsAt, endsAt, reminderSentAt: null })
+        .where(and(eq(appointments.id, id), ne(appointments.status, "cancelled")))
+        .returning({ id: appointments.id }),
+    );
+    return rows.length ? ok() : fail("NOT_ALLOWED");
+  } catch (e) {
+    if (pgCode(e) === "23P01") return fail("SLOT_TAKEN", "time");
+    throw e;
+  }
+}
+
 export function listDay(tx: Tx, [from, to]: [Date, Date]) {
   return tx
     .select({
@@ -70,6 +98,7 @@ export function listDay(tx: Tx, [from, to]: [Date, Date]) {
       clientId: clients.id,
       clientName: clients.name,
       clientPhone: clients.phoneE164,
+      serviceId: appointments.serviceId,
       serviceName: services.name,
     })
     .from(appointments)

@@ -23,6 +23,8 @@ export const notify = {
   info: (title: string, description?: string) => toast.info(title, { description, icon: <Mascot size={30} /> }),
   error: (code: ErrorCode | undefined, retry?: () => void) =>
     toast.error(messageFor(code), retry ? { action: { label: "Tentar de novo", onClick: retry } } : undefined),
+  /** Recusa explicada na hora (ex.: soltar em cima de outro horário), sem código de erro do servidor. */
+  problem: (title: string, description?: string) => toast.error(title, { description }),
   /** Ação destrutiva com Desfazer por 6 s. */
   undoable: (title: string, undo: () => void, description?: string) =>
     toast.warning(title, { description, duration: 6000, action: { label: "Desfazer", onClick: undo } }),
