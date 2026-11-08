@@ -29,7 +29,7 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     externalId: id,
     fromMe: false,
     // Sem o nono dígito, como o WhatsApp às vezes manda
-    phoneDigits: "551100005555",
+    phoneDigits: "551187655555",
     text,
     ...over,
   });
@@ -40,7 +40,7 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     await admin`truncate tenants cascade`;
     [{ id: T }] = await admin`insert into tenants (name, whatsapp_instance) values ('Estúdio R', 'studio-r') returning id`;
     const [{ id: S }] = await admin`insert into services (tenant_id,name,duration_min,price_cents) values (${T},'Gel',60,10000) returning id`;
-    [{ id: C }] = await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Bia Souza','+5511900005555') returning id`;
+    [{ id: C }] = await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Bia Souza','+5511987655555') returning id`;
     [{ id: A }] = await admin`insert into appointments (tenant_id,client_id,service_id,starts_at,ends_at,price_cents,status,reminder_sent_at)
       values (${T},${C},${S},'2026-11-11T13:00:00Z','2026-11-11T14:00:00Z',10000,'pending_confirmation',${now.toISOString()}) returning id`;
   });
@@ -57,7 +57,7 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     const [a] = await admin`select status, reply_at from appointments where id = ${A}`;
     expect(a.status).toBe("confirmed");
     expect(a.reply_at).not.toBeNull();
-    expect(sent.at(-1)).toContain("+5511900005555|Obrigada, Bia! Seu horário está confirmado");
+    expect(sent.at(-1)).toContain("+5511987655555|Obrigada, Bia! Seu horário está confirmado");
     const conv = await admin`select direction, kind, intent from messages where client_id = ${C} order by created_at`;
     expect(conv.map((m) => `${m.direction}:${m.kind}:${m.intent ?? ""}`)).toEqual(["in:client:confirm", "out:auto_reply:"]);
   });
