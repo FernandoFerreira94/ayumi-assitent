@@ -25,13 +25,13 @@ import { requireTenant } from "@/lib/tenant";
 export const metadata: Metadata = { title: "Agenda" };
 
 export default async function AgendaPage({ searchParams }: PageProps<"/agenda">) {
-  await connection(); // "hoje" depende do relógio: renderiza a cada pedido
+  await connection(); // "hoje" depende do relÃ³gio: renderiza a cada pedido
   const { d } = await searchParams;
   const today = todayStr();
   const date = typeof d === "string" && isDateStr(d) ? d : today;
   const { tenantId, userName } = await requireTenant();
   const week = weekOf(date);
-  // Uma consulta para a semana toda: os pontinhos da faixa saem dela e o dia é filtrado daqui
+  // Uma consulta para a semana toda: os pontinhos da faixa saem dela e o dia Ã© filtrado daqui
   const weekRange: [Date, Date] = [dayRange(week[0])[0], dayRange(week[6])[1]];
 
   const { weekRows, dayBlocks, clients, services, openHours } = await withTenant(tenantId, async (tx) => ({
@@ -65,14 +65,14 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
     n === 0
       ? hours
         ? "Nenhum atendimento ainda"
-        : "Salão fechado"
-      : `${n} atendimento${n === 1 ? "" : "s"} · previsto ${formatBRL(forecastCents(rows))}`;
+        : "SalÃ£o fechado"
+      : `${n} atendimento${n === 1 ? "" : "s"} Â· previsto ${formatBRL(forecastCents(rows))}`;
   const dayLabel = formatDayTitle(date);
 
   return (
     <PageShell home title={greeting(new Date(), userName)} subtitle={dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1)}>
       <AgendaRefresh key={version} date={date} version={version} />
-      <DayBubble briefing={dayBriefing(rows, new Date(), date === today)} />
+      <DayBubble briefing={dayBriefing(rows, new Date(), date === today)} isToday={date === today} />
       <div data-tour="days">
         <WeekStrip
           date={date}

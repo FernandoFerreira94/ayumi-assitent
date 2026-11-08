@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
+import { GoogleCard } from "@/features/google/GoogleCard";
+import { isGoogleConnected } from "@/features/google/server";
 import { getHours } from "@/features/hours/core";
 import { HoursForm } from "@/features/hours/HoursForm";
 import { PushToggle } from "@/features/push/PushToggle";
@@ -9,19 +11,21 @@ import { listServices } from "@/features/services/core";
 import { NewServiceForm } from "@/features/services/NewServiceForm";
 import { InstallGuide } from "@/features/install/InstallGuide";
 import { ReplayTourButton } from "@/features/tour/ReplayTourButton";
+import { LocationCard } from "@/features/weather/LocationCard";
 import { formatBRL } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
 import { whatsappState } from "@/features/shell/status";
 
 export const metadata: Metadata = { title: "Ajustes" };
 
-export default async function AjustesPage() {
+export default async function AjustesPage({ searchParams }: PageProps<"/ajustes">) {
   const { tenantId } = await requireTenant();
+  const { google: googleResult } = await searchParams;
   const { services, week } = await withTenant(tenantId, async (tx) => ({
     services: await listServices(tx),
     week: await getHours(tx),
   }));
-  const wa = await whatsappState(tenantId);
+  const [wa, google] = await Promise.all([whatsappState(tenantId), isGoogleConnected(tenantId)]);
   return (
     <PageShell title="Ajustes">
       <section aria-labelledby="servicos" className="grid gap-3">
@@ -49,6 +53,12 @@ export default async function AjustesPage() {
       </section>
       <section id="whatsapp" aria-label="WhatsApp" className="mt-6 scroll-mt-6">
         <WhatsAppCard initial={wa} />
+      </section>
+      <section id="google" aria-label="Google Agenda" className="mt-6 scroll-mt-6">
+        <GoogleCard connected={google} failed={googleResult === "erro"} />
+      </section>
+      <section aria-label="Localização" className="mt-6">
+        <LocationCard />
       </section>
       <section aria-label="Avisos" className="mt-6">
         <PushToggle publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />

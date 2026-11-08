@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { addDays, formatDayTitle, formatMonthYear } from "@/lib/dates";
+import { addDays, formatDayTitle } from "@/lib/dates";
+import { MonthPicker } from "./MonthPicker";
 
 const WEEKDAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
 /** Arraste de lado maior que isso troca de semana. */
@@ -29,7 +30,7 @@ export function WeekStrip({ date, today, days, summary }: { date: string; today:
   return (
     <div className="mb-3">
       <div className="mb-1 flex min-h-11 items-center justify-between gap-3 px-1">
-        <p className="text-[15px] font-bold">{formatMonthYear(days[3].date).replace(/ de \d+$/, "")}</p>
+        <MonthPicker date={date} today={today} />
         <Link
           href="/agenda"
           scroll={false}

@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { Mascot } from "./Mascot";
 import { Wordmark } from "./Wordmark";
 
-/** Some de vez depois disso (a animação inteira cabe em menos de 2 s + o fade). */
-const TOTAL_MS = 2300;
+/** Some de vez depois disso: ~3,9 s de animação + o fade (tempos em globals.css, .splash). */
+const TOTAL_MS = 4300;
 /** Quando o Mimo abre os olhos, depois de surgir de olhos fechados. */
-const EYES_MS = 1350;
+const EYES_MS = 2350;
 export const SPLASH_KEY = "mimo-splash";
 
 /**
