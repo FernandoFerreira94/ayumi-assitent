@@ -62,7 +62,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
   ];
 
   return (
-    <PageShell title={greeting(new Date(), userName)}>
+    <PageShell home title={greeting(new Date(), userName)}>
       <AgendaRefresh key={version} date={date} version={version} />
       <DayBubble briefing={dayBriefing(rows, new Date(), date === today)} />
       <div className="mb-2 flex min-h-11 items-center justify-between gap-3 px-1">
