@@ -25,7 +25,8 @@ test("tocar na cliente abre a conversa; sem WhatsApp, a mensagem fica como não 
 });
 
 test("nas ações do agendamento também dá para mandar mensagem", async ({ page }) => {
-  await page.goto("/ajustes");
+  await page.goto("/servicos");
+  await page.getByRole("button", { name: "Novo serviço" }).click();
   await page.getByLabel("Nome").fill("Alongamento");
   await page.getByLabel("Valor (R$)").fill("150,00");
   await page.getByRole("button", { name: "Salvar serviço" }).click();

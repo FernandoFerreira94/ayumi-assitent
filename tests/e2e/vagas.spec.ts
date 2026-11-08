@@ -5,13 +5,15 @@ test("expediente salvo e vagas listadas com texto para copiar", async ({ page, c
   await page.goto("/vagas");
   await expect(page.getByText("Nenhum serviço cadastrado")).toBeVisible();
 
-  await page.goto("/ajustes");
+  await page.goto("/servicos");
+  await page.getByRole("button", { name: "Novo serviço" }).click();
   await page.getByLabel("Nome").fill("Gel");
   await page.getByLabel("Valor (R$)").fill("100");
   await page.getByRole("button", { name: "Salvar serviço" }).click();
   await expect(page.getByText("Serviço adicionado")).toBeVisible();
 
   // abre todos os dias das 06:00 às 22:00 para não depender do dia da semana de hoje
+  await page.goto("/ajustes");
   for (let i = 0; i < 7; i++) {
     await page.locator(`input[name="open-${i}"]`).check();
     await page.locator(`select[name="opens-${i}"]`).selectOption("06:00");
