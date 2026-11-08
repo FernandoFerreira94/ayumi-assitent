@@ -4,7 +4,7 @@ import { getDb, withTenant } from "@/db/client";
 import { googleCalendar, GoogleApiError, GoogleAuthError, refreshAccessToken, type CalendarPort } from "./calendar";
 import { syncAppointment, type SyncResult } from "./sync";
 
-type AccountRow = { id: string; accessToken: string | null; refreshToken: string | null; expiresAt: Date | null };
+type AccountRow = { id: string; accessToken: string | null; refreshToken: string | null; expiresAt: Date | string | null };
 
 /** Conta Google do dono do estúdio (a agenda é dele). */
 async function ownerGoogleAccount(tenantId: string): Promise<AccountRow | null> {
@@ -22,7 +22,7 @@ export async function googleAccessToken(tenantId: string): Promise<string | null
   const acc = await ownerGoogleAccount(tenantId);
   if (!acc || (!acc.accessToken && !acc.refreshToken)) return null;
   let token = acc.accessToken;
-  const stale = !token || (acc.expiresAt && acc.expiresAt.getTime() < Date.now() + 60_000);
+  const stale = !token || (acc.expiresAt && new Date(acc.expiresAt).getTime() < Date.now() + 60_000);
   if (stale) {
     if (!acc.refreshToken) throw new GoogleAuthError("sem refresh token");
     const fresh = await refreshAccessToken(
