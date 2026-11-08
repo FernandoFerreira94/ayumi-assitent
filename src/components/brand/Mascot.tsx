@@ -23,15 +23,67 @@ const SMILE = "M249.7 293.05A12 12 0 0 1 230.3 293.05";
  */
 export type MascotMood = "neutral" | "happy" | "shy" | "peek" | "thinking" | "worried" | "wink" | "focused";
 
+/** Roupa do clima da prancha "Humores do Mimo", por cima de qualquer humor. */
+export type MascotWeather = "rain" | "cold" | "hot" | "sun";
+
+const drop = (x: number, y: number, s = 1) =>
+  `M${x} ${y - 14 * s}Q${x + 11 * s} ${y + 2 * s} ${x} ${y + 8 * s}Q${x - 11 * s} ${y + 2 * s} ${x} ${y - 14 * s}Z`;
+
+const OUTFIT: Record<MascotWeather, React.ReactNode> = {
+  rain: (
+    <>
+      <path d="M118 112l-4 14M146 84l-4 14M92 168l-4 14M386 196l-4 14M402 150l-4 14" stroke="#9C8FD6" strokeWidth="5" strokeLinecap="round" />
+      <g transform="translate(312 122) rotate(10) scale(0.56)">
+        <path d="M0 -10V150Q0 175 -22 170" fill="none" stroke="#17142B" strokeWidth="14" strokeLinecap="round" />
+        <path d="M-150 0Q0 -150 150 0Q113 -22 75 0Q38 -22 0 0Q-37 -22 -75 0Q-112 -22 -150 0Z" fill="#6D4AFF" />
+        <path d="M0 -94Q0 -80 14 -80Q0 -80 0 -66Q0 -80 -14 -80Q0 -80 0 -94Z" fill="#FF8FB1" />
+      </g>
+    </>
+  ),
+  cold: (
+    <>
+      <path d="M158 128A82 52 0 0 1 322 128Z" fill="#FF8FB1" />
+      <rect x="156" y="118" width="168" height="24" rx="6" fill="#E5547F" />
+      <path d="M166 121v18M180 121v18M194 121v18M208 121v18M222 121v18M236 121v18M250 121v18M264 121v18M278 121v18M292 121v18M306 121v18" stroke="#fff" strokeOpacity="0.5" strokeWidth="3" />
+      <circle cx="240" cy="84" r="14" fill="#fff" />
+      <path d="M150 320Q240 350 330 320L334 348Q240 380 146 348Z" fill="#E5547F" />
+      <path d="M290 340H318L326 398H296Z" fill="#FF8FB1" />
+    </>
+  ),
+  hot: (
+    <>
+      <path d={drop(330, 200, 1.3)} fill="#D6EAFF" stroke="#8E73FF" strokeWidth="2" className="mascot-drop" />
+      <path d={drop(150, 228)} fill="#D6EAFF" stroke="#8E73FF" strokeWidth="2" />
+      <path d="M226 292A14 14 0 0 0 254 292Z" fill={EYE} />
+      <ellipse cx="240" cy="302" rx="9" ry="10" fill="#FF8FB1" />
+    </>
+  ),
+  // Os óculos usam o degradê <id>o, definido em <defs> no componente
+  sun: (
+    <path d="M230 246Q240 238 250 246" fill="none" stroke="#17142B" strokeWidth="6" strokeLinecap="round" />
+  ),
+};
+
+// Sol atrás da Bolha: desenhado antes do corpo
+const SUN = (
+  <g stroke="#FFD08A" strokeWidth="5" strokeLinecap="round">
+    <circle cx="372" cy="112" r="20" fill="#FFD08A" stroke="none" />
+    <path d="M372 80v-8M372 144v8M340 112h-8M404 112h8M349 89l-6-6M395 135l6 6M395 89l6-6" />
+  </g>
+);
+
 export function Mascot({
   mood = "neutral",
   size = 48,
   className = "",
   idle = false,
   look,
+  weather,
   children,
 }: {
   mood?: MascotMood;
+  /** Roupa do clima de hoje; sem ela o desenho fica como sempre. */
+  weather?: MascotWeather;
   size?: number;
   className?: string;
   /** Parada na tela: pisca e olha em volta sozinha (animações em globals.css). */
@@ -116,7 +168,9 @@ export function Mascot({
   }
   // Boca: some quando tapa os olhos ou pensa; vira para baixo no erro; apertada quando concentrada
   const mouth =
-    mood === "worried"
+    weather === "hot"
+      ? null // a língua de fora vem na roupa do calor
+      : mood === "worried"
       ? "M230.29 298.95A12 12 0 0 1 249.71 298.95"
       : mood === "focused"
         ? "M236 291Q246 294 256 290"
@@ -124,11 +178,15 @@ export function Mascot({
           ? null
           : SMILE;
 
+  // Gorro, pompom e guarda-chuva passam do topo da cabeça: com roupa, o quadro ganha altura
+  const top = weather ? 60 : 95;
+  const h = 400 - top;
+
   return (
     <svg
-      viewBox="70 95 340 305"
+      viewBox={`70 ${top} 340 ${h}`}
       width={size}
-      height={(size * 305) / 340}
+      height={(size * h) / 340}
       className={`${idle ? "mascot-idle" : ""} ${className}`}
       aria-hidden="true"
     >
@@ -150,7 +208,13 @@ export function Mascot({
           <stop offset="0" stopColor="#FF8FB1" stopOpacity="0.75" />
           <stop offset="1" stopColor="#FF8FB1" stopOpacity="0" />
         </radialGradient>
+        <linearGradient id={`${id}o`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#17142B" />
+          <stop offset="0.5" stopColor="#3B22B8" />
+          <stop offset="1" stopColor="#17142B" />
+        </linearGradient>
       </defs>
+      {weather === "sun" ? SUN : null}
       <g fill={`url(#${id}r)`}>{circles(0)}</g>
       <g fill={`url(#${id}b)`}>{circles(-9)}</g>
       <rect x="70" y="95" width="340" height="305" fill={`url(#${id}r)`} mask={`url(#${id}m)`} opacity="0.35" />
@@ -165,7 +229,14 @@ export function Mascot({
       >
         {face}
         {mouth ? <path d={mouth} {...stroke} strokeWidth="6" /> : null}
+        {weather === "sun" ? (
+          <g fill={`url(#${id}o)`}>
+            <rect x="166" y="232" width="66" height="46" rx="16" />
+            <rect x="248" y="232" width="66" height="46" rx="16" />
+          </g>
+        ) : null}
       </g>
+      {weather ? OUTFIT[weather] : null}
       {children}
     </svg>
   );
