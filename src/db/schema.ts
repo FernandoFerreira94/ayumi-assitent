@@ -17,6 +17,8 @@ export const tenants = pgTable("tenants", {
   name: text("name").notNull(),
   timezone: text("timezone").notNull().default("America/Sao_Paulo"),
   whatsappInstance: text("whatsapp_instance").unique(),
+  address: text("address"),
+  instagram: text("instagram"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
