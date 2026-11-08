@@ -38,3 +38,12 @@ export function freeGaps(day: Day, busy: Span[]): Span[] {
 }
 
 export const hhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+
+/** Duração curta para o card: "30 min", "1h", "1h30". */
+export function duration({ start, end }: Span) {
+  const total = end - start;
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h === 0) return `${m} min`;
+  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, "0")}`;
+}
