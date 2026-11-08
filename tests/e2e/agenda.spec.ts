@@ -29,12 +29,16 @@ test("cria serviço, cliente e agendamento; avisa conflito; cancela com desfazer
   };
 
   await agendar("09:00");
-  await expect(page.getByText("Agendamento criado")).toBeVisible();
+  // Conta de teste sem WhatsApp conectado: salva, mas avisa que o lembrete não sai
+  await expect(page.getByRole("heading", { name: "Agendado, sem lembrete" })).toBeVisible();
+  await page.getByRole("button", { name: "Fechar" }).click();
   await expect(page.getByText("R$ 150,00").first()).toBeVisible();
   const bloco = page.getByRole("button", { name: /Maria Silva/ });
   await expect(bloco).toBeVisible();
 
   await agendar("09:30");
+  await expect(page.getByRole("heading", { name: "Não deu para agendar" })).toBeVisible();
+  await page.getByRole("button", { name: "Escolher outro horário" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Esse horário acabou de ser ocupado" })).toBeVisible();
   await page.keyboard.press("Escape");
 

@@ -62,7 +62,8 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
   // Segue o destaque a cada quadro: ele anima (leque) e a página rola
   useLayoutEffect(() => {
     if (!current) return;
-    document.querySelector(current.target ?? "")?.scrollIntoView({ block: "center", behavior: "smooth" });
+    // querySelector("") lança SyntaxError: passo sem destaque (o primeiro e o último) não rola nada
+    if (current.target) document.querySelector(current.target)?.scrollIntoView({ block: "center", behavior: "smooth" });
     let raf = 0;
     const tick = () => {
       setBox((prev) => {
