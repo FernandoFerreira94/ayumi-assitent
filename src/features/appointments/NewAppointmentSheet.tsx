@@ -42,6 +42,8 @@ export function NewAppointmentSheet({
   clients,
   services,
   openKey,
+  time,
+  onClosed,
 }: {
   date: string;
   /** null enquanto as opções chegam (a folha do "Novo" do nav busca na hora de abrir). */
@@ -49,6 +51,10 @@ export function NewAppointmentSheet({
   services: PickerOption[] | null;
   /** Aberta pelo "Novo" do nav: sem botão próprio, e cada valor novo abre a folha. */
   openKey?: number;
+  /** Horário já escolhido (toque num vazio da linha do dia). */
+  time?: string;
+  /** Avisa quando a folha fecha, para a agenda tirar o bloco provisório. */
+  onClosed?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   /** null = formulário; senão, a Bolha trabalhando ou o resultado por cima de tudo. */
@@ -68,6 +74,14 @@ export function NewAppointmentSheet({
   const loading = clients === null || services === null;
   const missing = !loading && (clients.length === 0 || services.length === 0);
   const working = booking !== null && booking.result === null;
+  const times = time && !TIMES.includes(time) ? [...TIMES, time].sort() : TIMES;
+  const closedRef = useRef(onClosed);
+  useEffect(() => {
+    closedRef.current = onClosed;
+  });
+  useEffect(() => {
+    if (!open) closedRef.current?.();
+  }, [open]);
 
   async function book(fd: FormData) {
     const id = ++runId.current;
@@ -186,7 +200,7 @@ export function NewAppointmentSheet({
             ) : missing ? null : (
               // Fica montado por trás da Bolha: se der erro, a folha volta preenchida
               <form
-                key={formKey}
+                key={`${formKey}-${time ?? ""}`}
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (!working) void book(new FormData(e.currentTarget));
@@ -201,8 +215,8 @@ export function NewAppointmentSheet({
                 </label>
                 <label className="grid gap-1 text-sm font-bold">
                   Horário
-                  <select name="time" required className={input} defaultValue="09:00" aria-invalid={fieldErr?.field === "time"}>
-                    {TIMES.map((t) => (
+                  <select name="time" required className={input} defaultValue={time ?? "09:00"} aria-invalid={fieldErr?.field === "time"}>
+                    {times.map((t) => (
                       <option key={t}>{t}</option>
                     ))}
                   </select>

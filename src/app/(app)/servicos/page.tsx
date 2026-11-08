@@ -34,7 +34,6 @@ export default async function ServicosPage({ searchParams }: PageProps<"/servico
     <PageShell
       title="Serviços"
       subtitle={services.length ? `${services.length} ${services.length === 1 ? "serviço" : "serviços"}` : undefined}
-      back={{ href: "/agenda", label: "Voltar ao painel" }}
     >
       <ServicesCatalog services={services} categories={categories} startWithNew={novo === "1"} />
     </PageShell>

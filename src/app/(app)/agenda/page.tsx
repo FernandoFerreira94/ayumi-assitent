@@ -1,127 +1,97 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { connection } from "next/server";
-import { EmptyState } from "@/components/feedback/EmptyState";
 import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
+import { AgendaDay } from "@/features/appointments/AgendaDay";
+import { daySpan, gridWindow, serviceTone, weekOf } from "@/features/appointments/agenda-grid";
 import { AgendaRefresh } from "@/features/appointments/AgendaRefresh";
 import { dayBriefing } from "@/features/appointments/briefing";
 import { dayVersion } from "@/features/appointments/version";
-import { forecastCents, listDay, receivedCents } from "@/features/appointments/core";
+import { forecastCents, listDay } from "@/features/appointments/core";
 import { DayBubble } from "@/features/appointments/DayBubble";
-import { DayStrip } from "@/features/appointments/DayStrip";
-import { DayTimeline } from "@/features/appointments/DayTimeline";
-import { freeGaps, minuteOf, timelineWindow } from "@/features/appointments/timeline";
+import { minuteOf } from "@/features/appointments/timeline";
+import { WeekStrip } from "@/features/appointments/WeekStrip";
 import { listBlocks } from "@/features/blocks/core";
 import { getHours } from "@/features/hours/core";
 import { weekdayOf } from "@/features/hours/slots";
 import { NewBlockSheet } from "@/features/blocks/NewBlockSheet";
-import { NewAppointmentSheet } from "@/features/appointments/NewAppointmentSheet";
 import { bookingOptions } from "@/features/appointments/options";
 import { searchClients } from "@/features/clients/core";
 import { listBookable } from "@/features/services/core";
-import { dayRange, formatBRL, formatMonthYear, greeting, isDateStr, todayStr } from "@/lib/dates";
+import { dayRange, formatBRL, formatDayTitle, greeting, isDateStr, todayStr } from "@/lib/dates";
 import { maskPhone } from "@/lib/phone";
 import { requireTenant } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Agenda" };
 
 export default async function AgendaPage({ searchParams }: PageProps<"/agenda">) {
-  await connection(); // "hoje" depende do relógio: renderiza a cada pedido
+  await connection(); // "hoje" depende do relÃ³gio: renderiza a cada pedido
   const { d } = await searchParams;
   const today = todayStr();
   const date = typeof d === "string" && isDateStr(d) ? d : today;
   const { tenantId, userName } = await requireTenant();
+  const week = weekOf(date);
+  // Uma consulta para a semana toda: os pontinhos da faixa saem dela e o dia Ã© filtrado daqui
+  const weekRange: [Date, Date] = [dayRange(week[0])[0], dayRange(week[6])[1]];
 
-  const { rows, dayBlocks, clients, services, week } = await withTenant(tenantId, async (tx) => ({
-    week: await getHours(tx),
+  const { weekRows, dayBlocks, clients, services, openHours } = await withTenant(tenantId, async (tx) => ({
+    openHours: await getHours(tx),
     dayBlocks: await listBlocks(tx, dayRange(date)),
-    rows: await listDay(tx, dayRange(date)),
+    weekRows: await listDay(tx, weekRange),
     clients: await searchClients(tx, ""),
     services: await listBookable(tx),
   }));
 
+  const rows = weekRows.filter((r) => todayStr(r.startsAt) === date);
   const version = dayVersion(rows, dayBlocks);
-  const day = week[weekdayOf(date)];
-  const forecast = forecastCents(rows);
-  const received = receivedCents(rows);
+  const hours = daySpan(openHours[weekdayOf(date)]);
   const span = (s: Date, e: Date) => ({ start: minuteOf(s), end: minuteOf(e) });
-  const events = [
-    ...rows.map((r) => ({
-      kind: "appointment" as const,
-      ...span(r.startsAt, r.endsAt),
-      id: r.id,
-      clientId: r.clientId,
-      clientName: r.clientName,
-      clientPhone: maskPhone(r.clientPhone.replace(/^\+55/, "")),
-      serviceName: r.serviceName,
-      price: formatBRL(r.priceCents),
-      status: r.status,
-    })),
-    ...dayBlocks.map((b) => ({ kind: "block" as const, ...span(b.startsAt, b.endsAt), id: b.id, reason: b.reason })),
-  ];
+  const appointments = rows.map((r) => ({
+    kind: "appointment" as const,
+    ...span(r.startsAt, r.endsAt),
+    id: r.id,
+    clientId: r.clientId,
+    clientName: r.clientName,
+    clientPhone: maskPhone(r.clientPhone.replace(/^\+55/, "")),
+    serviceName: r.serviceName,
+    price: formatBRL(r.priceCents),
+    status: r.status,
+    tone: serviceTone(r.serviceId),
+  }));
+  const blocks = dayBlocks.map((b) => ({ kind: "block" as const, ...span(b.startsAt, b.endsAt), id: b.id, reason: b.reason }));
+  const busyDays = new Set(weekRows.map((r) => todayStr(r.startsAt)));
+  const n = rows.length;
+  const summary =
+    n === 0
+      ? hours
+        ? "Nenhum atendimento ainda"
+        : "SalÃ£o fechado"
+      : `${n} atendimento${n === 1 ? "" : "s"} Â· previsto ${formatBRL(forecastCents(rows))}`;
+  const dayLabel = formatDayTitle(date);
 
   return (
-    <PageShell title={greeting(new Date(), userName)}>
+    <PageShell home title={greeting(new Date(), userName)} subtitle={dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1)}>
       <AgendaRefresh key={version} date={date} version={version} />
-      <DayBubble briefing={dayBriefing(rows, new Date(), date === today)} />
-      <div className="mb-2 flex min-h-11 items-center justify-between gap-3 px-1">
-        <p className="flex items-center gap-1.5 text-sm font-bold text-primary-text">
-          <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" aria-hidden="true">
-            <rect x="3.5" y="5" width="17" height="15" rx="4.5" />
-            <path d="M8 3v3.5M16 3v3.5M3.5 10h17" />
-          </svg>
-          {formatMonthYear(date)}
-        </p>
-        {date !== today ? (
-          <Link
-            href="/agenda"
-            scroll={false}
-            className="btn-glass min-h-11 rounded-full px-4 text-sm font-bold leading-[2.6rem]"
-          >
-            Hoje
-          </Link>
-        ) : null}
-      </div>
+      <DayBubble briefing={dayBriefing(rows, new Date(), date === today)} isToday={date === today} />
       <div data-tour="days">
-        <DayStrip date={date} today={today} />
-      </div>
-
-      <div data-tour="money" className="glass mb-4 grid gap-3 rounded-3xl px-4 py-3">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-muted">Previsto do dia</p>
-            <p className="text-2xl font-bold">{formatBRL(forecast)}</p>
-          </div>
-          <dl className="grid grid-cols-[auto_auto] gap-x-2 text-right text-xs font-bold tabular-nums">
-            <dt className="text-muted">Recebido</dt>
-            <dd className="text-ok">{formatBRL(received)}</dd>
-            <dt className="text-muted">Falta</dt>
-            <dd className="text-primary-text">{formatBRL(forecast - received)}</dd>
-          </dl>
-        </div>
-        {forecast > 0 ? (
-          <div className="h-1.5 overflow-hidden rounded-full bg-soft" role="img" aria-label={`${Math.round((received / forecast) * 100)}% recebido`}>
-            <div className="h-full rounded-full bg-ok" style={{ width: `${(received / forecast) * 100}%` }} />
-          </div>
-        ) : null}
-        <div className="grid grid-cols-2 gap-2">
-          <NewBlockSheet date={date} />
-          <NewAppointmentSheet date={date} {...bookingOptions(clients, services)} />
-        </div>
-      </div>
-
-      {events.length === 0 && !day ? (
-        <EmptyState title="Dia fechado" description="Fora do expediente. Ainda dá para agendar se precisar." />
-      ) : (
-        <DayTimeline
+        <WeekStrip
           date={date}
-          window={timelineWindow(day, events)}
-          events={events}
-          free={freeGaps(day, events)}
-          nowMin={date === today ? minuteOf(new Date()) : null}
+          today={today}
+          summary={summary}
+          days={week.map((w) => ({ date: w, has: busyDays.has(w), closed: !openHours[weekdayOf(w)] }))}
         />
-      )}
+      </div>
+      <AgendaDay
+        key={date}
+        date={date}
+        win={gridWindow([...appointments, ...blocks])}
+        hours={hours}
+        appointments={appointments}
+        blocks={blocks}
+        nowMin={date === today ? minuteOf(new Date()) : null}
+        {...bookingOptions(clients, services)}
+        blockButton={<NewBlockSheet date={date} />}
+      />
     </PageShell>
   );
 }
