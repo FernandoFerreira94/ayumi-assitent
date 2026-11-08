@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { Drawer } from "vaul";
+import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import { messageFor, type ActionResult } from "@/lib/errors";
@@ -13,6 +14,7 @@ const input =
 
 export function NewClientSheet() {
   const [open, setOpen] = useState(false);
+  const keyboard = useKeyboardInset(open);
   const [phone, setPhone] = useState("");
   const [state, action] = useActionState(async (prev: ActionResult<{ id: string }> | null, fd: FormData) => {
     const res = await createClient(prev, fd);
@@ -29,13 +31,13 @@ export function NewClientSheet() {
   const err = state && !state.ok ? state : null;
 
   return (
-    <Drawer.Root open={open} onOpenChange={setOpen}>
+    <Drawer.Root repositionInputs={false} open={open} onOpenChange={setOpen}>
       <Drawer.Trigger className="min-h-11 rounded-full bg-primary px-5 text-sm font-bold text-on-primary active:scale-[0.97]">
         Nova cliente
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
-        <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl bg-bg px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
+        <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl bg-bg px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none" style={keyboard}>
           <Drawer.Title className="pb-1 text-xl font-bold">Nova cliente</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
             Nome e WhatsApp são suficientes.

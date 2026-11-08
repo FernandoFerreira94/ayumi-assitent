@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { Drawer } from "vaul";
+import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import { notify } from "@/components/feedback/toast";
 import type { ActionResult } from "@/lib/errors";
 import { maskPhone } from "@/lib/phone";
@@ -15,6 +16,7 @@ const btn =
 
 export function ImportSheet() {
   const [open, setOpen] = useState(false);
+  const keyboard = useKeyboardInset(open);
   const [list, setList] = useState<Preview | null>(null);
   const [ignored, setIgnored] = useState(0);
   const [picked, setPicked] = useState<Set<string>>(new Set());
@@ -65,7 +67,7 @@ export function ImportSheet() {
   const allOn = fresh.length > 0 && fresh.every((c) => picked.has(c.phone));
 
   return (
-    <Drawer.Root
+    <Drawer.Root repositionInputs={false}
       open={open}
       onOpenChange={(o) => {
         setOpen(o);
@@ -77,7 +79,7 @@ export function ImportSheet() {
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
-        <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[85dvh] max-w-[520px] flex-col rounded-t-3xl bg-bg px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
+        <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[85dvh] max-w-[520px] flex-col rounded-t-3xl bg-bg px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none" style={keyboard}>
           <Drawer.Title className="pb-1 text-xl font-bold">Importar clientes</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
             {list ? "Escolha quem entra na sua lista." : "Traga seus contatos sem digitar um por um."}

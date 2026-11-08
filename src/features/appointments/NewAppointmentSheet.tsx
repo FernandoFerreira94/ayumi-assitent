@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { Drawer } from "vaul";
+import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import { formatBRL } from "@/lib/dates";
@@ -27,6 +28,7 @@ export function NewAppointmentSheet({
   services: (Option & { priceCents: number })[];
 }) {
   const [open, setOpen] = useState(false);
+  const keyboard = useKeyboardInset(open);
   const [state, action] = useActionState(async (prev: ActionResult<{ id: string }> | null, fd: FormData) => {
     const res = await createAppointment(prev, fd);
     if (res.ok) {
@@ -40,13 +42,13 @@ export function NewAppointmentSheet({
   const missing = clients.length === 0 || services.length === 0;
 
   return (
-    <Drawer.Root open={open} onOpenChange={setOpen}>
+    <Drawer.Root repositionInputs={false} open={open} onOpenChange={setOpen}>
       <Drawer.Trigger className="min-h-11 rounded-full bg-primary px-5 text-sm font-bold text-on-primary active:scale-[0.97]">
         Agendar
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
-        <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[92dvh] max-w-[520px] overflow-y-auto rounded-t-3xl bg-bg px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
+        <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[92dvh] max-w-[520px] overflow-y-auto rounded-t-3xl bg-bg px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none" style={keyboard}>
           <Drawer.Title className="pb-1 text-xl font-bold">Novo agendamento</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
             {missing
