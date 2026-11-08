@@ -49,6 +49,14 @@ async function fetchWeather(): Promise<Weather> {
   };
 }
 
+/** Pede a localização (o aviso do navegador aparece aqui) e guarda o clima para a agenda já abrir com ele. */
+export async function enableWeather(): Promise<Weather> {
+  write(ASKED, true);
+  const w = await fetchWeather();
+  write(CACHE, { at: Date.now(), w });
+  return w;
+}
+
 /**
  * Clima do lugar onde a usuária está. Só pede a localização uma vez, num toque no Mimo (`ask`),
  * para o aviso do navegador não pular sozinho ao abrir a agenda. Sem permissão ou sem rede, fica null
@@ -60,9 +68,7 @@ export function useWeather() {
 
   const load = useCallback(async () => {
     try {
-      const w = await fetchWeather();
-      write(CACHE, { at: Date.now(), w });
-      setWeather(w);
+      setWeather(await enableWeather());
     } catch {
       setWeather(null);
     }
@@ -86,7 +92,6 @@ export function useWeather() {
   const ask = useCallback(() => {
     if (!canAsk) return;
     setCanAsk(false);
-    write(ASKED, true);
     void load();
   }, [canAsk, load]);
 
