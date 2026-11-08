@@ -64,7 +64,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
   return (
     <PageShell title={greeting(new Date(), userName)}>
       <AgendaRefresh key={version} date={date} version={version} />
-      <DayBubble briefing={dayBriefing(rows, new Date(), date === today)} />
+      <DayBubble briefing={dayBriefing(rows, new Date(), date === today)} isToday={date === today} />
       <div className="mb-2 flex min-h-11 items-center justify-between gap-3 px-1">
         <p className="flex items-center gap-1.5 text-sm font-bold text-primary-text">
           <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" aria-hidden="true">
