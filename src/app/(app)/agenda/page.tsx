@@ -53,6 +53,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
     clientId: r.clientId,
     clientName: r.clientName,
     clientPhone: maskPhone(r.clientPhone.replace(/^\+55/, "")),
+    serviceId: r.serviceId,
     serviceName: r.serviceName,
     price: formatBRL(r.priceCents),
     status: r.status,

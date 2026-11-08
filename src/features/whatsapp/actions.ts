@@ -8,6 +8,7 @@ import { adminFromEnv, WhatsAppAdminError, type WaState } from "@/features/messa
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
 import { currentState, startPairing } from "./core";
+import { ensureWebhook } from "./webhook";
 
 /** Registra o motivo técnico (sem segredos) para o erro genérico mostrado à usuária ser diagnosticável. */
 function logWaError(action: string, e: unknown) {
@@ -26,7 +27,11 @@ export async function whatsappStatus(): Promise<ActionResult<{ state: WaState }>
   const admin = adminFromEnv();
   if (!admin) return fail("WHATSAPP_UNAVAILABLE");
   try {
-    return ok({ state: await currentState(admin, await tenantInstance(tenantId)) });
+    const instance = await tenantInstance(tenantId);
+    const state = await currentState(admin, instance);
+    // Acabou de conectar (ou já estava): as respostas das clientes passam a chegar no app
+    if (state === "open" && instance) await ensureWebhook(admin, instance);
+    return ok({ state });
   } catch (e) {
     logWaError("status", e);
     return fail("WHATSAPP_UNAVAILABLE");
@@ -43,6 +48,7 @@ export async function startWhatsappPairing(
     const r = await startPairing(admin, tenantId, String(phone ?? ""));
     if (!r.ok) return fail("VALIDATION", "phone");
     await getDb().update(tenants).set({ whatsappInstance: r.instance }).where(eq(tenants.id, tenantId));
+    await ensureWebhook(admin, r.instance);
     return ok({ pairingCode: r.pairingCode, qr: r.qr });
   } catch (e) {
     logWaError("pairing", e);

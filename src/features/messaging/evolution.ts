@@ -22,6 +22,12 @@ export function evolutionMessaging(cfg: Config, fetchImpl: typeof fetch = fetch)
       if (res.status === 401 || res.status === 403 || res.status === 404)
         throw new MessagingOfflineError(String(res.status));
       if (!res.ok) throw new MessagingTransientError(String(res.status));
+      // Já saiu: se a resposta vier estranha, perde-se só o id (o eco do webhook vira uma linha a mais)
+      let body: { key?: { id?: string } } | null = null;
+      try {
+        body = await res.json();
+      } catch {}
+      return { id: body?.key?.id ?? null };
     },
   };
 }

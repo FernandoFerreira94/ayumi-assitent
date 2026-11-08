@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { pushSubscriptions } from "@/db/schema";
 import { countPendencias, listPendencias } from "@/features/appointments/pendencias";
-import { PushGoneError, type PushPort, type PushSub } from "./port";
+import { PushGoneError, type PushPayload, type PushPort, type PushSub } from "./port";
 
 export async function saveSubscription(tx: Tx, tenantId: string, userId: string, sub: PushSub) {
   await tx
@@ -37,13 +37,18 @@ export type PushRun = { sent: number; removed: number; failed: number };
 
 /** Avisa o estúdio se houver pendências. Inscrições mortas são apagadas; falhas não propagam. */
 export async function notifyPendencias(tx: Tx, port: PushPort, now: Date, googleConnected: boolean): Promise<PushRun> {
-  const run: PushRun = { sent: 0, removed: 0, failed: 0 };
   const n = countPendencias(await listPendencias(tx, now, googleConnected));
-  if (n === 0) return run;
+  if (n === 0) return { sent: 0, removed: 0, failed: 0 };
+  return sendToAll(tx, port, { title: "mimo", body: pendenciasText(n), url: "/pendencias" });
+}
+
+/** Manda o mesmo aviso para todos os aparelhos inscritos do estúdio (o da transação). */
+export async function sendToAll(tx: Tx, port: PushPort, payload: PushPayload): Promise<PushRun> {
+  const run: PushRun = { sent: 0, removed: 0, failed: 0 };
   const subs = await tx.select().from(pushSubscriptions);
   for (const s of subs) {
     try {
-      await port.send(s, { title: "mimo", body: pendenciasText(n), url: "/pendencias" });
+      await port.send(s, payload);
       run.sent++;
     } catch (e) {
       if (e instanceof PushGoneError) {

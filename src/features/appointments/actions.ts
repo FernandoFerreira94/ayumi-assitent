@@ -11,7 +11,7 @@ import { searchClients } from "@/features/clients/core";
 import { listBookable } from "@/features/services/core";
 import { listBlocks } from "@/features/blocks/core";
 import { dayRange, isDateStr, toInstant } from "@/lib/dates";
-import { insertAppointment, listDay, moveAppointment, setStatus } from "./core";
+import { editAppointment, insertAppointment, listDay, moveAppointment, setStatus } from "./core";
 import { dayVersion } from "./version";
 import { bookingOptions, type BookingOptions } from "./options";
 import { appointmentInput, STATUSES } from "./schema";
@@ -82,6 +82,35 @@ export async function rescheduleAppointment(
     const res = await withTenant(tenantId, (tx) => moveAppointment(tx, tenantId, p.data.id, startsAt, endsAt));
     if (!res.ok) return res;
     revalidatePath("/agenda");
+    return ok({ sync: await syncAppointmentSafe(tenantId, p.data.id) });
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+const editInput = z.object({
+  id: z.string().uuid(),
+  serviceId: z.string().uuid(),
+  date: z.string().refine(isDateStr),
+  time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+});
+
+/** Reagenda e/ou troca o serviço pelo card da agenda (a cliente pediu "3" ou combinou por conversa). */
+export async function editAppointmentAction(input: {
+  id: string;
+  serviceId: string;
+  date: string;
+  time: string;
+}): Promise<ActionResult<{ sync: SyncResult }>> {
+  const { tenantId } = await requireTenant();
+  const p = editInput.safeParse(input);
+  if (!p.success) return fail("VALIDATION", String(p.error.issues[0]?.path[0] ?? ""));
+  try {
+    const { id, ...fields } = p.data;
+    const res = await withTenant(tenantId, (tx) => editAppointment(tx, tenantId, id, fields));
+    if (!res.ok) return res;
+    revalidatePath("/agenda");
+    revalidatePath("/pendencias");
     return ok({ sync: await syncAppointmentSafe(tenantId, p.data.id) });
   } catch {
     return fail("UNKNOWN");

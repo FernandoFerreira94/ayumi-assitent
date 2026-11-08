@@ -1,14 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Drawer } from "vaul";
 import { messageFor, type ErrorCode } from "@/lib/errors";
-import { formatTime } from "@/lib/dates";
-import { sendClientMessage } from "./actions";
+import { formatTime, todayStr } from "@/lib/dates";
+import { loadConversation, sendClientMessage } from "./actions";
 import { MAX_MESSAGE } from "./send";
+import type { ConversationMessage } from "./store";
 
-type Bubble = { id: number; text: string; at: Date; state: "sending" | "sent" | { failed: ErrorCode } };
+/** Com a folha aberta, confere respostas novas nesse intervalo. */
+const POLL_MS = 4000;
+
+/** Só o que ainda não está no banco: enviando agora ou que falhou (com tentar de novo). */
+type Local = { id: number; text: string; at: Date; state: "sending" | { failed: ErrorCode } };
 
 /** Visual do botão que abre a conversa, igual na agenda e onde mais aparecer. */
 export const CHAT_BUTTON = "btn-glass inline-flex items-center justify-center gap-2";
@@ -31,9 +36,26 @@ const initials = (name: string) =>
     .map((w) => w[0]!.toUpperCase())
     .join("");
 
+const KIND_LABEL: Partial<Record<ConversationMessage["kind"], string>> = {
+  reminder: "Lembrete automático",
+  auto_reply: "Resposta automática",
+  phone: "Pelo seu celular",
+};
+const INTENT_LABEL = { confirm: "Confirmou", cancel: "Cancelou", reschedule: "Quer remarcar" } as const;
+
+function dayLabel(iso: string) {
+  const day = todayStr(new Date(iso));
+  const today = todayStr();
+  if (day === today) return "Hoje";
+  const y = new Date(`${today}T12:00:00Z`);
+  y.setUTCDate(y.getUTCDate() - 1);
+  if (day === y.toISOString().slice(0, 10)) return "Ontem";
+  return `${day.slice(8)}/${day.slice(5, 7)}/${day.slice(0, 4)}`;
+}
+
 /**
- * Folha no estilo da conversa do WhatsApp para escrever a uma cliente pelo WhatsApp do salão.
- * Mostra o que foi enviado nesta visita à tela (o app ainda não guarda o histórico de conversas).
+ * Folha no estilo da conversa do WhatsApp com uma cliente: histórico guardado (o que a dona e os
+ * lembretes mandaram e o que a cliente respondeu), atualizado a cada poucos segundos enquanto aberta.
  * `nested` quando abre de dentro de outra folha (as ações do agendamento).
  */
 export function ChatSheet({
@@ -52,17 +74,53 @@ export function ChatSheet({
   triggerClassName: string;
   children: React.ReactNode;
 }) {
-  const [bubbles, setBubbles] = useState<Bubble[]>([]);
+  const [open, setOpen] = useState(false);
+  const [history, setHistory] = useState<ConversationMessage[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [locals, setLocals] = useState<Local[]>([]);
   const [text, setText] = useState("");
   const seq = useRef(0);
   const end = useRef<HTMLDivElement>(null);
+  const lastCount = useRef(0);
   const Root = nested ? Drawer.NestedRoot : Drawer.Root;
 
+  async function refresh() {
+    const res = await loadConversation(clientId).catch(() => null);
+    if (res?.ok) {
+      setHistory(res.data);
+      setLoadFailed(false);
+    } else setLoadFailed(true);
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    let alive = true;
+    const tick = () => alive && !document.hidden && refresh();
+    void tick();
+    const id = setInterval(tick, POLL_MS);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh só depende de clientId, que não muda com a folha aberta
+  }, [open, clientId]);
+
+  // Desce para a última mensagem quando chega ou sai uma nova
+  const total = (history?.length ?? 0) + locals.length;
+  useEffect(() => {
+    if (total !== lastCount.current) end.current?.scrollIntoView({ block: "end" });
+    lastCount.current = total;
+  }, [total]);
+
   async function deliver(id: number, body: string) {
-    const patch = (state: Bubble["state"]) => setBubbles((bs) => bs.map((b) => (b.id === id ? { ...b, state } : b)));
-    patch("sending");
+    setLocals((ls) => ls.map((l) => (l.id === id ? { ...l, state: "sending" } : l)));
     const res = await sendClientMessage(clientId, body).catch(() => null);
-    patch(res?.ok ? "sent" : { failed: res && !res.ok ? res.code : "NETWORK" });
+    if (res?.ok) {
+      await refresh();
+      setLocals((ls) => ls.filter((l) => l.id !== id));
+    } else {
+      setLocals((ls) => ls.map((l) => (l.id === id ? { ...l, state: { failed: res && !res.ok ? res.code : "NETWORK" } } : l)));
+    }
   }
 
   function send(e: React.FormEvent) {
@@ -70,14 +128,14 @@ export function ChatSheet({
     const body = text.trim();
     if (!body) return;
     const id = ++seq.current;
-    setBubbles((bs) => [...bs, { id, text: body, at: new Date(), state: "sending" }]);
+    setLocals((ls) => [...ls, { id, text: body, at: new Date(), state: "sending" }]);
     setText("");
-    requestAnimationFrame(() => end.current?.scrollIntoView({ block: "end" }));
     void deliver(id, body);
   }
 
+  let prevDay = "";
   return (
-    <Root>
+    <Root open={open} onOpenChange={setOpen}>
       <Drawer.Trigger className={triggerClassName}>{children}</Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
@@ -93,12 +151,48 @@ export function ChatSheet({
             </div>
           </header>
 
-          <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto px-3 py-4" aria-live="polite">
+          <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto px-3 py-4" aria-live="polite" aria-busy={history === null}>
             <p className="mx-auto mb-2 max-w-[34ch] rounded-lg bg-surface/80 px-3 py-1.5 text-center text-xs font-semibold text-muted">
-              As mensagens saem do WhatsApp conectado em Ajustes, como se você mandasse pelo celular.
+              As mensagens saem do WhatsApp conectado em Ajustes. As respostas da cliente aparecem aqui.
             </p>
-            {bubbles.map((b) => (
-              <div key={b.id} className="grid max-w-[82%] justify-items-end gap-1 self-end">
+            {history === null && !loadFailed ? <div className="skel mx-auto h-8 w-40 rounded-xl" aria-label="Carregando conversa" /> : null}
+            {loadFailed && history === null ? (
+              <p role="alert" className="text-center text-xs font-semibold text-fail">
+                Não deu para carregar a conversa. Tentando de novo…
+              </p>
+            ) : null}
+            {(history ?? []).map((m) => {
+              const day = dayLabel(m.createdAt);
+              const sep = day !== prevDay;
+              prevDay = day;
+              const out = m.direction === "out";
+              return (
+                <div key={m.id} className="contents">
+                  {sep ? <p className="mx-auto my-1 rounded-lg bg-surface/80 px-2.5 py-0.5 text-[11px] font-bold text-muted">{day}</p> : null}
+                  <div className={`grid max-w-[82%] gap-0.5 ${out ? "justify-items-end self-end" : "justify-items-start self-start"}`}>
+                    {KIND_LABEL[m.kind] ? <span className="px-1 text-[11px] font-bold text-muted">{KIND_LABEL[m.kind]}</span> : null}
+                    <p
+                      className={`whitespace-pre-wrap break-words rounded-xl px-3 pb-1 pt-1.5 text-[15px] leading-5 shadow-sm ${
+                        out ? "rounded-tr-sm bg-chat-out" : "rounded-tl-sm bg-surface"
+                      }`}
+                    >
+                      {m.body}
+                      <span className="float-right ml-2 mt-1.5 flex translate-y-0.5 items-center gap-0.5 text-[11px] font-semibold tabular-nums text-muted">
+                        {formatTime(new Date(m.createdAt))}
+                        {out ? <Status state="sent" /> : null}
+                      </span>
+                    </p>
+                    {m.intent ? (
+                      <span className="rounded-full bg-surface px-2 text-[11px] font-bold leading-5 text-primary-text shadow-sm">
+                        {INTENT_LABEL[m.intent]} · agenda atualizada
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
+            {locals.map((b) => (
+              <div key={`l${b.id}`} className="grid max-w-[82%] justify-items-end gap-1 self-end">
                 <p className="whitespace-pre-wrap break-words rounded-xl rounded-tr-sm bg-chat-out px-3 pb-1 pt-1.5 text-[15px] leading-5 shadow-sm">
                   {b.text}
                   <span className="float-right ml-2 mt-1.5 flex translate-y-0.5 items-center gap-0.5 text-[11px] font-semibold tabular-nums text-muted">
@@ -157,7 +251,7 @@ export function ChatSheet({
   );
 }
 
-function Status({ state }: { state: Bubble["state"] }) {
+function Status({ state }: { state: "sending" | "sent" | { failed: ErrorCode } }) {
   if (state === "sending")
     return (
       <svg viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" role="img" aria-label="Enviando">

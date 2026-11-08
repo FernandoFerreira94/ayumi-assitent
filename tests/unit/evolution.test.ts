@@ -6,9 +6,11 @@ const cfg = { baseUrl: "https://evo.test/", apiKey: "k", instance: "ayumi" };
 const res = (status: number) => ({ ok: status < 300, status }) as Response;
 
 describe("Evolution (WhatsApp)", () => {
-  it("envia texto com apikey e número só com dígitos", async () => {
-    const f = vi.fn().mockResolvedValue(res(201));
-    await evolutionMessaging(cfg, f as unknown as typeof fetch).sendText("+5511987654321", "oi");
+  it("envia texto com apikey e número só com dígitos, e devolve o id da mensagem", async () => {
+    const f = vi.fn().mockResolvedValue({ ...res(201), json: async () => ({ key: { id: "3EB0ABC" } }) });
+    expect(await evolutionMessaging(cfg, f as unknown as typeof fetch).sendText("+5511987654321", "oi")).toEqual({ id: "3EB0ABC" });
+    // Resposta sem corpo: a mensagem saiu, só fica sem id
+    expect(await evolutionMessaging(cfg, vi.fn().mockResolvedValue(res(201)) as unknown as typeof fetch).sendText("+55119", "x")).toEqual({ id: null });
     const [url, init] = f.mock.calls[0];
     expect(url).toBe("https://evo.test/message/sendText/ayumi");
     expect(init.headers.apikey).toBe("k");
@@ -64,6 +66,16 @@ describe("Evolution admin", () => {
     expect(await st(json(200, { instance: { state: "weird" } }))).toBe("close");
     expect(await st(json(404))).toBe("none");
   });
+  it("registra o webhook só para mensagem nova, no formato da v2", async () => {
+    const f = vi.fn().mockResolvedValue(json(201));
+    await mk(f).setWebhook("studio-x", "https://app.test/api/whatsapp/webhook?token=t");
+    const [url, init] = f.mock.calls[0];
+    expect(url).toBe("https://evo.test/webhook/set/studio-x");
+    expect(JSON.parse(init.body)).toEqual({
+      webhook: { enabled: true, url: "https://app.test/api/whatsapp/webhook?token=t", byEvents: false, base64: false, events: ["MESSAGES_UPSERT"] },
+    });
+    await expect(mk(vi.fn().mockResolvedValue(json(400))).setWebhook("i", "u")).rejects.toBeInstanceOf(WhatsAppAdminError);
+  });
   it("nome da instância é estável e fluxo valida o telefone", async () => {
     const id = "123e4567-e89b-12d3-a456-426614174000";
     expect(instanceName(id)).toBe("studio-123e4567e89b12d3");
@@ -72,6 +84,7 @@ describe("Evolution admin", () => {
       pair: vi.fn().mockResolvedValue({ pairingCode: "XXXX1111" }),
       state: vi.fn(),
       logout: vi.fn(),
+      setWebhook: vi.fn(),
     };
     expect(await startPairing(admin, id, "123")).toEqual({ ok: false, reason: "phone" });
     expect(admin.create).not.toHaveBeenCalled();
