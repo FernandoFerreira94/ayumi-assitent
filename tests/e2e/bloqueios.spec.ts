@@ -1,7 +1,7 @@
 import { expect, test } from "./fixtures";
 
 test("bloqueia um horário, mostra na agenda e remove com desfazer", async ({ page }) => {
-  await page.goto("/agenda");
+  await page.goto("/calendario");
   await page.getByRole("button", { name: "Bloquear" }).click();
   await page.getByLabel("Início").selectOption("12:00");
   await page.getByLabel("Fim").selectOption("13:00");
@@ -21,7 +21,7 @@ test("bloqueia um horário, mostra na agenda e remove com desfazer", async ({ pa
 });
 
 test("fim antes do início mostra erro claro", async ({ page }) => {
-  await page.goto("/agenda");
+  await page.goto("/calendario");
   await page.getByRole("button", { name: "Bloquear" }).click();
   await page.getByLabel("Início").selectOption("14:00");
   await page.getByLabel("Fim").selectOption("13:00");

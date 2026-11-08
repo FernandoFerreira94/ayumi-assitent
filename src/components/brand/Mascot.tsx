@@ -32,7 +32,12 @@ const drop = (x: number, y: number, s = 1) =>
 const OUTFIT: Record<MascotWeather, React.ReactNode> = {
   rain: (
     <>
-      <path d="M118 112l-4 14M146 84l-4 14M92 168l-4 14M386 196l-4 14M402 150l-4 14" stroke="#9C8FD6" strokeWidth="5" strokeLinecap="round" />
+      <path
+        d="M118 112l-4 14M146 84l-4 14M92 168l-4 14M386 196l-4 14M402 150l-4 14"
+        stroke="#9C8FD6"
+        strokeWidth="5"
+        strokeLinecap="round"
+      />
       <g transform="translate(312 122) rotate(10) scale(0.56)">
         <path d="M0 -10V150Q0 175 -22 170" fill="none" stroke="#17142B" strokeWidth="14" strokeLinecap="round" />
         <path d="M-150 0Q0 -150 150 0Q113 -22 75 0Q38 -22 0 0Q-37 -22 -75 0Q-112 -22 -150 0Z" fill="#6D4AFF" />
@@ -44,7 +49,12 @@ const OUTFIT: Record<MascotWeather, React.ReactNode> = {
     <>
       <path d="M158 128A82 52 0 0 1 322 128Z" fill="#FF8FB1" />
       <rect x="156" y="118" width="168" height="24" rx="6" fill="#E5547F" />
-      <path d="M166 121v18M180 121v18M194 121v18M208 121v18M222 121v18M236 121v18M250 121v18M264 121v18M278 121v18M292 121v18M306 121v18" stroke="#fff" strokeOpacity="0.5" strokeWidth="3" />
+      <path
+        d="M166 121v18M180 121v18M194 121v18M208 121v18M222 121v18M236 121v18M250 121v18M264 121v18M278 121v18M292 121v18M306 121v18"
+        stroke="#fff"
+        strokeOpacity="0.5"
+        strokeWidth="3"
+      />
       <circle cx="240" cy="84" r="14" fill="#fff" />
       <path d="M150 320Q240 350 330 320L334 348Q240 380 146 348Z" fill="#E5547F" />
       <path d="M290 340H318L326 398H296Z" fill="#FF8FB1" />
@@ -59,9 +69,7 @@ const OUTFIT: Record<MascotWeather, React.ReactNode> = {
     </>
   ),
   // Os óculos usam o degradê <id>o, definido em <defs> no componente
-  sun: (
-    <path d="M230 246Q240 238 250 246" fill="none" stroke="#17142B" strokeWidth="6" strokeLinecap="round" />
-  ),
+  sun: <path d="M230 246Q240 238 250 246" fill="none" stroke="#17142B" strokeWidth="6" strokeLinecap="round" />,
 };
 
 // Sol atrás da Bolha: desenhado antes do corpo
@@ -121,7 +129,11 @@ export function Mascot({
     case "shy":
       face = (
         <>
-          <path d="M215.37 256.81A15 15 0 0 1 188.63 256.81M291.37 256.81A15 15 0 0 1 264.63 256.81" {...stroke} strokeWidth="8" />
+          <path
+            d="M215.37 256.81A15 15 0 0 1 188.63 256.81M291.37 256.81A15 15 0 0 1 264.63 256.81"
+            {...stroke}
+            strokeWidth="8"
+          />
           <g fill="#B9A6FF">
             <ellipse cx="196" cy="262" rx="26" ry="20" transform="rotate(-17 196 262)" />
             <ellipse cx="284" cy="262" rx="26" ry="20" transform="rotate(17 284 262)" />
@@ -159,7 +171,11 @@ export function Mascot({
       face = (
         <>
           <g transform="translate(0 9)">{openEyes}</g>
-          <path d="M326 165C333.8 174.7 333.2 183.2 326 183.2C318.8 183.2 318.2 174.7 326 165Z" fill="#9CCBFF" className="mascot-drop" />
+          <path
+            d="M326 165C333.8 174.7 333.2 183.2 326 183.2C318.8 183.2 318.2 174.7 326 165Z"
+            fill="#9CCBFF"
+            className="mascot-drop"
+          />
         </>
       );
       break;
@@ -171,12 +187,12 @@ export function Mascot({
     weather === "hot"
       ? null // a língua de fora vem na roupa do calor
       : mood === "worried"
-      ? "M230.29 298.95A12 12 0 0 1 249.71 298.95"
-      : mood === "focused"
-        ? "M236 291Q246 294 256 290"
-        : mood === "shy" || mood === "thinking"
-          ? null
-          : SMILE;
+        ? "M230.29 298.95A12 12 0 0 1 249.71 298.95"
+        : mood === "focused"
+          ? "M236 291Q246 294 256 290"
+          : mood === "shy" || mood === "thinking"
+            ? null
+            : SMILE;
 
   // Gorro, pompom e guarda-chuva passam do topo da cabeça: com roupa, o quadro ganha altura
   const top = weather ? 60 : 95;
@@ -225,7 +241,11 @@ export function Mascot({
       {/* Rosto em grupos: .mascot-look move o rosto todo, .mascot-blink fecha só os olhos */}
       <g
         className="mascot-look"
-        style={look ? { transform: `translate(${look[0]}px, ${look[1]}px)`, transition: "transform 0.25s ease-out" } : undefined}
+        style={
+          look
+            ? { transform: `translate(${look[0]}px, ${look[1]}px)`, transition: "transform 0.25s ease-out" }
+            : undefined
+        }
       >
         {face}
         {mouth ? <path d={mouth} {...stroke} strokeWidth="6" /> : null}

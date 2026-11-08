@@ -6,16 +6,38 @@ import { Drawer } from "vaul";
 import { formatMonthYear } from "@/lib/dates";
 
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-const NAMES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+const NAMES = [
+  "janeiro",
+  "fevereiro",
+  "março",
+  "abril",
+  "maio",
+  "junho",
+  "julho",
+  "agosto",
+  "setembro",
+  "outubro",
+  "novembro",
+  "dezembro",
+];
 
 /** Destino ao escolher um mês: o dia 1, ou hoje quando é o mês corrente (a agenda já abre nele). */
 export function monthHref(year: number, month: number, today: string): string {
   const first = `${year}-${String(month).padStart(2, "0")}-01`;
-  return first.slice(0, 7) === today.slice(0, 7) ? "/agenda" : `/agenda?d=${first}`;
+  return first.slice(0, 7) === today.slice(0, 7) ? "/calendario" : `/calendario?d=${first}`;
 }
 
 const chevron = (d: string) => (
-  <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+  <svg
+    viewBox="0 0 24 24"
+    className="size-5"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.1"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
     <path d={d} />
   </svg>
 );
@@ -36,13 +58,30 @@ export function MonthPicker({ date, today }: { date: string; today: string }) {
       }}
     >
       <Drawer.Trigger className="-ml-2 flex min-h-11 items-center gap-1.5 rounded-full px-2 text-sm font-bold text-primary-text">
-        <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" aria-hidden="true">
+        <svg
+          viewBox="0 0 24 24"
+          className="size-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.1"
+          strokeLinecap="round"
+          aria-hidden="true"
+        >
           <rect x="3.5" y="5" width="17" height="15" rx="4.5" />
           <path d="M8 3v3.5M16 3v3.5M3.5 10h17" />
         </svg>
         {formatMonthYear(date)}
         <span className="sr-only">, trocar mês</span>
-        <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <svg
+          viewBox="0 0 24 24"
+          className="size-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.1"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
           <path d="M7 10l5 5 5-5" />
         </svg>
       </Drawer.Trigger>
@@ -52,13 +91,23 @@ export function MonthPicker({ date, today }: { date: string; today: string }) {
           <Drawer.Title className="pb-1 text-xl font-bold">Escolher mês</Drawer.Title>
           <Drawer.Description className="sr-only">A agenda abre no primeiro dia do mês escolhido.</Drawer.Description>
           <div className="flex items-center justify-between pb-3">
-            <button type="button" onClick={() => setYear((y) => y - 1)} aria-label="Ano anterior" className="btn-glass grid size-11 place-content-center rounded-full">
+            <button
+              type="button"
+              onClick={() => setYear((y) => y - 1)}
+              aria-label="Ano anterior"
+              className="btn-glass grid size-11 place-content-center rounded-full"
+            >
               {chevron("M15 5l-7 7 7 7")}
             </button>
             <p className="text-lg font-bold tabular-nums" aria-live="polite">
               {year}
             </p>
-            <button type="button" onClick={() => setYear((y) => y + 1)} aria-label="Próximo ano" className="btn-glass grid size-11 place-content-center rounded-full">
+            <button
+              type="button"
+              onClick={() => setYear((y) => y + 1)}
+              aria-label="Próximo ano"
+              className="btn-glass grid size-11 place-content-center rounded-full"
+            >
               {chevron("M9 5l7 7-7 7")}
             </button>
           </div>

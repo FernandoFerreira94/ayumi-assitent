@@ -32,7 +32,15 @@ export function NewClientSheet() {
   return (
     <Drawer.Root repositionInputs={false} open={open} onOpenChange={setOpen}>
       <Drawer.Trigger className="btn-tint flex min-h-12 items-center justify-center gap-2 rounded-full px-4 text-sm font-bold">
-        <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" aria-hidden="true">
+        <svg
+          viewBox="0 0 24 24"
+          className="size-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.1"
+          strokeLinecap="round"
+          aria-hidden="true"
+        >
           <circle cx="10" cy="8" r="4" />
           <path d="M3 20c1.3-3.6 3.9-5.5 7-5.5 1.3 0 2.5.3 3.5.9M18 14v6M15 17h6" />
         </svg>
@@ -40,7 +48,10 @@ export function NewClientSheet() {
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-        <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none" style={keyboard}>
+        <Drawer.Content
+          className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none"
+          style={keyboard}
+        >
           <Drawer.Title className="pb-1 text-xl font-bold">Nova cliente</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
             Nome e WhatsApp são suficientes.

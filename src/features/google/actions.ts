@@ -16,5 +16,6 @@ export async function retrySync(id: string): Promise<ActionResult> {
   if (r === "failed") return fail("NETWORK");
   revalidatePath("/pendencias");
   revalidatePath("/agenda");
+  revalidatePath("/calendario");
   return ok();
 }

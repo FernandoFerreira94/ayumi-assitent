@@ -8,17 +8,95 @@ import type { WhatsAppState } from "@/features/shell/status";
 import { SignOutButton } from "./SignOutButton";
 
 const icon = (d: React.ReactNode) => (
-  <svg viewBox="0 0 24 24" className="size-5 shrink-0 text-primary-text" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+  <svg
+    viewBox="0 0 24 24"
+    className="size-5 shrink-0 text-primary-text"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
     {d}
   </svg>
 );
 
 const ITEMS = [
-  { href: "/agenda", label: "Agenda", icon: icon(<><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M8 3v4M16 3v4M3 10h18" /></>) },
-  { href: "/clientes", label: "Clientes", icon: icon(<><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6" /></>) },
-  { href: "/vagas", label: "Vagas", icon: icon(<><path d="M12 7v5l3 2" /><circle cx="12" cy="12" r="9" /></>) },
-  { href: "/pendencias", label: "Pendências", icon: icon(<><path d="M9 12l2 2 4-4" /><rect x="4" y="3" width="16" height="18" rx="3" /></>) },
-  { href: "/ajustes", label: "Ajustes", icon: icon(<><path d="M4 7h16M4 17h16" /><circle cx="9" cy="7" r="2.5" /><circle cx="15" cy="17" r="2.5" /></>) },
+  {
+    href: "/agenda",
+    label: "Painel",
+    icon: icon(
+      <>
+        <rect x="3" y="3" width="8" height="8" rx="2.5" />
+        <rect x="13" y="3" width="8" height="5" rx="2" />
+        <rect x="13" y="11" width="8" height="10" rx="2.5" />
+        <rect x="3" y="14" width="8" height="7" rx="2" />
+      </>,
+    ),
+  },
+  {
+    href: "/calendario",
+    label: "Calendário",
+    icon: icon(
+      <>
+        <rect x="3" y="5" width="18" height="16" rx="3" />
+        <path d="M8 3v4M16 3v4M3 10h18" />
+      </>,
+    ),
+  },
+  {
+    href: "/servicos",
+    label: "Serviços",
+    icon: icon(
+      <>
+        <path d="M6 3l12 12M18 3L6 15" />
+        <circle cx="6" cy="18" r="3" />
+        <circle cx="18" cy="18" r="3" />
+      </>,
+    ),
+  },
+  {
+    href: "/clientes",
+    label: "Clientes",
+    icon: icon(
+      <>
+        <circle cx="9" cy="8" r="3.5" />
+        <path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6" />
+      </>,
+    ),
+  },
+  {
+    href: "/vagas",
+    label: "Vagas",
+    icon: icon(
+      <>
+        <path d="M12 7v5l3 2" />
+        <circle cx="12" cy="12" r="9" />
+      </>,
+    ),
+  },
+  {
+    href: "/pendencias",
+    label: "Pendências",
+    icon: icon(
+      <>
+        <path d="M9 12l2 2 4-4" />
+        <rect x="4" y="3" width="16" height="18" rx="3" />
+      </>,
+    ),
+  },
+  {
+    href: "/ajustes",
+    label: "Ajustes",
+    icon: icon(
+      <>
+        <path d="M4 7h16M4 17h16" />
+        <circle cx="9" cy="7" r="2.5" />
+        <circle cx="15" cy="17" r="2.5" />
+      </>,
+    ),
+  },
 ] as const;
 
 /** Arrastar a folha para cima mais que isso fecha; menos, ela volta. */
@@ -96,16 +174,28 @@ export function AppMenu({
         className="app-menu"
       >
         <div className="mx-auto grid max-w-[520px] gap-3 px-4 pb-3 pt-[max(env(safe-area-inset-top),16px)]">
-          <div className="flex items-center gap-3">
-            <span aria-hidden="true" className="avatar grid size-13 shrink-0 place-content-center rounded-full text-[17px] font-bold text-white">
+          <Link href="/perfil" onClick={close} aria-label="Meu perfil" className="flex items-center gap-3">
+            <span
+              aria-hidden="true"
+              className="avatar grid size-13 shrink-0 place-content-center rounded-full text-[17px] font-bold text-white"
+            >
               {abbr}
             </span>
             <div className="min-w-0">
               <b className="block truncate text-[17px] leading-tight">{userName ?? "Você"}</b>
-              {studioName ? <span className="block truncate text-sm font-semibold text-muted">{studioName}</span> : null}
+              {studioName ? (
+                <span className="block truncate text-sm font-semibold text-muted">{studioName}</span>
+              ) : null}
             </div>
             <Mascot idle size={64} className="ml-auto shrink-0" />
-          </div>
+          </Link>
+          <Link
+            href="/perfil"
+            onClick={close}
+            className="btn-tint flex min-h-11 items-center justify-center rounded-full px-4 text-sm font-bold"
+          >
+            Meu perfil
+          </Link>
           {whatsapp === "open" ? (
             <span className="inline-flex items-center gap-1.5 justify-self-start rounded-full bg-ok-bg px-2.5 py-1 text-xs font-bold text-ok">
               <span aria-hidden="true" className="size-1.5 rounded-full bg-ok" />

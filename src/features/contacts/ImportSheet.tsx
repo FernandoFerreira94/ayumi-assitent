@@ -67,7 +67,8 @@ export function ImportSheet() {
   const allOn = fresh.length > 0 && fresh.every((c) => picked.has(c.phone));
 
   return (
-    <Drawer.Root repositionInputs={false}
+    <Drawer.Root
+      repositionInputs={false}
       open={open}
       onOpenChange={(o) => {
         setOpen(o);
@@ -75,14 +76,26 @@ export function ImportSheet() {
       }}
     >
       <Drawer.Trigger className="btn-glass flex min-h-12 items-center justify-center gap-2 rounded-full px-4 text-sm font-bold">
-        <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <svg
+          viewBox="0 0 24 24"
+          className="size-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.1"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
           <path d="M12 4v10M8 10l4 4 4-4M5 17v1.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V17" />
         </svg>
         Importar
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-        <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[85dvh] max-w-[520px] flex-col rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none" style={keyboard}>
+        <Drawer.Content
+          className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[85dvh] max-w-[520px] flex-col rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none"
+          style={keyboard}
+        >
           <Drawer.Title className="pb-1 text-xl font-bold">Importar clientes</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
             {list ? "Escolha quem entra na sua lista." : "Traga seus contatos sem digitar um por um."}

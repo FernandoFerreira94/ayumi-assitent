@@ -17,7 +17,12 @@ const h = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
 describe("grade da agenda do dia", () => {
   it("janela é 08–20 e estica em hora cheia para caber atendimento fora dela", () => {
     expect(gridWindow([])).toEqual({ start: h("08:00"), end: h("20:00") });
-    expect(gridWindow([{ start: h("07:30"), end: h("08:15") }, { start: h("20:00"), end: h("20:45") }])).toEqual({
+    expect(
+      gridWindow([
+        { start: h("07:30"), end: h("08:15") },
+        { start: h("20:00"), end: h("20:45") },
+      ]),
+    ).toEqual({
       start: h("07:00"),
       end: h("21:00"),
     });

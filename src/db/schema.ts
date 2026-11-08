@@ -19,6 +19,9 @@ export const tenants = pgTable("tenants", {
   whatsappInstance: text("whatsapp_instance").unique(),
   address: text("address"),
   instagram: text("instagram"),
+  category: text("category"),
+  msgConfirmation: text("msg_confirmation"),
+  msgReminder: text("msg_reminder"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

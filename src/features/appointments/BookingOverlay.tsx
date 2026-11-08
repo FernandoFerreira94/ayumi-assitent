@@ -61,13 +61,23 @@ export function BookingOverlay({
       <div role="status" aria-live="polite" className="grid gap-1">
         <h2 className="text-2xl font-bold">{title(booking)}</h2>
         <p className="mx-auto min-h-5 max-w-[30ch] text-sm font-semibold text-muted">
-          {result?.kind === "error" ? "" : result ? booking.who : booking.slow ? "A conexão está lenta, mas sigo tentando." : "O Mimo está cuidando de tudo."}
+          {result?.kind === "error"
+            ? ""
+            : result
+              ? booking.who
+              : booking.slow
+                ? "A conexão está lenta, mas sigo tentando."
+                : "O Mimo está cuidando de tudo."}
         </p>
       </div>
 
       <ul className="mt-1 grid w-full max-w-72 gap-2.5 text-left">
         {STEPS.map((label, i) => (
-          <li key={label} data-s={steps[i]} className="booking-step grid grid-cols-[24px_1fr] items-center gap-2.5 text-sm font-semibold">
+          <li
+            key={label}
+            data-s={steps[i]}
+            className="booking-step grid grid-cols-[24px_1fr] items-center gap-2.5 text-sm font-semibold"
+          >
             <StepIcon />
             <span>{label}</span>
           </li>
@@ -82,7 +92,12 @@ export function BookingOverlay({
                 <b className="text-[15px]">{booking.service}</b>
                 <span className="font-semibold text-muted">Lembrete programado no WhatsApp.</span>
               </div>
-              <button type="button" autoFocus onClick={() => onDone(result.id)} className="btn-tint min-h-13 rounded-full px-5 font-bold">
+              <button
+                type="button"
+                autoFocus
+                onClick={() => onDone(result.id)}
+                className="btn-tint min-h-13 rounded-full px-5 font-bold"
+              >
                 Ver na agenda
               </button>
             </>
@@ -101,13 +116,19 @@ export function BookingOverlay({
               >
                 Reconectar WhatsApp
               </Link>
-              <button type="button" onClick={() => onDone(result.id)} className="btn-glass min-h-12 rounded-full px-5 font-bold">
+              <button
+                type="button"
+                onClick={() => onDone(result.id)}
+                className="btn-glass min-h-12 rounded-full px-5 font-bold"
+              >
                 Fechar
               </button>
             </>
           ) : (
             <>
-              <p className="rounded-2xl bg-fail-bg px-4 py-3 text-left text-sm font-semibold text-fail">{failText(result.code)}</p>
+              <p className="rounded-2xl bg-fail-bg px-4 py-3 text-left text-sm font-semibold text-fail">
+                {failText(result.code)}
+              </p>
               <button
                 type="button"
                 autoFocus
@@ -144,7 +165,14 @@ function StepIcon() {
   return (
     <span className="step-ic" aria-hidden="true">
       <svg viewBox="0 0 12 12" className="ck">
-        <path d="M2.5 6.2l2.3 2.3 4.7-4.9" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d="M2.5 6.2l2.3 2.3 4.7-4.9"
+          fill="none"
+          stroke="#fff"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
       <svg viewBox="0 0 12 12" className="x">
         <path d="M3 3l6 6M9 3l-6 6" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
@@ -213,7 +241,16 @@ function ResultBubble({ kind }: { kind: "ok" | "warn" | "error" }) {
               ))}
             </linearGradient>
           </defs>
-          <circle cx="100" cy="100" r="95" pathLength="1" fill="none" stroke="url(#booking-ring)" strokeWidth="4" strokeLinecap="round" />
+          <circle
+            cx="100"
+            cy="100"
+            r="95"
+            pathLength="1"
+            fill="none"
+            stroke="url(#booking-ring)"
+            strokeWidth="4"
+            strokeLinecap="round"
+          />
         </svg>
       ) : null}
       {kind === "ok"
@@ -230,7 +267,12 @@ function ResultBubble({ kind }: { kind: "ok" | "warn" | "error" }) {
         <Mascot mood={kind === "error" ? "worried" : kind === "ok" ? "happy" : "neutral"} size={126} />
       </span>
       {kind !== "error" ? (
-        <svg viewBox="0 0 40 40" className="booking-badge absolute left-[138px] top-[134px] size-10" data-kind={kind} aria-hidden="true">
+        <svg
+          viewBox="0 0 40 40"
+          className="booking-badge absolute left-[138px] top-[134px] size-10"
+          data-kind={kind}
+          aria-hidden="true"
+        >
           <circle cx="20" cy="20" r="20" />
           {kind === "ok" ? <path d="M11 20.5l5.5 5.5 12-12" /> : <path d="M20 11v11M20 29v.5" />}
         </svg>

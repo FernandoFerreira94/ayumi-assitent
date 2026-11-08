@@ -68,10 +68,7 @@ export default async function PendenciasPage() {
               </h2>
               <ul className="grid gap-2">
                 {p.unsynced.map((r) => (
-                  <li
-                    key={r.id}
-                    className="flex items-center justify-between gap-3 glass rounded-2xl px-4 py-3"
-                  >
+                  <li key={r.id} className="flex items-center justify-between gap-3 glass rounded-2xl px-4 py-3">
                     <div>
                       <p className="font-bold">
                         <span className="text-primary-text">{when(r.startsAt)}</span> · {r.clientName}

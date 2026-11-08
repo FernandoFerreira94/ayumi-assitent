@@ -37,7 +37,8 @@ const blank = (preset: Partial<Draft>): Draft => ({
   ...preset,
 });
 
-const hhmm = (min: number) => `${String(Math.floor(min / 60) % 24).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+const hhmm = (min: number) =>
+  `${String(Math.floor(min / 60) % 24).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
 
 /**
  * Cria (sem `service`) ou edita um serviço. Valida antes de enviar o que dá para saber aqui
@@ -72,7 +73,8 @@ export function ServiceForm({
   const [state, action] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
     const res = await saveService(prev, fd);
     if (res.ok) {
-      const changed = service && (service.durationMin !== d.durationMin || maskMoney(String(service.priceCents)) !== d.price);
+      const changed =
+        service && (service.durationMin !== d.durationMin || maskMoney(String(service.priceCents)) !== d.price);
       if (service) notify.success("Salvo", changed ? "Vale para os próximos agendamentos" : undefined);
       else notify.success("Serviço criado", `${d.name.trim()} · ${formatDuration(d.durationMin)} · R$ ${d.price}`);
       onSaved();
@@ -85,7 +87,8 @@ export function ServiceForm({
   const errorFor = (f: string) => {
     if (local?.field === f) return local.text;
     if (serverField !== f) return null;
-    if (state && !state.ok && state.code === "NAME_TAKEN") return `Já existe "${d.name.trim()}" ${categoryName ? `em ${categoryName}` : "aqui"}.`;
+    if (state && !state.ok && state.code === "NAME_TAKEN")
+      return `Já existe "${d.name.trim()}" ${categoryName ? `em ${categoryName}` : "aqui"}.`;
     return f === "price" ? "Digite o preço. Use 0 se for cortesia." : "Confira este campo.";
   };
 
@@ -153,7 +156,11 @@ export function ServiceForm({
       <div className="grid grid-cols-2 gap-3">
         <div className={label}>
           <span id="svc-dur">Duração</span>
-          <div role="group" aria-labelledby="svc-dur" className="flex min-h-12 items-center gap-1 rounded-full border-[1.5px] border-line bg-surface p-1">
+          <div
+            role="group"
+            aria-labelledby="svc-dur"
+            className="flex min-h-12 items-center gap-1 rounded-full border-[1.5px] border-line bg-surface p-1"
+          >
             <button
               type="button"
               aria-label="Diminuir 15 minutos"
@@ -163,7 +170,10 @@ export function ServiceForm({
             >
               −
             </button>
-            <output aria-live="polite" className="flex-1 text-center text-[15px] font-bold normal-case tracking-normal text-fg tabular-nums">
+            <output
+              aria-live="polite"
+              className="flex-1 text-center text-[15px] font-bold normal-case tracking-normal text-fg tabular-nums"
+            >
               {formatDuration(d.durationMin)}
             </output>
             <button
@@ -193,7 +203,11 @@ export function ServiceForm({
             />
           </span>
           {priceError ? (
-            <span id="svc-price-err" role="alert" className="text-xs font-semibold normal-case tracking-normal text-fail">
+            <span
+              id="svc-price-err"
+              role="alert"
+              className="text-xs font-semibold normal-case tracking-normal text-fail"
+            >
               {priceError}
             </span>
           ) : null}
@@ -211,12 +225,20 @@ export function ServiceForm({
         <span id="svc-buf">Intervalo depois</span>
         <div role="group" aria-labelledby="svc-buf" className="flex flex-wrap gap-1.5">
           {BUFFER_OPTIONS.map((m) => (
-            <button key={m} type="button" aria-pressed={d.bufferMin === m} onClick={() => set("bufferMin", m)} className={`${pill} ${pressed}`}>
+            <button
+              key={m}
+              type="button"
+              aria-pressed={d.bufferMin === m}
+              onClick={() => set("bufferMin", m)}
+              className={`${pill} ${pressed}`}
+            >
               {m ? `${m} min` : "Sem"}
             </button>
           ))}
         </div>
-        <span className="text-xs font-semibold normal-case tracking-normal">O calendário bloqueia esse tempo para limpar e preparar.</span>
+        <span className="text-xs font-semibold normal-case tracking-normal">
+          O calendário bloqueia esse tempo para limpar e preparar.
+        </span>
       </div>
 
       <div className={label}>
@@ -229,7 +251,10 @@ export function ServiceForm({
               aria-pressed={d.color === k}
               aria-label={name}
               onClick={() => set("color", k)}
-              style={{ background: `var(--svc-${k})`, boxShadow: d.color === k ? `0 0 0 2.5px var(--svc-${k})` : "0 0 0 1px var(--line)" }}
+              style={{
+                background: `var(--svc-${k})`,
+                boxShadow: d.color === k ? `0 0 0 2.5px var(--svc-${k})` : "0 0 0 1px var(--line)",
+              }}
               className="h-11 w-11 rounded-full border-[3px] border-surface"
             />
           ))}
@@ -285,7 +310,11 @@ export function ServiceForm({
 
       {service ? (
         <div className="-mt-3 grid grid-cols-2 gap-2">
-          <button type="button" onClick={() => onDuplicate(service)} className="btn-glass min-h-12 rounded-full text-sm font-bold">
+          <button
+            type="button"
+            onClick={() => onDuplicate(service)}
+            className="btn-glass min-h-12 rounded-full text-sm font-bold"
+          >
             Duplicar
           </button>
           <button
@@ -305,7 +334,17 @@ export function ServiceForm({
   );
 }
 
-function Toggle({ label, hint, on, onChange }: { label: string; hint: string; on: boolean; onChange: (v: boolean) => void }) {
+function Toggle({
+  label,
+  hint,
+  on,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  on: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
     <div className="flex items-center justify-between gap-3 border-t border-line py-2.5">
       <span className="text-sm font-bold">
@@ -346,7 +385,12 @@ function CategoryPicker({
     setBusy(true);
     const res = await saveCategory(name);
     setBusy(false);
-    if (!res.ok) return setError(res.code === "NAME_TAKEN" ? `Já existe a categoria "${name.trim()}".` : "Não deu para criar agora. Tente de novo.");
+    if (!res.ok)
+      return setError(
+        res.code === "NAME_TAKEN"
+          ? `Já existe a categoria "${name.trim()}".`
+          : "Não deu para criar agora. Tente de novo.",
+      );
     onCreated(res.data);
     setAdding(false);
     setName("");
@@ -358,12 +402,23 @@ function CategoryPicker({
       <span id="svc-cat">Categoria</span>
       <div role="group" aria-labelledby="svc-cat" className="flex flex-wrap gap-1.5">
         {categories.length === 0 || value === null ? (
-          <button type="button" aria-pressed={value === null} onClick={() => onChange(null)} className={`${pill} ${pressed}`}>
+          <button
+            type="button"
+            aria-pressed={value === null}
+            onClick={() => onChange(null)}
+            className={`${pill} ${pressed}`}
+          >
             Sem categoria
           </button>
         ) : null}
         {categories.map((c) => (
-          <button key={c.id} type="button" aria-pressed={value === c.id} onClick={() => onChange(c.id)} className={`${pill} ${pressed}`}>
+          <button
+            key={c.id}
+            type="button"
+            aria-pressed={value === c.id}
+            onClick={() => onChange(c.id)}
+            className={`${pill} ${pressed}`}
+          >
             {c.name}
           </button>
         ))}
@@ -391,7 +446,12 @@ function CategoryPicker({
             className={field}
             aria-invalid={!!error}
           />
-          <button type="button" disabled={busy} onClick={create} className="btn-tint min-h-12 shrink-0 rounded-full px-5 text-sm font-bold normal-case tracking-normal">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={create}
+            className="btn-tint min-h-12 shrink-0 rounded-full px-5 text-sm font-bold normal-case tracking-normal"
+          >
             {busy ? "Criando…" : "Criar"}
           </button>
         </div>

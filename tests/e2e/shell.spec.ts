@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "./fixtures";
 
 const TABS = [
-  { href: "/agenda", name: "Agenda", heading: /^(Bom dia|Boa tarde|Boa noite)/ },
+  { href: "/agenda", name: "Painel", heading: /^(Bom dia|Boa tarde|Boa noite)/ },
   { href: "/clientes", name: "Clientes", heading: "Clientes" },
   { href: "/vagas", name: "Vagas", heading: "Vagas" },
   { href: "/ajustes", name: "Ajustes", heading: "Ajustes" },

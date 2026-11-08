@@ -22,7 +22,7 @@ import { categoryName, serviceInput } from "./schema";
 
 // Toda tela que lista serviços
 const revalidate = () => {
-  for (const p of ["/servicos", "/ajustes", "/agenda", "/vagas"]) revalidatePath(p);
+  for (const p of ["/servicos", "/ajustes", "/agenda", "/calendario", "/vagas"]) revalidatePath(p);
 };
 
 const uuid = z.string().uuid();
@@ -114,7 +114,8 @@ export async function saveCategory(name: string, id?: string): Promise<ActionRes
   try {
     const res = await withTenant(tenantId, async (tx) => {
       const cats = await listCategories(tx);
-      if (cats.some((c) => c.id !== id && normalizeName(c.name) === normalizeName(parsed.data))) return "taken" as const;
+      if (cats.some((c) => c.id !== id && normalizeName(c.name) === normalizeName(parsed.data)))
+        return "taken" as const;
       if (!id) return insertCategory(tx, tenantId, parsed.data);
       return (await setCategoryName(tx, id, parsed.data)) ? { id, name: parsed.data } : null;
     });

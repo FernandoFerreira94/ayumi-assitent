@@ -25,8 +25,21 @@ export function PageShell({
             <HeaderMenu />
           ) : (
             // Link fixo e não history.back(): no PWA aberto direto numa tela não há histórico para voltar
-            <Link href="/agenda" aria-label="Voltar para a agenda" className="btn-glass grid size-11 shrink-0 place-content-center rounded-full">
-              <svg viewBox="0 0 24 24" className="size-[22px]" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <Link
+              href="/agenda"
+              aria-label="Voltar para a agenda"
+              className="btn-glass grid size-11 shrink-0 place-content-center rounded-full"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="size-[22px]"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
                 <path d="M15 5l-7 7 7 7" />
               </svg>
             </Link>

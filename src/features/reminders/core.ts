@@ -1,6 +1,8 @@
 import { sql } from "drizzle-orm";
+import { tenants } from "@/db/schema";
 import type { Tx } from "@/db/client";
 import { addDays, formatTime, todayStr } from "@/lib/dates";
+import { DEFAULT_REMINDER, fillTemplate } from "@/features/profile/templates";
 import type { MessagingPort } from "@/features/messaging/port";
 import { MessagingOfflineError } from "@/features/messaging/port";
 
@@ -17,9 +19,20 @@ function dayWord(startsAt: Date, now: Date): string {
   return `dia ${day.slice(8)}/${day.slice(5, 7)}`;
 }
 
-export function reminderText(a: Pick<Due, "client" | "service" | "startsAt">, now: Date): string {
+export function reminderText(
+  a: Pick<Due, "client" | "service" | "startsAt">,
+  now: Date,
+  template: string | null = null,
+  studio = "",
+): string {
   const first = a.client.trim().split(/\s+/)[0];
-  return `Oi, ${first}! Passando para lembrar do seu horário de ${a.service} ${dayWord(a.startsAt, now)} às ${formatTime(a.startsAt)}. Te espero! 💜`;
+  return fillTemplate(template || DEFAULT_REMINDER, {
+    nome: first,
+    servico: a.service,
+    dia: dayWord(a.startsAt, now),
+    hora: formatTime(a.startsAt),
+    studio,
+  });
 }
 
 /**
@@ -68,6 +81,7 @@ export type ReminderRun = { sent: number; failed: number; offline: boolean };
  */
 export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Promise<ReminderRun> {
   const due = await claimDue(tx, now);
+  const [studio] = due.length ? await tx.select({ name: tenants.name, msg: tenants.msgReminder }).from(tenants) : [];
   const failedIds: string[] = [];
   let sent = 0;
   let offline = false;
@@ -77,7 +91,7 @@ export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Pro
       continue;
     }
     try {
-      await port.sendText(a.phone, reminderText(a, now));
+      await port.sendText(a.phone, reminderText(a, now, studio?.msg ?? null, studio?.name ?? ""));
       sent++;
     } catch (e) {
       failedIds.push(a.id);

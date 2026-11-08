@@ -35,10 +35,18 @@ export function DayBubble({ briefing, isToday }: { briefing: Briefing; isToday: 
       >
         {/* key muda a cada toque: remonta e a animação de pulo roda de novo */}
         <span key={hop} className={hop ? "mascot-hop" : "mascot-float"}>
-          <Mascot size={60} mood={i === 0 ? briefing.mood : "happy"} weather={(today && weatherMood(today)) || undefined} idle />
+          <Mascot
+            size={60}
+            mood={i === 0 ? briefing.mood : "happy"}
+            weather={(today && weatherMood(today)) || undefined}
+            idle
+          />
         </span>
       </button>
-      <p aria-live="polite" className="speech glass relative min-h-14 flex-1 rounded-3xl px-4 py-2.5 text-sm font-semibold leading-snug">
+      <p
+        aria-live="polite"
+        className="speech glass relative min-h-14 flex-1 rounded-3xl px-4 py-2.5 text-sm font-semibold leading-snug"
+      >
         {line}
       </p>
     </div>

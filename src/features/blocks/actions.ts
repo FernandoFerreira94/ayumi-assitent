@@ -21,6 +21,7 @@ export async function createBlock(_prev: ActionResult<{ id: string }> | null, fd
     const res = await withTenant(tenantId, (tx) => insertBlock(tx, tenantId, parsed.data));
     if (res.ok) {
       revalidatePath("/agenda");
+      revalidatePath("/calendario");
       revalidatePath("/vagas");
     }
     return res;
@@ -37,6 +38,7 @@ export async function deleteBlock(id: string): Promise<ActionResult> {
     const res = await withTenant(tenantId, (tx) => removeBlock(tx, p.data));
     if (res.ok) {
       revalidatePath("/agenda");
+      revalidatePath("/calendario");
       revalidatePath("/vagas");
     }
     return res;

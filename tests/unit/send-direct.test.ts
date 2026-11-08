@@ -7,7 +7,11 @@ const port = (impl: MessagingPort["sendText"]): MessagingPort => ({ sendText: im
 describe("mensagem avulsa para a cliente", () => {
   it("envia para o número da cliente com o texto digitado", async () => {
     const sent: [string, string][] = [];
-    const res = await sendDirect(port(async (to, text) => void sent.push([to, text])), "+5511987654321", "Oi, Maria!");
+    const res = await sendDirect(
+      port(async (to, text) => void sent.push([to, text])),
+      "+5511987654321",
+      "Oi, Maria!",
+    );
     expect(res).toEqual({ ok: true, data: undefined });
     expect(sent).toEqual([["+5511987654321", "Oi, Maria!"]]);
   });

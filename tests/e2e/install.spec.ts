@@ -14,7 +14,10 @@ anonymous("no iPhone, o login ensina a pôr o app na tela de início", async ({ 
 test("aberto pelo ícone (já instalado), o botão some", async ({ page }) => {
   await page.addInitScript(() => {
     const real = window.matchMedia.bind(window);
-    window.matchMedia = (q: string) => (q.includes("standalone") ? ({ ...real(q), matches: true, media: q, addEventListener() {}, removeEventListener() {} } as MediaQueryList) : real(q));
+    window.matchMedia = (q: string) =>
+      q.includes("standalone")
+        ? ({ ...real(q), matches: true, media: q, addEventListener() {}, removeEventListener() {} } as MediaQueryList)
+        : real(q);
   });
   await page.goto("/ajustes");
   await expect(page.getByRole("button", { name: "Rever o tour do app" })).toBeVisible();

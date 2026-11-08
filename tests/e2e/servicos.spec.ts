@@ -1,8 +1,7 @@
 import { expect, test } from "./fixtures";
 
-test("cadastra, edita e remove serviço com desfazer; Ajustes leva para a tela", async ({ page }) => {
-  await page.goto("/ajustes");
-  await page.getByRole("link", { name: /Serviços/ }).click();
+test("cadastra, edita e remove serviço com desfazer", async ({ page }) => {
+  await page.goto("/servicos");
   await expect(page.getByRole("heading", { name: "Serviços" })).toBeVisible();
   await expect(page.getByText("Nenhum serviço cadastrado")).toBeVisible();
 

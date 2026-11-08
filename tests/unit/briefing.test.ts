@@ -18,7 +18,10 @@ describe("balão do dia da Bolha", () => {
   });
   it("tudo concluído comemora", () => {
     const b = dayBriefing([{ startsAt: at("09:00"), clientName: "Bia", status: "done" }], now, true);
-    expect(b).toMatchObject({ mood: "happy", lines: ["Dia encerrado! Você concluiu 1 atendimento.", ...b.lines.slice(1)] });
+    expect(b).toMatchObject({
+      mood: "happy",
+      lines: ["Dia encerrado! Você concluiu 1 atendimento.", ...b.lines.slice(1)],
+    });
   });
   it("horários passados sem fechar lembram de fechar", () => {
     const b = dayBriefing([{ startsAt: at("09:00"), clientName: "Bia", status: "confirmed" }], now, true);

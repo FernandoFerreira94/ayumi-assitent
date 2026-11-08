@@ -16,7 +16,7 @@ test("cria serviço, cliente e agendamento; avisa conflito; cancela com desfazer
   await page.getByRole("button", { name: "Salvar" }).click();
   await expect(page.getByText("Cliente cadastrada")).toBeVisible();
 
-  await page.goto("/agenda");
+  await page.goto("/calendario");
   const agendar = async (hora: string) => {
     await page.getByRole("button", { name: "Agendar", exact: true }).first().click();
     // Seletores em lista por letra, como os contatos do iPhone

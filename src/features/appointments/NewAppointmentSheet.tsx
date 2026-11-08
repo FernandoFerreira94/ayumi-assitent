@@ -28,13 +28,18 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Resolve com o valor, "network" se a chamada falhar ou "timeout" se passar do prazo. */
 const settle = <T,>(p: Promise<T>, ms: number) =>
   Promise.race([
-    p.then((v) => ({ v }), () => "network" as const),
+    p.then(
+      (v) => ({ v }),
+      () => "network" as const,
+    ),
     sleep(ms).then(() => "timeout" as const),
   ]);
 
 /** Faz o horário recém-criado piscar na linha do dia (se o dia estiver na tela). */
 function flash(id: string) {
-  requestAnimationFrame(() => document.querySelector(`[data-appointment="${CSS.escape(id)}"]`)?.classList.add("appt-new"));
+  requestAnimationFrame(() =>
+    document.querySelector(`[data-appointment="${CSS.escape(id)}"]`)?.classList.add("appt-new"),
+  );
 }
 
 export function NewAppointmentSheet({
@@ -125,8 +130,7 @@ export function NewAppointmentSheet({
     await sleep(200);
     steps(["done", "done", "run"]);
     const wa = await settle(whatsappStatus(), 8000);
-    const reminder =
-      typeof wa === "string" || !wa.v.ok ? "unavailable" : wa.v.data.state === "open" ? "ok" : "off";
+    const reminder = typeof wa === "string" || !wa.v.ok ? "unavailable" : wa.v.data.state === "open" ? "ok" : "off";
     steps(["done", "done", reminder === "ok" ? "done" : "warn"]);
     patch((b) => ({
       ...b,
@@ -165,7 +169,15 @@ export function NewAppointmentSheet({
     >
       {openKey === undefined ? (
         <Drawer.Trigger className="btn-tint flex min-h-12 items-center justify-center gap-2 rounded-full px-4 text-sm font-bold">
-          <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            className="size-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.3"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
             <rect x="3.5" y="5" width="17" height="15" rx="4.5" />
             <path d="M8 3v3.5M16 3v3.5M12 10.5v6M9 13.5h6" />
           </svg>
@@ -215,7 +227,13 @@ export function NewAppointmentSheet({
                 </label>
                 <label className="grid gap-1 text-sm font-bold">
                   Horário
-                  <select name="time" required className={input} defaultValue={time ?? "09:00"} aria-invalid={fieldErr?.field === "time"}>
+                  <select
+                    name="time"
+                    required
+                    className={input}
+                    defaultValue={time ?? "09:00"}
+                    aria-invalid={fieldErr?.field === "time"}
+                  >
                     {times.map((t) => (
                       <option key={t}>{t}</option>
                     ))}
@@ -226,7 +244,11 @@ export function NewAppointmentSheet({
                     {messageFor(fieldErr.code)}
                   </p>
                 ) : null}
-                <button type="submit" disabled={working} className="btn-tint mt-1 flex min-h-13 items-center justify-center rounded-full px-5 font-bold">
+                <button
+                  type="submit"
+                  disabled={working}
+                  className="btn-tint mt-1 flex min-h-13 items-center justify-center rounded-full px-5 font-bold"
+                >
                   Agendar
                 </button>
               </form>

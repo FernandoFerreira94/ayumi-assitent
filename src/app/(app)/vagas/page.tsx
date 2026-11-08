@@ -44,7 +44,10 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
           title="Nenhum serviço cadastrado"
           description="Para ver os horários livres, adicione um serviço."
           action={
-            <Link href="/servicos?novo=1" className="btn-tint inline-flex min-h-11 items-center rounded-full px-5 text-sm font-bold">
+            <Link
+              href="/servicos?novo=1"
+              className="btn-tint inline-flex min-h-11 items-center rounded-full px-5 text-sm font-bold"
+            >
               Novo serviço
             </Link>
           }
@@ -82,7 +85,10 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
             {x.name}
           </Link>
         ))}
-        <Link href="/servicos?novo=1" className="btn-tint inline-flex min-h-11 shrink-0 items-center rounded-full px-5 text-sm font-bold">
+        <Link
+          href="/servicos?novo=1"
+          className="btn-tint inline-flex min-h-11 shrink-0 items-center rounded-full px-5 text-sm font-bold"
+        >
           + Serviço
         </Link>
       </nav>
@@ -96,11 +102,7 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
           {/* No topo: é a ação da tela, não precisa rolar a semana até achar */}
           <CopyButton text={text} />
           {withSlots.map((d) => (
-            <section
-              key={d.date}
-              aria-label={formatDayTitle(d.date)}
-              className="glass rounded-2xl px-4 py-3"
-            >
+            <section key={d.date} aria-label={formatDayTitle(d.date)} className="glass rounded-2xl px-4 py-3">
               <h2 className="pb-2 text-sm font-bold capitalize">{formatDayTitle(d.date)}</h2>
               <ul className="flex flex-wrap gap-2">
                 {d.slots.map((t) => (
