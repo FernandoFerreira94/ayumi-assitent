@@ -9,8 +9,7 @@ import { messageFor, type ActionResult } from "@/lib/errors";
 import { maskPhone } from "@/lib/phone";
 import { createClient } from "./actions";
 
-const input =
-  "min-h-13 w-full rounded-2xl border border-line bg-white px-4 text-base font-semibold outline-none focus:border-primary";
+const input = "min-h-13 w-full rounded-2xl border px-4 text-base font-semibold";
 
 export function NewClientSheet() {
   const [open, setOpen] = useState(false);
@@ -32,12 +31,16 @@ export function NewClientSheet() {
 
   return (
     <Drawer.Root repositionInputs={false} open={open} onOpenChange={setOpen}>
-      <Drawer.Trigger className="min-h-11 rounded-full bg-primary px-5 text-sm font-bold text-on-primary active:scale-[0.97]">
+      <Drawer.Trigger className="btn-tint flex min-h-12 items-center justify-center gap-2 rounded-full px-4 text-sm font-bold">
+        <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" aria-hidden="true">
+          <circle cx="10" cy="8" r="4" />
+          <path d="M3 20c1.3-3.6 3.9-5.5 7-5.5 1.3 0 2.5.3 3.5.9M18 14v6M15 17h6" />
+        </svg>
         Nova cliente
       </Drawer.Trigger>
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
-        <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl bg-bg px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none" style={keyboard}>
+        <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
+        <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none" style={keyboard}>
           <Drawer.Title className="pb-1 text-xl font-bold">Nova cliente</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
             Nome e WhatsApp são suficientes.
@@ -45,7 +48,14 @@ export function NewClientSheet() {
           <form action={action} className="grid gap-3">
             <label className="grid gap-1 text-sm font-bold">
               Nome
-              <input name="name" required autoComplete="off" className={input} aria-invalid={err?.field === "name"} />
+              <input
+                name="name"
+                required
+                autoComplete="off"
+                placeholder="Ex.: Maria Souza"
+                className={input}
+                aria-invalid={err?.field === "name"}
+              />
               {err?.field === "name" ? (
                 <span role="alert" className="text-xs text-primary-text">
                   Informe o nome
@@ -61,6 +71,7 @@ export function NewClientSheet() {
                 required
                 value={phone}
                 onChange={(e) => setPhone(maskPhone(e.target.value))}
+                placeholder="(11) 98765-4321"
                 className={input}
                 aria-invalid={err?.field === "phone"}
               />
@@ -77,6 +88,7 @@ export function NewClientSheet() {
                 type="email"
                 inputMode="email"
                 autoComplete="off"
+                placeholder="maria@email.com"
                 className={input}
                 aria-invalid={err?.field === "email"}
               />

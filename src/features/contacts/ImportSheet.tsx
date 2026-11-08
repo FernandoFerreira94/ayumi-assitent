@@ -12,7 +12,7 @@ import type { Preview } from "./core";
 type PreviewRes = ActionResult<{ list: Preview; ignored: number }>;
 
 const btn =
-  "min-h-12 w-full rounded-2xl border border-line bg-white px-4 text-left font-bold active:scale-[0.99] disabled:opacity-60";
+  "glass min-h-12 w-full rounded-2xl px-4 py-2 text-left font-bold transition-transform active:scale-[0.99] disabled:opacity-60";
 
 export function ImportSheet() {
   const [open, setOpen] = useState(false);
@@ -74,12 +74,15 @@ export function ImportSheet() {
         if (!o) reset();
       }}
     >
-      <Drawer.Trigger className="min-h-11 rounded-full bg-soft px-4 text-sm font-bold text-primary-text active:scale-[0.97]">
+      <Drawer.Trigger className="btn-glass flex min-h-12 items-center justify-center gap-2 rounded-full px-4 text-sm font-bold">
+        <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 4v10M8 10l4 4 4-4M5 17v1.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V17" />
+        </svg>
         Importar
       </Drawer.Trigger>
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
-        <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[85dvh] max-w-[520px] flex-col rounded-t-3xl bg-bg px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none" style={keyboard}>
+        <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
+        <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[85dvh] max-w-[520px] flex-col rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none" style={keyboard}>
           <Drawer.Title className="pb-1 text-xl font-bold">Importar clientes</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
             {list ? "Escolha quem entra na sua lista." : "Traga seus contatos sem digitar um por um."}
@@ -129,7 +132,7 @@ export function ImportSheet() {
               <ul className="-mx-1 grid flex-1 gap-1 overflow-y-auto px-1">
                 {list.map((c) => (
                   <li key={c.phone}>
-                    <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-line bg-white px-4 py-2">
+                    <label className="glass flex min-h-12 items-center gap-3 rounded-2xl px-4 py-2">
                       <input
                         type="checkbox"
                         disabled={c.exists}
@@ -165,7 +168,7 @@ export function ImportSheet() {
                 onClick={doImport}
                 disabled={pending || picked.size === 0}
                 aria-busy={pending}
-                className="mt-3 min-h-13 w-full rounded-2xl bg-primary px-4 font-bold text-on-primary active:scale-[0.99] disabled:opacity-60"
+                className="btn-tint mt-3 min-h-13 w-full rounded-2xl px-4 font-bold disabled:opacity-60"
               >
                 {pending ? "Importando…" : `Importar ${picked.size}`}
               </button>

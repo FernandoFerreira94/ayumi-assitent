@@ -39,9 +39,10 @@ test.describe("login por e-mail e senha", () => {
 
   test("e-mail fora da lista não consegue criar conta", async ({ page }) => {
     await page.goto("/login");
-    await page.getByRole("button", { name: "Primeiro acesso? Criar conta" }).click();
+    await page.getByRole("button", { name: "Criar conta com e-mail" }).click();
+    await page.getByLabel("Nome").fill("Intrusa");
     await page.getByLabel("E-mail").fill("intruso@e2e.test");
-    await page.getByLabel("Senha").fill("senha-segura-123");
+    await page.getByLabel("Senha", { exact: true }).fill("senha-segura-123");
     await page.getByRole("button", { name: "Criar conta", exact: true }).click();
     await expect(page.getByText("Esta conta não tem acesso.")).toBeVisible();
     await expect(page).toHaveURL(/\/login/);
@@ -49,22 +50,26 @@ test.describe("login por e-mail e senha", () => {
 
   test("cria conta autorizada, sai, erra a senha e entra de novo", async ({ page, context }) => {
     await page.goto("/login");
-    await page.getByRole("button", { name: "Primeiro acesso? Criar conta" }).click();
+    await page.getByRole("button", { name: "Criar conta com e-mail" }).click();
     await page.getByLabel("Nome").fill("Yumi");
     await page.getByLabel("E-mail").fill(email);
-    await page.getByLabel("Senha").fill("senha-segura-123");
+    await page.getByLabel("Senha", { exact: true }).fill("senha-segura-123");
     await page.getByRole("button", { name: "Criar conta", exact: true }).click();
     await expect(page).toHaveURL(/\/agenda/);
     await expect(page.getByText("Previsto do dia")).toBeVisible();
 
     await context.clearCookies();
     await page.goto("/login");
+    await page.getByRole("button", { name: "Continuar com e-mail" }).click();
     await page.getByLabel("E-mail").fill(email);
-    await page.getByLabel("Senha").fill("senha-errada-999");
+    await page.getByLabel("Senha", { exact: true }).fill("senha-errada-999");
     await page.getByRole("button", { name: "Entrar", exact: true }).click();
     await expect(page.getByText("E-mail ou senha incorretos.")).toBeVisible();
+    // a Bolha reage ao toque e não atrapalha o formulário
+    await page.getByRole("button", { name: "Bolha, toque para brincar" }).click();
+    await expect(page.getByText("Pulinho")).toBeVisible();
 
-    await page.getByLabel("Senha").fill("senha-segura-123");
+    await page.getByLabel("Senha", { exact: true }).fill("senha-segura-123");
     await page.getByRole("button", { name: "Entrar", exact: true }).click();
     await expect(page).toHaveURL(/\/agenda/);
   });

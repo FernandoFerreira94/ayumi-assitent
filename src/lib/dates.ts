@@ -32,5 +32,21 @@ export const formatDayTitle = (date: string) =>
     new Date(`${date}T12:00:00${OFFSET}`),
   );
 
-export const formatBRL = (cents: number) =>
+/** "Novembro de 2026": o mês do dia escolhido, já que a faixa de dias só mostra o número. */
+export const formatMonthYear = (date: string) => {
+  const s = new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, month: "long", year: "numeric" }).format(
+    new Date(`${date}T12:00:00${OFFSET}`),
+  );
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
+
+/** Saudação pelo horário do estúdio, com o primeiro nome quando houver. */
+export function greeting(now: Date, name?: string | null): string {
+  const hour = Number(new Intl.DateTimeFormat("en-US", { timeZone: TZ, hour: "numeric", hour12: false }).format(now)) % 24;
+  const base = hour >= 5 && hour < 12 ? "Bom dia" : hour >= 12 && hour < 18 ? "Boa tarde" : "Boa noite";
+  const first = name?.trim().split(/\s+/)[0];
+  return first ? `${base}, ${first}` : base;
+}
+
+export const formatBRL =(cents: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);

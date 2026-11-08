@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "./fixtures";
 
 const TABS = [
-  { href: "/agenda", name: "Agenda", heading: "Hoje" },
+  { href: "/agenda", name: "Agenda", heading: /^(Bom dia|Boa tarde|Boa noite)/ },
   { href: "/clientes", name: "Clientes", heading: "Clientes" },
   { href: "/vagas", name: "Vagas", heading: "Vagas" },
   { href: "/ajustes", name: "Ajustes", heading: "Ajustes" },
@@ -13,25 +13,42 @@ test("a raiz abre a agenda", async ({ page }) => {
   await expect(page).toHaveURL(/\/agenda$/);
 });
 
+// O nav em leque só mostra as telas depois de aberto pelo botão central.
+// Toque antes da hidratação não abre nada, então repete até o leque abrir de fato.
+const openFan = (page: import("@playwright/test").Page) =>
+  expect(async () => {
+    const toggle = page.locator(".fan-toggle");
+    if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click({ timeout: 1000 });
+    await expect(toggle).toHaveAttribute("aria-expanded", "true", { timeout: 1000 });
+  }).toPass();
+
 test("as 4 abas navegam e marcam a aba atual", async ({ page }) => {
   await page.goto("/agenda");
   for (const t of TABS) {
+    await openFan(page);
     await page.getByRole("link", { name: t.name, exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`${t.href}$`));
     await expect(page.getByRole("heading", { level: 1, name: t.heading })).toBeVisible();
+    await openFan(page);
     await expect(page.getByRole("link", { name: t.name, exact: true })).toHaveAttribute("aria-current", "page");
+    await page.keyboard.press("Escape");
   }
 });
 
-test("alvos de toque da barra têm pelo menos 44 px", async ({ page }) => {
+test("alvos de toque do nav têm pelo menos 44 px", async ({ page }) => {
+  // Sem animação: o leque abre com scale e mediria o botão no meio da transição
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/agenda");
+  const toggle = await page.getByRole("button", { name: "Abrir navegação" }).boundingBox();
+  expect(toggle!.width).toBeGreaterThanOrEqual(44);
+  await openFan(page);
   for (const t of TABS) {
-    const box = await page.getByRole("link", { name: t.name, exact: true }).boundingBox();
+    const link = page.getByRole("link", { name: t.name, exact: true });
+    await expect(link).toBeVisible();
+    const box = await link.boundingBox();
     expect(box!.height).toBeGreaterThanOrEqual(44);
     expect(box!.width).toBeGreaterThanOrEqual(44);
   }
-  const fab = await page.getByRole("button", { name: "Criar" }).boundingBox();
-  expect(fab!.width).toBeGreaterThanOrEqual(44);
 });
 
 test("página inexistente mostra o 404 com saída", async ({ page }) => {

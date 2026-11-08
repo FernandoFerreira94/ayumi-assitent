@@ -18,17 +18,17 @@ export default async function ClientesPage({ searchParams }: PageProps<"/cliente
 
   return (
     <PageShell title="Clientes">
-      <div className="flex items-center gap-2 pb-3">
-        <form role="search" className="flex-1">
-          <input
-            name="q"
-            defaultValue={q}
-            type="search"
-            aria-label="Buscar cliente"
-            placeholder="Buscar por nome ou telefone"
-            className="min-h-11 w-full rounded-full border border-line bg-white px-4 text-base font-semibold outline-none focus:border-primary"
-          />
-        </form>
+      <form role="search" className="pb-2">
+        <input
+          name="q"
+          defaultValue={q}
+          type="search"
+          aria-label="Buscar cliente"
+          placeholder="Buscar por nome ou telefone"
+          className="min-h-12 w-full rounded-full border px-4 text-base font-semibold"
+        />
+      </form>
+      <div className="grid grid-cols-2 gap-2 pb-3">
         <ImportSheet />
         <NewClientSheet />
       </div>
@@ -41,7 +41,7 @@ export default async function ClientesPage({ searchParams }: PageProps<"/cliente
       ) : (
         <ul className="grid gap-2">
           {list.map((c) => (
-            <li key={c.id} className="rounded-2xl border border-line bg-white px-4 py-3">
+            <li key={c.id} className="glass rounded-2xl px-4 py-3">
               <p className="font-bold">{c.name}</p>
               <p className="text-sm font-semibold text-muted">{maskPhone(c.phoneE164.replace(/^\+55/, ""))}</p>
             </li>

@@ -80,3 +80,7 @@ export function listDay(tx: Tx, [from, to]: [Date, Date]) {
 /** Previsto do dia: soma dos valores dos atendimentos que não foram cancelados nem faltaram. */
 export const forecastCents = (rows: { priceCents: number; status: Status }[]) =>
   rows.filter((r) => r.status !== "no_show").reduce((sum, r) => sum + r.priceCents, 0);
+
+/** Já recebido: só o que foi marcado como concluído. O que falta é o previsto menos isso. */
+export const receivedCents = (rows: { priceCents: number; status: Status }[]) =>
+  rows.filter((r) => r.status === "done").reduce((sum, r) => sum + r.priceCents, 0);

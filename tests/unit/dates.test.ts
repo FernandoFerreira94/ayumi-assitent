@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, dayRange, formatBRL, formatTime, isDateStr, todayStr, toInstant } from "@/lib/dates";
+import { addDays, dayRange, formatBRL, formatMonthYear, formatTime, greeting, isDateStr, todayStr, toInstant } from "@/lib/dates";
 
 describe("datas no fuso do estúdio", () => {
   it("hoje usa o fuso de São Paulo (22h de 10/11 em SP já é 11/11 UTC)", () => {
@@ -22,5 +22,13 @@ describe("datas no fuso do estúdio", () => {
     expect(isDateStr("2026-13-40")).toBe(false);
     expect(isDateStr("hoje")).toBe(false);
     expect(formatBRL(15050).replace(/\s/g, " ")).toBe("R$ 150,50");
+  });
+  it("mês do dia escolhido com inicial maiúscula", () => {
+    expect(formatMonthYear("2026-11-08")).toBe("Novembro de 2026");
+  });
+  it("saudação segue o relógio de SP e usa só o primeiro nome", () => {
+    expect(greeting(new Date("2026-11-08T11:00:00Z"), "Ayumi Tanaka")).toBe("Bom dia, Ayumi"); // 08h
+    expect(greeting(new Date("2026-11-08T18:00:00Z"), "Ayumi")).toBe("Boa tarde, Ayumi"); // 15h
+    expect(greeting(new Date("2026-11-09T01:00:00Z"), null)).toBe("Boa noite"); // 22h
   });
 });

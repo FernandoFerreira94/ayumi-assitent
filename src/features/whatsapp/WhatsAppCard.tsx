@@ -72,9 +72,8 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
     });
   }
 
-  const box = "rounded-2xl border border-line bg-white px-4 py-3";
-  const btn =
-    "min-h-11 rounded-full bg-soft px-4 text-sm font-bold text-primary-text active:scale-[0.97] disabled:opacity-60";
+  const box = "glass rounded-[1.75rem] px-5 py-4";
+  const btn = "btn-glass min-h-11 rounded-full px-4 text-sm font-bold disabled:opacity-60";
 
   if (view === "unavailable")
     return (
@@ -147,14 +146,14 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
         aria-label="Número do WhatsApp do estúdio"
         value={phone}
         onChange={(e) => setPhone(maskPhone(e.target.value))}
-        className="min-h-13 w-full rounded-2xl border border-line bg-white px-4 text-base font-semibold outline-none focus:border-primary"
+        className="min-h-13 w-full rounded-full border px-5 text-base font-semibold"
       />
       <button
         type="button"
         onClick={generate}
         disabled={pending || phone.replace(/\D/g, "").length < 10}
         aria-busy={pending}
-        className="min-h-12 rounded-2xl bg-primary px-4 font-bold text-on-primary active:scale-[0.99] disabled:opacity-60"
+        className="btn-tint min-h-12 rounded-full px-4 font-bold disabled:opacity-60"
       >
         {pending ? "Gerando código…" : "Gerar código de conexão"}
       </button>
