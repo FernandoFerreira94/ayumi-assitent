@@ -23,6 +23,8 @@ export const tenants = pgTable("tenants", {
   businessType: text("business_type"),
   /** Texto do lembrete; null = o padrão do app */
   reminderTemplate: text("reminder_template"),
+  /** Horas antes do horário em que sai o lembrete (1 a 72) */
+  reminderHours: integer("reminder_hours").notNull().default(24),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

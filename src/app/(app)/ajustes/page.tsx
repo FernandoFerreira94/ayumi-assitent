@@ -7,6 +7,8 @@ import { GoogleCard } from "@/features/google/GoogleCard";
 import { isGoogleConnected } from "@/features/google/server";
 import { getHours } from "@/features/hours/core";
 import { HoursForm } from "@/features/hours/HoursForm";
+import { getReminderHours } from "@/features/reminders/core";
+import { ReminderForm } from "@/features/reminders/ReminderForm";
 import { PushToggle } from "@/features/push/PushToggle";
 import { WhatsAppCard } from "@/features/whatsapp/WhatsAppCard";
 import { InstallGuide } from "@/features/install/InstallGuide";
@@ -22,7 +24,10 @@ export const metadata: Metadata = { title: "Ajustes" };
 export default async function AjustesPage({ searchParams }: PageProps<"/ajustes">) {
   const { tenantId } = await requireTenant();
   const { google: googleResult } = await searchParams;
-  const week = await withTenant(tenantId, (tx) => getHours(tx));
+  const { week, reminderHours } = await withTenant(tenantId, async (tx) => ({
+    week: await getHours(tx),
+    reminderHours: await getReminderHours(tx),
+  }));
   const [wa, google, [salon]] = await Promise.all([
     whatsappState(tenantId),
     isGoogleConnected(tenantId),
@@ -47,6 +52,9 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
       </section>
       <section aria-label="Avisos" className="mt-6">
         <PushToggle publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
+      </section>
+      <section aria-label="Lembrete" className="mt-6">
+        <ReminderForm hours={reminderHours} />
       </section>
       <section aria-label="Expediente" className="mt-6">
         <HoursForm week={week} />
