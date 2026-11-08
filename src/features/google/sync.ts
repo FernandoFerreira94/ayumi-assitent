@@ -56,6 +56,7 @@ export async function syncAppointment(tx: Tx, port: CalendarPort | null, appoint
     }
     return "synced";
   } catch (e) {
+    console.error("google_event_failed", { appointmentId, error: e instanceof Error ? e.message : String(e) });
     return e instanceof GoogleAuthError ? "auth" : "failed";
   }
 }

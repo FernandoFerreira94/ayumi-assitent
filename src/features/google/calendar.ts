@@ -44,7 +44,20 @@ export function googleCalendar(accessToken: string, fetchImpl: typeof fetch = fe
     } catch {
       throw new GoogleApiError("network");
     }
-    if (res.status === 401 || res.status === 403) throw new GoogleAuthError(String(res.status));
+    if (res.status === 401) throw new GoogleAuthError("401");
+    if (res.status === 403) {
+      // 403 pode ser API desativada no projeto ou cota: reconectar não resolve. Só permissão pede reconectar.
+      let reason = "";
+      try {
+        const j = (await res.clone().json()) as { error?: { errors?: { reason?: string }[]; message?: string } };
+        reason = j.error?.errors?.[0]?.reason ?? j.error?.message ?? "";
+      } catch {
+        /* corpo ilegível: trata como permissão */
+      }
+      if (/accessNotConfigured|rateLimit|quota|disabled|not been used/i.test(reason))
+        throw new GoogleApiError(`403 ${reason}`);
+      throw new GoogleAuthError(`403 ${reason}`);
+    }
     if (res.status === 404 && okOn404) return null;
     if (!res.ok) throw new GoogleApiError(String(res.status));
     return res.status === 204 ? null : ((await res.json()) as { id?: string });
