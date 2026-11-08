@@ -32,6 +32,13 @@ describe("cliente do Google Agenda", () => {
     await googleCalendar("t", f as unknown as typeof fetch).createEvent(ev);
     expect(JSON.parse(f.mock.calls[1][1].body).attendees).toBeUndefined();
   });
+  it("403 de API desativada vira erro de API; 403 de permissão pede reconectar", async () => {
+    const body = (reason: string) => ({ status: 403, ok: false, clone() { return this; }, json: async () => ({ error: { errors: [{ reason }] } }) });
+    const off = googleCalendar("t", vi.fn().mockResolvedValue(body("accessNotConfigured")) as unknown as typeof fetch);
+    await expect(off.createEvent(ev)).rejects.toBeInstanceOf(GoogleApiError);
+    const perm = googleCalendar("t", vi.fn().mockResolvedValue(body("insufficientPermissions")) as unknown as typeof fetch);
+    await expect(perm.createEvent(ev)).rejects.toBeInstanceOf(GoogleAuthError);
+  });
   it("401 vira erro de autenticação e 500 vira erro de API", async () => {
     const auth = googleCalendar("t", vi.fn().mockResolvedValue(res(401)) as unknown as typeof fetch);
     await expect(auth.createEvent(ev)).rejects.toBeInstanceOf(GoogleAuthError);

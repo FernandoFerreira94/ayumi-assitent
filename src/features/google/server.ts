@@ -50,7 +50,8 @@ export async function syncAppointmentSafe(tenantId: string, appointmentId: strin
     const port = await calendarForTenant(tenantId);
     return await withTenant(tenantId, (tx) => syncAppointment(tx, port, appointmentId));
   } catch (e) {
-    return e instanceof GoogleAuthError ? "auth" : e instanceof GoogleApiError ? "failed" : "failed";
+    console.error("google_sync_failed", { appointmentId, error: e instanceof Error ? e.message : String(e) });
+    return e instanceof GoogleAuthError ? "auth" : "failed";
   }
 }
 
