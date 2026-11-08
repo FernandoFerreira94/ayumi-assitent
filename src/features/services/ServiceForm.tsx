@@ -5,19 +5,24 @@ import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import type { ActionResult } from "@/lib/errors";
 import { maskMoney } from "@/lib/money";
-import { createService } from "./actions";
+import { createService, editService } from "./actions";
 
 const input = "min-h-13 w-full rounded-full border px-5 text-base font-semibold";
 
-export function NewServiceForm({ onSaved, bare }: { onSaved?: () => void; bare?: boolean }) {
+export type ServiceRow = { id: string; name: string; durationMin: number; priceCents: number };
+
+/** Com `service`, edita esse serviço; sem, cadastra um novo e limpa os campos para o próximo. */
+export function ServiceForm({ service, onSaved }: { service?: ServiceRow; onSaved?: () => void }) {
   const ref = useRef<HTMLFormElement>(null);
-  const [price, setPrice] = useState("");
+  const [price, setPrice] = useState(service ? maskMoney(String(service.priceCents)) : "");
   const [state, action] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
-    const res = await createService(prev, fd);
+    const res = await (service ? editService : createService)(prev, fd);
     if (res.ok) {
-      notify.success("Serviço adicionado");
-      ref.current?.reset();
-      setPrice("");
+      notify.success(service ? "Serviço atualizado" : "Serviço adicionado");
+      if (!service) {
+        ref.current?.reset();
+        setPrice("");
+      }
       onSaved?.();
     } else if (res.code !== "VALIDATION") notify.error(res.code);
     return res;
@@ -26,12 +31,8 @@ export function NewServiceForm({ onSaved, bare }: { onSaved?: () => void; bare?:
   const bad = (f: string) => (field === f ? "Confira este campo" : null);
 
   return (
-    <form
-      ref={ref}
-      action={action}
-      className={bare ? "grid gap-3" : "glass grid gap-3 rounded-[1.75rem] p-5"}
-    >
-      {bare ? null : <h2 className="font-bold">Adicionar serviço</h2>}
+    <form ref={ref} action={action} className="grid gap-3">
+      {service ? <input type="hidden" name="id" value={service.id} /> : null}
       <label className="grid gap-1 text-sm font-bold">
         Nome
         <input
@@ -39,6 +40,7 @@ export function NewServiceForm({ onSaved, bare }: { onSaved?: () => void; bare?:
           required
           autoComplete="off"
           placeholder="Ex.: Design de sobrancelha"
+          defaultValue={service?.name}
           className={input}
           aria-invalid={field === "name"}
         />
@@ -55,7 +57,7 @@ export function NewServiceForm({ onSaved, bare }: { onSaved?: () => void; bare?:
             name="durationMin"
             inputMode="numeric"
             required
-            defaultValue="60"
+            defaultValue={service?.durationMin ?? 60}
             placeholder="Ex.: 60"
             className={input}
             aria-invalid={field === "durationMin"}

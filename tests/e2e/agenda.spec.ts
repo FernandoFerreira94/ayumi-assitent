@@ -1,7 +1,8 @@
 import { expect, test } from "./fixtures";
 
 test("cria serviço, cliente e agendamento; avisa conflito; cancela com desfazer", async ({ page }) => {
-  await page.goto("/ajustes");
+  await page.goto("/servicos");
+  await page.getByRole("button", { name: "Novo serviço" }).click();
   await page.getByLabel("Nome").fill("Alongamento");
   await page.getByLabel("Valor (R$)").fill("150,00");
   await page.getByRole("button", { name: "Salvar serviço" }).click();

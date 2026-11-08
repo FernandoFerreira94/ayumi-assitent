@@ -5,7 +5,8 @@ test("expediente salvo e vagas listadas com texto para copiar", async ({ page, c
   await page.goto("/vagas");
   await expect(page.getByText("Nenhum serviço cadastrado")).toBeVisible();
 
-  await page.goto("/ajustes");
+  await page.goto("/servicos");
+  await page.getByRole("button", { name: "Novo serviço" }).click();
   await page.getByLabel("Nome").fill("Gel");
   await page.getByLabel("Valor (R$)").fill("100");
   await page.getByRole("button", { name: "Salvar serviço" }).click();
