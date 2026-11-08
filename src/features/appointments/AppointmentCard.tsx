@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { notify } from "@/components/feedback/toast";
 import type { SyncResult } from "@/features/google/sync";
+import { CHAT_BUTTON, ChatGlyph, ChatSheet } from "@/features/messaging/ChatSheet";
 import type { ActionResult } from "@/lib/errors";
 import { updateStatus } from "./actions";
 import { warnSync } from "./sync-warning";
@@ -11,10 +12,14 @@ import type { Status } from "./schema";
 type Props = {
   id: string;
   time: string;
+  clientId: string;
   clientName: string;
+  clientPhone: string;
   serviceName: string;
   price: string;
   status: Status;
+  /** Já está dentro de uma folha (a da linha do dia): a conversa abre como folha aninhada. */
+  inSheet?: boolean;
 };
 
 const LABEL: Record<Status, string> = {
@@ -25,7 +30,7 @@ const LABEL: Record<Status, string> = {
   no_show: "Faltou",
 };
 
-export function AppointmentCard({ id, time, clientName, serviceName, price, status }: Props) {
+export function AppointmentCard({ id, time, clientId, clientName, clientPhone, serviceName, price, status, inSheet = false }: Props) {
   const [pending, start] = useTransition();
   const [busy, setBusy] = useState<Status | null>(null);
 
@@ -98,6 +103,11 @@ export function AppointmentCard({ id, time, clientName, serviceName, price, stat
           </button>
         </div>
       ) : null}
+      {/* Em qualquer status: dá para falar com a cliente mesmo depois de concluído ou se faltou */}
+      <ChatSheet nested={inSheet} clientId={clientId} clientName={clientName} phone={clientPhone} triggerClassName={`${btn} ${CHAT_BUTTON}`}>
+        <ChatGlyph />
+        Mensagem no WhatsApp
+      </ChatSheet>
     </li>
   );
 }

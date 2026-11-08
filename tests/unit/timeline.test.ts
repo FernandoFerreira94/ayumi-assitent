@@ -1,8 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { freeGaps, hhmm, minuteOf, timelineWindow } from "@/features/appointments/timeline";
+import { duration, freeGaps, hhmm, minuteOf, timelineWindow } from "@/features/appointments/timeline";
 
 const day = { opens: "09:00", closes: "18:00" };
 const at = (h: number, m = 0) => h * 60 + m;
+
+describe("duration", () => {
+  it("escreve minutos, horas cheias e horas com minutos", () => {
+    expect(duration({ start: at(9), end: at(9, 30) })).toBe("30 min");
+    expect(duration({ start: at(9), end: at(10) })).toBe("1h");
+    expect(duration({ start: at(9), end: at(10, 30) })).toBe("1h30");
+    expect(duration({ start: at(9), end: at(11, 5) })).toBe("2h05");
+  });
+});
 
 describe("timelineWindow", () => {
   it("usa o expediente quando tudo cabe nele", () => {

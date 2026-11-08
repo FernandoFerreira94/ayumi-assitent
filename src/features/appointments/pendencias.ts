@@ -9,7 +9,9 @@ const base = (tx: Tx) =>
       startsAt: appointments.startsAt,
       priceCents: appointments.priceCents,
       status: appointments.status,
+      clientId: clients.id,
       clientName: clients.name,
+      clientPhone: clients.phoneE164,
       serviceName: services.name,
     })
     .from(appointments)

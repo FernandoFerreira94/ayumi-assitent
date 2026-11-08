@@ -9,6 +9,7 @@ import { countPendencias, listPendencias } from "@/features/appointments/pendenc
 import { RetrySyncButton } from "@/features/google/RetrySyncButton";
 import { isGoogleConnected } from "@/features/google/server";
 import { formatBRL, formatTime } from "@/lib/dates";
+import { maskPhone } from "@/lib/phone";
 import { requireTenant } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Pendências" };
@@ -27,7 +28,9 @@ export default async function PendenciasPage() {
       key={r.id}
       id={r.id}
       time={when(r.startsAt)}
+      clientId={r.clientId}
       clientName={r.clientName}
+      clientPhone={maskPhone(r.clientPhone.replace(/^\+55/, ""))}
       serviceName={r.serviceName}
       price={formatBRL(r.priceCents)}
       status={r.status}

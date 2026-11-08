@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Assist Agent",
-    short_name: "Assist Agent",
+    name: "mimo",
+    short_name: "mimo",
     description: "Agenda, clientes e lembretes do seu estúdio.",
     start_url: "/agenda",
     scope: "/",

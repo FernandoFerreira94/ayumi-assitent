@@ -6,7 +6,7 @@ test("primeiro acesso: o tour pede toques, avança e não volta depois", async (
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/agenda");
   const card = page.getByRole("dialog");
-  await expect(card.getByRole("heading", { name: "Oi, eu sou a Bolha!" })).toBeVisible();
+  await expect(card.getByRole("heading", { name: "Oi, eu sou o Mimo!" })).toBeVisible();
   await card.getByRole("button", { name: "Começar" }).click();
 
   // Passo de toque: sem botão, só o destaque avança
@@ -36,5 +36,5 @@ test("pular o tour fecha e Ajustes reabre", async ({ page }) => {
   await page.goto("/ajustes");
   await page.getByRole("button", { name: "Rever o tour do app" }).click();
   await expect(page).toHaveURL(/\/agenda$/);
-  await expect(page.getByRole("heading", { name: "Oi, eu sou a Bolha!" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Oi, eu sou o Mimo!" })).toBeVisible();
 });

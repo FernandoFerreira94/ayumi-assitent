@@ -9,7 +9,10 @@ import { syncAppointmentSafe } from "@/features/google/server";
 import type { SyncResult } from "@/features/google/sync";
 import { searchClients } from "@/features/clients/core";
 import { listServices } from "@/features/services/core";
-import { insertAppointment, setStatus } from "./core";
+import { listBlocks } from "@/features/blocks/core";
+import { dayRange, isDateStr } from "@/lib/dates";
+import { insertAppointment, listDay, setStatus } from "./core";
+import { dayVersion } from "./version";
 import { bookingOptions, type BookingOptions } from "./options";
 import { appointmentInput, STATUSES } from "./schema";
 
@@ -19,6 +22,18 @@ export async function loadBookingOptions(): Promise<ActionResult<BookingOptions>
   try {
     const [clients, services] = await withTenant(tenantId, async (tx) => [await searchClients(tx, ""), await listServices(tx)] as const);
     return ok(bookingOptions(clients, services));
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+/** Versão atual da agenda do dia, para a tela saber se outro aparelho (ou o WhatsApp) mexeu nela. */
+export async function agendaVersion(date: string): Promise<ActionResult<string>> {
+  const { tenantId } = await requireTenant();
+  if (!isDateStr(date)) return fail("VALIDATION");
+  try {
+    const range = dayRange(date);
+    return ok(await withTenant(tenantId, async (tx) => dayVersion(await listDay(tx, range), await listBlocks(tx, range))));
   } catch {
     return fail("UNKNOWN");
   }

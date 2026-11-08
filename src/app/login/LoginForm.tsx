@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Mascot, type MascotMood } from "@/components/brand/Mascot";
 import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
+import { InstallGuide } from "@/features/install/InstallGuide";
 import { authClient } from "@/lib/auth-client";
 import { ERROR_MESSAGES } from "@/lib/errors";
 
@@ -26,15 +27,8 @@ const HEAD: Record<View, [string, string]> = {
   signup: ["Criar sua conta", "Leva menos de 1 minuto."],
 };
 
-/** Cada toque na Bolha é a próxima reação desta lista, em ordem. */
-const REACTIONS = [
-  ["pulo", "Pulinho"],
-  ["gelatina", "Gelatina"],
-  ["piscadinha", "Piscadinha"],
-  ["coracoes", "Corações"],
-  ["bolhinhas", "Bolhinhas"],
-  ["rodopio", "Rodopio"],
-] as const;
+/** Cada toque no Mimo é a próxima reação desta lista, em ordem; só movimento, sem legenda. */
+const REACTIONS = ["pulo", "gelatina", "piscadinha", "coracoes", "bolhinhas", "rodopio"] as const;
 const REACT_MS = 1300;
 /** Quanto tempo a Bolha fica preocupada depois de um erro. */
 const WORRY_MS = 2200;
@@ -54,6 +48,18 @@ function passwordStrength(v: string) {
   return { pct: 25, label: "Senha fraca", color: "var(--fail)" };
 }
 
+/** O "G" oficial do Google, nas quatro cores da marca. */
+function GoogleG() {
+  return (
+    <svg viewBox="0 0 48 48" className="size-[18px]" aria-hidden="true">
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+    </svg>
+  );
+}
+
 export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
@@ -68,7 +74,7 @@ export function LoginForm() {
   const [typed, setTyped] = useState(0);
   const [showPass, setShowPass] = useState(false);
   const [strength, setStrength] = useState(passwordStrength(""));
-  const [reaction, setReaction] = useState<{ n: number; k: (typeof REACTIONS)[number][0] } | null>(null);
+  const [reaction, setReaction] = useState<{ n: number; k: (typeof REACTIONS)[number] } | null>(null);
   const taps = useRef(0);
 
   useEffect(() => {
@@ -99,7 +105,7 @@ export function LoginForm() {
 
   function tapMascot() {
     if (busy) return;
-    const [k] = REACTIONS[taps.current++ % REACTIONS.length];
+    const k = REACTIONS[taps.current++ % REACTIONS.length];
     setReaction({ n: taps.current, k });
   }
 
@@ -228,7 +234,7 @@ export function LoginForm() {
           <button
             type="button"
             onClick={tapMascot}
-            aria-label="Bolha, toque para brincar"
+            aria-label="Mimo, toque para brincar"
             className="login-mascot relative grid justify-items-center rounded-3xl"
           >
             <span key={reaction?.n ?? (success ? "ok" : worried ? worriedAt : "idle")} className={motion}>
@@ -247,13 +253,8 @@ export function LoginForm() {
               ))}
             </span>
           ) : null}
-          {reaction ? (
-            <span key={`t${reaction.n}`} className="login-react-tag" aria-live="polite">
-              {REACTIONS.find(([k]) => k === reaction.k)?.[1]}
-            </span>
-          ) : null}
         </div>
-        <h1 className="mt-1 text-2xl font-bold">Assist Agent</h1>
+        <h1 className="font-brand mt-1 text-[2.25rem] leading-none text-brand">mimo</h1>
         <h2 className="mt-1.5 text-xl font-bold">{HEAD[view][0]}</h2>
         <p className="text-sm font-semibold text-muted">{HEAD[view][1]}</p>
       </div>
@@ -267,7 +268,13 @@ export function LoginForm() {
       {view === "start" ? (
         <div key="start" className="login-view grid gap-3">
           <SubmitButton type="button" onClick={google} pending={pendingGoogle} disabled={busy} pendingLabel="Abrindo o Google…">
-            Entrar com Google
+            <span className="flex items-center gap-2.5">
+              {/* O "G" do Google pede fundo branco; no botão lavanda ele vai num círculo */}
+              <span className="grid size-7 place-items-center rounded-full bg-white">
+                <GoogleG />
+              </span>
+              Entrar com Google
+            </span>
           </SubmitButton>
           <button type="button" onClick={() => go("email")} disabled={busy} className="flex min-h-13 items-center justify-center gap-2.5 rounded-2xl bg-soft px-5 font-bold text-primary-text">
             <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -282,6 +289,7 @@ export function LoginForm() {
               Criar conta com e-mail
             </button>
           </p>
+          <InstallGuide compact />
         </div>
       ) : (
         <form key={view} onSubmit={submitEmail} noValidate className={`login-view grid gap-3 ${worried ? "login-shake" : ""}`}>

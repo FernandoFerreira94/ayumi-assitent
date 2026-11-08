@@ -61,7 +61,7 @@ export function BookingOverlay({
       <div role="status" aria-live="polite" className="grid gap-1">
         <h2 className="text-2xl font-bold">{title(booking)}</h2>
         <p className="mx-auto min-h-5 max-w-[30ch] text-sm font-semibold text-muted">
-          {result?.kind === "error" ? "" : result ? booking.who : booking.slow ? "A conexão está lenta, mas sigo tentando." : "A Bolha está cuidando de tudo."}
+          {result?.kind === "error" ? "" : result ? booking.who : booking.slow ? "A conexão está lenta, mas sigo tentando." : "O Mimo está cuidando de tudo."}
         </p>
       </div>
 

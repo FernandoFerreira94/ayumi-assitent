@@ -5,6 +5,7 @@ import { withTenant } from "@/db/client";
 import { searchClients } from "@/features/clients/core";
 import { ImportSheet } from "@/features/contacts/ImportSheet";
 import { NewClientSheet } from "@/features/clients/NewClientSheet";
+import { ChatGlyph, ChatSheet } from "@/features/messaging/ChatSheet";
 import { maskPhone } from "@/lib/phone";
 import { requireTenant } from "@/lib/tenant";
 
@@ -40,12 +41,26 @@ export default async function ClientesPage({ searchParams }: PageProps<"/cliente
         )
       ) : (
         <ul className="grid gap-2">
-          {list.map((c) => (
-            <li key={c.id} className="glass rounded-2xl px-4 py-3">
-              <p className="font-bold">{c.name}</p>
-              <p className="text-sm font-semibold text-muted">{maskPhone(c.phoneE164.replace(/^\+55/, ""))}</p>
-            </li>
-          ))}
+          {list.map((c) => {
+            const phone = maskPhone(c.phoneE164.replace(/^\+55/, ""));
+            return (
+              <li key={c.id}>
+                {/* Tocar na cliente abre a conversa no WhatsApp do salão */}
+                <ChatSheet
+                  clientId={c.id}
+                  clientName={c.name}
+                  phone={phone}
+                  triggerClassName="glass flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left transition-transform active:scale-[0.99]"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-bold">{c.name}</span>
+                    <span className="block text-sm font-semibold text-muted">{phone}</span>
+                  </span>
+                  <ChatGlyph />
+                </ChatSheet>
+              </li>
+            );
+          })}
         </ul>
       )}
     </PageShell>

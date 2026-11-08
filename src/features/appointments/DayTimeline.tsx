@@ -6,15 +6,18 @@ import { Drawer } from "vaul";
 import { BlockCard } from "@/features/blocks/BlockCard";
 import { AppointmentCard } from "./AppointmentCard";
 import type { Status } from "./schema";
-import { hhmm, type Span } from "./timeline";
+import { duration, hhmm, type Span } from "./timeline";
 
-/** Altura de uma hora na linha do dia; 30 min = 36 px, o mínimo para uma linha de texto. */
-const HOUR_PX = 72;
+/** Altura de uma hora na linha do dia; 30 min = 48 px, o bastante para duas linhas no card. */
+const HOUR_PX = 96;
 
 export type TimelineAppointment = Span & {
   kind: "appointment";
   id: string;
+  clientId: string;
   clientName: string;
+  /** Já formatado para exibir. */
+  clientPhone: string;
   serviceName: string;
   price: string;
   status: Status;
@@ -97,19 +100,35 @@ function EventBlock({ event, date, style }: { event: TimelineAppointment | Timel
   let detail: ReactNode;
   if (event.kind === "appointment") {
     const chip = CHIP[event.status];
+    // Cabe tanto quanto a altura deixa: 15 min = uma linha; 30 min = duas; 45 min ou mais = três
+    const lines = style.height >= 64 ? 3 : style.height >= 40 ? 2 : 1;
+    const when = `${time} · ${duration(event)}`;
+    const price = <span className="shrink-0 text-xs font-bold tabular-nums text-primary-text">{event.price}</span>;
     face = (
       <>
-        <span className="absolute inset-y-2.5 left-0 w-1 rounded-r bg-primary" aria-hidden="true" />
+        <span className="absolute inset-y-2 left-0 w-1 rounded-r bg-primary" aria-hidden="true" />
         <span className="flex items-center justify-between gap-2">
-          <b className="truncate text-sm">{event.clientName}</b>
-          {tall ? <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${chip.className}`}>{chip.label}</span> : <span className="shrink-0 text-[11px] font-bold tabular-nums text-muted">{hhmm(event.start)}</span>}
+          <b className="truncate text-sm leading-5">{event.clientName}</b>
+          {lines > 1 ? (
+            <span className={`shrink-0 rounded-full px-2 text-[11px] font-bold leading-[18px] ${chip.className}`}>{chip.label}</span>
+          ) : (
+            <span className="shrink-0 text-[11px] font-bold tabular-nums text-muted">{hhmm(event.start)}</span>
+          )}
         </span>
-        {tall ? (
+        {lines === 2 ? (
+          <span className="flex items-center justify-between gap-2 text-xs font-semibold leading-4">
+            <span className="truncate text-muted">
+              {event.serviceName} · <span className="tabular-nums">{when}</span>
+            </span>
+            {price}
+          </span>
+        ) : null}
+        {lines === 3 ? (
           <>
-            <span className="truncate text-xs font-semibold text-muted">{event.serviceName}</span>
-            <span className="flex justify-between text-[11px] font-bold tabular-nums">
-              <span className="text-muted">{time}</span>
-              <span className="text-xs text-primary-text">{event.price}</span>
+            <span className="truncate text-xs font-semibold leading-4 text-muted">{event.serviceName}</span>
+            <span className="flex items-center justify-between gap-2 text-xs font-semibold leading-4">
+              <span className="truncate tabular-nums text-muted">{when}</span>
+              {price}
             </span>
           </>
         ) : null}
@@ -117,9 +136,12 @@ function EventBlock({ event, date, style }: { event: TimelineAppointment | Timel
     );
     detail = (
       <AppointmentCard
+        inSheet
         id={event.id}
         time={hhmm(event.start)}
+        clientId={event.clientId}
         clientName={event.clientName}
+        clientPhone={event.clientPhone}
         serviceName={event.serviceName}
         price={event.price}
         status={event.status}

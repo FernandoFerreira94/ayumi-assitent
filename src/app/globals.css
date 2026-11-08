@@ -13,6 +13,12 @@
   --on-primary: #ffffff;
   --soft: #eee9ff;
   --accent: #ff8fb1;
+  /* Cor do nome "mimo" (wordmark) */
+  --brand: #e5547f;
+  /* Folha de mensagem no estilo da conversa do WhatsApp */
+  --chat-bg: #efeae2;
+  --chat-out: #d9fdd3;
+  --chat-send: #00a884;
   --ok: #1c6b48;
   --ok-bg: #ddf3e7;
   --wait: #8a5a00;
@@ -45,6 +51,10 @@
   --color-on-primary: var(--on-primary);
   --color-soft: var(--soft);
   --color-accent: var(--accent);
+  --color-brand: var(--brand);
+  --color-chat-bg: var(--chat-bg);
+  --color-chat-out: var(--chat-out);
+  --color-chat-send: var(--chat-send);
   --color-ok: var(--ok);
   --color-ok-bg: var(--ok-bg);
   --color-wait: var(--wait);
@@ -52,6 +62,7 @@
   --color-fail: var(--fail);
   --color-fail-bg: var(--fail-bg);
   --font-sans: var(--font-quicksand), ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  --font-brand: var(--font-varela), var(--font-sans);
 }
 
 html,
@@ -880,35 +891,6 @@ button {
   to {
     opacity: 0;
     transform: translateY(-120px) scale(1.3);
-  }
-}
-.login-react-tag {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  translate: -50% 0;
-  pointer-events: none;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface);
-  padding: 3px 9px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--primary-text);
-  animation: login-tag 1.3s ease forwards;
-}
-@keyframes login-tag {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  15%,
-  75% {
-    opacity: 1;
-    transform: none;
-  }
-  to {
-    opacity: 0;
   }
 }
 /* Trocar entre início, e-mail e cadastro: só a parte de baixo desliza */

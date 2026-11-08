@@ -4,7 +4,9 @@ import { connection } from "next/server";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
+import { AgendaRefresh } from "@/features/appointments/AgendaRefresh";
 import { dayBriefing } from "@/features/appointments/briefing";
+import { dayVersion } from "@/features/appointments/version";
 import { forecastCents, listDay, receivedCents } from "@/features/appointments/core";
 import { DayBubble } from "@/features/appointments/DayBubble";
 import { DayStrip } from "@/features/appointments/DayStrip";
@@ -19,6 +21,7 @@ import { bookingOptions } from "@/features/appointments/options";
 import { searchClients } from "@/features/clients/core";
 import { listServices } from "@/features/services/core";
 import { dayRange, formatBRL, formatMonthYear, greeting, isDateStr, todayStr } from "@/lib/dates";
+import { maskPhone } from "@/lib/phone";
 import { requireTenant } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Agenda" };
@@ -38,6 +41,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
     services: await listServices(tx),
   }));
 
+  const version = dayVersion(rows, dayBlocks);
   const day = week[weekdayOf(date)];
   const forecast = forecastCents(rows);
   const received = receivedCents(rows);
@@ -47,7 +51,9 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
       kind: "appointment" as const,
       ...span(r.startsAt, r.endsAt),
       id: r.id,
+      clientId: r.clientId,
       clientName: r.clientName,
+      clientPhone: maskPhone(r.clientPhone.replace(/^\+55/, "")),
       serviceName: r.serviceName,
       price: formatBRL(r.priceCents),
       status: r.status,
@@ -57,6 +63,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
 
   return (
     <PageShell title={greeting(new Date(), userName)}>
+      <AgendaRefresh key={version} date={date} version={version} />
       <DayBubble briefing={dayBriefing(rows, new Date(), date === today)} />
       <div className="mb-2 flex min-h-11 items-center justify-between gap-3 px-1">
         <p className="flex items-center gap-1.5 text-sm font-bold text-primary-text">
