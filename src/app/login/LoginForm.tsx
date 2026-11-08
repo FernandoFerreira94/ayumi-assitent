@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Mascot, type MascotMood } from "@/components/brand/Mascot";
+import { Wordmark } from "@/components/brand/Wordmark";
 import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import { InstallGuide } from "@/features/install/InstallGuide";
@@ -254,7 +255,9 @@ export function LoginForm() {
             </span>
           ) : null}
         </div>
-        <h1 className="font-brand mt-1 text-[2.25rem] leading-none text-brand">mimo</h1>
+        <h1 className="mt-1 text-[2.25rem]" aria-label="mimo">
+          <Wordmark />
+        </h1>
         <h2 className="mt-1.5 text-xl font-bold">{HEAD[view][0]}</h2>
         <p className="text-sm font-semibold text-muted">{HEAD[view][1]}</p>
       </div>

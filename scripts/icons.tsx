@@ -2,10 +2,11 @@
  * Gera os ícones do app (aba do navegador, tela de início do iPhone e do Android) a partir da Bolha do código.
  * A Bolha ainda é provisória: quando a peça final chegar, basta rodar `pnpm icons` de novo.
  */
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { chromium } from "@playwright/test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Mascot } from "../src/components/brand/Mascot";
+import { STARTUP_IMAGES } from "../src/lib/startup-images";
 
 const BG = "linear-gradient(160deg, #F4F0FF 0%, #E3DAFF 100%)";
 
@@ -33,6 +34,14 @@ async function main() {
     );
     await writeFile(out, await page.screenshot({ omitBackground: !bg }));
     console.log(`${out} (${size}px)`);
+  }
+  // Abertura do PWA no iPhone: lavanda lisa, o primeiro quadro do splash
+  await mkdir("public/splash", { recursive: true });
+  for (const { url, width, height } of STARTUP_IMAGES) {
+    await page.setViewportSize({ width, height });
+    await page.setContent(`<style>html,body{margin:0;background:#6D4AFF}</style>`);
+    await writeFile(`public${url}`, await page.screenshot());
+    console.log(`public${url}`);
   }
   await browser.close();
 }
