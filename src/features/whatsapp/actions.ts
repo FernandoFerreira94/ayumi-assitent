@@ -11,7 +11,9 @@ import { currentState, startPairing } from "./core";
 
 /** Registra o motivo técnico (sem segredos) para o erro genérico mostrado à usuária ser diagnosticável. */
 function logWaError(action: string, e: unknown) {
-  console.error(JSON.stringify({ level: "error", msg: "whatsapp_failed", action, err: e instanceof Error ? e.message : String(e) }));
+  console.error(
+    JSON.stringify({ level: "error", msg: "whatsapp_failed", action, err: e instanceof Error ? e.message : String(e) }),
+  );
 }
 
 async function tenantInstance(tenantId: string): Promise<string | null> {
@@ -31,7 +33,9 @@ export async function whatsappStatus(): Promise<ActionResult<{ state: WaState }>
   }
 }
 
-export async function startWhatsappPairing(phone: string): Promise<ActionResult<{ pairingCode: string }>> {
+export async function startWhatsappPairing(
+  phone: string,
+): Promise<ActionResult<{ pairingCode: string; qr: string | null }>> {
   const { tenantId } = await requireTenant();
   const admin = adminFromEnv();
   if (!admin) return fail("WHATSAPP_UNAVAILABLE");
@@ -39,7 +43,7 @@ export async function startWhatsappPairing(phone: string): Promise<ActionResult<
     const r = await startPairing(admin, tenantId, String(phone ?? ""));
     if (!r.ok) return fail("VALIDATION", "phone");
     await getDb().update(tenants).set({ whatsappInstance: r.instance }).where(eq(tenants.id, tenantId));
-    return ok({ pairingCode: r.pairingCode });
+    return ok({ pairingCode: r.pairingCode, qr: r.qr });
   } catch (e) {
     logWaError("pairing", e);
     return fail(e instanceof WhatsAppAdminError ? "WHATSAPP_UNAVAILABLE" : "UNKNOWN");
