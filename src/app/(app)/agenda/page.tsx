@@ -11,6 +11,7 @@ import { forecastCents, listDay, receivedCents } from "@/features/appointments/c
 import { DayBubble } from "@/features/appointments/DayBubble";
 import { DayStrip } from "@/features/appointments/DayStrip";
 import { DayTimeline } from "@/features/appointments/DayTimeline";
+import { MonthPicker } from "@/features/appointments/MonthPicker";
 import { freeGaps, minuteOf, timelineWindow } from "@/features/appointments/timeline";
 import { listBlocks } from "@/features/blocks/core";
 import { getHours } from "@/features/hours/core";
@@ -20,7 +21,7 @@ import { NewAppointmentSheet } from "@/features/appointments/NewAppointmentSheet
 import { bookingOptions } from "@/features/appointments/options";
 import { searchClients } from "@/features/clients/core";
 import { listServices } from "@/features/services/core";
-import { dayRange, formatBRL, formatDayTitle, formatMonthYear, greeting, isDateStr, todayStr } from "@/lib/dates";
+import { dayRange, formatBRL, formatDayTitle, greeting, isDateStr, todayStr } from "@/lib/dates";
 import { maskPhone } from "@/lib/phone";
 import { requireTenant } from "@/lib/tenant";
 
@@ -65,15 +66,9 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
   return (
     <PageShell home title={greeting(new Date(), userName)} subtitle={todayLabel.charAt(0).toUpperCase() + todayLabel.slice(1)}>
       <AgendaRefresh key={version} date={date} version={version} />
-      <DayBubble briefing={dayBriefing(rows, new Date(), date === today)} />
+      <DayBubble briefing={dayBriefing(rows, new Date(), date === today)} isToday={date === today} />
       <div className="mb-2 flex min-h-11 items-center justify-between gap-3 px-1">
-        <p className="flex items-center gap-1.5 text-sm font-bold text-primary-text">
-          <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" aria-hidden="true">
-            <rect x="3.5" y="5" width="17" height="15" rx="4.5" />
-            <path d="M8 3v3.5M16 3v3.5M3.5 10h17" />
-          </svg>
-          {formatMonthYear(date)}
-        </p>
+        <MonthPicker date={date} today={today} />
         {date !== today ? (
           <Link
             href="/agenda"
@@ -90,10 +85,11 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
 
       <div data-tour="money" className="glass mb-4 grid gap-3 rounded-3xl px-4 py-3">
         <div className="flex items-end justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-muted">Previsto do dia</p>
+          {/* O número do dia leva ao Financeiro (semana, mês, semestre) */}
+          <Link href="/financeiro" aria-label={`Previsto do dia ${formatBRL(forecast)}. Ver financeiro`} className="-m-1 rounded-2xl p-1">
+            <p className="text-xs font-bold uppercase tracking-wide text-muted">Previsto do dia ›</p>
             <p className="text-2xl font-bold">{formatBRL(forecast)}</p>
-          </div>
+          </Link>
           <dl className="grid grid-cols-[auto_auto] gap-x-2 text-right text-xs font-bold tabular-nums">
             <dt className="text-muted">Recebido</dt>
             <dd className="text-ok">{formatBRL(received)}</dd>

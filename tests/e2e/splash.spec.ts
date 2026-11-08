@@ -12,7 +12,7 @@ test("abrir o app mostra o splash uma vez; recarregar na mesma abertura não rep
   await expect(splash).toContainText("sua agenda com carinho");
   // Não segura o toque: o login por baixo já responde
   await expect(page.getByRole("button", { name: "Entrar com Google" })).toBeEnabled();
-  await expect(splash).toHaveCount(0, { timeout: 4000 });
+  await expect(splash).toHaveCount(0, { timeout: 7000 });
 
   await page.reload();
   await expect(page.locator(".splash")).toBeHidden();

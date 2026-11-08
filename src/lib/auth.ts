@@ -22,6 +22,9 @@ export const auth = betterAuth({
       prompt: "consent",
     },
   },
+  // A agenda do estúdio pode estar num Gmail diferente do e-mail de login (Conectar em Ajustes).
+  // Ligar exige sessão aberta, então isso não abre entrada nova na conta.
+  account: { accountLinking: { allowDifferentEmails: true } },
   session: { expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24 },
   databaseHooks: {
     user: {

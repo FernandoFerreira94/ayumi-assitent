@@ -1231,8 +1231,8 @@ button {
 }
 
 /* Splash "Revelação" (prancha login/splash-login.html). Tempos em ms a partir da abertura:
-   0–800 a bolha cresce · 800–1180 vira o Mimo · 950–1470 a tela clara abre de dentro dela ·
-   1350 nome e frase · 1500–1900 pulinho · 1950–2300 some */
+   0–1400 a bolha cresce · 1400–2000 vira o Mimo · 1650–2550 a tela clara abre de dentro dela ·
+   2350 abre os olhos · 2400 nome e frase · 2700–3300 pulinho · 3850–4300 some */
 .splash {
   position: fixed;
   inset: 0;
@@ -1242,7 +1242,7 @@ button {
   overflow: hidden;
   background: var(--primary);
   pointer-events: none;
-  animation: splash-out 0.35s ease 1.95s forwards;
+  animation: splash-out 0.45s ease 3.85s forwards;
 }
 [data-splash="off"] .splash {
   display: none;
@@ -1255,15 +1255,15 @@ button {
   inset: 0;
   background: radial-gradient(120% 80% at 50% 40%, #ffffff 0%, #f1ecff 55%, #e6deff 100%);
   clip-path: circle(0% at 50% 42%);
-  animation: splash-flood 0.52s cubic-bezier(0.22, 0.8, 0.3, 1) 0.95s forwards;
+  animation: splash-flood 0.9s cubic-bezier(0.22, 0.8, 0.3, 1) 1.65s forwards;
 }
 .splash-film {
   width: min(480px, 100vw);
   transform-origin: 50% 50%;
   animation:
-    splash-film 0.8s cubic-bezier(0.22, 0.8, 0.3, 1) both,
-    splash-wobble 0.11s ease-in-out 0s 7 alternate,
-    splash-hide 0.2s ease 0.8s forwards;
+    splash-film 1.4s cubic-bezier(0.22, 0.8, 0.3, 1) both,
+    splash-wobble 0.2s ease-in-out 0s 7 alternate,
+    splash-hide 0.3s ease 1.4s forwards;
 }
 .splash-mimo {
   position: relative;
@@ -1271,8 +1271,8 @@ button {
   justify-items: center;
   opacity: 0;
   animation:
-    splash-mimo 0.38s cubic-bezier(0.34, 1.45, 0.64, 1) 0.8s forwards,
-    splash-hop 0.4s ease-in-out 1.5s;
+    splash-mimo 0.6s cubic-bezier(0.34, 1.45, 0.64, 1) 1.4s forwards,
+    splash-hop 0.6s ease-in-out 2.7s;
 }
 .splash-shadow {
   margin-top: 6px;
@@ -1286,7 +1286,7 @@ button {
   margin-bottom: max(18vh, 120px);
   opacity: 0;
   transform: translateY(8px);
-  animation: splash-word 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) 1.35s forwards;
+  animation: splash-word 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) 2.4s forwards;
 }
 @keyframes splash-film {
   from {
