@@ -3,12 +3,12 @@ import { expect, test } from "./fixtures";
 test("expediente salvo e vagas listadas com texto para copiar", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/vagas");
-  await expect(page.getByText("Cadastre um serviço")).toBeVisible();
+  await expect(page.getByText("Nenhum serviço cadastrado")).toBeVisible();
 
   await page.goto("/ajustes");
   await page.getByLabel("Nome").fill("Gel");
   await page.getByLabel("Valor (R$)").fill("100");
-  await page.getByRole("button", { name: "Adicionar serviço" }).click();
+  await page.getByRole("button", { name: "Salvar serviço" }).click();
   await expect(page.getByText("Serviço adicionado")).toBeVisible();
 
   // abre todos os dias das 06:00 às 22:00 para não depender do dia da semana de hoje

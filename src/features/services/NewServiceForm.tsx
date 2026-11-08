@@ -24,7 +24,7 @@ export function NewServiceForm() {
 
   return (
     <form ref={ref} action={action} className="grid gap-3 rounded-3xl border border-line bg-white p-4">
-      <h2 className="font-bold">Novo serviço</h2>
+      <h2 className="font-bold">Adicionar serviço</h2>
       <label className="grid gap-1 text-sm font-bold">
         Nome
         <input name="name" required autoComplete="off" className={input} aria-invalid={field === "name"} />
@@ -68,7 +68,7 @@ export function NewServiceForm() {
           ) : null}
         </label>
       </div>
-      <SubmitButton pendingLabel="Salvando…">Adicionar serviço</SubmitButton>
+      <SubmitButton pendingLabel="Salvando…">Salvar serviço</SubmitButton>
     </form>
   );
 }

@@ -4,7 +4,7 @@ test("cria serviço, cliente e agendamento; avisa conflito; cancela com desfazer
   await page.goto("/ajustes");
   await page.getByLabel("Nome").fill("Alongamento");
   await page.getByLabel("Valor (R$)").fill("150,00");
-  await page.getByRole("button", { name: "Adicionar serviço" }).click();
+  await page.getByRole("button", { name: "Salvar serviço" }).click();
   await expect(page.getByText("Serviço adicionado")).toBeVisible();
   await expect(page.getByText("60 min · R$ 150,00")).toBeVisible();
 

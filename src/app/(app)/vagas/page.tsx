@@ -39,8 +39,16 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
     return (
       <PageShell title="Vagas">
         <EmptyState
-          title="Cadastre um serviço"
-          description="Em Ajustes, adicione ao menos um serviço para ver os horários livres."
+          title="Nenhum serviço cadastrado"
+          description="Para ver os horários livres, adicione um serviço em Ajustes."
+          action={
+            <Link
+              href="/ajustes"
+              className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-bold text-on-primary"
+            >
+              Ir para Ajustes
+            </Link>
+          }
         />
       </PageShell>
     );
