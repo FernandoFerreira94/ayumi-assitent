@@ -20,6 +20,8 @@ import { requireTenant } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Agenda" };
 
+const WEEKDAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
+
 export default async function AgendaPage({ searchParams }: PageProps<"/agenda">) {
   await connection(); // "hoje" depende do relógio: renderiza a cada pedido
   const { d } = await searchParams;
@@ -55,19 +57,36 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
           </span>
         </Link>
       ) : null}
+      {date !== today ? (
+        <div className="mb-3 flex justify-end">
+          <Link
+            href="/agenda"
+            className="min-h-11 rounded-full bg-soft px-4 text-sm font-bold leading-[2.75rem] text-primary-text active:scale-[0.97]"
+          >
+            Hoje
+          </Link>
+        </div>
+      ) : null}
       <nav aria-label="Dias" className="mb-4 grid grid-cols-7 gap-1.5">
         {week.map((day) => {
           const sel = day === date;
+          const isToday = day === today;
           const num = Number(day.slice(8));
+          const weekday = WEEKDAYS[new Date(`${day}T12:00:00`).getDay()];
           return (
             <Link
               key={day}
-              href={day === today ? "/agenda" : `/agenda?d=${day}`}
+              href={isToday ? "/agenda" : `/agenda?d=${day}`}
               aria-current={sel ? "date" : undefined}
-              aria-label={formatDayTitle(day)}
-              className={`grid min-h-14 place-items-center rounded-2xl text-sm font-bold ${sel ? "bg-primary text-on-primary" : "bg-white text-text"}`}
+              aria-label={`${formatDayTitle(day)}${isToday ? " (hoje)" : ""}`}
+              className={`grid min-h-16 place-content-center justify-items-center gap-0.5 rounded-2xl text-sm font-bold ${sel ? "bg-primary text-on-primary" : "bg-white text-text"} ${isToday && !sel ? "ring-2 ring-primary" : ""}`}
             >
+              <span className={`text-[11px] ${sel ? "opacity-80" : "text-muted"}`}>{weekday}</span>
               {num}
+              <span
+                aria-hidden="true"
+                className={`size-1.5 rounded-full ${isToday ? (sel ? "bg-on-primary" : "bg-primary") : "bg-transparent"}`}
+              />
             </Link>
           );
         })}
