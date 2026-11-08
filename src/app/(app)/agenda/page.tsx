@@ -89,10 +89,11 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
 
       <div data-tour="money" className="glass mb-4 grid gap-3 rounded-3xl px-4 py-3">
         <div className="flex items-end justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-muted">Previsto do dia</p>
+          {/* O número do dia leva ao Financeiro (semana, mês, semestre) */}
+          <Link href="/financeiro" aria-label={`Previsto do dia ${formatBRL(forecast)}. Ver financeiro`} className="-m-1 rounded-2xl p-1">
+            <p className="text-xs font-bold uppercase tracking-wide text-muted">Previsto do dia ›</p>
             <p className="text-2xl font-bold">{formatBRL(forecast)}</p>
-          </div>
+          </Link>
           <dl className="grid grid-cols-[auto_auto] gap-x-2 text-right text-xs font-bold tabular-nums">
             <dt className="text-muted">Recebido</dt>
             <dd className="text-ok">{formatBRL(received)}</dd>
