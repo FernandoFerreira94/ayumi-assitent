@@ -131,7 +131,7 @@ export function AppMenu({
                     href={item.href}
                     onClick={close}
                     aria-current={active ? "page" : undefined}
-                    className="relative flex min-h-16 flex-col items-center justify-center gap-1.5 rounded-2xl border border-line bg-bg px-1 py-3 text-center text-[13px] font-semibold hover:bg-soft aria-[current=page]:bg-soft"
+                    className="relative flex min-h-16 flex-col items-center justify-center gap-1.5 rounded-2xl border border-line bg-surface px-1 py-3 text-center text-[13px] font-semibold hover:bg-soft aria-[current=page]:bg-soft"
                   >
                     {item.icon}
                     {item.label}
