@@ -20,7 +20,7 @@ import { NewAppointmentSheet } from "@/features/appointments/NewAppointmentSheet
 import { bookingOptions } from "@/features/appointments/options";
 import { searchClients } from "@/features/clients/core";
 import { listServices } from "@/features/services/core";
-import { dayRange, formatBRL, formatMonthYear, greeting, isDateStr, todayStr } from "@/lib/dates";
+import { dayRange, formatBRL, formatDayTitle, formatMonthYear, greeting, isDateStr, todayStr } from "@/lib/dates";
 import { maskPhone } from "@/lib/phone";
 import { requireTenant } from "@/lib/tenant";
 
@@ -41,6 +41,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
     services: await listServices(tx),
   }));
 
+  const todayLabel = formatDayTitle(today);
   const version = dayVersion(rows, dayBlocks);
   const day = week[weekdayOf(date)];
   const forecast = forecastCents(rows);
@@ -62,7 +63,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
   ];
 
   return (
-    <PageShell home title={greeting(new Date(), userName)}>
+    <PageShell home title={greeting(new Date(), userName)} subtitle={todayLabel.charAt(0).toUpperCase() + todayLabel.slice(1)}>
       <AgendaRefresh key={version} date={date} version={version} />
       <DayBubble briefing={dayBriefing(rows, new Date(), date === today)} />
       <div className="mb-2 flex min-h-11 items-center justify-between gap-3 px-1">

@@ -127,6 +127,50 @@ body::before {
   transform: scale(0.96);
 }
 
+/* Avatar do header: iniciais sobre o degradê lavanda → rosa da marca */
+.avatar {
+  background: linear-gradient(135deg, #8e73ff, var(--accent));
+  box-shadow: 0 0 0 2px #fff, 0 4px 12px -4px rgba(109, 74, 255, 0.6);
+}
+
+/* Menu "cartão flutuante": nasce do avatar (canto de cima à esquerda) e cresce por cima da tela */
+.app-menu {
+  position: fixed;
+  inset: max(env(safe-area-inset-top), 14px) 12px auto;
+  width: auto;
+  max-width: 496px;
+  margin: 52px auto 0;
+  padding: 0;
+  border: 1px solid #fff;
+  border-radius: 28px;
+  color: var(--fg);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  box-shadow: 0 24px 50px -20px rgba(23, 20, 43, 0.45);
+  transform-origin: 22px 0;
+  opacity: 0;
+  transform: scale(0.3);
+  transition:
+    transform 0.45s var(--spring),
+    opacity 0.3s,
+    overlay 0.45s allow-discrete,
+    display 0.45s allow-discrete;
+}
+.app-menu[open] {
+  opacity: 1;
+  transform: none;
+}
+@starting-style {
+  .app-menu[open] {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+}
+.app-menu::backdrop {
+  background: rgba(23, 20, 43, 0.22);
+}
+
 /* Folha inferior (drawers) em vidro fosco, como as sheets do iOS */
 .sheet {
   /* Quase opaca: com menos que isso o texto do dashboard aparece por trás do formulário */
@@ -1079,6 +1123,7 @@ button {
   .fab,
   .btn-tint,
   .btn-glass,
+  .app-menu,
   .tour-hole,
   .tour-card,
   .tour-hint {
