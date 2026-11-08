@@ -15,7 +15,7 @@ export function DayBubble({ briefing }: { briefing: Briefing }) {
       <button
         type="button"
         data-tour="bubble"
-        aria-label={briefing.lines.length > 1 ? "Ver mais sobre o dia" : "Bolha"}
+        aria-label={briefing.lines.length > 1 ? "Ver mais sobre o dia" : "Mimo"}
         onClick={() => {
           setI((n) => n + 1);
           setHop((n) => n + 1);

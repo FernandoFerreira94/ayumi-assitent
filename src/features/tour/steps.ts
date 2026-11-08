@@ -11,7 +11,7 @@ export type TourStep = {
 
 export const TOUR_STEPS: TourStep[] = [
   {
-    title: "Oi, eu sou a Bolha!",
+    title: "Oi, eu sou o Mimo!",
     text: "Vou te mostrar o principal do app em menos de um minuto.",
     advance: "next",
   },
