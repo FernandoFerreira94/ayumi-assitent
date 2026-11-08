@@ -67,7 +67,8 @@ test.describe("login por e-mail e senha", () => {
     await expect(page.getByText("E-mail ou senha incorretos.")).toBeVisible();
     // o Mimo reage ao toque e não atrapalha o formulário
     await page.getByRole("button", { name: "Mimo, toque para brincar" }).click();
-    await expect(page.getByText("Pulinho")).toBeVisible();
+    // Só a animação: nenhuma legenda dizendo o que ele está fazendo
+    await expect(page.getByText("Pulinho")).toHaveCount(0);
 
     await page.getByLabel("Senha", { exact: true }).fill("senha-segura-123");
     await page.getByRole("button", { name: "Entrar", exact: true }).click();
