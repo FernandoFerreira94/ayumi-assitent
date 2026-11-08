@@ -8,7 +8,7 @@ import { requireTenant } from "@/lib/tenant";
 import { syncAppointmentSafe } from "@/features/google/server";
 import type { SyncResult } from "@/features/google/sync";
 import { searchClients } from "@/features/clients/core";
-import { listServices } from "@/features/services/core";
+import { listBookable } from "@/features/services/core";
 import { listBlocks } from "@/features/blocks/core";
 import { dayRange, isDateStr } from "@/lib/dates";
 import { insertAppointment, listDay, setStatus } from "./core";
@@ -20,7 +20,7 @@ import { appointmentInput, STATUSES } from "./schema";
 export async function loadBookingOptions(): Promise<ActionResult<BookingOptions>> {
   const { tenantId } = await requireTenant();
   try {
-    const [clients, services] = await withTenant(tenantId, async (tx) => [await searchClients(tx, ""), await listServices(tx)] as const);
+    const [clients, services] = await withTenant(tenantId, async (tx) => [await searchClients(tx, ""), await listBookable(tx)] as const);
     return ok(bookingOptions(clients, services));
   } catch {
     return fail("UNKNOWN");

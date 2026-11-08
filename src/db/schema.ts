@@ -36,15 +36,34 @@ export const clients = pgTable(
   (t) => [unique().on(t.tenantId, t.phoneE164)],
 );
 
-export const services = pgTable("services", {
+export const serviceCategories = pgTable("service_categories", {
   id: uuid("id").primaryKey().defaultRandom(),
   tenantId: uuid("tenant_id")
     .notNull()
     .references(() => tenants.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  position: integer("position").notNull().default(0),
+});
+
+export const services = pgTable("services", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  categoryId: uuid("category_id").references(() => serviceCategories.id, { onDelete: "restrict" }),
+  name: text("name").notNull(),
   durationMin: integer("duration_min").notNull(),
   priceCents: integer("price_cents").notNull(),
+  /** false = excluído (arquivado: o histórico ainda aponta para ele) */
   active: boolean("active").notNull().default(true),
+  position: integer("position").notNull().default(0),
+  color: text("color").notNull().default("lav"),
+  bufferMin: integer("buffer_min").notNull().default(0),
+  priceFrom: boolean("price_from").notNull().default(false),
+  /** false = pausado: some do novo agendamento, os marcados continuam */
+  bookable: boolean("bookable").notNull().default(true),
+  showInSlots: boolean("show_in_slots").notNull().default(true),
+  notes: text("notes"),
 });
 
 export const appointmentStatus = pgEnum("appointment_status", [
@@ -70,6 +89,9 @@ export const appointments = pgTable(
       .references(() => services.id),
     startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
     endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+    bufferMin: integer("buffer_min").notNull().default(0),
+    /** ends_at + intervalo; quem calcula é o trigger do banco (o default aqui só deixa o insert omitir) */
+    blockedUntil: timestamp("blocked_until", { withTimezone: true }).notNull().defaultNow(),
     priceCents: integer("price_cents").notNull(),
     status: appointmentStatus("status").notNull().default("pending_confirmation"),
     googleEventId: text("google_event_id"),

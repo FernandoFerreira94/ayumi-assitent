@@ -19,7 +19,7 @@ import { NewBlockSheet } from "@/features/blocks/NewBlockSheet";
 import { NewAppointmentSheet } from "@/features/appointments/NewAppointmentSheet";
 import { bookingOptions } from "@/features/appointments/options";
 import { searchClients } from "@/features/clients/core";
-import { listServices } from "@/features/services/core";
+import { listBookable } from "@/features/services/core";
 import { dayRange, formatBRL, formatMonthYear, greeting, isDateStr, todayStr } from "@/lib/dates";
 import { maskPhone } from "@/lib/phone";
 import { requireTenant } from "@/lib/tenant";
@@ -38,7 +38,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
     dayBlocks: await listBlocks(tx, dayRange(date)),
     rows: await listDay(tx, dayRange(date)),
     clients: await searchClients(tx, ""),
-    services: await listServices(tx),
+    services: await listBookable(tx),
   }));
 
   const version = dayVersion(rows, dayBlocks);

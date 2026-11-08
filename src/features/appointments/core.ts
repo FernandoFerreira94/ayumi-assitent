@@ -18,11 +18,14 @@ export async function insertAppointment(
 ): Promise<ActionResult<{ id: string }>> {
   const [svc] = await tx.select().from(services).where(eq(services.id, input.serviceId));
   const [cli] = await tx.select({ id: clients.id }).from(clients).where(eq(clients.id, input.clientId));
-  if (!svc || !cli) return fail("VALIDATION", svc ? "clientId" : "serviceId");
+  // pausado ou excluído não entra em agendamento novo
+  if (!svc || !svc.active || !svc.bookable) return fail("VALIDATION", "serviceId");
+  if (!cli) return fail("VALIDATION", "clientId");
   const startsAt = toInstant(input.date, input.time);
   const endsAt = new Date(startsAt.getTime() + svc.durationMin * 60_000);
   await lockTenant(tx, tenantId);
-  if (await overlapsBlock(tx, startsAt, endsAt)) return fail("SLOT_TAKEN", "time");
+  const blockedUntil = new Date(endsAt.getTime() + svc.bufferMin * 60_000);
+  if (await overlapsBlock(tx, startsAt, blockedUntil)) return fail("SLOT_TAKEN", "time");
   try {
     const row = await tx.transaction(async (sp) => {
       const [r] = await sp
@@ -33,6 +36,7 @@ export async function insertAppointment(
           serviceId: svc.id,
           startsAt,
           endsAt,
+          bufferMin: svc.bufferMin,
           priceCents: svc.priceCents,
           status: "confirmed",
         })
@@ -65,6 +69,7 @@ export function listDay(tx: Tx, [from, to]: [Date, Date]) {
       id: appointments.id,
       startsAt: appointments.startsAt,
       endsAt: appointments.endsAt,
+      blockedUntil: appointments.blockedUntil,
       priceCents: appointments.priceCents,
       status: appointments.status,
       clientId: clients.id,
