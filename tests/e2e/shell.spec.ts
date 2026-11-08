@@ -35,6 +35,16 @@ test("as 4 abas navegam e marcam a aba atual", async ({ page }) => {
   }
 });
 
+test("fora da agenda, a seta volta para ela", async ({ page }) => {
+  await page.goto("/agenda");
+  await expect(page.getByRole("link", { name: "Voltar para a agenda" })).toHaveCount(0);
+  for (const t of TABS.slice(1)) {
+    await page.goto(t.href);
+    await page.getByRole("link", { name: "Voltar para a agenda" }).click();
+    await expect(page).toHaveURL(/\/agenda$/);
+  }
+});
+
 test("alvos de toque do nav têm pelo menos 44 px", async ({ page }) => {
   // Sem animação: o leque abre com scale e mediria o botão no meio da transição
   await page.emulateMedia({ reducedMotion: "reduce" });

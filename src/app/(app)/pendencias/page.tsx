@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { connection } from "next/server";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { PageShell } from "@/components/ui/PageShell";
@@ -39,9 +38,6 @@ export default async function PendenciasPage() {
 
   return (
     <PageShell title="Pendências" subtitle={countPendencias(p) ? `${countPendencias(p)} para resolver` : undefined}>
-      <Link href="/agenda" className="mb-3 inline-block min-h-11 py-2.5 text-sm font-bold text-primary-text">
-        ← Voltar para a agenda
-      </Link>
       {countPendencias(p) === 0 ? (
         <EmptyState
           title="Tudo em dia"
