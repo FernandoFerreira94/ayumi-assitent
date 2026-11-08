@@ -19,6 +19,10 @@ export const tenants = pgTable("tenants", {
   whatsappInstance: text("whatsapp_instance").unique(),
   address: text("address"),
   instagram: text("instagram"),
+  /** Um dos BUSINESS_TYPES de features/salon/schema */
+  businessType: text("business_type"),
+  /** Texto do lembrete; null = o padrão do app */
+  reminderTemplate: text("reminder_template"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -74,6 +78,7 @@ export const appointmentStatus = pgEnum("appointment_status", [
   "cancelled",
   "done",
   "no_show",
+  "reschedule_requested",
 ]);
 
 export const appointments = pgTable(
@@ -98,6 +103,8 @@ export const appointments = pgTable(
     status: appointmentStatus("status").notNull().default("pending_confirmation"),
     googleEventId: text("google_event_id"),
     reminderSentAt: timestamp("reminder_sent_at", { withTimezone: true }),
+    /** Quando a cliente respondeu ao lembrete; só a primeira resposta muda o status */
+    replyAt: timestamp("reply_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("appointments_tenant_start").on(t.tenantId, t.startsAt)],
@@ -137,3 +144,30 @@ export const pushSubscriptions = pgTable("push_subscriptions", {
   auth: text("auth").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** Conversa com a cliente pelo WhatsApp: o que o app mandou e o que chegou pelo webhook. */
+export const messages = pgTable(
+  "messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    appointmentId: uuid("appointment_id").references(() => appointments.id, { onDelete: "set null" }),
+    /** "out" | "in" */
+    direction: text("direction").notNull(),
+    /** MessageKind de features/messaging/store */
+    kind: text("kind").notNull(),
+    body: text("body").notNull(),
+    /** Intent de features/messaging/replies (resposta 1/2/3 ao lembrete) */
+    intent: text("intent"),
+    /** Id da mensagem no WhatsApp: barra o webhook repetido e o eco do próprio envio */
+    externalId: text("external_id"),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique().on(t.tenantId, t.externalId), index("messages_client_created").on(t.clientId, t.createdAt)],
+);

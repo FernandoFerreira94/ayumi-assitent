@@ -4,12 +4,14 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb, withTenant } from "@/db/client";
 import { clients, tenants } from "@/db/schema";
-import { fail, type ActionResult } from "@/lib/errors";
+import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
 import { messagingForInstance } from "./evolution";
 import { MAX_MESSAGE, sendDirect } from "./send";
+import { listConversation, markRead, recordMessage, type ConversationMessage } from "./store";
 
 const input = z.object({ clientId: z.string().uuid(), text: z.string().trim().min(1).max(MAX_MESSAGE) });
+const clientIdOnly = z.string().uuid();
 
 /**
  * Mensagem da dona para uma cliente, pelo WhatsApp do salão. O número vem do banco (da cliente
@@ -28,8 +30,32 @@ export async function sendClientMessage(clientId: string, text: string): Promise
     // Mesma regra dos lembretes: sem instância própria, usa a do ambiente
     const instance = t?.i ?? process.env.EVOLUTION_INSTANCE;
     const res = await sendDirect(instance ? messagingForInstance(instance) : null, cli.phone, p.data.text);
-    if (!res.ok) console.error(JSON.stringify({ level: "error", msg: "client_message_failed", code: res.code }));
-    return res;
+    if (!res.ok) {
+      console.error(JSON.stringify({ level: "error", msg: "client_message_failed", code: res.code }));
+      return res;
+    }
+    // Já saiu: falha ao gravar não pode virar "não enviada" (ela tentaria de novo e a cliente receberia duas)
+    await withTenant(tenantId, (tx) =>
+      recordMessage(tx, tenantId, { clientId: p.data.clientId, direction: "out", kind: "manual", body: p.data.text, externalId: res.data.id }),
+    ).catch((e) => console.error(JSON.stringify({ level: "warn", msg: "client_message_record_failed", err: String(e) })));
+    return ok();
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+/** Conversa com a cliente para a folha; abrir marca as recebidas como lidas (somem do sino). */
+export async function loadConversation(clientId: string): Promise<ActionResult<ConversationMessage[]>> {
+  const { tenantId } = await requireTenant();
+  const id = clientIdOnly.safeParse(clientId);
+  if (!id.success) return fail("VALIDATION");
+  try {
+    return ok(
+      await withTenant(tenantId, async (tx) => {
+        await markRead(tx, id.data);
+        return listConversation(tx, id.data);
+      }),
+    );
   } catch {
     return fail("UNKNOWN");
   }

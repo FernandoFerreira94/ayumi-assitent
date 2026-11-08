@@ -7,8 +7,15 @@ const port = (impl: MessagingPort["sendText"]): MessagingPort => ({ sendText: im
 describe("mensagem avulsa para a cliente", () => {
   it("envia para o número da cliente com o texto digitado", async () => {
     const sent: [string, string][] = [];
-    const res = await sendDirect(port(async (to, text) => void sent.push([to, text])), "+5511987654321", "Oi, Maria!");
-    expect(res).toEqual({ ok: true, data: undefined });
+    const res = await sendDirect(
+      port(async (to, text) => {
+        sent.push([to, text]);
+        return { id: "W1" };
+      }),
+      "+5511987654321",
+      "Oi, Maria!",
+    );
+    expect(res).toEqual({ ok: true, data: { id: "W1" } });
     expect(sent).toEqual([["+5511987654321", "Oi, Maria!"]]);
   });
   it("sem WhatsApp configurado ou desconectado pede reconectar", async () => {

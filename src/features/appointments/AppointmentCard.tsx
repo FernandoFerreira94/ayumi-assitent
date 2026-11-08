@@ -6,15 +6,20 @@ import type { SyncResult } from "@/features/google/sync";
 import { CHAT_BUTTON, ChatGlyph, ChatSheet } from "@/features/messaging/ChatSheet";
 import type { ActionResult } from "@/lib/errors";
 import { updateStatus } from "./actions";
+import { EditAppointmentSheet } from "./EditAppointmentSheet";
 import { warnSync } from "./sync-warning";
 import type { Status } from "./schema";
 
 type Props = {
   id: string;
   time: string;
+  /** Dia (AAAA-MM-DD) e horário (HH:MM) do atendimento, para a folha de reagendar começar preenchida. */
+  date: string;
+  start: string;
   clientId: string;
   clientName: string;
   clientPhone: string;
+  serviceId: string;
   serviceName: string;
   price: string;
   status: Status;
@@ -28,9 +33,10 @@ const LABEL: Record<Status, string> = {
   cancelled: "Cancelado",
   done: "Concluído",
   no_show: "Faltou",
+  reschedule_requested: "Quer remarcar",
 };
 
-export function AppointmentCard({ id, time, clientId, clientName, clientPhone, serviceName, price, status, inSheet = false }: Props) {
+export function AppointmentCard({ id, time, date, start: startHHMM, clientId, clientName, clientPhone, serviceId, serviceName, price, status, inSheet = false }: Props) {
   const [pending, start] = useTransition();
   const [busy, setBusy] = useState<Status | null>(null);
   // Cancelar pede um segundo toque: o primeiro só troca o texto do botão
@@ -66,9 +72,14 @@ export function AppointmentCard({ id, time, clientId, clientName, clientPhone, s
       <p className="text-sm font-semibold text-muted">
         {serviceName} · {LABEL[status]}
       </p>
-      {status === "pending_confirmation" || status === "confirmed" ? (
+      {status === "reschedule_requested" ? (
+        <p className="rounded-xl bg-wait-bg px-3 py-2 text-sm font-semibold text-wait">
+          Ela pediu para remarcar. Combine pela conversa; se ficar neste horário, toque em Confirmar.
+        </p>
+      ) : null}
+      {status === "pending_confirmation" || status === "confirmed" || status === "reschedule_requested" ? (
         <div className="flex flex-wrap gap-2">
-          {status === "pending_confirmation" ? (
+          {status !== "confirmed" ? (
             <button
               type="button"
               disabled={pending}
@@ -95,6 +106,16 @@ export function AppointmentCard({ id, time, clientId, clientName, clientPhone, s
           >
             {busy === "no_show" ? "Salvando…" : "Faltou"}
           </button>
+          <EditAppointmentSheet
+            id={id}
+            clientName={clientName}
+            serviceId={serviceId}
+            serviceName={serviceName}
+            date={date}
+            start={startHHMM}
+            nested={inSheet}
+            triggerClassName={`${btn} ${status === "reschedule_requested" ? "btn-tint" : "btn-glass"}`}
+          />
           <button
             type="button"
             disabled={pending}
