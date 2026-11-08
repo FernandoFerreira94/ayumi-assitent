@@ -4,7 +4,9 @@ import { connection } from "next/server";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
+import { AgendaRefresh } from "@/features/appointments/AgendaRefresh";
 import { dayBriefing } from "@/features/appointments/briefing";
+import { dayVersion } from "@/features/appointments/version";
 import { forecastCents, listDay, receivedCents } from "@/features/appointments/core";
 import { DayBubble } from "@/features/appointments/DayBubble";
 import { DayStrip } from "@/features/appointments/DayStrip";
@@ -38,6 +40,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
     services: await listServices(tx),
   }));
 
+  const version = dayVersion(rows, dayBlocks);
   const day = week[weekdayOf(date)];
   const forecast = forecastCents(rows);
   const received = receivedCents(rows);
@@ -57,6 +60,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
 
   return (
     <PageShell title={greeting(new Date(), userName)}>
+      <AgendaRefresh key={version} date={date} version={version} />
       <DayBubble briefing={dayBriefing(rows, new Date(), date === today)} />
       <div className="mb-2 flex min-h-11 items-center justify-between gap-3 px-1">
         <p className="flex items-center gap-1.5 text-sm font-bold text-primary-text">
