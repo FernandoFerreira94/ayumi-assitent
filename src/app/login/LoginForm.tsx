@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Mascot, type MascotMood } from "@/components/brand/Mascot";
 import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import { authClient } from "@/lib/auth-client";
@@ -18,16 +19,89 @@ export function authErrorText(code: string | null | undefined): string | null {
   return "Não foi possível entrar. Tente de novo.";
 }
 
+type View = "start" | "email" | "signup";
+const HEAD: Record<View, [string, string]> = {
+  start: ["Que bom te ver!", "Entre para abrir sua agenda."],
+  email: ["Entrar com e-mail", "Use o e-mail e a senha da sua conta."],
+  signup: ["Criar sua conta", "Leva menos de 1 minuto."],
+};
+
+/** Cada toque na Bolha é a próxima reação desta lista, em ordem. */
+const REACTIONS = [
+  ["pulo", "Pulinho"],
+  ["gelatina", "Gelatina"],
+  ["piscadinha", "Piscadinha"],
+  ["coracoes", "Corações"],
+  ["bolhinhas", "Bolhinhas"],
+  ["rodopio", "Rodopio"],
+] as const;
+const REACT_MS = 1300;
+/** Quanto tempo a Bolha fica preocupada depois de um erro. */
+const WORRY_MS = 2200;
+
 const input =
-  "min-h-13 w-full rounded-2xl border px-4 text-base font-semibold";
+  "min-h-13 w-full rounded-2xl border-[1.5px] border-line bg-surface px-4 text-base font-semibold transition-[border-color,box-shadow] focus:border-primary focus:shadow-[0_0_0_4px_var(--soft)] focus:outline-none aria-invalid:border-fail";
+
+function passwordStrength(v: string) {
+  let s = 0;
+  if (v.length >= 8) s++;
+  if (/[A-Z]/.test(v) && /[a-z]/.test(v)) s++;
+  if (/\d/.test(v)) s++;
+  if (/[^A-Za-z0-9]/.test(v)) s++;
+  if (!v) return { pct: 0, label: "Força da senha", color: "var(--line)" };
+  if (s >= 3) return { pct: s * 25, label: "Senha forte", color: "var(--ok)" };
+  if (s === 2) return { pct: 50, label: "Senha razoável", color: "var(--wait)" };
+  return { pct: 25, label: "Senha fraca", color: "var(--fail)" };
+}
 
 export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const [mode, setMode] = useState<"entrar" | "criar">("entrar");
+  const [view, setView] = useState<View>("start");
   const [pendingGoogle, setPendingGoogle] = useState(false);
   const [pendingEmail, setPendingEmail] = useState(false);
   const [error, setError] = useState<string | null>(authErrorText(params.get("error")));
+  const [worriedAt, setWorriedAt] = useState(0);
+  const [success, setSuccess] = useState(false);
+  // O que a Bolha acompanha: o campo em foco, o tamanho do texto digitado e se a senha está à mostra
+  const [focus, setFocus] = useState<"text" | "password" | null>(null);
+  const [typed, setTyped] = useState(0);
+  const [showPass, setShowPass] = useState(false);
+  const [strength, setStrength] = useState(passwordStrength(""));
+  const [reaction, setReaction] = useState<{ n: number; k: (typeof REACTIONS)[number][0] } | null>(null);
+  const taps = useRef(0);
+
+  useEffect(() => {
+    if (!reaction) return;
+    const id = setTimeout(() => setReaction(null), REACT_MS);
+    return () => clearTimeout(id);
+  }, [reaction]);
+  useEffect(() => {
+    if (!worriedAt) return;
+    const id = setTimeout(() => setWorriedAt(0), WORRY_MS);
+    return () => clearTimeout(id);
+  }, [worriedAt]);
+
+  const busy = pendingGoogle || pendingEmail;
+
+  function go(next: View) {
+    setView(next);
+    setError(null);
+    setFocus(null);
+    setShowPass(false);
+    setStrength(passwordStrength(""));
+  }
+
+  function fail(text: string | null) {
+    setError(text);
+    setWorriedAt(Date.now());
+  }
+
+  function tapMascot() {
+    if (busy) return;
+    const [k] = REACTIONS[taps.current++ % REACTIONS.length];
+    setReaction({ n: taps.current, k });
+  }
 
   async function google() {
     setPendingGoogle(true);
@@ -38,7 +112,7 @@ export function LoginForm() {
       errorCallbackURL: "/login",
     });
     if (res?.error) {
-      setError(authErrorText(res.error.message) ?? ERROR_MESSAGES.NETWORK);
+      fail(authErrorText(res.error.message) ?? ERROR_MESSAGES.NETWORK);
       setPendingGoogle(false);
     }
     // Sem erro: o navegador segue para o Google; o botão continua em carregamento.
@@ -50,90 +124,211 @@ export function LoginForm() {
     const email = String(fd.get("email") ?? "").trim();
     const password = String(fd.get("password") ?? "");
     const name = String(fd.get("name") ?? "").trim();
+    if (view === "signup" && name.length < 2) return fail("Digite seu nome.");
+    if (!/^\S+@\S+\.\S+$/.test(email)) return fail("Digite um e-mail válido, como voce@salao.com.br.");
+    if (!password) return fail("Digite sua senha.");
+    if (view === "signup" && password.length < 8) return fail("A senha precisa ter pelo menos 8 caracteres.");
+    (document.activeElement as HTMLElement | null)?.blur();
     setPendingEmail(true);
     setError(null);
     try {
       const res =
-        mode === "criar"
-          ? await authClient.signUp.email({ name: name || email.split("@")[0], email, password })
+        view === "signup"
+          ? await authClient.signUp.email({ name, email, password })
           : await authClient.signIn.email({ email, password });
-      if (res.error) {
-        setError(authErrorText(res.error.code ?? res.error.message));
-        return;
-      }
-      notify.success(mode === "criar" ? "Conta criada" : "Bem-vinda de volta");
+      if (res.error) return fail(authErrorText(res.error.code ?? res.error.message));
+      setSuccess(true);
+      notify.success(view === "signup" ? `Bem-vinda, ${name.split(" ")[0]}! Conta criada` : "Pronto! Abrindo sua agenda");
       router.replace("/agenda");
       router.refresh();
     } catch {
-      setError(ERROR_MESSAGES.NETWORK);
+      fail(ERROR_MESSAGES.NETWORK);
     } finally {
       setPendingEmail(false);
     }
   }
 
-  const busy = pendingGoogle || pendingEmail;
+  const worried = worriedAt > 0;
+  let mood: MascotMood = "neutral";
+  if (busy) mood = "thinking";
+  else if (success) mood = "happy";
+  else if (worried) mood = "worried";
+  else if (focus === "password") mood = showPass ? "peek" : "shy";
+  else if (reaction) mood = reaction.k === "piscadinha" ? "wink" : "happy";
+  const look: [number, number] = focus === "text" ? [-12 + Math.min(typed, 28) * 0.9, 12] : [0, 0];
+  const motion = success ? "react-pulo" : worried ? "login-worry" : reaction ? `react-${reaction.k}` : "mascot-float";
+
+  const textField = {
+    onFocus: (e: React.FocusEvent<HTMLInputElement>) => {
+      setFocus("text");
+      setTyped(e.currentTarget.value.length);
+    },
+    onInput: (e: React.FormEvent<HTMLInputElement>) => setTyped(e.currentTarget.value.length),
+    onBlur: () => setFocus(null),
+  };
+
+  const passwordField = (autoComplete: string, placeholder: string, meter: boolean) => (
+    <div className="grid gap-1">
+      <label htmlFor="password" className="pl-1.5 text-xs font-bold text-muted">
+        Senha
+      </label>
+      <div className="relative">
+        <input
+          id="password"
+          name="password"
+          type={showPass ? "text" : "password"}
+          required
+          autoComplete={autoComplete}
+          placeholder={placeholder}
+          className={`${input} pr-12`}
+          onFocus={() => setFocus("password")}
+          onBlur={() => setFocus(null)}
+          onInput={meter ? (e) => setStrength(passwordStrength(e.currentTarget.value)) : undefined}
+        />
+        <button
+          type="button"
+          aria-label={showPass ? "Esconder senha" : "Mostrar senha"}
+          aria-pressed={showPass}
+          // Mantém o foco no campo: assim a Bolha passa de "tapando os olhos" para "espiando"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => setShowPass((v) => !v)}
+          className="absolute right-1.5 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-xl text-muted"
+        >
+          <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+            <circle cx="12" cy="12" r="3" />
+            {showPass ? <path d="M4 4l16 16" /> : null}
+          </svg>
+        </button>
+      </div>
+      {meter ? (
+        <div className="flex items-center gap-2 pl-1.5 text-xs font-semibold text-muted">
+          <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
+            <i className="block h-full rounded-full transition-all duration-300" style={{ width: `${strength.pct}%`, background: strength.color }} />
+          </span>
+          <span aria-live="polite">{strength.label}</span>
+        </div>
+      ) : null}
+    </div>
+  );
+
+  const back = (
+    <button type="button" onClick={() => go("start")} className="flex min-h-11 items-center gap-1 self-start text-sm font-bold text-muted">
+      <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+        <path d="m15 18-6-6 6-6" />
+      </svg>
+      Voltar
+    </button>
+  );
+
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-5">
+      <div className="grid justify-items-center gap-0.5 text-center">
+        <div className="relative">
+          <button
+            type="button"
+            onClick={tapMascot}
+            aria-label="Bolha, toque para brincar"
+            className="login-mascot relative grid justify-items-center rounded-3xl"
+          >
+            <span key={reaction?.n ?? (success ? "ok" : worried ? worriedAt : "idle")} className={motion}>
+              <Mascot mood={mood} look={look} size={view === "start" ? 148 : 104} className="transition-[width,height] duration-300" />
+            </span>
+            <span className="login-shadow" aria-hidden="true" />
+          </button>
+          {reaction?.k === "coracoes" || reaction?.k === "bolhinhas" ? (
+            <span key={reaction.n} className="pointer-events-none absolute inset-0" aria-hidden="true">
+              {Array.from({ length: 8 }, (_, i) => (
+                <i
+                  key={i}
+                  className={reaction.k === "coracoes" ? "login-heart" : "login-bubble"}
+                  style={{ left: `${i % 2 ? 72 + (i % 3) * 6 : 12 + (i % 3) * 6}%`, animationDelay: `${i * 70}ms` }}
+                />
+              ))}
+            </span>
+          ) : null}
+          {reaction ? (
+            <span key={`t${reaction.n}`} className="login-react-tag" aria-live="polite">
+              {REACTIONS.find(([k]) => k === reaction.k)?.[1]}
+            </span>
+          ) : null}
+        </div>
+        <h1 className="mt-1 text-2xl font-bold">Assist Agent</h1>
+        <h2 className="mt-1.5 text-xl font-bold">{HEAD[view][0]}</h2>
+        <p className="text-sm font-semibold text-muted">{HEAD[view][1]}</p>
+      </div>
+
       {error ? (
-        <p role="alert" className="rounded-2xl bg-soft px-4 py-3 text-sm font-semibold text-text">
+        <p role="alert" className="rounded-2xl bg-fail-bg px-4 py-3 text-sm font-semibold text-fail">
           {error}
         </p>
       ) : null}
 
-      <SubmitButton
-        type="button"
-        onClick={google}
-        pending={pendingGoogle}
-        disabled={busy}
-        pendingLabel="Abrindo o Google…"
-      >
-        Entrar com Google
-      </SubmitButton>
-
-      <p className="text-center text-sm font-bold text-muted">ou com e-mail</p>
-
-      <form onSubmit={submitEmail} className="grid gap-3" noValidate={false}>
-        {mode === "criar" ? (
-          <label className="grid gap-1 text-sm font-bold">
-            Nome
-            <input name="name" autoComplete="name" placeholder="Como quer ser chamada" className={input} />
-          </label>
-        ) : null}
-        <label className="grid gap-1 text-sm font-bold">
-          E-mail
-          <input name="email" type="email" required autoComplete="email" inputMode="email" placeholder="voce@email.com" className={input} />
-        </label>
-        <label className="grid gap-1 text-sm font-bold">
-          Senha
-          <input
-            name="password"
-            type="password"
-            required
-            minLength={8}
-            autoComplete={mode === "criar" ? "new-password" : "current-password"}
-            placeholder="Mínimo de 8 caracteres"
-            className={input}
-          />
-        </label>
-        <SubmitButton
-          pending={pendingEmail}
-          disabled={busy}
-          pendingLabel={mode === "criar" ? "Criando conta…" : "Entrando…"}
-        >
-          {mode === "criar" ? "Criar conta" : "Entrar"}
-        </SubmitButton>
-      </form>
-
-      <button
-        type="button"
-        onClick={() => {
-          setMode(mode === "entrar" ? "criar" : "entrar");
-          setError(null);
-        }}
-        className="min-h-11 text-sm font-bold text-primary-text"
-      >
-        {mode === "entrar" ? "Primeiro acesso? Criar conta" : "Já tenho conta? Entrar"}
-      </button>
+      {view === "start" ? (
+        <div key="start" className="login-view grid gap-3">
+          <SubmitButton type="button" onClick={google} pending={pendingGoogle} disabled={busy} pendingLabel="Abrindo o Google…">
+            Entrar com Google
+          </SubmitButton>
+          <button type="button" onClick={() => go("email")} disabled={busy} className="flex min-h-13 items-center justify-center gap-2.5 rounded-2xl bg-soft px-5 font-bold text-primary-text">
+            <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="5" width="18" height="14" rx="4" />
+              <path d="m4 7 8 6 8-6" />
+            </svg>
+            Continuar com e-mail
+          </button>
+          <p className="text-center text-sm font-semibold text-muted">
+            Não tem conta?{" "}
+            <button type="button" onClick={() => go("signup")} className="min-h-11 font-bold text-primary-text">
+              Criar conta com e-mail
+            </button>
+          </p>
+        </div>
+      ) : (
+        <form key={view} onSubmit={submitEmail} noValidate className={`login-view grid gap-3 ${worried ? "login-shake" : ""}`}>
+          {back}
+          {view === "signup" ? (
+            <div className="grid gap-1">
+              <label htmlFor="name" className="pl-1.5 text-xs font-bold text-muted">
+                Nome
+              </label>
+              <input id="name" name="name" autoComplete="name" placeholder="Como quer ser chamada" className={input} {...textField} />
+            </div>
+          ) : null}
+          <div className="grid gap-1">
+            <label htmlFor="email" className="pl-1.5 text-xs font-bold text-muted">
+              E-mail
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              autoComplete={view === "signup" ? "email" : "username"}
+              inputMode="email"
+              placeholder="voce@salao.com.br"
+              autoFocus
+              className={input}
+              {...textField}
+            />
+          </div>
+          {view === "signup"
+            ? passwordField("new-password", "Mínimo de 8 caracteres", true)
+            : passwordField("current-password", "Sua senha", false)}
+          <SubmitButton
+            pending={pendingEmail}
+            disabled={busy}
+            pendingLabel={view === "signup" ? "Criando conta…" : "Entrando…"}
+          >
+            {view === "signup" ? "Criar conta" : "Entrar"}
+          </SubmitButton>
+          <p className="text-center text-sm font-semibold text-muted">
+            {view === "signup" ? "Já tem conta? " : "Ainda não tem conta? "}
+            <button type="button" onClick={() => go(view === "signup" ? "email" : "signup")} className="min-h-11 font-bold text-primary-text">
+              {view === "signup" ? "Entrar" : "Criar conta"}
+            </button>
+          </p>
+        </form>
+      )}
     </div>
   );
 }

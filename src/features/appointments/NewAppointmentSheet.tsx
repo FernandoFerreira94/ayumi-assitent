@@ -1,13 +1,14 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Drawer } from "vaul";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
-import { Mascot } from "@/components/brand/Mascot";
-import { notify } from "@/components/feedback/toast";
 import { LetterPicker, type PickerOption } from "@/components/ui/LetterPicker";
 import { LoadingRegion, Skeleton } from "@/components/ui/Skeleton";
-import { messageFor, type ActionResult } from "@/lib/errors";
+import { formatDayTitle } from "@/lib/dates";
+import { messageFor, type ErrorCode } from "@/lib/errors";
+import { whatsappStatus } from "@/features/whatsapp/actions";
+import { BookingOverlay, type Booking, type Step } from "./BookingOverlay";
 import { warnSync } from "./sync-warning";
 import { createAppointment } from "./actions";
 
@@ -16,10 +17,25 @@ const TIMES = Array.from({ length: 29 }, (_, i) => {
   const m = 7 * 60 + i * 30;
   return `${String(Math.floor(m / 60)).padStart(2, "0")}:${m % 60 ? "30" : "00"}`;
 });
-/** Tempo da comemoração antes de a folha fechar sozinha. */
-const DONE_MS = 1600;
+/** Mesmo com resposta instantânea a Bolha trabalha um pouco, para a tela não piscar. */
+const MIN_MS = 900;
+const SLOW_MS = 4000;
+const GIVE_UP_MS = 15000;
+/** Tempo do "Agendado!" antes de a tela fechar sozinha. */
+const DONE_MS = 2500;
 
-type Phase = "form" | "saving" | "done";
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** Resolve com o valor, "network" se a chamada falhar ou "timeout" se passar do prazo. */
+const settle = <T,>(p: Promise<T>, ms: number) =>
+  Promise.race([
+    p.then((v) => ({ v }), () => "network" as const),
+    sleep(ms).then(() => "timeout" as const),
+  ]);
+
+/** Faz o horário recém-criado piscar na linha do dia (se o dia estiver na tela). */
+function flash(id: string) {
+  requestAnimationFrame(() => document.querySelector(`[data-appointment="${CSS.escape(id)}"]`)?.classList.add("appt-new"));
+}
 
 export function NewAppointmentSheet({
   date,
@@ -35,47 +51,102 @@ export function NewAppointmentSheet({
   openKey?: number;
 }) {
   const [open, setOpen] = useState(false);
-  const [phase, setPhase] = useState<Phase>("form");
+  /** null = formulário; senão, a Bolha trabalhando ou o resultado por cima de tudo. */
+  const [booking, setBooking] = useState<Booking | null>(null);
+  const [fieldErr, setFieldErr] = useState<{ code: ErrorCode; field?: string } | null>(null);
+  /** Troca a cada agendamento salvo, para a próxima folha começar vazia. */
+  const [formKey, setFormKey] = useState(0);
+  const runId = useRef(0);
+  const lastData = useRef<FormData | null>(null);
   const [prevKey, setPrevKey] = useState(openKey);
   if (openKey !== prevKey) {
     setPrevKey(openKey);
     setOpen(true);
-    setPhase("form");
+    setBooking(null);
   }
   const keyboard = useKeyboardInset(open);
-  const [state, action] = useActionState(async (prev: ActionResult<{ id: string }> | null, fd: FormData) => {
-    const res = await createAppointment(prev, fd);
-    if (res.ok) {
-      setPhase("done");
-      warnSync(res.data.sync);
-    } else {
-      setPhase("form");
-      if (res.code !== "VALIDATION" && res.code !== "SLOT_TAKEN") notify.error(res.code);
-    }
-    return res;
-  }, null);
-  const err = state && !state.ok ? state : null;
   const loading = clients === null || services === null;
   const missing = !loading && (clients.length === 0 || services.length === 0);
+  const working = booking !== null && booking.result === null;
 
+  async function book(fd: FormData) {
+    const id = ++runId.current;
+    const alive = () => runId.current === id;
+    const patch = (fn: (b: Booking) => Booking) => alive() && setBooking((b) => (b ? fn(b) : b));
+    const steps = (s: Step[]) => patch((b) => ({ ...b, steps: s }));
+    lastData.current = fd;
+    setFieldErr(null);
+    const client = clients?.find((c) => c.id === fd.get("clientId"))?.label ?? "";
+    const service = services?.find((s) => s.id === fd.get("serviceId"))?.label ?? "";
+    setBooking({
+      steps: ["run", "wait", "wait"],
+      slow: false,
+      result: null,
+      who: `${client} · ${formatDayTitle(String(fd.get("date")))} às ${fd.get("time")}`,
+      service,
+    });
+    const started = Date.now();
+    const slow = setTimeout(() => patch((b) => ({ ...b, slow: true })), SLOW_MS);
+    const res = await settle(createAppointment(null, fd), GIVE_UP_MS);
+    await sleep(MIN_MS - (Date.now() - started));
+    clearTimeout(slow);
+    if (!alive()) return;
+
+    const r = typeof res === "string" ? null : res.v;
+    if (!r || !r.ok) {
+      if (r?.code === "VALIDATION") {
+        setFieldErr({ code: r.code, field: r.field });
+        setBooking(null);
+        return;
+      }
+      const code = r ? r.code : res === "timeout" ? "TIMEOUT" : "NETWORK";
+      steps(["fail", "wait", "wait"]);
+      patch((b) => ({ ...b, result: { kind: "error", code } }));
+      return;
+    }
+
+    const created = r.data;
+    warnSync(created.sync);
+    steps(["done", "wait", "wait"]);
+    await sleep(200);
+    steps(["done", "done", "run"]);
+    const wa = await settle(whatsappStatus(), 8000);
+    const reminder =
+      typeof wa === "string" || !wa.v.ok ? "unavailable" : wa.v.data.state === "open" ? "ok" : "off";
+    steps(["done", "done", reminder === "ok" ? "done" : "warn"]);
+    patch((b) => ({
+      ...b,
+      result: reminder === "ok" ? { kind: "ok", id: created.id } : { kind: "warn", id: created.id, reason: reminder },
+    }));
+  }
+
+  function finish(id: string) {
+    runId.current++;
+    setOpen(false);
+    setBooking(null);
+    setFormKey((k) => k + 1);
+    flash(id);
+  }
+
+  const done = booking?.result?.kind === "ok" ? booking.result.id : null;
   useEffect(() => {
-    if (phase !== "done") return;
-    const id = setTimeout(() => {
-      setOpen(false);
-      notify.success("Agendamento criado");
-    }, DONE_MS);
-    return () => clearTimeout(id);
-  }, [phase]);
+    if (!done) return;
+    const t = setTimeout(() => finish(done), DONE_MS);
+    return () => clearTimeout(t);
+  }, [done]);
 
   return (
     <Drawer.Root
       repositionInputs={false}
       open={open}
+      dismissible={!working}
       onOpenChange={(next) => {
         // Enquanto salva, arrastar para baixo não pode largar o pedido no meio
-        if (!next && phase === "saving") return;
+        if (!next && working) return;
+        if (!next && booking?.result && booking.result.kind !== "error") return finish(booking.result.id);
+        runId.current++;
         setOpen(next);
-        if (next) setPhase("form");
+        setBooking(null);
       }}
     >
       {openKey === undefined ? (
@@ -89,66 +160,82 @@ export function NewAppointmentSheet({
       ) : null}
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
-        <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[92dvh] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none" style={keyboard}>
-          <Drawer.Title className="pb-1 text-xl font-bold">Novo agendamento</Drawer.Title>
-          <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
-            {missing
-              ? "Cadastre ao menos uma cliente (em Clientes) e um serviço (em Ajustes)."
-              : "Escolha cliente, serviço e horário."}
-          </Drawer.Description>
-          {loading ? (
-            <LoadingRegion label="Carregando clientes e serviços">
-              <div className="grid gap-3">
-                <Skeleton className="h-13 w-full rounded-2xl" />
-                <Skeleton className="h-13 w-full rounded-2xl" />
-                <Skeleton className="h-13 w-full rounded-2xl" />
-              </div>
-            </LoadingRegion>
-          ) : missing ? null : phase === "form" ? (
-            <form action={action} onSubmit={() => setPhase("saving")} className="grid gap-3">
-              <LetterPicker name="clientId" label="Cliente" placeholder="Escolha a cliente…" options={clients} />
-              <LetterPicker name="serviceId" label="Serviço" placeholder="Escolha o serviço…" options={services} />
-              <label className="grid gap-1 text-sm font-bold">
-                Dia
-                <input name="date" type="date" required defaultValue={date} className={input} />
-              </label>
-              <label className="grid gap-1 text-sm font-bold">
-                Horário
-                <select name="time" required className={input} defaultValue="09:00" aria-invalid={err?.field === "time"}>
-                  {TIMES.map((t) => (
-                    <option key={t}>{t}</option>
-                  ))}
-                </select>
-              </label>
-              {err?.code === "SLOT_TAKEN" || err?.code === "VALIDATION" ? (
-                <p role="alert" className="rounded-2xl bg-soft px-4 py-3 text-sm font-semibold">
-                  {messageFor(err.code)}
-                </p>
-              ) : null}
-              <button type="submit" className="btn-tint mt-1 flex min-h-13 items-center justify-center rounded-full px-5 font-bold">
-                Agendar
-              </button>
-            </form>
-          ) : (
-            <BookingProgress done={phase === "done"} />
-          )}
+        <Drawer.Content
+          className={
+            booking
+              ? "booking-ov fixed inset-0 z-50 overflow-y-auto outline-none"
+              : "sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[92dvh] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none"
+          }
+          style={booking ? undefined : keyboard}
+        >
+          <div hidden={booking !== null}>
+            <Drawer.Title className="pb-1 text-xl font-bold">Novo agendamento</Drawer.Title>
+            <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
+              {missing
+                ? "Cadastre ao menos uma cliente (em Clientes) e um serviço (em Ajustes)."
+                : "Escolha cliente, serviço e horário."}
+            </Drawer.Description>
+            {loading ? (
+              <LoadingRegion label="Carregando clientes e serviços">
+                <div className="grid gap-3">
+                  <Skeleton className="h-13 w-full rounded-2xl" />
+                  <Skeleton className="h-13 w-full rounded-2xl" />
+                  <Skeleton className="h-13 w-full rounded-2xl" />
+                </div>
+              </LoadingRegion>
+            ) : missing ? null : (
+              // Fica montado por trás da Bolha: se der erro, a folha volta preenchida
+              <form
+                key={formKey}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!working) void book(new FormData(e.currentTarget));
+                }}
+                className="grid gap-3"
+              >
+                <LetterPicker name="clientId" label="Cliente" placeholder="Escolha a cliente…" options={clients} />
+                <LetterPicker name="serviceId" label="Serviço" placeholder="Escolha o serviço…" options={services} />
+                <label className="grid gap-1 text-sm font-bold">
+                  Dia
+                  <input name="date" type="date" required defaultValue={date} className={input} />
+                </label>
+                <label className="grid gap-1 text-sm font-bold">
+                  Horário
+                  <select name="time" required className={input} defaultValue="09:00" aria-invalid={fieldErr?.field === "time"}>
+                    {TIMES.map((t) => (
+                      <option key={t}>{t}</option>
+                    ))}
+                  </select>
+                </label>
+                {fieldErr ? (
+                  <p role="alert" className="rounded-2xl bg-soft px-4 py-3 text-sm font-semibold">
+                    {messageFor(fieldErr.code)}
+                  </p>
+                ) : null}
+                <button type="submit" disabled={working} className="btn-tint mt-1 flex min-h-13 items-center justify-center rounded-full px-5 font-bold">
+                  Agendar
+                </button>
+              </form>
+            )}
+          </div>
+          {booking ? (
+            <BookingOverlay
+              booking={booking}
+              onDone={finish}
+              onRetry={() => lastData.current && void book(lastData.current)}
+              onPickAnother={() => {
+                setBooking(null);
+                setFieldErr({ code: "SLOT_TAKEN", field: "time" });
+              }}
+              onClose={() => {
+                runId.current++;
+                setOpen(false);
+                setBooking(null);
+              }}
+            />
+          ) : null}
         </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>
-  );
-}
-
-/** Barra que enche enquanto salva (como a do Nubank) e vira a Bolha feliz ao concluir. */
-function BookingProgress({ done }: { done: boolean }) {
-  return (
-    <div role="status" aria-live="polite" className="grid justify-items-center gap-4 py-8 text-center">
-      <div className={done ? "mascot-hop" : "opacity-60"}>
-        <Mascot mood={done ? "happy" : "neutral"} size={112} />
-      </div>
-      <p className="text-lg font-bold">{done ? "Agendado!" : "Agendando…"}</p>
-      <div className="h-2.5 w-full max-w-64 overflow-hidden rounded-full bg-soft">
-        <div className={`h-full rounded-full bg-primary ${done ? "booking-bar-done" : "booking-bar"}`} />
-      </div>
-    </div>
   );
 }

@@ -9,6 +9,7 @@ import { WhatsAppCard } from "@/features/whatsapp/WhatsAppCard";
 import { currentState } from "@/features/whatsapp/core";
 import { listServices } from "@/features/services/core";
 import { NewServiceForm } from "@/features/services/NewServiceForm";
+import { ReplayTourButton } from "@/features/tour/ReplayTourButton";
 import { formatBRL } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
 import { getDb } from "@/db/client";
@@ -60,7 +61,7 @@ export default async function AjustesPage() {
         )}
         <NewServiceForm />
       </section>
-      <section aria-label="WhatsApp" className="mt-6">
+      <section id="whatsapp" aria-label="WhatsApp" className="mt-6 scroll-mt-6">
         <WhatsAppCard initial={wa} />
       </section>
       <section aria-label="Avisos" className="mt-6">
@@ -68,6 +69,9 @@ export default async function AjustesPage() {
       </section>
       <section aria-label="Expediente" className="mt-6">
         <HoursForm week={week} />
+      </section>
+      <section aria-label="Tour" className="mt-6">
+        <ReplayTourButton />
       </section>
     </PageShell>
   );

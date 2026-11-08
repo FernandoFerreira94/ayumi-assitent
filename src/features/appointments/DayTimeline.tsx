@@ -142,6 +142,7 @@ function EventBlock({ event, date, style }: { event: TimelineAppointment | Timel
           event.kind === "appointment" ? "glass" : "timeline-pause"
         }`}
         style={style}
+        data-appointment={event.kind === "appointment" ? event.id : undefined}
       >
         {face}
       </Drawer.Trigger>

@@ -3,6 +3,7 @@ import { OfflineBanner } from "@/components/feedback/OfflineBanner";
 import { FanNav } from "@/components/nav/FanNav";
 import { NavSwitch } from "@/components/nav/NavSwitch";
 import { QuickBook } from "@/features/appointments/QuickBook";
+import { TourGate } from "@/features/tour/TourGate";
 import { LoadingRegion, Skeleton } from "@/components/ui/Skeleton";
 import { requireSession } from "@/lib/session";
 
@@ -32,6 +33,9 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
       </Suspense>
       <Suspense fallback={null}>
         <QuickBook />
+      </Suspense>
+      <Suspense fallback={null}>
+        <TourGate />
       </Suspense>
     </>
   );

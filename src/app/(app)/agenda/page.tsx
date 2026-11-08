@@ -76,9 +76,11 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
           </Link>
         ) : null}
       </div>
-      <DayStrip date={date} today={today} />
+      <div data-tour="days">
+        <DayStrip date={date} today={today} />
+      </div>
 
-      <div className="glass mb-4 grid gap-3 rounded-3xl px-4 py-3">
+      <div data-tour="money" className="glass mb-4 grid gap-3 rounded-3xl px-4 py-3">
         <div className="flex items-end justify-between gap-3">
           <div>
             <p className="text-xs font-bold uppercase tracking-wide text-muted">Previsto do dia</p>

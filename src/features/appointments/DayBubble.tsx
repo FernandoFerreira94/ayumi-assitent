@@ -14,6 +14,7 @@ export function DayBubble({ briefing }: { briefing: Briefing }) {
     <div className="mb-3 flex items-center gap-2">
       <button
         type="button"
+        data-tour="bubble"
         aria-label={briefing.lines.length > 1 ? "Ver mais sobre o dia" : "Bolha"}
         onClick={() => {
           setI((n) => n + 1);
