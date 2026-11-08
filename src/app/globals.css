@@ -15,6 +15,10 @@
   --accent: #ff8fb1;
   /* Cor do nome "mimo" (wordmark) */
   --brand: #e5547f;
+  /* Folha de mensagem no estilo da conversa do WhatsApp */
+  --chat-bg: #efeae2;
+  --chat-out: #d9fdd3;
+  --chat-send: #00a884;
   --ok: #1c6b48;
   --ok-bg: #ddf3e7;
   --wait: #8a5a00;
@@ -48,6 +52,9 @@
   --color-soft: var(--soft);
   --color-accent: var(--accent);
   --color-brand: var(--brand);
+  --color-chat-bg: var(--chat-bg);
+  --color-chat-out: var(--chat-out);
+  --color-chat-send: var(--chat-send);
   --color-ok: var(--ok);
   --color-ok-bg: var(--ok-bg);
   --color-wait: var(--wait);

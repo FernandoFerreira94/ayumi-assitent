@@ -67,7 +67,9 @@ export function listDay(tx: Tx, [from, to]: [Date, Date]) {
       endsAt: appointments.endsAt,
       priceCents: appointments.priceCents,
       status: appointments.status,
+      clientId: clients.id,
       clientName: clients.name,
+      clientPhone: clients.phoneE164,
       serviceName: services.name,
     })
     .from(appointments)

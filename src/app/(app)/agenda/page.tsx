@@ -21,6 +21,7 @@ import { bookingOptions } from "@/features/appointments/options";
 import { searchClients } from "@/features/clients/core";
 import { listServices } from "@/features/services/core";
 import { dayRange, formatBRL, formatMonthYear, greeting, isDateStr, todayStr } from "@/lib/dates";
+import { maskPhone } from "@/lib/phone";
 import { requireTenant } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Agenda" };
@@ -50,7 +51,9 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
       kind: "appointment" as const,
       ...span(r.startsAt, r.endsAt),
       id: r.id,
+      clientId: r.clientId,
       clientName: r.clientName,
+      clientPhone: maskPhone(r.clientPhone.replace(/^\+55/, "")),
       serviceName: r.serviceName,
       price: formatBRL(r.priceCents),
       status: r.status,

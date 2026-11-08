@@ -1,0 +1,36 @@
+"use server";
+
+import { eq } from "drizzle-orm";
+import { z } from "zod";
+import { getDb, withTenant } from "@/db/client";
+import { clients, tenants } from "@/db/schema";
+import { fail, type ActionResult } from "@/lib/errors";
+import { requireTenant } from "@/lib/tenant";
+import { messagingForInstance } from "./evolution";
+import { MAX_MESSAGE, sendDirect } from "./send";
+
+const input = z.object({ clientId: z.string().uuid(), text: z.string().trim().min(1).max(MAX_MESSAGE) });
+
+/**
+ * Mensagem da dona para uma cliente, pelo WhatsApp do salão. O número vem do banco (da cliente
+ * deste salão), nunca do navegador: assim não dá para usar a ação para escrever a qualquer número.
+ */
+export async function sendClientMessage(clientId: string, text: string): Promise<ActionResult> {
+  const { tenantId } = await requireTenant();
+  const p = input.safeParse({ clientId, text });
+  if (!p.success) return fail("VALIDATION", String(p.error.issues[0]?.path[0] ?? ""));
+  try {
+    const [cli] = await withTenant(tenantId, (tx) =>
+      tx.select({ phone: clients.phoneE164 }).from(clients).where(eq(clients.id, p.data.clientId)),
+    );
+    if (!cli) return fail("NOT_ALLOWED");
+    const [t] = await getDb().select({ i: tenants.whatsappInstance }).from(tenants).where(eq(tenants.id, tenantId));
+    // Mesma regra dos lembretes: sem instância própria, usa a do ambiente
+    const instance = t?.i ?? process.env.EVOLUTION_INSTANCE;
+    const res = await sendDirect(instance ? messagingForInstance(instance) : null, cli.phone, p.data.text);
+    if (!res.ok) console.error(JSON.stringify({ level: "error", msg: "client_message_failed", code: res.code }));
+    return res;
+  } catch {
+    return fail("UNKNOWN");
+  }
+}

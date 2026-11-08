@@ -14,7 +14,10 @@ const HOUR_PX = 96;
 export type TimelineAppointment = Span & {
   kind: "appointment";
   id: string;
+  clientId: string;
   clientName: string;
+  /** Já formatado para exibir. */
+  clientPhone: string;
   serviceName: string;
   price: string;
   status: Status;
@@ -133,9 +136,12 @@ function EventBlock({ event, date, style }: { event: TimelineAppointment | Timel
     );
     detail = (
       <AppointmentCard
+        inSheet
         id={event.id}
         time={hhmm(event.start)}
+        clientId={event.clientId}
         clientName={event.clientName}
+        clientPhone={event.clientPhone}
         serviceName={event.serviceName}
         price={event.price}
         status={event.status}
