@@ -9,6 +9,7 @@ import { WhatsAppCard } from "@/features/whatsapp/WhatsAppCard";
 import { currentState } from "@/features/whatsapp/core";
 import { listServices } from "@/features/services/core";
 import { NewServiceForm } from "@/features/services/NewServiceForm";
+import { InstallGuide } from "@/features/install/InstallGuide";
 import { ReplayTourButton } from "@/features/tour/ReplayTourButton";
 import { formatBRL } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
@@ -70,7 +71,8 @@ export default async function AjustesPage() {
       <section aria-label="Expediente" className="mt-6">
         <HoursForm week={week} />
       </section>
-      <section aria-label="Tour" className="mt-6">
+      <section aria-label="Tour e instalação" className="mt-6 grid gap-3">
+        <InstallGuide />
         <ReplayTourButton />
       </section>
     </PageShell>
