@@ -3,6 +3,7 @@ import { Quicksand, Varela_Round } from "next/font/google";
 import { Splash, splashGate } from "@/components/brand/Splash";
 import { AppToaster } from "@/components/feedback/toast";
 import { STARTUP_IMAGES } from "@/lib/startup-images";
+import { UpdateGate } from "@/components/nav/UpdateGate";
 import { ServiceWorkerRegister } from "@/components/nav/ServiceWorkerRegister";
 import "./globals.css";
 
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {children}
         <AppToaster />
         <ServiceWorkerRegister />
+        <UpdateGate />
       </body>
     </html>
   );
