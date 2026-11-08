@@ -104,6 +104,18 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
         >
           {code}
         </p>
+        <button
+          type="button"
+          className={btn}
+          onClick={() =>
+            navigator.clipboard.writeText(code).then(
+              () => notify.success("Código copiado"),
+              () => notify.error("UNKNOWN"),
+            )
+          }
+        >
+          Copiar código
+        </button>
         <ol className="list-decimal pl-5 text-sm font-semibold text-muted">
           <li>Abra o WhatsApp deste número.</li>
           <li>Toque em Configurações &gt; Aparelhos conectados &gt; Conectar um aparelho.</li>
