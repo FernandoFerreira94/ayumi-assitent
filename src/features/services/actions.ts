@@ -19,6 +19,7 @@ export async function createService(_prev: ActionResult | null, formData: FormDa
     await withTenant(tenantId, (tx) => insertService(tx, tenantId, parsed.data));
     revalidatePath("/ajustes");
     revalidatePath("/agenda");
+    revalidatePath("/vagas");
     return ok();
   } catch {
     return fail("UNKNOWN");

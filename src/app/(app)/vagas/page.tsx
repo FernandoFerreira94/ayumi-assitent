@@ -10,6 +10,7 @@ import { getHours } from "@/features/hours/core";
 import { CopyButton } from "@/features/hours/CopyButton";
 import { freeSlots, weekdayOf } from "@/features/hours/slots";
 import { listServices } from "@/features/services/core";
+import { NewServiceSheet } from "@/features/services/NewServiceSheet";
 import { addDays, dayRange, formatDayTitle, todayStr } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
 
@@ -40,15 +41,8 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
       <PageShell title="Vagas">
         <EmptyState
           title="Nenhum serviço cadastrado"
-          description="Para ver os horários livres, adicione um serviço em Ajustes."
-          action={
-            <Link
-              href="/ajustes"
-              className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 text-sm font-bold text-on-primary"
-            >
-              Ir para Ajustes
-            </Link>
-          }
+          description="Para ver os horários livres, adicione um serviço."
+          action={<NewServiceSheet />}
         />
       </PageShell>
     );
@@ -83,6 +77,7 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
             {x.name}
           </Link>
         ))}
+        <NewServiceSheet>+ Serviço</NewServiceSheet>
       </nav>
       {withSlots.length === 0 ? (
         <EmptyState

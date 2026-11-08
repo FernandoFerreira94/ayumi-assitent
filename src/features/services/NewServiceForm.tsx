@@ -9,13 +9,14 @@ import { createService } from "./actions";
 const input =
   "min-h-13 w-full rounded-2xl border border-line bg-white px-4 text-base font-semibold outline-none focus:border-primary";
 
-export function NewServiceForm() {
+export function NewServiceForm({ onSaved, bare }: { onSaved?: () => void; bare?: boolean }) {
   const ref = useRef<HTMLFormElement>(null);
   const [state, action] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
     const res = await createService(prev, fd);
     if (res.ok) {
       notify.success("Serviço adicionado");
       ref.current?.reset();
+      onSaved?.();
     } else if (res.code !== "VALIDATION") notify.error(res.code);
     return res;
   }, null);
@@ -23,8 +24,12 @@ export function NewServiceForm() {
   const bad = (f: string) => (field === f ? "Confira este campo" : null);
 
   return (
-    <form ref={ref} action={action} className="grid gap-3 rounded-3xl border border-line bg-white p-4">
-      <h2 className="font-bold">Adicionar serviço</h2>
+    <form
+      ref={ref}
+      action={action}
+      className={bare ? "grid gap-3" : "grid gap-3 rounded-3xl border border-line bg-white p-4"}
+    >
+      {bare ? null : <h2 className="font-bold">Adicionar serviço</h2>}
       <label className="grid gap-1 text-sm font-bold">
         Nome
         <input name="name" required autoComplete="off" className={input} aria-invalid={field === "name"} />
