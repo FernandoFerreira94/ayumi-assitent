@@ -14,7 +14,13 @@ describe("maskMoney", () => {
   it("vazio continua vazio para o placeholder aparecer", () => expect(maskMoney("")).toBe(""));
   it("corta acima do limite do serviço", () => expect(maskMoney("12345678901")).toBe("99.999,99"));
   it("o valor mascarado passa no schema em centavos", () => {
-    const r = serviceInput.parse({ name: "Corte", durationMin: "60", price: maskMoney("123456") });
+    const r = serviceInput.parse({
+      name: "Corte",
+      durationMin: "60",
+      price: maskMoney("123456"),
+      bufferMin: "0",
+      color: "lav",
+    });
     expect(r.price).toBe(123456);
   });
 });

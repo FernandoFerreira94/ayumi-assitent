@@ -6,11 +6,11 @@ test("expediente salvo e vagas listadas com texto para copiar", async ({ page, c
   await expect(page.getByText("Nenhum serviço cadastrado")).toBeVisible();
 
   await page.goto("/servicos");
-  await page.getByRole("button", { name: "Novo serviço" }).click();
-  await page.getByLabel("Nome").fill("Gel");
-  await page.getByLabel("Valor (R$)").fill("100");
-  await page.getByRole("button", { name: "Salvar serviço" }).click();
-  await expect(page.getByText("Serviço adicionado")).toBeVisible();
+  await page.getByRole("button", { name: "Criar serviço" }).click();
+  await page.getByRole("dialog").getByRole("textbox", { name: "Nome", exact: true }).fill("Gel");
+  await page.getByRole("dialog").getByRole("textbox", { name: /Preço/ }).fill("100");
+  await page.getByRole("dialog").getByRole("button", { name: "Criar serviço" }).click();
+  await expect(page.getByText("Serviço criado")).toBeVisible();
 
   // abre todos os dias das 06:00 às 22:00 para não depender do dia da semana de hoje
   await page.goto("/ajustes");

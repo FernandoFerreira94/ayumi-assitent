@@ -86,8 +86,11 @@ export function WeekStrip({ date, today, days, summary }: { date: string; today:
           );
         })}
       </nav>
+      {/* O resumo do dia leva ao Financeiro (semana, mês, semestre) */}
       <p className="pt-1.5 text-center text-xs font-bold text-muted" aria-live="polite">
-        {summary}
+        <Link href="/financeiro" aria-label={`${summary}. Ver financeiro`} className="rounded-full px-2 py-1">
+          {summary} ›
+        </Link>
       </p>
     </div>
   );

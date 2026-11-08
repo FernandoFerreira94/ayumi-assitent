@@ -6,6 +6,8 @@ export const ERROR_MESSAGES = {
   GOOGLE_EXPIRED: "O acesso ao Google expirou. Reconecte para sincronizar.",
   WHATSAPP_UNAVAILABLE: "Não conseguimos falar com o WhatsApp agora. Tente de novo em instantes.",
   WHATSAPP_OFFLINE: "O WhatsApp está desconectado. Reconecte para enviar mensagens.",
+  NAME_TAKEN: "Já existe um com esse nome aqui. Escolha outro.",
+  CATEGORY_NOT_EMPTY: "Mova ou exclua os serviços antes de excluir a categoria.",
   IMAGE_TOO_LARGE: "A imagem é grande demais. Tente uma foto menor.",
   NOT_ALLOWED: "Esta conta não tem acesso.",
   VALIDATION: "Confira os campos destacados.",

@@ -2,12 +2,12 @@ import { expect, test } from "./fixtures";
 
 test("cria serviço, cliente e agendamento; avisa conflito; cancela com desfazer", async ({ page }) => {
   await page.goto("/servicos");
-  await page.getByRole("button", { name: "Novo serviço" }).click();
-  await page.getByLabel("Nome").fill("Alongamento");
-  await page.getByLabel("Valor (R$)").fill("150,00");
-  await page.getByRole("button", { name: "Salvar serviço" }).click();
-  await expect(page.getByText("Serviço adicionado")).toBeVisible();
-  await expect(page.getByText("60 min · R$ 150,00")).toBeVisible();
+  await page.getByRole("button", { name: "Criar serviço" }).click();
+  await page.getByRole("dialog").getByRole("textbox", { name: "Nome", exact: true }).fill("Alongamento");
+  await page.getByRole("dialog").getByRole("textbox", { name: /Preço/ }).fill("150,00");
+  await page.getByRole("dialog").getByRole("button", { name: "Criar serviço" }).click();
+  await expect(page.getByText("Serviço criado")).toBeVisible();
+  await expect(page.getByText("Alongamento · 1h · R$ 150,00")).toBeVisible();
 
   await page.goto("/clientes");
   await page.getByRole("button", { name: "Nova cliente" }).click();

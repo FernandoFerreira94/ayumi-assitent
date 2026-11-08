@@ -17,7 +17,7 @@ import { weekdayOf } from "@/features/hours/slots";
 import { NewBlockSheet } from "@/features/blocks/NewBlockSheet";
 import { bookingOptions } from "@/features/appointments/options";
 import { searchClients } from "@/features/clients/core";
-import { listServices } from "@/features/services/core";
+import { listBookable } from "@/features/services/core";
 import { dayRange, formatBRL, formatDayTitle, greeting, isDateStr, todayStr } from "@/lib/dates";
 import { maskPhone } from "@/lib/phone";
 import { requireTenant } from "@/lib/tenant";
@@ -39,7 +39,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
     dayBlocks: await listBlocks(tx, dayRange(date)),
     weekRows: await listDay(tx, weekRange),
     clients: await searchClients(tx, ""),
-    services: await listServices(tx),
+    services: await listBookable(tx),
   }));
 
   const rows = weekRows.filter((r) => todayStr(r.startsAt) === date);

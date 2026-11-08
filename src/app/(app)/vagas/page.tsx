@@ -9,8 +9,7 @@ import { listBlocks } from "@/features/blocks/core";
 import { getHours } from "@/features/hours/core";
 import { CopyButton } from "@/features/hours/CopyButton";
 import { freeSlots, weekdayOf } from "@/features/hours/slots";
-import { listServices } from "@/features/services/core";
-import { ServiceSheet } from "@/features/services/ServiceSheet";
+import { listBookable } from "@/features/services/core";
 import { addDays, dayRange, formatDayTitle, todayStr } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
 
@@ -30,9 +29,11 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
     const range: [Date, Date] = [dayRange(today)[0], dayRange(addDays(today, 6))[1]];
     const [appts, blks] = await Promise.all([listDay(tx, range), listBlocks(tx, range)]);
     return {
-      services: await listServices(tx),
+      // "Mostrar nas vagas" desligado tira o serviço da mensagem de horários livres
+      services: (await listBookable(tx)).filter((x) => x.showInSlots),
       week: await getHours(tx),
-      busy: [...appts, ...blks],
+      // o intervalo depois de cada atendimento também ocupa a agenda
+      busy: [...appts.map((a) => ({ startsAt: a.startsAt, endsAt: a.blockedUntil })), ...blks],
     };
   });
 
@@ -42,7 +43,11 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
         <EmptyState
           title="Nenhum serviço cadastrado"
           description="Para ver os horários livres, adicione um serviço."
-          action={<ServiceSheet />}
+          action={
+            <Link href="/servicos?novo=1" className="btn-tint inline-flex min-h-11 items-center rounded-full px-5 text-sm font-bold">
+              Novo serviço
+            </Link>
+          }
         />
       </PageShell>
     );
@@ -54,7 +59,7 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
     slots: freeSlots({
       date,
       day: week[weekdayOf(date)],
-      durationMin: service.durationMin,
+      durationMin: service.durationMin + service.bufferMin,
       busy,
       notBefore: date === today ? now : undefined,
     }),
@@ -77,7 +82,9 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
             {x.name}
           </Link>
         ))}
-        <ServiceSheet>+ Serviço</ServiceSheet>
+        <Link href="/servicos?novo=1" className="btn-tint inline-flex min-h-11 shrink-0 items-center rounded-full px-5 text-sm font-bold">
+          + Serviço
+        </Link>
       </nav>
       {withSlots.length === 0 ? (
         <EmptyState

@@ -25,6 +25,25 @@
   --wait-bg: #fbefd5;
   --fail: #b42318;
   --fail-bg: #fde7e4;
+  /* Cor do serviço no calendário: faixa, fundo do bloco e texto (catalog.ts SERVICE_COLORS) */
+  --svc-lav: #6d4aff;
+  --svc-lav-soft: #eee9ff;
+  --svc-lav-ink: #3b22b8;
+  --svc-rosa: #e5547f;
+  --svc-rosa-soft: #fde8ee;
+  --svc-rosa-ink: #a3264c;
+  --svc-mel: #b7791f;
+  --svc-mel-soft: #fdf1dc;
+  --svc-mel-ink: #7a4f0c;
+  --svc-verde: #1a7a4c;
+  --svc-verde-soft: #e3f5ec;
+  --svc-verde-ink: #11543a;
+  --svc-lilas: #8e73ff;
+  --svc-lilas-soft: #f1ecff;
+  --svc-lilas-ink: #4b33b8;
+  --svc-azul: #2f6fd6;
+  --svc-azul-soft: #e6effc;
+  --svc-azul-ink: #1b4a94;
   --glass: rgba(255, 255, 255, 0.64);
   --glass-line: rgba(255, 255, 255, 0.75);
   /* Liquid Glass (iOS 26): corpo translúcido + brilho na borda de cima + sombra em duas camadas */
@@ -177,6 +196,11 @@ body::before {
   box-shadow: var(--glass-rim), 0 -12px 40px rgba(40, 24, 110, 0.18);
   backdrop-filter: blur(34px) saturate(1.8);
   -webkit-backdrop-filter: blur(34px) saturate(1.8);
+}
+/* O vaul estende a folha com um ::after absoluto em top:100%. Se a própria folha rola,
+   ele sobe junto com o conteúdo e cobre (e bloqueia o toque de) o fim do formulário. */
+[data-vaul-drawer].overflow-y-auto::after {
+  display: none;
 }
 
 /* Campos em vidro. Fora de @layer de propósito: vence o bg-white/border-line que cada formulário repete */
