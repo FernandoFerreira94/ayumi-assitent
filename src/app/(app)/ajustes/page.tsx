@@ -5,10 +5,8 @@ import { GoogleCard } from "@/features/google/GoogleCard";
 import { isGoogleConnected } from "@/features/google/server";
 import { getHours } from "@/features/hours/core";
 import { HoursForm } from "@/features/hours/HoursForm";
-import { adminFromEnv } from "@/features/messaging/evolution-admin";
 import { PushToggle } from "@/features/push/PushToggle";
 import { WhatsAppCard } from "@/features/whatsapp/WhatsAppCard";
-import { currentState } from "@/features/whatsapp/core";
 import { listServices } from "@/features/services/core";
 import { NewServiceForm } from "@/features/services/NewServiceForm";
 import { InstallGuide } from "@/features/install/InstallGuide";
@@ -16,20 +14,7 @@ import { ReplayTourButton } from "@/features/tour/ReplayTourButton";
 import { LocationCard } from "@/features/weather/LocationCard";
 import { formatBRL } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
-import { getDb } from "@/db/client";
-import { tenants } from "@/db/schema";
-import { eq } from "drizzle-orm";
-
-async function waInitial(tenantId: string): Promise<"open" | "other" | "unavailable"> {
-  const admin = adminFromEnv();
-  if (!admin) return "unavailable";
-  try {
-    const [t] = await getDb().select({ i: tenants.whatsappInstance }).from(tenants).where(eq(tenants.id, tenantId));
-    return (await currentState(admin, t?.i ?? null)) === "open" ? "open" : "other";
-  } catch {
-    return "unavailable";
-  }
-}
+import { whatsappState } from "@/features/shell/status";
 
 export const metadata: Metadata = { title: "Ajustes" };
 
@@ -40,7 +25,7 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
     services: await listServices(tx),
     week: await getHours(tx),
   }));
-  const [wa, google] = await Promise.all([waInitial(tenantId), isGoogleConnected(tenantId)]);
+  const [wa, google] = await Promise.all([whatsappState(tenantId), isGoogleConnected(tenantId)]);
   return (
     <PageShell title="Ajustes">
       <section aria-labelledby="servicos" className="grid gap-3">

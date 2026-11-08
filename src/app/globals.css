@@ -127,6 +127,46 @@ body::before {
   transform: scale(0.96);
 }
 
+/* Avatar do header: iniciais sobre o degradê lavanda → rosa da marca */
+.avatar {
+  background: linear-gradient(135deg, #8e73ff, var(--accent));
+  box-shadow: 0 0 0 2px #fff, 0 4px 12px -4px rgba(109, 74, 255, 0.6);
+}
+
+/* Menu "de cima": folha branca que desce do topo por cima da tela */
+.app-menu {
+  position: fixed;
+  inset: 0 0 auto;
+  width: 100%;
+  max-width: none;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0 0 32px 32px;
+  color: var(--fg);
+  background: var(--surface);
+  box-shadow: 0 20px 40px -22px rgba(23, 20, 43, 0.45);
+  /* O dedo arrasta a folha (pointermove) em vez de rolar a página */
+  touch-action: none;
+  transform: translateY(-104%);
+  transition:
+    transform 0.45s cubic-bezier(0.3, 1, 0.3, 1),
+    overlay 0.45s allow-discrete,
+    display 0.45s allow-discrete;
+}
+.app-menu[open] {
+  transform: none;
+}
+@starting-style {
+  .app-menu[open] {
+    transform: translateY(-104%);
+  }
+}
+.app-menu::backdrop {
+  background: rgba(23, 20, 43, 0.22);
+}
+
 /* Folha inferior (drawers) em vidro fosco, como as sheets do iOS */
 .sheet {
   /* Quase opaca: com menos que isso o texto do dashboard aparece por trás do formulário */
@@ -1079,6 +1119,7 @@ button {
   .fab,
   .btn-tint,
   .btn-glass,
+  .app-menu,
   .tour-hole,
   .tour-card,
   .tour-hint {
