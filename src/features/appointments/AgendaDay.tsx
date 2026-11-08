@@ -51,6 +51,7 @@ export type AgendaAppointment = Span & {
   clientName: string;
   /** Já formatado para exibir. */
   clientPhone: string;
+  serviceId: string;
   serviceName: string;
   price: string;
   status: Status;
@@ -81,8 +82,9 @@ const STATUS_SHORT: Record<Status, string> = {
   cancelled: "cancelado",
   done: "concluído",
   no_show: "faltou",
+  reschedule_requested: "quer remarcar",
 };
-const canDrag = (s: Status) => s === "pending_confirmation" || s === "confirmed";
+const canDrag = (s: Status) => s === "pending_confirmation" || s === "confirmed" || s === "reschedule_requested";
 const firstName = (n: string) => n.trim().split(/\s+/)[0];
 const range = (s: Span) => `${hhmm(s.start)}–${hhmm(s.end)}`;
 const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -523,9 +525,12 @@ export function AgendaDay({
                   inSheet
                   id={detailAppt.id}
                   time={hhmm(detailAppt.start)}
+                  date={date}
+                  start={hhmm(detailAppt.start)}
                   clientId={detailAppt.clientId}
                   clientName={detailAppt.clientName}
                   clientPhone={detailAppt.clientPhone}
+                  serviceId={detailAppt.serviceId}
                   serviceName={detailAppt.serviceName}
                   price={detailAppt.price}
                   status={detailAppt.status}

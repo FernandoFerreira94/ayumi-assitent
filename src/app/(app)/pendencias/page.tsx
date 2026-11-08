@@ -7,7 +7,7 @@ import { AppointmentCard } from "@/features/appointments/AppointmentCard";
 import { countPendencias, listPendencias } from "@/features/appointments/pendencias";
 import { RetrySyncButton } from "@/features/google/RetrySyncButton";
 import { isGoogleConnected } from "@/features/google/server";
-import { formatBRL, formatTime } from "@/lib/dates";
+import { formatBRL, formatTime, todayStr } from "@/lib/dates";
 import { maskPhone } from "@/lib/phone";
 import { requireTenant } from "@/lib/tenant";
 
@@ -27,9 +27,12 @@ export default async function PendenciasPage() {
       key={r.id}
       id={r.id}
       time={when(r.startsAt)}
+      date={todayStr(r.startsAt)}
+      start={formatTime(r.startsAt)}
       clientId={r.clientId}
       clientName={r.clientName}
       clientPhone={maskPhone(r.clientPhone.replace(/^\+55/, ""))}
+      serviceId={r.serviceId}
       serviceName={r.serviceName}
       price={formatBRL(r.priceCents)}
       status={r.status}
@@ -45,6 +48,14 @@ export default async function PendenciasPage() {
         />
       ) : (
         <div className="grid gap-5">
+          {p.toReschedule.length > 0 ? (
+            <section aria-labelledby="remarcar" className="grid gap-2">
+              <h2 id="remarcar" className="px-1 text-sm font-bold uppercase tracking-wide text-muted">
+                Querem remarcar
+              </h2>
+              <ul className="grid gap-2">{p.toReschedule.map(card)}</ul>
+            </section>
+          ) : null}
           {p.toClose.length > 0 ? (
             <section aria-labelledby="fechar" className="grid gap-2">
               <h2 id="fechar" className="px-1 text-sm font-bold uppercase tracking-wide text-muted">

@@ -305,7 +305,12 @@ d("lembretes (núcleo)", () => {
     await mk("2026-11-10T10:00:00Z", "2026-11-10T11:00:00Z", "confirmed"); // já passou → não
 
     const sent: string[] = [];
-    const ok = { sendText: async (to: string, t: string) => void sent.push(`${to}|${t}`) };
+    const ok = {
+      sendText: async (to: string, t: string) => {
+        sent.push(`${to}|${t}`);
+        return { id: `m${sent.length}` };
+      },
+    };
     expect(await withTenant(T, (tx) => sendReminders(tx, ok, now))).toEqual({ sent: 1, failed: 0, offline: false });
     expect(sent[0]).toContain("+5511900005555|Oi, Bia!");
     // segunda rodada: nada novo

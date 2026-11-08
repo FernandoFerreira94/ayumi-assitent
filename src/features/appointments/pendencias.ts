@@ -12,6 +12,7 @@ const base = (tx: Tx) =>
       clientId: clients.id,
       clientName: clients.name,
       clientPhone: clients.phoneE164,
+      serviceId: services.id,
       serviceName: services.name,
     })
     .from(appointments)
@@ -25,11 +26,13 @@ export type Pendencias = {
   toConfirm: Awaited<ReturnType<ReturnType<typeof base>["orderBy"]>>;
   /** Futuros que não chegaram ao Google Agenda (só se o Google estiver conectado). */
   unsynced: Awaited<ReturnType<ReturnType<typeof base>["orderBy"]>>;
+  /** A cliente respondeu "3" ao lembrete: a dona precisa combinar outro horário. */
+  toReschedule: Awaited<ReturnType<ReturnType<typeof base>["orderBy"]>>;
 };
 
 export async function listPendencias(tx: Tx, now: Date, googleConnected: boolean): Promise<Pendencias> {
-  const open = inArray(appointments.status, ["pending_confirmation", "confirmed"]);
-  const [toClose, toConfirm, unsynced] = await Promise.all([
+  const open = inArray(appointments.status, ["pending_confirmation", "confirmed", "reschedule_requested"]);
+  const [toClose, toConfirm, unsynced, toReschedule] = await Promise.all([
     base(tx)
       .where(and(open, lt(appointments.endsAt, now)))
       .orderBy(asc(appointments.startsAt)),
@@ -41,8 +44,12 @@ export async function listPendencias(tx: Tx, now: Date, googleConnected: boolean
           .where(and(open, gte(appointments.endsAt, now), isNull(appointments.googleEventId)))
           .orderBy(asc(appointments.startsAt))
       : Promise.resolve([]),
+    base(tx)
+      .where(and(eq(appointments.status, "reschedule_requested"), gte(appointments.endsAt, now)))
+      .orderBy(asc(appointments.startsAt)),
   ]);
-  return { toClose, toConfirm, unsynced };
+  return { toClose, toConfirm, unsynced, toReschedule };
 }
 
-export const countPendencias = (p: Pendencias) => p.toClose.length + p.toConfirm.length + p.unsynced.length;
+export const countPendencias = (p: Pendencias) =>
+  p.toClose.length + p.toConfirm.length + p.unsynced.length + p.toReschedule.length;

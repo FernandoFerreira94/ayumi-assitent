@@ -38,7 +38,8 @@ export async function insertAppointment(
           endsAt,
           bufferMin: svc.bufferMin,
           priceCents: svc.priceCents,
-          status: "confirmed",
+          // Fica confirmado quando a cliente responder "1" ao lembrete da véspera
+          status: "pending_confirmation",
         })
         .returning({ id: appointments.id });
       return r;
@@ -85,6 +86,55 @@ export async function moveAppointment(
         .returning({ id: appointments.id }),
     );
     return rows.length ? ok() : fail("NOT_ALLOWED");
+  } catch (e) {
+    if (pgCode(e) === "23P01") return fail("SLOT_TAKEN", "time");
+    throw e;
+  }
+}
+
+/**
+ * Edita o atendimento: outro dia/horário e/ou outro serviço (que traz a própria duração e valor).
+ * Se o horário mudou, volta a "aguardando confirmação" e limpa lembrete e resposta: a cliente
+ * recebe um lembrete novo, do horário novo. Só trocar o serviço mantém o status.
+ */
+export async function editAppointment(
+  tx: Tx,
+  tenantId: string,
+  id: string,
+  input: { date: string; time: string; serviceId: string },
+): Promise<ActionResult> {
+  const [a] = await tx
+    .select({ startsAt: appointments.startsAt, endsAt: appointments.endsAt, serviceId: appointments.serviceId, priceCents: appointments.priceCents })
+    .from(appointments)
+    .where(eq(appointments.id, id));
+  if (!a) return fail("NOT_ALLOWED");
+  let durationMs = a.endsAt.getTime() - a.startsAt.getTime();
+  let priceCents = a.priceCents;
+  if (input.serviceId !== a.serviceId) {
+    const [svc] = await tx.select().from(services).where(eq(services.id, input.serviceId));
+    if (!svc || !svc.active || !svc.bookable) return fail("VALIDATION", "serviceId");
+    durationMs = svc.durationMin * 60_000;
+    priceCents = svc.priceCents;
+  }
+  const startsAt = toInstant(input.date, input.time);
+  const endsAt = new Date(startsAt.getTime() + durationMs);
+  const moved = startsAt.getTime() !== a.startsAt.getTime();
+  await lockTenant(tx, tenantId);
+  if (await overlapsBlock(tx, startsAt, endsAt)) return fail("SLOT_TAKEN", "time");
+  try {
+    await tx.transaction((sp) =>
+      sp
+        .update(appointments)
+        .set({
+          startsAt,
+          endsAt,
+          serviceId: input.serviceId,
+          priceCents,
+          ...(moved ? { status: "pending_confirmation" as const, reminderSentAt: null, replyAt: null } : {}),
+        })
+        .where(eq(appointments.id, id)),
+    );
+    return ok();
   } catch (e) {
     if (pgCode(e) === "23P01") return fail("SLOT_TAKEN", "time");
     throw e;
