@@ -13,9 +13,14 @@ test("a raiz abre a agenda", async ({ page }) => {
   await expect(page).toHaveURL(/\/agenda$/);
 });
 
-// O nav em leque só mostra as telas depois de aberto pelo botão central
+// O nav em leque só mostra as telas depois de aberto pelo botão central.
+// Toque antes da hidratação não abre nada, então repete até o leque abrir de fato.
 const openFan = (page: import("@playwright/test").Page) =>
-  page.getByRole("button", { name: "Abrir navegação" }).click();
+  expect(async () => {
+    const toggle = page.locator(".fan-toggle");
+    if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click({ timeout: 1000 });
+    await expect(toggle).toHaveAttribute("aria-expanded", "true", { timeout: 1000 });
+  }).toPass();
 
 test("as 4 abas navegam e marcam a aba atual", async ({ page }) => {
   await page.goto("/agenda");
