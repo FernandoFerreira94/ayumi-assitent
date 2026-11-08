@@ -31,12 +31,7 @@ export function HoursForm({ week }: { week: Day[] }) {
         return (
           <div key={name} className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
             <label className="flex min-h-11 items-center gap-2 text-sm font-bold">
-              <input
-                type="checkbox"
-                name={`open-${i}`}
-                defaultChecked={!!d}
-                className="check-round"
-              />
+              <input type="checkbox" name={`open-${i}`} defaultChecked={!!d} className="check-round" />
               {name}
             </label>
             <select name={`opens-${i}`} aria-label={`${name}: abre`} defaultValue={d?.opens ?? "09:00"} className={sel}>

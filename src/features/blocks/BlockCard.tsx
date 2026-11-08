@@ -28,8 +28,18 @@ export function BlockCard({ id, date, start, end, reason }: Props) {
 
   return (
     <li className="glass flex items-center gap-3 rounded-2xl px-4 py-3" aria-busy={pending}>
-      <span className="grid size-10 shrink-0 place-content-center rounded-full bg-soft/70 text-primary-text" aria-hidden="true">
-        <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round">
+      <span
+        className="grid size-10 shrink-0 place-content-center rounded-full bg-soft/70 text-primary-text"
+        aria-hidden="true"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className="size-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.1"
+          strokeLinecap="round"
+        >
           <rect x="5" y="10.5" width="14" height="10" rx="3" />
           <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" />
         </svg>

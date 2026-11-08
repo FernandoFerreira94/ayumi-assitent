@@ -17,7 +17,16 @@ export function SignOutButton() {
         onClick={() => setAsking(true)}
         className="flex min-h-11 items-center gap-3 rounded-2xl px-2.5 text-[15px] font-bold text-fail"
       >
-        <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <svg
+          viewBox="0 0 24 24"
+          className="size-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
           <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11" />
         </svg>
         Sair da conta
@@ -26,8 +35,14 @@ export function SignOutButton() {
   }
 
   return (
-    <div role="alertdialog" aria-label="Confirmar saída" className="grid w-full gap-2 rounded-2xl border border-line bg-surface p-3">
-      <p className="text-sm font-semibold text-muted">Sair da conta? Para voltar, você entra de novo com o Google ou o e-mail.</p>
+    <div
+      role="alertdialog"
+      aria-label="Confirmar saída"
+      className="grid w-full gap-2 rounded-2xl border border-line bg-surface p-3"
+    >
+      <p className="text-sm font-semibold text-muted">
+        Sair da conta? Para voltar, você entra de novo com o Google ou o e-mail.
+      </p>
       <div className="flex gap-2">
         <button
           type="button"

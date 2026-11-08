@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+  type PointerEvent,
+  type ReactNode,
+} from "react";
 import { Drawer } from "vaul";
 import { notify } from "@/components/feedback/toast";
 import type { PickerOption } from "@/components/ui/LetterPicker";
@@ -8,7 +16,15 @@ import { BlockCard } from "@/features/blocks/BlockCard";
 import { formatDayTitle } from "@/lib/dates";
 import { AppointmentCard } from "./AppointmentCard";
 import { rescheduleAppointment } from "./actions";
-import { conflictReason, dragSpan, layoutColumns, nextFree, SNAP_MIN, type DragMode, type Occupant } from "./agenda-grid";
+import {
+  conflictReason,
+  dragSpan,
+  layoutColumns,
+  nextFree,
+  SNAP_MIN,
+  type DragMode,
+  type Occupant,
+} from "./agenda-grid";
 import { NewAppointmentSheet } from "./NewAppointmentSheet";
 import type { Status } from "./schema";
 import { warnSync } from "./sync-warning";
@@ -60,6 +76,14 @@ type Gesture = {
   active: boolean;
 };
 
+const STATUS_SHORT: Record<Status, string> = {
+  pending_confirmation: "aguardando",
+  confirmed: "confirmado",
+  cancelled: "cancelado",
+  done: "concluído",
+  no_show: "faltou",
+  reschedule_requested: "quer remarcar",
+};
 const canDrag = (s: Status) => s === "pending_confirmation" || s === "confirmed" || s === "reschedule_requested";
 const firstName = (n: string) => n.trim().split(/\s+/)[0];
 const range = (s: Span) => `${hhmm(s.start)}–${hhmm(s.end)}`;
@@ -109,7 +133,9 @@ export function AgendaDay({
   const [detailId, setDetailId] = useState<string | null>(null);
   const [temp, setTemp] = useState<Span | null>(null);
   const [newKey, setNewKey] = useState(0);
-  const [enter] = useState(() => (lastDate === null || lastDate === date ? undefined : date > lastDate ? "fwd" : "back"));
+  const [enter] = useState(() =>
+    lastDate === null || lastDate === date ? undefined : date > lastDate ? "fwd" : "back",
+  );
 
   const appts = appointments.map((a) => (moved[a.id] ? { ...a, ...moved[a.id] } : a));
   const occupants: Occupant[] = [
@@ -232,13 +258,9 @@ export function AgendaDay({
     };
   }, []);
 
-  // Abre rolada até a hora atual, se ela estiver abaixo da dobra
+  // Sempre abre no topo; a linha da hora atual já aparece marcada na grade
   useEffect(() => {
     lastDate = date;
-    const grid = gridRef.current;
-    if (nowMin === null || !grid) return;
-    const target = grid.getBoundingClientRect().top + window.scrollY + y(nowMin) - window.innerHeight * 0.4;
-    if (target > window.scrollY) window.scrollTo({ top: target });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- só ao abrir o dia
   }, []);
 
@@ -348,7 +370,15 @@ export function AgendaDay({
           onClick={() => openNew(nextFree(nowMin ?? 0, NEW_LEN, hours, occupants))}
           className="btn-tint flex min-h-12 items-center justify-center gap-2 rounded-full px-4 text-sm font-bold"
         >
-          <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            className="size-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.3"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
             <rect x="3.5" y="5" width="17" height="15" rx="4.5" />
             <path d="M8 3v3.5M16 3v3.5M12 10.5v6M9 13.5h6" />
           </svg>
@@ -417,20 +447,29 @@ export function AgendaDay({
                 }}
                 aria-label={`${a.clientName}, ${a.serviceName}, ${hhmm(span.start)} a ${hhmm(span.end)}${canDrag(a.status) ? ". Segure para mover." : ""}`}
               >
-                {(sel || lifted) && canDrag(a.status) ? <span className="ag-hd t" data-h="t" aria-hidden="true" /> : null}
+                {(sel || lifted) && canDrag(a.status) ? (
+                  <span className="ag-hd t" data-h="t" aria-hidden="true" />
+                ) : null}
                 <b>{a.clientName}</b>
-                {/* Cabe o quanto a altura deixa: até 40 min numa linha, até 1 h em duas, depois em três */}
+                {/* Cabe o quanto a altura deixa: 40 min numa linha, 1 h serviço e valor, 90 min telefone e situação */}
                 {span.end - span.start >= 60 ? (
                   <span>
-                    {a.serviceName}
-                    {a.status === "pending_confirmation" ? " · aguardando" : ""}
+                    {a.serviceName} · {a.price}
+                  </span>
+                ) : null}
+                {span.end - span.start >= 90 ? (
+                  <span>
+                    {a.clientPhone} · {STATUS_SHORT[a.status]}
                   </span>
                 ) : null}
                 <span className="tm">
                   {span.end - span.start >= 40 && span.end - span.start < 60 ? `${a.serviceName} · ` : ""}
                   {range(span)}
+                  {span.end - span.start >= 60 ? ` · ${duration(span)}` : ""}
                 </span>
-                {(sel || lifted) && canDrag(a.status) ? <span className="ag-hd b" data-h="b" aria-hidden="true" /> : null}
+                {(sel || lifted) && canDrag(a.status) ? (
+                  <span className="ag-hd b" data-h="b" aria-hidden="true" />
+                ) : null}
               </button>
             );
           })}
@@ -469,10 +508,16 @@ export function AgendaDay({
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
           <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
-            <Drawer.Title className="pb-1 text-xl font-bold">{detailAppt ? detailAppt.clientName : "Horário bloqueado"}</Drawer.Title>
+            <Drawer.Title className="pb-1 text-xl font-bold">
+              {detailAppt ? detailAppt.clientName : "Horário bloqueado"}
+            </Drawer.Title>
             <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
               {dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1)}
-              {detailAppt ? ` · ${range(detailAppt)} · ${duration(detailAppt)}` : detailBlock ? ` · ${range(detailBlock)}` : ""}
+              {detailAppt
+                ? ` · ${range(detailAppt)} · ${duration(detailAppt)}`
+                : detailBlock
+                  ? ` · ${range(detailBlock)}`
+                  : ""}
             </Drawer.Description>
             <ul className="grid gap-2">
               {detailAppt ? (
@@ -505,7 +550,10 @@ export function AgendaDay({
                 type="button"
                 onClick={() => {
                   setDetailId(null);
-                  notify.info("Segure o atendimento e arraste", "Ou puxe a bolinha de cima ou de baixo para mudar a duração.");
+                  notify.info(
+                    "Segure o atendimento e arraste",
+                    "Ou puxe a bolinha de cima ou de baixo para mudar a duração.",
+                  );
                 }}
                 className="btn-glass mt-2 min-h-11 w-full rounded-full px-4 text-sm font-bold"
               >

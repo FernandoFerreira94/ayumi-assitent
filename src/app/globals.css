@@ -141,7 +141,9 @@ body::before {
   background: var(--glass-body);
   border: 1px solid var(--glass-line);
   color: var(--primary-text);
-  box-shadow: var(--glass-rim), 0 4px 14px rgba(40, 24, 110, 0.1);
+  box-shadow:
+    var(--glass-rim),
+    0 4px 14px rgba(40, 24, 110, 0.1);
 }
 .btn-tint:active,
 .btn-glass:active {
@@ -151,7 +153,9 @@ body::before {
 /* Avatar do header: iniciais sobre o degradê lavanda → rosa da marca */
 .avatar {
   background: linear-gradient(135deg, #8e73ff, var(--accent));
-  box-shadow: 0 0 0 2px #fff, 0 4px 12px -4px rgba(109, 74, 255, 0.6);
+  box-shadow:
+    0 0 0 2px #fff,
+    0 4px 12px -4px rgba(109, 74, 255, 0.6);
 }
 
 /* Menu "de cima": folha branca que desce do topo por cima da tela */
@@ -193,7 +197,9 @@ body::before {
   /* Quase opaca: com menos que isso o texto do dashboard aparece por trás do formulário */
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 247, 252, 0.93));
   border-top: 1px solid var(--glass-line);
-  box-shadow: var(--glass-rim), 0 -12px 40px rgba(40, 24, 110, 0.18);
+  box-shadow:
+    var(--glass-rim),
+    0 -12px 40px rgba(40, 24, 110, 0.18);
   backdrop-filter: blur(34px) saturate(1.8);
   -webkit-backdrop-filter: blur(34px) saturate(1.8);
 }
@@ -403,7 +409,9 @@ button {
   border-radius: 999px;
   background: var(--surface);
   color: var(--primary-text);
-  box-shadow: 0 6px 18px rgba(40, 24, 110, 0.16), 0 1px 2px rgba(40, 24, 110, 0.1);
+  box-shadow:
+    0 6px 18px rgba(40, 24, 110, 0.16),
+    0 1px 2px rgba(40, 24, 110, 0.1);
   transition: transform 0.3s var(--spring);
 }
 .fan-link:active {

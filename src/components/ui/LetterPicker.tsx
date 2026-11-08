@@ -35,7 +35,15 @@ export function LetterPicker({
     <div className="grid gap-1 text-sm font-bold">
       <span id={`${name}-label`}>{label}</span>
       {/* Oculto mas validável: sem readOnly, que tiraria o campo da validação e o "required" não barraria o envio */}
-      <input name={name} value={value?.id ?? ""} onChange={() => {}} required tabIndex={-1} className="sr-only" aria-hidden="true" />
+      <input
+        name={name}
+        value={value?.id ?? ""}
+        onChange={() => {}}
+        required
+        tabIndex={-1}
+        className="sr-only"
+        aria-hidden="true"
+      />
       <Drawer.NestedRoot open={open} onOpenChange={setOpen}>
         <Drawer.Trigger
           aria-labelledby={`${name}-label`}
@@ -45,7 +53,15 @@ export function LetterPicker({
             {value ? value.label : placeholder}
             {value?.hint ? <span className="text-sm font-semibold text-muted"> · {value.hint}</span> : null}
           </span>
-          <svg viewBox="0 0 24 24" className="size-5 shrink-0 text-muted" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            className="size-5 shrink-0 text-muted"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.3"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
             <path d="m9 6 6 6-6 6" />
           </svg>
         </Drawer.Trigger>
@@ -91,7 +107,16 @@ export function LetterPicker({
                                 {o.hint ? <span className="text-sm font-semibold text-muted">{o.hint}</span> : null}
                               </span>
                               {value?.id === o.id ? (
-                                <svg viewBox="0 0 24 24" className="size-5 text-primary-text" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <svg
+                                  viewBox="0 0 24 24"
+                                  className="size-5 text-primary-text"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2.6"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  aria-hidden="true"
+                                >
                                   <path d="m5 12.5 4.5 4.5L19 7.5" />
                                 </svg>
                               ) : null}

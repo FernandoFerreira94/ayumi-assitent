@@ -44,7 +44,8 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
     setStep((s) => {
       if (s === null) return null;
       // Sair do passo do leque fecha o leque, para o sino ficar à vista
-      if (TOUR_STEPS[s].target?.includes("fan-link")) window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      if (TOUR_STEPS[s].target?.includes("fan-link"))
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
       return s + 1 < TOUR_STEPS.length ? s + 1 : s;
     });
   }, []);
@@ -68,7 +69,14 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
     const tick = () => {
       setBox((prev) => {
         const b = measure(current.target);
-        const same = prev && b && Math.abs(prev.top - b.top) + Math.abs(prev.left - b.left) + Math.abs(prev.width - b.width) + Math.abs(prev.height - b.height) < 0.5;
+        const same =
+          prev &&
+          b &&
+          Math.abs(prev.top - b.top) +
+            Math.abs(prev.left - b.left) +
+            Math.abs(prev.width - b.width) +
+            Math.abs(prev.height - b.height) <
+            0.5;
         return same ? prev : b;
       });
       raf = requestAnimationFrame(tick);
@@ -112,14 +120,24 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
     <div className="tour" data-step={step}>
       {box ? (
         <>
-          <div className="tour-hole" style={{ top: box.top, left: box.left, width: box.width, height: box.height }} aria-hidden="true" />
+          <div
+            className="tour-hole"
+            style={{ top: box.top, left: box.left, width: box.width, height: box.height }}
+            aria-hidden="true"
+          />
           {tapping ? (
             // Quatro faixas em volta do furo: bloqueiam o resto e deixam o destaque tocável
             <>
               <div className="tour-block" style={{ top: 0, left: 0, right: 0, height: Math.max(0, box.top) }} />
               <div className="tour-block" style={{ top: box.top + box.height, left: 0, right: 0, bottom: 0 }} />
-              <div className="tour-block" style={{ top: box.top, left: 0, width: Math.max(0, box.left), height: box.height }} />
-              <div className="tour-block" style={{ top: box.top, left: box.left + box.width, right: 0, height: box.height }} />
+              <div
+                className="tour-block"
+                style={{ top: box.top, left: 0, width: Math.max(0, box.left), height: box.height }}
+              />
+              <div
+                className="tour-block"
+                style={{ top: box.top, left: box.left + box.width, right: 0, height: box.height }}
+              />
             </>
           ) : (
             <div className="tour-block inset-0" />

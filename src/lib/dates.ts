@@ -42,11 +42,12 @@ export const formatMonthYear = (date: string) => {
 
 /** Saudação pelo horário do estúdio, com o primeiro nome quando houver. */
 export function greeting(now: Date, name?: string | null): string {
-  const hour = Number(new Intl.DateTimeFormat("en-US", { timeZone: TZ, hour: "numeric", hour12: false }).format(now)) % 24;
+  const hour =
+    Number(new Intl.DateTimeFormat("en-US", { timeZone: TZ, hour: "numeric", hour12: false }).format(now)) % 24;
   const base = hour >= 5 && hour < 12 ? "Bom dia" : hour >= 12 && hour < 18 ? "Boa tarde" : "Boa noite";
   const first = name?.trim().split(/\s+/)[0];
   return first ? `${base}, ${first}` : base;
 }
 
-export const formatBRL =(cents: number) =>
+export const formatBRL = (cents: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);

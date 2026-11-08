@@ -20,7 +20,10 @@ import { appointmentInput, STATUSES } from "./schema";
 export async function loadBookingOptions(): Promise<ActionResult<BookingOptions>> {
   const { tenantId } = await requireTenant();
   try {
-    const [clients, services] = await withTenant(tenantId, async (tx) => [await searchClients(tx, ""), await listBookable(tx)] as const);
+    const [clients, services] = await withTenant(
+      tenantId,
+      async (tx) => [await searchClients(tx, ""), await listBookable(tx)] as const,
+    );
     return ok(bookingOptions(clients, services));
   } catch {
     return fail("UNKNOWN");
@@ -33,7 +36,9 @@ export async function agendaVersion(date: string): Promise<ActionResult<string>>
   if (!isDateStr(date)) return fail("VALIDATION");
   try {
     const range = dayRange(date);
-    return ok(await withTenant(tenantId, async (tx) => dayVersion(await listDay(tx, range), await listBlocks(tx, range))));
+    return ok(
+      await withTenant(tenantId, async (tx) => dayVersion(await listDay(tx, range), await listBlocks(tx, range))),
+    );
   } catch {
     return fail("UNKNOWN");
   }
@@ -52,6 +57,7 @@ export async function createAppointment(_prev: ActionResult<{ id: string }> | nu
     const res = await withTenant(tenantId, (tx) => insertAppointment(tx, tenantId, parsed.data));
     if (!res.ok) return res;
     revalidatePath("/agenda");
+    revalidatePath("/calendario");
     const sync = await syncAppointmentSafe(tenantId, res.data.id);
     return ok({ id: res.data.id, sync });
   } catch {
@@ -72,7 +78,12 @@ export async function rescheduleAppointment(
       id: z.string().uuid(),
       date: z.string().refine(isDateStr),
       time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
-      durationMin: z.number().int().min(15).max(12 * 60).multipleOf(15),
+      durationMin: z
+        .number()
+        .int()
+        .min(15)
+        .max(12 * 60)
+        .multipleOf(15),
     })
     .safeParse({ id, date, time, durationMin });
   if (!p.success) return fail("VALIDATION");
@@ -82,6 +93,7 @@ export async function rescheduleAppointment(
     const res = await withTenant(tenantId, (tx) => moveAppointment(tx, tenantId, p.data.id, startsAt, endsAt));
     if (!res.ok) return res;
     revalidatePath("/agenda");
+    revalidatePath("/calendario");
     return ok({ sync: await syncAppointmentSafe(tenantId, p.data.id) });
   } catch {
     return fail("UNKNOWN");
@@ -125,6 +137,7 @@ export async function updateStatus(id: string, status: string): Promise<ActionRe
     const res = await withTenant(tenantId, (tx) => setStatus(tx, p.data.id, p.data.status));
     if (!res.ok) return res;
     revalidatePath("/agenda");
+    revalidatePath("/calendario");
     return ok({ sync: await syncAppointmentSafe(tenantId, p.data.id) });
   } catch {
     return fail("UNKNOWN");

@@ -7,7 +7,7 @@ const CACHE = "mimo:clima";
 const ASKED = "mimo:clima-pedido";
 const TTL = 30 * 60_000;
 
-const read = <T,>(key: string): T | null => {
+const read = <T>(key: string): T | null => {
   try {
     const v = localStorage.getItem(key);
     return v ? (JSON.parse(v) as T) : null;

@@ -38,7 +38,9 @@ export function dayBriefing(rows: Row[], now: Date, isToday: boolean): Briefing 
   const unconfirmed = active.filter((r) => r.status === "pending_confirmation" && r.startsAt >= now).length;
   if (unconfirmed > 0) {
     lines.push(
-      unconfirmed === 1 ? "1 cliente ainda não confirmou o horário." : `${unconfirmed} clientes ainda não confirmaram o horário.`,
+      unconfirmed === 1
+        ? "1 cliente ainda não confirmou o horário."
+        : `${unconfirmed} clientes ainda não confirmaram o horário.`,
     );
   }
   const last = active.at(-1);

@@ -6,18 +6,58 @@ import { useEffect, useState } from "react";
 import { openNewAppointment } from "@/features/appointments/QuickBook";
 
 const icon = (d: React.ReactNode) => (
-  <svg viewBox="0 0 24 24" className="size-[22px]" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" aria-hidden="true">
+  <svg
+    viewBox="0 0 24 24"
+    className="size-[22px]"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.1"
+    strokeLinecap="round"
+    aria-hidden="true"
+  >
     {d}
   </svg>
 );
 
 /** Da esquerda para a direita no semicírculo; "Novo" fica no topo, ao alcance do polegar, e abre a folha sem sair da tela. */
 const ITEMS = [
-  { href: "/agenda", label: "Agenda", icon: icon(<><rect x="3.5" y="5" width="17" height="15" rx="4.5" /><path d="M8 3v3.5M16 3v3.5M3.5 10h17" /></>) },
-  { href: "/clientes", label: "Clientes", icon: icon(<><circle cx="12" cy="8" r="4" /><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" /></>) },
+  {
+    href: "/agenda",
+    label: "Painel",
+    icon: icon(
+      <>
+        <rect x="3.5" y="5" width="17" height="15" rx="4.5" />
+        <path d="M8 3v3.5M16 3v3.5M3.5 10h17" />
+      </>,
+    ),
+  },
+  {
+    href: "/clientes",
+    label: "Clientes",
+    icon: icon(
+      <>
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" />
+      </>,
+    ),
+  },
   { href: null, label: "Novo", icon: icon(<path d="M12 5v14M5 12h14" />) },
-  { href: "/vagas", label: "Vagas", icon: icon(<path d="M12 3.5 13.6 10.4 20.5 12 13.6 13.6 12 20.5 10.4 13.6 3.5 12 10.4 10.4Z" />) },
-  { href: "/ajustes", label: "Ajustes", icon: icon(<><path d="M4 7h16M4 17h16" /><circle cx="9" cy="7" r="2.5" /><circle cx="15" cy="17" r="2.5" /></>) },
+  {
+    href: "/vagas",
+    label: "Vagas",
+    icon: icon(<path d="M12 3.5 13.6 10.4 20.5 12 13.6 13.6 12 20.5 10.4 13.6 3.5 12 10.4 10.4Z" />),
+  },
+  {
+    href: "/ajustes",
+    label: "Ajustes",
+    icon: icon(
+      <>
+        <path d="M4 7h16M4 17h16" />
+        <circle cx="9" cy="7" r="2.5" />
+        <circle cx="15" cy="17" r="2.5" />
+      </>,
+    ),
+  },
 ];
 /** Raio do semicírculo: 104px deixa ~82px entre os centros, folga para os rótulos não encostarem. */
 const RADIUS = 104;
@@ -88,7 +128,14 @@ export function FanNav() {
           aria-label={open ? "Fechar navegação" : "Abrir navegação"}
           onClick={() => setOpen((o) => !o)}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.6"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
             <path d="M12 5v14M5 12h14" />
           </svg>
         </button>

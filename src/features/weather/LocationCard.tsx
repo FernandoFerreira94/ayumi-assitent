@@ -25,7 +25,11 @@ export function LocationCard() {
         if (!alive) return;
         setState(s);
         // Já liberada: não abre aviso, só busca o clima para mostrar a roupa de agora
-        if (s === "granted") enableWeather().then((w) => alive && setWeather(w), () => {});
+        if (s === "granted")
+          enableWeather().then(
+            (w) => alive && setWeather(w),
+            () => {},
+          );
       })
       .catch(() => alive && setState("prompt"));
     return () => {

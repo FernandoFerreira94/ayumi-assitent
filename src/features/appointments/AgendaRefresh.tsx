@@ -37,7 +37,10 @@ export function AgendaRefresh({ date, version }: { date: string; version: string
   }, [date, version, stale]);
 
   return (
-    <div aria-live="polite" className="pointer-events-none fixed inset-x-0 top-[max(env(safe-area-inset-top),12px)] z-30 flex justify-center">
+    <div
+      aria-live="polite"
+      className="pointer-events-none fixed inset-x-0 top-[max(env(safe-area-inset-top),12px)] z-30 flex justify-center"
+    >
       {stale ? (
         <button
           type="button"
@@ -48,7 +51,16 @@ export function AgendaRefresh({ date, version }: { date: string; version: string
           {pending ? (
             <span className="spin" aria-hidden="true" />
           ) : (
-            <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              className="size-[18px]"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7" />
             </svg>
           )}

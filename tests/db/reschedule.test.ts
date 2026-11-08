@@ -19,7 +19,8 @@ d("remarcar pelo arraste (Postgres real)", () => {
     [{ id: T }] = await admin`insert into tenants (name) values ('Estúdio R') returning id`;
     [{ id: svc }] =
       await admin`insert into services (tenant_id,name,duration_min,price_cents) values (${T},'Corte',60,8000) returning id`;
-    [{ id: cli }] = await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Ana','+5511977770000') returning id`;
+    [{ id: cli }] =
+      await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Ana','+5511977770000') returning id`;
   });
   afterAll(async () => admin.end());
 
@@ -45,8 +46,14 @@ d("remarcar pelo arraste (Postgres real)", () => {
     const a = await insert("2030-01-11T12:00:00Z", "2030-01-11T13:00:00Z");
     await insert("2030-01-11T14:00:00Z", "2030-01-11T15:00:00Z");
     await admin`insert into blocks (tenant_id,starts_at,ends_at,reason) values (${T},'2030-01-11T16:00:00Z','2030-01-11T17:00:00Z','Almoço')`;
-    expect(await move(a, "2030-01-11T14:30:00Z", "2030-01-11T15:30:00Z")).toMatchObject({ ok: false, code: "SLOT_TAKEN" });
-    expect(await move(a, "2030-01-11T16:30:00Z", "2030-01-11T17:30:00Z")).toMatchObject({ ok: false, code: "SLOT_TAKEN" });
+    expect(await move(a, "2030-01-11T14:30:00Z", "2030-01-11T15:30:00Z")).toMatchObject({
+      ok: false,
+      code: "SLOT_TAKEN",
+    });
+    expect(await move(a, "2030-01-11T16:30:00Z", "2030-01-11T17:30:00Z")).toMatchObject({
+      ok: false,
+      code: "SLOT_TAKEN",
+    });
     const [row] = await admin`select starts_at from appointments where id = ${a}`;
     expect(new Date(row.starts_at).toISOString()).toBe("2030-01-11T12:00:00.000Z");
   });
@@ -54,6 +61,9 @@ d("remarcar pelo arraste (Postgres real)", () => {
   it("atendimento cancelado não pode ser arrastado", async () => {
     const id = await insert("2030-01-12T12:00:00Z", "2030-01-12T13:00:00Z");
     await admin`update appointments set status = 'cancelled' where id = ${id}`;
-    expect(await move(id, "2030-01-12T14:00:00Z", "2030-01-12T15:00:00Z")).toMatchObject({ ok: false, code: "NOT_ALLOWED" });
+    expect(await move(id, "2030-01-12T14:00:00Z", "2030-01-12T15:00:00Z")).toMatchObject({
+      ok: false,
+      code: "NOT_ALLOWED",
+    });
   });
 });

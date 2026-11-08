@@ -33,7 +33,11 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     // suppressHydrationWarning: o script do splash marca data-splash no <html> antes de o React hidratar
-    <html lang="pt-BR" className={`${quicksand.variable} ${varela.variable} h-full antialiased`} suppressHydrationWarning>
+    <html
+      lang="pt-BR"
+      className={`${quicksand.variable} ${varela.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: splashGate }} />
       </head>

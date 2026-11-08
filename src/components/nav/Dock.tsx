@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const TABS = [
   {
     href: "/agenda",
-    label: "Agenda",
+    label: "Painel",
     icon: (
       <>
         <rect x="3.5" y="5" width="17" height="15" rx="4.5" />

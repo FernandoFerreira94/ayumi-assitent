@@ -18,7 +18,12 @@ describe("timelineWindow", () => {
     expect(timelineWindow(day, [{ start: at(10), end: at(11) }])).toEqual({ start: at(9), end: at(18) });
   });
   it("estica até a hora cheia para mostrar atendimento fora do expediente", () => {
-    expect(timelineWindow(day, [{ start: at(7, 30), end: at(8, 30) }, { start: at(18), end: at(19, 15) }])).toEqual({
+    expect(
+      timelineWindow(day, [
+        { start: at(7, 30), end: at(8, 30) },
+        { start: at(18), end: at(19, 15) },
+      ]),
+    ).toEqual({
       start: at(7),
       end: at(20),
     });
@@ -28,7 +33,12 @@ describe("timelineWindow", () => {
 
 describe("freeGaps", () => {
   it("acha as lacunas entre os ocupados", () => {
-    expect(freeGaps(day, [{ start: at(10), end: at(11) }, { start: at(15, 30), end: at(18) }])).toEqual([
+    expect(
+      freeGaps(day, [
+        { start: at(10), end: at(11) },
+        { start: at(15, 30), end: at(18) },
+      ]),
+    ).toEqual([
       { start: at(9), end: at(10) },
       { start: at(11), end: at(15, 30) },
     ]);
@@ -37,7 +47,13 @@ describe("freeGaps", () => {
     expect(freeGaps(day, [{ start: at(9, 20), end: at(18) }])).toEqual([]);
   });
   it("ocupados sobrepostos não abrem lacuna falsa", () => {
-    expect(freeGaps(day, [{ start: at(9), end: at(12) }, { start: at(10), end: at(11) }, { start: at(12), end: at(18) }])).toEqual([]);
+    expect(
+      freeGaps(day, [
+        { start: at(9), end: at(12) },
+        { start: at(10), end: at(11) },
+        { start: at(12), end: at(18) },
+      ]),
+    ).toEqual([]);
   });
   it("dia fechado não tem horário livre", () => expect(freeGaps(null, [])).toEqual([]));
 });

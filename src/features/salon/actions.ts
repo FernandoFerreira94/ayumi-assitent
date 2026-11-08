@@ -23,6 +23,7 @@ export async function saveSalon(_prev: ActionResult | null, form: FormData): Pro
       .set({ name: p.data.name, businessType: p.data.businessType, reminderTemplate: p.data.reminderTemplate || null })
       .where(eq(tenants.id, tenantId));
     revalidatePath("/ajustes");
+    revalidatePath("/perfil");
     return ok();
   } catch {
     return fail("UNKNOWN");

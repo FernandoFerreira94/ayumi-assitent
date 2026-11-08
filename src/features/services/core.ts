@@ -69,7 +69,10 @@ export async function updateService(tx: Tx, id: string, input: ServiceInput) {
 
 /** Cópia logo abaixo do original, com "(cópia)" no nome. */
 export async function duplicateService(tx: Tx, tenantId: string, id: string) {
-  const [src] = await tx.select().from(services).where(and(eq(services.id, id), eq(services.active, true)));
+  const [src] = await tx
+    .select()
+    .from(services)
+    .where(and(eq(services.id, id), eq(services.active, true)));
   if (!src) return null;
   // abre espaço logo depois do original
   const all = await listServices(tx);
@@ -99,7 +102,11 @@ export async function setServiceActive(tx: Tx, id: string, active: boolean) {
 
 /** `ids` na nova ordem; poucas dezenas de linhas, então uma atualização por serviço basta. */
 export async function reorderServices(tx: Tx, ids: string[]) {
-  for (const [i, id] of ids.entries()) await tx.update(services).set({ position: i + 1 }).where(eq(services.id, id));
+  for (const [i, id] of ids.entries())
+    await tx
+      .update(services)
+      .set({ position: i + 1 })
+      .where(eq(services.id, id));
 }
 
 export async function insertCategory(tx: Tx, tenantId: string, name: string) {
@@ -129,6 +136,9 @@ export async function deleteCategory(tx: Tx, id: string): Promise<"ok" | "not_em
     .where(and(eq(services.categoryId, id), eq(services.active, true)));
   if (used.n > 0) return "not_empty";
   await tx.update(services).set({ categoryId: null }).where(eq(services.categoryId, id));
-  const rows = await tx.delete(serviceCategories).where(eq(serviceCategories.id, id)).returning({ id: serviceCategories.id });
+  const rows = await tx
+    .delete(serviceCategories)
+    .where(eq(serviceCategories.id, id))
+    .returning({ id: serviceCategories.id });
   return rows.length ? "ok" : "not_found";
 }

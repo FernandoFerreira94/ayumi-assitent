@@ -12,8 +12,7 @@ test("primeiro acesso: o tour pede toques, avança e não volta depois", async (
   // Passo de toque: sem botão, só o destaque avança
   await expect(card.getByText("Toque no destaque")).toBeVisible();
   await page.locator("[data-tour='bubble']").click();
-  await expect(card.getByRole("heading", { name: "Escolha o dia" })).toBeVisible();
-  await card.getByRole("button", { name: "Próximo" }).click();
+  await expect(card.getByRole("heading", { name: "Agendar e bloquear" })).toBeVisible();
   await card.getByRole("button", { name: "Próximo" }).click();
 
   await expect(card.getByRole("heading", { name: "O menu fica aqui" })).toBeVisible();

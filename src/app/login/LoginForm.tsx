@@ -53,10 +53,22 @@ function passwordStrength(v: string) {
 function GoogleG() {
   return (
     <svg viewBox="0 0 48 48" className="size-[18px]" aria-hidden="true">
-      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
-      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
-      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
-      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+      <path
+        fill="#EA4335"
+        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+      />
+      <path
+        fill="#4285F4"
+        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+      />
+      <path
+        fill="#34A853"
+        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+      />
     </svg>
   );
 }
@@ -145,7 +157,9 @@ export function LoginForm() {
           : await authClient.signIn.email({ email, password });
       if (res.error) return fail(authErrorText(res.error.code ?? res.error.message));
       setSuccess(true);
-      notify.success(view === "signup" ? `Bem-vinda, ${name.split(" ")[0]}! Conta criada` : "Pronto! Abrindo sua agenda");
+      notify.success(
+        view === "signup" ? `Bem-vinda, ${name.split(" ")[0]}! Conta criada` : "Pronto! Abrindo sua agenda",
+      );
       router.replace("/agenda");
       router.refresh();
     } catch {
@@ -201,7 +215,15 @@ export function LoginForm() {
           onClick={() => setShowPass((v) => !v)}
           className="absolute right-1.5 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-xl text-muted"
         >
-          <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            className="size-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
             <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
             <circle cx="12" cy="12" r="3" />
             {showPass ? <path d="M4 4l16 16" /> : null}
@@ -211,7 +233,10 @@ export function LoginForm() {
       {meter ? (
         <div className="flex items-center gap-2 pl-1.5 text-xs font-semibold text-muted">
           <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
-            <i className="block h-full rounded-full transition-all duration-300" style={{ width: `${strength.pct}%`, background: strength.color }} />
+            <i
+              className="block h-full rounded-full transition-all duration-300"
+              style={{ width: `${strength.pct}%`, background: strength.color }}
+            />
           </span>
           <span aria-live="polite">{strength.label}</span>
         </div>
@@ -220,8 +245,20 @@ export function LoginForm() {
   );
 
   const back = (
-    <button type="button" onClick={() => go("start")} className="flex min-h-11 items-center gap-1 self-start text-sm font-bold text-muted">
-      <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+    <button
+      type="button"
+      onClick={() => go("start")}
+      className="flex min-h-11 items-center gap-1 self-start text-sm font-bold text-muted"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        className="size-[18px]"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        aria-hidden="true"
+      >
         <path d="m15 18-6-6 6-6" />
       </svg>
       Voltar
@@ -239,7 +276,12 @@ export function LoginForm() {
             className="login-mascot relative grid justify-items-center rounded-3xl"
           >
             <span key={reaction?.n ?? (success ? "ok" : worried ? worriedAt : "idle")} className={motion}>
-              <Mascot mood={mood} look={look} size={view === "start" ? 148 : 104} className="transition-[width,height] duration-300" />
+              <Mascot
+                mood={mood}
+                look={look}
+                size={view === "start" ? 148 : 104}
+                className="transition-[width,height] duration-300"
+              />
             </span>
             <span className="login-shadow" aria-hidden="true" />
           </button>
@@ -270,7 +312,13 @@ export function LoginForm() {
 
       {view === "start" ? (
         <div key="start" className="login-view grid gap-3">
-          <SubmitButton type="button" onClick={google} pending={pendingGoogle} disabled={busy} pendingLabel="Abrindo o Google…">
+          <SubmitButton
+            type="button"
+            onClick={google}
+            pending={pendingGoogle}
+            disabled={busy}
+            pendingLabel="Abrindo o Google…"
+          >
             <span className="flex items-center gap-2.5">
               {/* O "G" do Google pede fundo branco; no botão lavanda ele vai num círculo */}
               <span className="grid size-7 place-items-center rounded-full bg-white">
@@ -279,8 +327,22 @@ export function LoginForm() {
               Entrar com Google
             </span>
           </SubmitButton>
-          <button type="button" onClick={() => go("email")} disabled={busy} className="flex min-h-13 items-center justify-center gap-2.5 rounded-2xl bg-soft px-5 font-bold text-primary-text">
-            <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <button
+            type="button"
+            onClick={() => go("email")}
+            disabled={busy}
+            className="flex min-h-13 items-center justify-center gap-2.5 rounded-2xl bg-soft px-5 font-bold text-primary-text"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="size-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <rect x="3" y="5" width="18" height="14" rx="4" />
               <path d="m4 7 8 6 8-6" />
             </svg>
@@ -295,14 +357,26 @@ export function LoginForm() {
           <InstallGuide compact />
         </div>
       ) : (
-        <form key={view} onSubmit={submitEmail} noValidate className={`login-view grid gap-3 ${worried ? "login-shake" : ""}`}>
+        <form
+          key={view}
+          onSubmit={submitEmail}
+          noValidate
+          className={`login-view grid gap-3 ${worried ? "login-shake" : ""}`}
+        >
           {back}
           {view === "signup" ? (
             <div className="grid gap-1">
               <label htmlFor="name" className="pl-1.5 text-xs font-bold text-muted">
                 Nome
               </label>
-              <input id="name" name="name" autoComplete="name" placeholder="Como quer ser chamada" className={input} {...textField} />
+              <input
+                id="name"
+                name="name"
+                autoComplete="name"
+                placeholder="Como quer ser chamada"
+                className={input}
+                {...textField}
+              />
             </div>
           ) : null}
           <div className="grid gap-1">
@@ -334,7 +408,11 @@ export function LoginForm() {
           </SubmitButton>
           <p className="text-center text-sm font-semibold text-muted">
             {view === "signup" ? "Já tem conta? " : "Ainda não tem conta? "}
-            <button type="button" onClick={() => go(view === "signup" ? "email" : "signup")} className="min-h-11 font-bold text-primary-text">
+            <button
+              type="button"
+              onClick={() => go(view === "signup" ? "email" : "signup")}
+              className="min-h-11 font-bold text-primary-text"
+            >
               {view === "signup" ? "Entrar" : "Criar conta"}
             </button>
           </p>

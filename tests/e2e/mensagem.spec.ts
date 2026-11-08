@@ -20,7 +20,12 @@ test("tocar na cliente abre a conversa; sem WhatsApp, a mensagem fica como não 
   await expect(conversa.getByText("Oi, Maria! Tudo certo para amanhã?")).toBeVisible();
   // Desconectado (CI) ou fora do ar: nos dois casos fica marcada e diz o que fazer
   await expect(conversa.getByRole("alert")).toContainText("Não enviada.");
-  await expect(conversa.getByRole("alert").getByRole("link", { name: "Reconectar" }).or(conversa.getByRole("button", { name: "Tentar de novo" }))).toBeVisible();
+  await expect(
+    conversa
+      .getByRole("alert")
+      .getByRole("link", { name: "Reconectar" })
+      .or(conversa.getByRole("button", { name: "Tentar de novo" })),
+  ).toBeVisible();
   await expect(conversa.getByLabel("Mensagem para Maria Silva")).toHaveValue("");
 });
 
@@ -38,7 +43,7 @@ test("nas ações do agendamento também dá para mandar mensagem", async ({ pag
   await page.getByRole("button", { name: "Salvar" }).click();
   await expect(page.getByText("Cliente cadastrada")).toBeVisible();
 
-  await page.goto("/agenda");
+  await page.goto("/calendario");
   await page.getByRole("button", { name: "Agendar", exact: true }).first().click();
   await page.getByRole("button", { name: "Cliente" }).click();
   await page.getByRole("button", { name: /Joana Lima/ }).click();

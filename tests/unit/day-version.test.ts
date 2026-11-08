@@ -2,7 +2,15 @@ import { describe, expect, it } from "vitest";
 import { dayVersion } from "@/features/appointments/version";
 
 const at = (h: number) => new Date(Date.UTC(2026, 10, 8, h));
-const row = { id: "a1", startsAt: at(12), endsAt: at(13), priceCents: 15000, status: "confirmed", clientName: "Maria", serviceName: "Alongamento" };
+const row = {
+  id: "a1",
+  startsAt: at(12),
+  endsAt: at(13),
+  priceCents: 15000,
+  status: "confirmed",
+  clientName: "Maria",
+  serviceName: "Alongamento",
+};
 const block = { id: "b1", startsAt: at(15), endsAt: at(16), reason: "Almoço" };
 
 describe("versão da agenda do dia", () => {

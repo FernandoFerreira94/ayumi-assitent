@@ -3,12 +3,23 @@
  * (atendimento novo, cancelado, status, horário, valor, nome; bloqueio novo ou removido).
  * Serve para avisar "tem novidade" sem precisar de coluna updated_at no banco.
  */
-type Row = { id: string; startsAt: Date; endsAt: Date; priceCents: number; status: string; clientName: string; serviceName: string };
+type Row = {
+  id: string;
+  startsAt: Date;
+  endsAt: Date;
+  priceCents: number;
+  status: string;
+  clientName: string;
+  serviceName: string;
+};
 type Block = { id: string; startsAt: Date; endsAt: Date; reason: string | null };
 
 export function dayVersion(rows: Row[], blocks: Block[]): string {
   const parts = [
-    ...rows.map((r) => `a|${r.id}|${r.startsAt.getTime()}|${r.endsAt.getTime()}|${r.priceCents}|${r.status}|${r.clientName}|${r.serviceName}`),
+    ...rows.map(
+      (r) =>
+        `a|${r.id}|${r.startsAt.getTime()}|${r.endsAt.getTime()}|${r.priceCents}|${r.status}|${r.clientName}|${r.serviceName}`,
+    ),
     ...blocks.map((b) => `b|${b.id}|${b.startsAt.getTime()}|${b.endsAt.getTime()}|${b.reason ?? ""}`),
   ].sort();
   // FNV-1a de 32 bits: curto para trafegar a cada consulta e igual no servidor e no teste

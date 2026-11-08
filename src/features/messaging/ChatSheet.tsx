@@ -21,7 +21,16 @@ export const CHAT_BUTTON = "btn-glass inline-flex items-center justify-center ga
 /** Balão de conversa em verde de chat; não é o logo do WhatsApp, que é marca de terceiros. */
 export function ChatGlyph() {
   return (
-    <svg viewBox="0 0 24 24" className="size-[18px] text-chat-send" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      className="size-[18px] text-chat-send"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.1"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M4 19.5 5.3 16A8 8 0 1 1 8 18.7Z" />
       <path d="M9 11h6M9 14h3.5" />
     </svg>
@@ -140,13 +149,21 @@ export function ChatSheet({
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
         <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 mx-auto flex h-[85dvh] max-w-[520px] flex-col overflow-hidden rounded-t-3xl bg-chat-bg outline-none">
           <header className="sheet flex items-center gap-3 px-4 pb-3 pt-2">
-            <span className="absolute left-1/2 top-1.5 h-1 w-10 -translate-x-1/2 rounded-full bg-line" aria-hidden="true" />
-            <span className="mt-2 grid size-11 shrink-0 place-content-center rounded-full bg-soft font-bold text-primary-text" aria-hidden="true">
+            <span
+              className="absolute left-1/2 top-1.5 h-1 w-10 -translate-x-1/2 rounded-full bg-line"
+              aria-hidden="true"
+            />
+            <span
+              className="mt-2 grid size-11 shrink-0 place-content-center rounded-full bg-soft font-bold text-primary-text"
+              aria-hidden="true"
+            >
               {initials(clientName)}
             </span>
             <div className="mt-2 min-w-0">
               <Drawer.Title className="truncate font-bold leading-5">{clientName}</Drawer.Title>
-              <Drawer.Description className="text-xs font-semibold text-muted">{phone} · pelo WhatsApp do salão</Drawer.Description>
+              <Drawer.Description className="text-xs font-semibold text-muted">
+                {phone} · pelo WhatsApp do salão
+              </Drawer.Description>
             </div>
           </header>
 
@@ -207,7 +224,11 @@ export function ChatSheet({
                         Reconectar
                       </Link>
                     ) : (
-                      <button type="button" onClick={() => deliver(b.id, b.text)} className="min-h-6 font-bold underline">
+                      <button
+                        type="button"
+                        onClick={() => deliver(b.id, b.text)}
+                        className="min-h-6 font-bold underline"
+                      >
                         Tentar de novo
                       </button>
                     )}
@@ -253,7 +274,16 @@ export function ChatSheet({
 function Status({ state }: { state: "sending" | "sent" | { failed: ErrorCode } }) {
   if (state === "sending")
     return (
-      <svg viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" role="img" aria-label="Enviando">
+      <svg
+        viewBox="0 0 16 16"
+        className="size-3.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        role="img"
+        aria-label="Enviando"
+      >
         <circle cx="8" cy="8" r="6" />
         <path d="M8 4.5V8l2.2 1.4" />
       </svg>
@@ -261,7 +291,17 @@ function Status({ state }: { state: "sending" | "sent" | { failed: ErrorCode } }
   // Um tique só: a Evolution confirma que saiu, não que a cliente recebeu ou leu
   if (state === "sent")
     return (
-      <svg viewBox="0 0 12 12" className="size-3" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" role="img" aria-label="Enviada">
+      <svg
+        viewBox="0 0 12 12"
+        className="size-3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        role="img"
+        aria-label="Enviada"
+      >
         <path d="M1.5 6.5 4.5 9.5 10.5 2.5" />
       </svg>
     );

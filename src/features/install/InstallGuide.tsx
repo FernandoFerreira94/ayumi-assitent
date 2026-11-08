@@ -15,12 +15,23 @@ function subscribe(onChange: () => void) {
 
 /** null = já instalado (aberto pelo ícone) ou ainda no servidor: não há o que ensinar. */
 function snapshot(): InstallPlatform | null {
-  const installed = window.matchMedia(STANDALONE).matches || (navigator as { standalone?: boolean }).standalone === true;
+  const installed =
+    window.matchMedia(STANDALONE).matches || (navigator as { standalone?: boolean }).standalone === true;
   return installed ? null : detectPlatform(navigator.userAgent, navigator.maxTouchPoints);
 }
 
 const ShareIcon = (
-  <svg viewBox="0 0 24 24" className="inline size-[18px] align-[-3px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="ícone de Compartilhar" role="img">
+  <svg
+    viewBox="0 0 24 24"
+    className="inline size-[18px] align-[-3px]"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-label="ícone de Compartilhar"
+    role="img"
+  >
     <path d="M12 3v12M8 7l4-4 4 4" />
     <path d="M7 11H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1" />
   </svg>
@@ -31,16 +42,24 @@ const STEPS: Record<"ios" | "android", { title: string; steps: React.ReactNode[]
     title: "No iPhone (Safari)",
     steps: [
       <>Toque em Compartilhar {ShareIcon} na barra do Safari. Se não aparecer, toque antes em •••.</>,
-      <>Role a lista e toque em <b>Adicionar à Tela de Início</b>.</>,
-      <>Toque em <b>Adicionar</b>. O app passa a abrir pelo ícone do Mimo.</>,
+      <>
+        Role a lista e toque em <b>Adicionar à Tela de Início</b>.
+      </>,
+      <>
+        Toque em <b>Adicionar</b>. O app passa a abrir pelo ícone do Mimo.
+      </>,
     ],
   },
   android: {
     title: "No Android (Chrome)",
     steps: [
       <>Toque no menu ⋮ no canto de cima do Chrome.</>,
-      <>Toque em <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.</>,
-      <>Confirme em <b>Instalar</b>. O ícone do Mimo aparece com os outros apps.</>,
+      <>
+        Toque em <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.
+      </>,
+      <>
+        Confirme em <b>Instalar</b>. O ícone do Mimo aparece com os outros apps.
+      </>,
     ],
   },
 };
@@ -76,11 +95,19 @@ export function InstallGuide({ compact = false }: { compact?: boolean }) {
           <div className="grid gap-4">
             {guides.map((g) => (
               <section key={g} aria-label={STEPS[g].title} className="grid gap-2">
-                {guides.length > 1 ? <h3 className="px-1 text-sm font-bold uppercase tracking-wide text-muted">{STEPS[g].title}</h3> : null}
+                {guides.length > 1 ? (
+                  <h3 className="px-1 text-sm font-bold uppercase tracking-wide text-muted">{STEPS[g].title}</h3>
+                ) : null}
                 <ol className="grid gap-2">
                   {STEPS[g].steps.map((step, i) => (
-                    <li key={i} className="glass grid grid-cols-[28px_1fr] items-start gap-3 rounded-2xl px-4 py-3 text-sm font-semibold">
-                      <span className="grid size-7 place-content-center rounded-full bg-soft font-bold text-primary-text" aria-hidden="true">
+                    <li
+                      key={i}
+                      className="glass grid grid-cols-[28px_1fr] items-start gap-3 rounded-2xl px-4 py-3 text-sm font-semibold"
+                    >
+                      <span
+                        className="grid size-7 place-content-center rounded-full bg-soft font-bold text-primary-text"
+                        aria-hidden="true"
+                      >
                         {i + 1}
                       </span>
                       <span className="pt-1">{step}</span>

@@ -215,7 +215,16 @@ export function ServicesCatalog({
           </dl>
 
           <label className="flex min-h-11 items-center gap-2 rounded-full border border-line bg-surface px-3.5 text-muted focus-within:border-primary">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
               <circle cx="11" cy="11" r="7" />
               <path d="M20 20l-4-4" />
             </svg>
@@ -230,8 +239,16 @@ export function ServicesCatalog({
             />
           </label>
 
-          <div role="toolbar" aria-label="Categorias" className="-mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none]">
-            <button type="button" onClick={() => openSheet({ kind: "category" })} className={`${chip} border-dashed text-primary-text`}>
+          <div
+            role="toolbar"
+            aria-label="Categorias"
+            className="-mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none]"
+          >
+            <button
+              type="button"
+              onClick={() => openSheet({ kind: "category" })}
+              className={`${chip} border-dashed text-primary-text`}
+            >
               + Categoria
             </button>
             {[
@@ -257,7 +274,16 @@ export function ServicesCatalog({
             onClick={() => openSheet({ kind: "service", preset: newPreset() })}
             className="btn-tint flex min-h-12 items-center justify-center gap-2 rounded-full font-bold"
           >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.6"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
               <path d="M12 5v14M5 12h14" />
             </svg>
             Criar serviço
@@ -277,7 +303,10 @@ export function ServicesCatalog({
           ) : (
             groups.map((g) => (
               <section key={g.category.id} aria-labelledby={`cat-${g.category.id}`} className="grid gap-1.5">
-                <h2 id={`cat-${g.category.id}`} className="flex items-center justify-between px-0.5 pt-1 text-sm font-bold text-muted">
+                <h2
+                  id={`cat-${g.category.id}`}
+                  className="flex items-center justify-between px-0.5 pt-1 text-sm font-bold text-muted"
+                >
                   {g.category.name} · {g.services.length}
                   {g.category.id !== NO_CATEGORY ? (
                     <button
@@ -298,10 +327,16 @@ export function ServicesCatalog({
                         key={s.id}
                         style={lifted ? { transform: `translateY(${dragging.dy}px) scale(1.02)` } : undefined}
                         className={`relative grid grid-cols-[10px_minmax(0,1fr)_auto_44px_28px] items-center gap-2.5 border-t border-line bg-surface py-2.5 pl-3 pr-1 first:border-t-0 ${
-                          lifted ? "z-10 rounded-2xl shadow-[0_14px_30px_-12px_rgba(23,20,43,0.4)]" : "transition-transform"
+                          lifted
+                            ? "z-10 rounded-2xl shadow-[0_14px_30px_-12px_rgba(23,20,43,0.4)]"
+                            : "transition-transform"
                         }`}
                       >
-                        <span className="h-9 w-2.5 rounded-md" style={{ background: `var(--svc-${s.color})` }} aria-hidden="true" />
+                        <span
+                          className="h-9 w-2.5 rounded-md"
+                          style={{ background: `var(--svc-${s.color})` }}
+                          aria-hidden="true"
+                        />
                         <button
                           type="button"
                           onClick={() => openSheet({ kind: "service", service: s })}
@@ -315,7 +350,9 @@ export function ServicesCatalog({
                           </span>
                         </button>
                         <span className={`text-right text-sm font-bold tabular-nums ${s.bookable ? "" : "opacity-45"}`}>
-                          {s.priceFrom ? <small className="block text-[11px] font-semibold text-muted">a partir de</small> : null}
+                          {s.priceFrom ? (
+                            <small className="block text-[11px] font-semibold text-muted">a partir de</small>
+                          ) : null}
                           {formatBRL(s.priceCents)}
                         </span>
                         <button
@@ -325,7 +362,17 @@ export function ServicesCatalog({
                           className="grid h-11 w-11 place-items-center rounded-full text-primary-text"
                         >
                           <span className="grid h-9 w-9 place-items-center rounded-full bg-soft">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <svg
+                              viewBox="0 0 24 24"
+                              width="16"
+                              height="16"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden="true"
+                            >
                               <path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4" />
                             </svg>
                           </span>
@@ -341,7 +388,9 @@ export function ServicesCatalog({
                           className="grid h-11 w-7 cursor-grab touch-none place-items-center text-[#c3bcd8] active:cursor-grabbing"
                         >
                           <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
-                            {[6, 12, 18].flatMap((y) => [9, 15].map((x) => <circle key={`${x}${y}`} cx={x} cy={y} r="1.8" />))}
+                            {[6, 12, 18].flatMap((y) =>
+                              [9, 15].map((x) => <circle key={`${x}${y}`} cx={x} cy={y} r="1.8" />),
+                            )}
                           </svg>
                         </button>
                       </li>

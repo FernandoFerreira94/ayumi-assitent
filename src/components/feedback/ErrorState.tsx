@@ -35,11 +35,7 @@ export function ErrorState({
       <p className="text-sm text-muted">{message}</p>
       <div className="mt-3 grid w-full gap-2">
         {onRetry ? (
-          <button
-            type="button"
-            onClick={onRetry}
-            className="btn-tint min-h-12 rounded-2xl px-5 font-bold"
-          >
+          <button type="button" onClick={onRetry} className="btn-tint min-h-12 rounded-2xl px-5 font-bold">
             Tentar de novo
           </button>
         ) : null}

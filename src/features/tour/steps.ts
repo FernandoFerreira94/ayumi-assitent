@@ -22,12 +22,6 @@ export const TOUR_STEPS: TourStep[] = [
     advance: "tap",
   },
   {
-    target: "[data-tour='days']",
-    title: "Escolha o dia",
-    text: "Toque num dia da semana. Arraste a faixa para o lado para trocar de semana.",
-    advance: "next",
-  },
-  {
     target: "[data-tour='money']",
     title: "Agendar e bloquear",
     text: "Daqui você agenda uma cliente ou bloqueia um horário. Na agenda, segure um atendimento para arrastar ou toque num vazio para marcar.",
@@ -42,7 +36,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     target: ".fan[data-open] .fan-link",
     title: "Tudo a um toque",
-    text: "Clientes, Vagas e Ajustes ficam no leque. O + do topo marca um horário de qualquer tela.",
+    text: "Painel, Clientes, Vagas e Ajustes ficam no leque; Calendário e Serviços ficam no menu do seu avatar. O + do topo marca um horário de qualquer tela.",
     advance: "next",
   },
   {

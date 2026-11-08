@@ -12,10 +12,20 @@ const SWIPE_PX = 50;
 
 export type WeekDay = { date: string; has: boolean; closed: boolean };
 
-const href = (day: string, today: string) => (day === today ? "/agenda" : `/agenda?d=${day}`);
+const href = (day: string, today: string) => (day === today ? "/calendario" : `/calendario?d=${day}`);
 
 /** Domingo a sábado do dia escolhido. Arrastar para o lado vai para a mesma data da semana vizinha. */
-export function WeekStrip({ date, today, days, summary }: { date: string; today: string; days: WeekDay[]; summary: string }) {
+export function WeekStrip({
+  date,
+  today,
+  days,
+  summary,
+}: {
+  date: string;
+  today: string;
+  days: WeekDay[];
+  summary: string;
+}) {
   const router = useRouter();
   // Seleção otimista: o dia acende no toque, sem esperar o servidor
   const [sel, setSel] = useState(date);
@@ -32,7 +42,7 @@ export function WeekStrip({ date, today, days, summary }: { date: string; today:
       <div className="mb-1 flex min-h-11 items-center justify-between gap-3 px-1">
         <MonthPicker date={date} today={today} />
         <Link
-          href="/agenda"
+          href="/calendario"
           scroll={false}
           onClick={() => setSel(today)}
           className="btn-glass min-h-9 rounded-full px-4 text-[13px] font-bold leading-9 text-primary-text"

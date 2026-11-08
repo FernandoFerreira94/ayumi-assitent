@@ -8,10 +8,7 @@ export default function NotFound() {
         title="Não encontramos isto"
         description="O link pode estar quebrado ou o item foi apagado."
         action={
-          <Link
-            href="/agenda"
-            className="btn-tint grid min-h-12 place-items-center rounded-2xl px-6 font-bold"
-          >
+          <Link href="/agenda" className="btn-tint grid min-h-12 place-items-center rounded-2xl px-6 font-bold">
             Voltar para a agenda
           </Link>
         }

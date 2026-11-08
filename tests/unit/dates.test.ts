@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { addDays, dayRange, formatBRL, formatMonthYear, formatTime, greeting, isDateStr, todayStr, toInstant } from "@/lib/dates";
+import {
+  addDays,
+  dayRange,
+  formatBRL,
+  formatMonthYear,
+  formatTime,
+  greeting,
+  isDateStr,
+  todayStr,
+  toInstant,
+} from "@/lib/dates";
 
 describe("datas no fuso do estúdio", () => {
   it("hoje usa o fuso de São Paulo (22h de 10/11 em SP já é 11/11 UTC)", () => {

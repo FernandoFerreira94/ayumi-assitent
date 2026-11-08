@@ -16,7 +16,11 @@ async function MenuWithData() {
     getDb().select({ name: tenants.name }).from(tenants).where(eq(tenants.id, tenantId)),
   ]);
   return (
-    <AppMenu userName={userName} studioName={tenant?.name ?? null} whatsapp={whatsapp} pendencias={countPendencias(pendencias)}
+    <AppMenu
+      userName={userName}
+      studioName={tenant?.name ?? null}
+      whatsapp={whatsapp}
+      pendencias={countPendencias(pendencias)}
       version={pkg.version}
     />
   );

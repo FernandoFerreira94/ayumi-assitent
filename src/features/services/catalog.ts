@@ -48,7 +48,8 @@ export const nameTaken = (
   name: string,
   categoryId: string | null,
   exceptId?: string,
-) => list.some((s) => s.id !== exceptId && s.categoryId === categoryId && normalizeName(s.name) === normalizeName(name));
+) =>
+  list.some((s) => s.id !== exceptId && s.categoryId === categoryId && normalizeName(s.name) === normalizeName(name));
 
 export const NO_CATEGORY = "sem-categoria";
 

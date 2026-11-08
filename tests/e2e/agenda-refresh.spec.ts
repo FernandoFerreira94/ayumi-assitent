@@ -1,7 +1,10 @@
 import { expect, test } from "./fixtures";
 
-test("mudança feita em outro aparelho mostra o botão Atualizar, que traz a novidade sem recarregar", async ({ page, context }) => {
-  await page.goto("/agenda");
+test("mudança feita em outro aparelho mostra o botão Atualizar, que traz a novidade sem recarregar", async ({
+  page,
+  context,
+}) => {
+  await page.goto("/calendario");
   const atualizar = page.getByRole("button", { name: /Atualizar/ });
   await expect(atualizar).toHaveCount(0);
   // Marca a página: se ela recarregasse por inteiro, a marca sumiria
@@ -9,7 +12,7 @@ test("mudança feita em outro aparelho mostra o botão Atualizar, que traz a nov
 
   // "Outro aparelho": mesma conta, outra aba
   const outro = await context.newPage();
-  await outro.goto("/agenda");
+  await outro.goto("/calendario");
   await outro.getByRole("button", { name: "Bloquear" }).click();
   await outro.getByLabel("Início").selectOption("12:00");
   await outro.getByLabel("Fim").selectOption("13:00");
@@ -28,7 +31,7 @@ test("mudança feita em outro aparelho mostra o botão Atualizar, que traz a nov
 });
 
 test("o que a própria tela fez não vira aviso de atualização", async ({ page }) => {
-  await page.goto("/agenda");
+  await page.goto("/calendario");
   await page.getByRole("button", { name: "Bloquear" }).click();
   await page.getByLabel("Início").selectOption("12:00");
   await page.getByLabel("Fim").selectOption("13:00");
@@ -36,7 +39,7 @@ test("o que a própria tela fez não vira aviso de atualização", async ({ page
   await expect(page.getByText("Horário bloqueado")).toBeVisible();
   await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
   // Dá tempo da conferência ir e voltar do servidor antes de afirmar que nada apareceu
-  await page.waitForResponse((r) => r.request().method() === "POST" && r.url().includes("/agenda"));
+  await page.waitForResponse((r) => r.request().method() === "POST" && r.url().includes("/calendario"));
   await page.waitForTimeout(300);
   await expect(page.getByRole("button", { name: /Atualizar/ })).toHaveCount(0);
 });
