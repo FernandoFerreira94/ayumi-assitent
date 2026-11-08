@@ -5,6 +5,8 @@ import { tenants } from "@/db/schema";
 import { countPendencias } from "@/features/appointments/pendencias";
 import { shellStatus } from "@/features/shell/status";
 import { requireTenant } from "@/lib/tenant";
+// Default import: o bundler só garante o export default de JSON
+import pkg from "../../../package.json";
 import { AppMenu } from "./AppMenu";
 
 async function MenuWithData() {
@@ -14,7 +16,9 @@ async function MenuWithData() {
     getDb().select({ name: tenants.name }).from(tenants).where(eq(tenants.id, tenantId)),
   ]);
   return (
-    <AppMenu userName={userName} studioName={tenant?.name ?? null} whatsapp={whatsapp} pendencias={countPendencias(pendencias)} />
+    <AppMenu userName={userName} studioName={tenant?.name ?? null} whatsapp={whatsapp} pendencias={countPendencias(pendencias)}
+      version={pkg.version}
+    />
   );
 }
 

@@ -21,6 +21,9 @@ const ITEMS = [
   { href: "/ajustes", label: "Ajustes", icon: icon(<><path d="M4 7h16M4 17h16" /><circle cx="9" cy="7" r="2.5" /><circle cx="15" cy="17" r="2.5" /></>) },
 ] as const;
 
+/** Arrastar a folha para cima mais que isso fecha; menos, ela volta. */
+const DRAG_CLOSE_PX = 60;
+
 export function initials(name: string | null | undefined): string {
   const parts = name?.trim().split(/\s+/).filter(Boolean) ?? [];
   if (parts.length === 0) return "?";
@@ -30,7 +33,7 @@ export function initials(name: string | null | undefined): string {
 }
 
 /**
- * Avatar do header que abre o menu num cartão de vidro por cima da tela, sem trocar de página.
+ * Avatar do header que abre o menu numa folha de vidro que desce do topo, sem trocar de página.
  * <dialog> modal dá foco preso, Esc e fundo inerte de graça.
  */
 export function AppMenu({
@@ -38,16 +41,31 @@ export function AppMenu({
   studioName,
   whatsapp,
   pendencias,
+  version,
 }: {
   userName: string | null;
   studioName: string | null;
   whatsapp: WhatsAppState;
   pendencias: number;
+  version: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const dragFrom = useRef<number | null>(null);
   const pathname = usePathname();
-  const close = () => ref.current?.close();
   const abbr = initials(userName);
+
+  const close = () => ref.current?.close();
+  const follow = (dy: number) => {
+    // Só acompanha o dedo para cima; para baixo a folha já está no lugar
+    if (ref.current) ref.current.style.translate = dy < 0 ? `0 ${dy}px` : "";
+  };
+  const endDrag = (y: number) => {
+    if (dragFrom.current === null) return;
+    const dy = y - dragFrom.current;
+    dragFrom.current = null;
+    follow(0);
+    if (dy < -DRAG_CLOSE_PX) close();
+  };
 
   return (
     <>
@@ -67,9 +85,17 @@ export function AppMenu({
         onClick={(e) => {
           if (e.target === e.currentTarget) close();
         }}
+        onPointerDown={(e) => {
+          if (e.pointerType !== "mouse") dragFrom.current = e.clientY;
+        }}
+        onPointerMove={(e) => {
+          if (dragFrom.current !== null) follow(e.clientY - dragFrom.current);
+        }}
+        onPointerUp={(e) => endDrag(e.clientY)}
+        onPointerCancel={() => endDrag(dragFrom.current ?? 0)}
         className="app-menu"
       >
-        <div className="grid gap-3 p-4">
+        <div className="mx-auto grid max-w-[520px] gap-3 px-4 pb-3 pt-[max(env(safe-area-inset-top),16px)]">
           <div className="flex items-center gap-3">
             <span aria-hidden="true" className="avatar grid size-13 shrink-0 place-content-center rounded-full text-[17px] font-bold text-white">
               {abbr}
@@ -95,7 +121,7 @@ export function AppMenu({
               WhatsApp desconectado, toque para reconectar
             </Link>
           ) : null}
-          <ul className="grid grid-cols-2 gap-1">
+          <ul className="grid grid-cols-3 gap-2">
             {ITEMS.map((item) => {
               const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
               const badge = item.href === "/pendencias" && pendencias > 0 ? pendencias : 0;
@@ -105,12 +131,12 @@ export function AppMenu({
                     href={item.href}
                     onClick={close}
                     aria-current={active ? "page" : undefined}
-                    className="flex min-h-11 items-center gap-3 rounded-2xl px-2.5 text-[15px] font-semibold hover:bg-soft aria-[current=page]:bg-soft"
+                    className="relative flex min-h-16 flex-col items-center justify-center gap-1.5 rounded-2xl border border-line bg-bg px-1 py-3 text-center text-[13px] font-semibold hover:bg-soft aria-[current=page]:bg-soft"
                   >
                     {item.icon}
                     {item.label}
                     {badge ? (
-                      <span className="ml-auto rounded-full bg-fail px-1.5 text-[11px] font-bold leading-5 text-white">
+                      <span className="absolute right-2 top-1.5 rounded-full bg-fail px-1.5 text-[11px] font-bold leading-5 text-white">
                         <span className="sr-only">, </span>
                         {badge > 9 ? "9+" : badge}
                       </span>
@@ -120,10 +146,15 @@ export function AppMenu({
               );
             })}
           </ul>
-          <SignOutButton />
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <SignOutButton />
+            <span className="px-2.5 font-mono text-[11px] text-muted">Mimo {version}</span>
+          </div>
           <button type="button" onClick={close} className="sr-only focus:not-sr-only">
             Fechar menu
           </button>
+          {/* Puxador embaixo: é dali que o polegar arrasta a folha de volta para cima */}
+          <span aria-hidden="true" className="h-[5px] w-10 justify-self-center rounded-full bg-line" />
         </div>
       </dialog>
     </>

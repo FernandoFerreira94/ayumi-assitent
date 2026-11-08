@@ -133,38 +133,36 @@ body::before {
   box-shadow: 0 0 0 2px #fff, 0 4px 12px -4px rgba(109, 74, 255, 0.6);
 }
 
-/* Menu "cartão flutuante": nasce do avatar (canto de cima à esquerda) e cresce por cima da tela */
+/* Menu "de cima": folha de vidro que desce do topo por cima da tela */
 .app-menu {
   position: fixed;
-  inset: max(env(safe-area-inset-top), 14px) 12px auto;
-  width: auto;
-  max-width: 496px;
-  margin: 52px auto 0;
+  inset: 0 0 auto;
+  width: 100%;
+  max-width: none;
+  max-height: 100dvh;
+  margin: 0;
   padding: 0;
-  border: 1px solid #fff;
-  border-radius: 28px;
+  border: 0;
+  border-radius: 0 0 32px 32px;
   color: var(--fg);
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(22px);
   -webkit-backdrop-filter: blur(22px);
-  box-shadow: 0 24px 50px -20px rgba(23, 20, 43, 0.45);
-  transform-origin: 22px 0;
-  opacity: 0;
-  transform: scale(0.3);
+  box-shadow: 0 20px 40px -22px rgba(23, 20, 43, 0.45);
+  /* O dedo arrasta a folha (pointermove) em vez de rolar a página */
+  touch-action: none;
+  transform: translateY(-104%);
   transition:
-    transform 0.45s var(--spring),
-    opacity 0.3s,
+    transform 0.45s cubic-bezier(0.3, 1, 0.3, 1),
     overlay 0.45s allow-discrete,
     display 0.45s allow-discrete;
 }
 .app-menu[open] {
-  opacity: 1;
   transform: none;
 }
 @starting-style {
   .app-menu[open] {
-    opacity: 0;
-    transform: scale(0.3);
+    transform: translateY(-104%);
   }
 }
 .app-menu::backdrop {

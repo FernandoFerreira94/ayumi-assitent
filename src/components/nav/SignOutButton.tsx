@@ -26,7 +26,7 @@ export function SignOutButton() {
   }
 
   return (
-    <div role="alertdialog" aria-label="Confirmar saída" className="grid gap-2 rounded-2xl border border-line bg-surface p-3">
+    <div role="alertdialog" aria-label="Confirmar saída" className="grid w-full gap-2 rounded-2xl border border-line bg-surface p-3">
       <p className="text-sm font-semibold text-muted">Sair da conta? Para voltar, você entra de novo com o Google ou o e-mail.</p>
       <div className="flex gap-2">
         <button
