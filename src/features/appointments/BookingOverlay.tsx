@@ -45,8 +45,9 @@ export function BookingOverlay({
 
   return (
     <div
-      className={`flex min-h-full flex-col items-center gap-2.5 px-6 pb-[max(env(safe-area-inset-bottom),40px)] text-center ${
-        result ? "justify-start pt-16" : "justify-center pt-10"
+      // No resultado com aviso são dois botões: o respiro é curto para caber num iPhone sem rolar
+      className={`flex min-h-full flex-col items-center gap-2.5 px-6 pb-[max(env(safe-area-inset-bottom),24px)] text-center ${
+        result ? "justify-start pt-6" : "justify-center pt-10"
       }`}
     >
       {result ? (
@@ -64,7 +65,7 @@ export function BookingOverlay({
         </p>
       </div>
 
-      <ul className="mt-2 grid w-full max-w-72 gap-2.5 text-left">
+      <ul className="mt-1 grid w-full max-w-72 gap-2.5 text-left">
         {STEPS.map((label, i) => (
           <li key={label} data-s={steps[i]} className="booking-step grid grid-cols-[24px_1fr] items-center gap-2.5 text-sm font-semibold">
             <StepIcon />
