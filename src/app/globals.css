@@ -135,7 +135,7 @@ body::before {
   box-shadow: 0 0 0 2px #fff, 0 4px 12px -4px rgba(109, 74, 255, 0.6);
 }
 
-/* Menu "de cima": folha de vidro que desce do topo por cima da tela */
+/* Menu "de cima": folha branca que desce do topo por cima da tela */
 .app-menu {
   position: fixed;
   inset: 0 0 auto;
@@ -147,9 +147,7 @@ body::before {
   border: 0;
   border-radius: 0 0 32px 32px;
   color: var(--fg);
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
+  background: var(--surface);
   box-shadow: 0 20px 40px -22px rgba(23, 20, 43, 0.45);
   /* O dedo arrasta a folha (pointermove) em vez de rolar a página */
   touch-action: none;
