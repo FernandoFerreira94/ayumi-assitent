@@ -42,7 +42,7 @@ export default async function AjustesPage() {
           Serviços
         </h2>
         {services.length === 0 ? (
-          <p className="px-1 text-sm font-semibold text-muted">Nenhum serviço ainda. Adicione o primeiro abaixo.</p>
+          <p className="px-1 text-sm font-semibold text-muted">Nenhum serviço cadastrado. Use o formulário abaixo para adicionar o primeiro.</p>
         ) : (
           <ul className="grid gap-2">
             {services.map((s) => (

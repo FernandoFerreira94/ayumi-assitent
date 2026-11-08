@@ -52,7 +52,7 @@ export function NewAppointmentSheet({
           <Drawer.Title className="pb-1 text-xl font-bold">Novo agendamento</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
             {missing
-              ? "Cadastre ao menos uma cliente (aba Clientes) e um serviço (aba Ajustes)."
+              ? "Cadastre ao menos uma cliente (em Clientes) e um serviço (em Ajustes)."
               : "Escolha cliente, serviço e horário."}
           </Drawer.Description>
           {missing ? null : (
