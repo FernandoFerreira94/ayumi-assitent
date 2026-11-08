@@ -24,13 +24,13 @@ export const TOUR_STEPS: TourStep[] = [
   {
     target: "[data-tour='days']",
     title: "Escolha o dia",
-    text: "Deslize para o lado e toque num dia para ver a agenda dele.",
+    text: "Toque num dia da semana. Arraste a faixa para o lado para trocar de semana.",
     advance: "next",
   },
   {
     target: "[data-tour='money']",
-    title: "Previsto e recebido",
-    text: "Mostra quanto o dia rende e quanto já entrou. Daqui você também bloqueia um horário ou agenda uma cliente.",
+    title: "Agendar e bloquear",
+    text: "Daqui você agenda uma cliente ou bloqueia um horário. Na agenda, segure um atendimento para arrastar ou toque num vazio para marcar.",
     advance: "next",
   },
   {

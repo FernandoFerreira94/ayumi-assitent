@@ -33,6 +33,8 @@ const LABEL: Record<Status, string> = {
 export function AppointmentCard({ id, time, clientId, clientName, clientPhone, serviceName, price, status, inSheet = false }: Props) {
   const [pending, start] = useTransition();
   const [busy, setBusy] = useState<Status | null>(null);
+  // Cancelar pede um segundo toque: o primeiro só troca o texto do botão
+  const [askCancel, setAskCancel] = useState(false);
 
   function change(next: Status, undoTo?: Status) {
     setBusy(next);
@@ -96,10 +98,10 @@ export function AppointmentCard({ id, time, clientId, clientName, clientPhone, s
           <button
             type="button"
             disabled={pending}
-            onClick={() => change("cancelled", status)}
-            className={`${btn} btn-glass`}
+            onClick={() => (askCancel ? change("cancelled", status) : setAskCancel(true))}
+            className={`${btn} btn-glass ${askCancel ? "text-fail" : ""}`}
           >
-            {busy === "cancelled" ? "Cancelando…" : "Cancelar"}
+            {busy === "cancelled" ? "Cancelando…" : askCancel ? "Toque de novo para cancelar" : "Cancelar"}
           </button>
         </div>
       ) : null}

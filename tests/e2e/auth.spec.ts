@@ -56,7 +56,7 @@ test.describe("login por e-mail e senha", () => {
     await page.getByLabel("Senha", { exact: true }).fill("senha-segura-123");
     await page.getByRole("button", { name: "Criar conta", exact: true }).click();
     await expect(page).toHaveURL(/\/agenda/);
-    await expect(page.getByText("Previsto do dia")).toBeVisible();
+    await expect(page.getByRole("region", { name: "Linha do dia" })).toBeVisible();
 
     await context.clearCookies();
     await page.goto("/login");

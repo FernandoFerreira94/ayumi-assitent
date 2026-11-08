@@ -10,8 +10,8 @@ import type { SyncResult } from "@/features/google/sync";
 import { searchClients } from "@/features/clients/core";
 import { listServices } from "@/features/services/core";
 import { listBlocks } from "@/features/blocks/core";
-import { dayRange, isDateStr } from "@/lib/dates";
-import { insertAppointment, listDay, setStatus } from "./core";
+import { dayRange, isDateStr, toInstant } from "@/lib/dates";
+import { insertAppointment, listDay, moveAppointment, setStatus } from "./core";
 import { dayVersion } from "./version";
 import { bookingOptions, type BookingOptions } from "./options";
 import { appointmentInput, STATUSES } from "./schema";
@@ -54,6 +54,35 @@ export async function createAppointment(_prev: ActionResult<{ id: string }> | nu
     revalidatePath("/agenda");
     const sync = await syncAppointmentSafe(tenantId, res.data.id);
     return ok({ id: res.data.id, sync });
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+/** Remarca pelo arraste: novo começo (HH:MM) e duração em minutos, de 15 em 15. */
+export async function rescheduleAppointment(
+  id: string,
+  date: string,
+  time: string,
+  durationMin: number,
+): Promise<ActionResult<{ sync: SyncResult }>> {
+  const { tenantId } = await requireTenant();
+  const p = z
+    .object({
+      id: z.string().uuid(),
+      date: z.string().refine(isDateStr),
+      time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+      durationMin: z.number().int().min(15).max(12 * 60).multipleOf(15),
+    })
+    .safeParse({ id, date, time, durationMin });
+  if (!p.success) return fail("VALIDATION");
+  const startsAt = toInstant(p.data.date, p.data.time);
+  const endsAt = new Date(startsAt.getTime() + p.data.durationMin * 60_000);
+  try {
+    const res = await withTenant(tenantId, (tx) => moveAppointment(tx, tenantId, p.data.id, startsAt, endsAt));
+    if (!res.ok) return res;
+    revalidatePath("/agenda");
+    return ok({ sync: await syncAppointmentSafe(tenantId, p.data.id) });
   } catch {
     return fail("UNKNOWN");
   }
