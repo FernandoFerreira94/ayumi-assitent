@@ -23,8 +23,10 @@ export function evolutionAdmin(cfg: Config, fetchImpl: typeof fetch = fetch): Wh
         headers: { "Content-Type": "application/json", apikey: cfg.apiKey },
         body: body ? JSON.stringify(body) : undefined,
       });
-    } catch {
-      throw new WhatsAppAdminError("network");
+    } catch (e) {
+      // "fetch failed" sozinho não diz nada; a causa (URL inválida, DNS, recusa) vem em e.cause
+      const cause = (e as { cause?: { message?: string } }).cause?.message ?? (e as Error).message;
+      throw new WhatsAppAdminError(`network: ${cause} (${method} ${path.split("?")[0]})`);
     }
   }
   const enc = encodeURIComponent;
