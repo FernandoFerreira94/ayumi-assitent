@@ -10,32 +10,60 @@ const plain = (s: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
-// Ordem importa: "nao vou" antes de "vou"; "remarcar" e "cancelar" antes do "ok" que pode vir junto
+// Texto já normalizado (sem acento, minúsculo). Ordem importa: "nao vou" antes de "vou"
 const RESCHEDULE = /\b(reagend\w*|remarc\w*|outro (horario|dia)|mudar (o )?horario|trocar (o )?horario)\b/;
-const CANCEL = /\b(cancel\w*|desmarc\w*|nao (vou|posso|consigo|da)|nao vai dar)\b/;
+const CANCEL = /\b(cancel\w*|desmarc\w*|nao (vou|posso|consigo|da)|nao vai dar|nao irei)\b/;
+const CANCEL_ALL = new RegExp(CANCEL.source, "g");
+// "não precisa cancelar", "não cancele", "não quero remarcar": negou a ação, então não é pedido nenhum
+const NEGATED_ACTION =
+  /\bnao (quero |precisa |preciso |vou |pode |va |me )?(cancel\w*|desmarc\w*|remarc\w*|reagend\w*)/;
+// "não vou faltar": parece cancelamento pela palavra "não vou", mas é o contrário
+const WILL_ATTEND = /\bnao (vou|iria) (faltar|esquecer|me esquecer|deixar de ir|perder)\b/;
 const CONFIRM =
-  /\b(ok|okay|sim|confirm\w*|certo|combinado|beleza|blz|pode ser|estarei|vou sim|vou|claro|perfeito|fechado)\b/;
+  /\b(o+k+a*y?|oks|si+m+|confirm\w*|certo|combinado|beleza|blz|pode ser|estarei|irei|vou sim|vou|claro|perfeito|fechado|fechou|ta bom|ta otimo|tudo certo|com certeza|certeza|pode deixar|pode crer|positivo|aham|uhum|isso|yes|show|top|dale|presente|ciente)\b/;
+// Ressalva, dúvida, pergunta, adiamento ou ajuste de horário: "ok, mas dá pra ser às 15h?" não é confirmação
+const HEDGE =
+  /\b(mas|porem|talvez|se der|se puder|acho que|nao sei|depende|duvida|atras\w*|adiantar|vou ver|deixa eu ver|te (aviso|falo|retorno|confirmo)|depois|ainda|mais (tarde|cedo)|\d+ ?(h|hr|hrs|horas?|min|minutos?))\b/;
 // O número só vale sozinho ("2", "opção 2"): em "posso ir às 2?" ele é hora, não opção
-const OPTION = /^(opcao |numero )?([123])$/;
-const BY_OPTION: Record<string, Intent> = { "1": "confirm", "2": "cancel", "3": "reschedule" };
-const THUMBS = /^(\u{1F44D}|\u{1F44C}|✅|✔️?)+$/u;
+const OPTION = /^(opcao |numero )?([123]|um|dois|tres)$/;
+const BY_OPTION: Record<string, Intent> = {
+  "1": "confirm",
+  um: "confirm",
+  "2": "cancel",
+  dois: "cancel",
+  "3": "reschedule",
+  tres: "reschedule",
+};
+// Só emojis de "sim"; tom de pele e seletores de variação não contam
+const THUMBS = /^(\u{1F44D}|\u{1F44C}|✅|✔|💜|❤|\u{1F499}|\u{1F618})+$/u;
+const EMOJI_NOISE = /[\u{1F3FB}-\u{1F3FF}️‍\s]/gu;
 
 /**
- * Entende a resposta ao lembrete ("1/2/3" ou palavras do dia a dia). Mensagem longa ou que não casa
- * com nada volta null: fica só na conversa e no aviso, sem mexer no agendamento.
+ * Entende a resposta ao lembrete ("1/2/3" ou palavras do dia a dia). Só aceita quando a intenção é
+ * clara: o resultado muda o status do agendamento e responde à cliente, então dúvida, negação,
+ * pedido misto ("sim, cancela o outro") ou conversa voltam null e ficam para a dona ler e decidir.
  */
 export function parseIntent(raw: string): Intent | null {
   const trimmed = raw.trim();
-  if (THUMBS.test(trimmed.replace(/\s/g, ""))) return "confirm";
+  if (THUMBS.test(trimmed.replace(EMOJI_NOISE, ""))) return "confirm";
   const t = plain(trimmed);
   // Texto longo costuma ser conversa (pergunta, recado): melhor a dona ler do que o sistema adivinhar
   if (!t || t.split(" ").length > 12) return null;
   const option = OPTION.exec(t);
   if (option) return BY_OPTION[option[2]];
+  if (NEGATED_ACTION.test(t)) return null;
+  const doubtful = trimmed.includes("?") || HEDGE.test(t);
+  if (WILL_ATTEND.test(t)) return doubtful ? null : "confirm";
   if (RESCHEDULE.test(t)) return "reschedule";
-  if (CANCEL.test(t)) return "cancel";
-  if (CONFIRM.test(t)) return "confirm";
-  return null;
+  if (CANCEL.test(t)) {
+    // "vou sim, mas cancela o outro": sem como saber a qual horário se refere
+    // ("vou ter que cancelar" é só o jeito de dizer; o "vou" ali não confirma nada)
+    const rest = t.replace(CANCEL_ALL, " ").replace(/\bvou (ter que|precisar)\b/g, " ");
+    return CONFIRM.test(rest) ? null : "cancel";
+  }
+  // Qualquer "não" que sobrou ("não confirmo", "não esqueci") não é confirmação
+  if (doubtful || /\bnao\b/.test(t)) return null;
+  return CONFIRM.test(t) ? "confirm" : null;
 }
 
 /** 2º aviso (horas definidas pela dona) para quem não respondeu ao lembrete. Nunca cancela sozinho. */

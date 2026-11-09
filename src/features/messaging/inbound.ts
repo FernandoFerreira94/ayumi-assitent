@@ -26,9 +26,17 @@ const pushTitle = (name: string, intent: Intent | null) => {
   return `${first} mandou mensagem`;
 };
 
+const GUESS_LABEL: Record<Intent, string> = {
+  confirm: "confirmar",
+  cancel: "cancelar",
+  reschedule: "remarcar",
+};
+
 export type InboundDeps = {
   portFor: (instance: string) => MessagingPort | null;
   push: PushPort | null;
+  /** Palpite de intenção para mensagens que as regras não entendem (opcional; só vira texto no aviso) */
+  suggest?: (text: string) => Promise<Intent | null>;
   now?: Date;
 };
 
@@ -138,8 +146,11 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
   }
   if (deps.push) {
     const push = deps.push;
+    // Regras não entenderam: o modelo só sugere no aviso; quem decide é a profissional
+    const guess = !intent && deps.suggest ? await deps.suggest(msg.text) : null;
+    const title = guess ? `${pushTitle(client.name, null)} (parece: ${GUESS_LABEL[guess]})` : pushTitle(client.name, intent);
     await withTenant(tenantId, (tx) =>
-      sendToAll(tx, push, { title: pushTitle(client.name, intent), body: msg.text.slice(0, 140), url: "/agenda" }),
+      sendToAll(tx, push, { title, body: msg.text.slice(0, 140), url: "/agenda" }),
     ).catch((e) => console.error(JSON.stringify({ level: "warn", msg: "reply_push_failed", err: String(e) })));
   }
   return { handled: true, intent, appointmentId };

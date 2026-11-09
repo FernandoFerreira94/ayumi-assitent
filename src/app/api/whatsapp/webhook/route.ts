@@ -1,6 +1,7 @@
 import { messagingForInstance } from "@/features/messaging/evolution";
 import { handleInbound } from "@/features/messaging/inbound";
 import { parseUpsert } from "@/features/messaging/replies";
+import { suggestIntent } from "@/features/messaging/suggest";
 import { isValidWebhookToken } from "@/features/messaging/webhook-url";
 import { pushFromEnv } from "@/features/push/webpush";
 
@@ -14,6 +15,7 @@ export async function POST(req: Request) {
     const r = await handleInbound(msg, {
       portFor: (i) => messagingForInstance(i),
       push: pushFromEnv(),
+      suggest: suggestIntent,
     });
     // Sem ids na resposta: só se foi tratada (útil para conferir no log da Evolution)
     return Response.json({ ok: true, handled: r.handled });
