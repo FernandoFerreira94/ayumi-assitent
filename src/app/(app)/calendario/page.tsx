@@ -27,7 +27,7 @@ export default async function CalendarioPage({ searchParams }: PageProps<"/calen
     return (
       <PageShell title="Calendário">
         <DaySchedule tenantId={tenantId} date={view.date} withStrip calendar />
-        {view.date === today ? null : <TodayFab href="/calendario" />}
+        {view.date === today ? null : <TodayFab href={`/calendario?d=${today}`} />}
       </PageShell>
     );
   }

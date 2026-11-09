@@ -1,4 +1,5 @@
 import { expect, test } from "./fixtures";
+import { todayStr } from "../../src/lib/dates";
 
 // No teste não há WhatsApp conectado: nenhuma mensagem sai de verdade, e a tela mostra o aviso de reconectar
 test("tocar na cliente abre a conversa; sem WhatsApp, a mensagem fica como não enviada", async ({ page }) => {
@@ -43,7 +44,7 @@ test("nas ações do agendamento também dá para mandar mensagem", async ({ pag
   await page.getByRole("button", { name: "Salvar" }).click();
   await expect(page.getByText("Cliente cadastrada")).toBeVisible();
 
-  await page.goto("/calendario");
+  await page.goto(`/calendario?d=${todayStr()}`);
   await page.getByRole("button", { name: "Agendar", exact: true }).first().click();
   await page.getByRole("button", { name: "Cliente" }).click();
   await page.getByRole("button", { name: /Joana Lima/ }).click();

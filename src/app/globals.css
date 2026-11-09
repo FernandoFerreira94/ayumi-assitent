@@ -92,6 +92,13 @@ body {
   overscroll-behavior-y: none;
 }
 
+/* Faixa da barra de status também no fundo do html: se a página for puxada, o topo continua roxo */
+html {
+  background-image: linear-gradient(var(--primary), var(--primary));
+  background-size: 100% env(safe-area-inset-top, 0px);
+  background-repeat: no-repeat;
+}
+
 /* O fundo fica no html para as manchas (z-index -1) aparecerem por trás do body */
 body {
   background: transparent;
@@ -458,12 +465,32 @@ button {
 
 /* Faixa da semana: domingo a sábado; escolhido lavanda, hoje rosa, pontinho onde há atendimento */
 .wk-days {
+  border-radius: 26px;
+  overflow: hidden;
+}
+/* Rolagem lateral contínua, uma semana por encaixe; some a barra e fica invisível até posicionar na semana certa */
+.wk-scroll {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  padding: 6px 0;
+}
+.wk-scroll::-webkit-scrollbar {
+  display: none;
+}
+.wk-scroll:not([data-ready]) {
+  opacity: 0;
+}
+.wk-week {
+  flex: 0 0 100%;
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 2px;
-  padding: 6px 4px;
-  border-radius: 26px;
-  touch-action: pan-y;
+  padding: 0 4px;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 .wk-d {
   display: grid;

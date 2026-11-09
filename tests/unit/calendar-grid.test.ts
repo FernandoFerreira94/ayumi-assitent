@@ -20,7 +20,7 @@ describe("grade do calendário", () => {
   });
   it("lê a visão da URL, com hoje como padrão", () => {
     const today = "2026-11-08";
-    expect(parseView({}, today, isDateStr)).toEqual({ kind: "day", date: today });
+    expect(parseView({}, today, isDateStr)).toEqual({ kind: "month", month: today.slice(0, 7) });
     expect(parseView({ d: "2026-03-01" }, today, isDateStr)).toEqual({ kind: "day", date: "2026-03-01" });
     expect(parseView({ v: "mes", m: "2027-03" }, today, isDateStr)).toEqual({ kind: "month", month: "2027-03" });
     expect(parseView({ v: "mes", m: "lixo" }, today, isDateStr)).toEqual({ kind: "month", month: "2026-11" });

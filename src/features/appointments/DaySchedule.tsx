@@ -13,8 +13,11 @@ import { NewBlockSheet } from "@/features/blocks/NewBlockSheet";
 import { bookingOptions } from "@/features/appointments/options";
 import { searchClients } from "@/features/clients/core";
 import { listBookable } from "@/features/services/core";
-import { dayRange, formatBRL, todayStr } from "@/lib/dates";
+import { addDays, dayRange, formatBRL, todayStr } from "@/lib/dates";
 import { maskPhone } from "@/lib/phone";
+
+/** Semanas carregadas antes e depois da semana do dia escolhido. */
+const WEEK_RADIUS = 5;
 
 /**
  * Dia da agenda (linha do dia com arrastar para remarcar, agendar e bloquear).
@@ -35,9 +38,10 @@ export async function DaySchedule({
   calendar?: boolean;
 }) {
   const today = todayStr();
-  const week = weekOf(date);
-  // Uma consulta para a semana toda: os pontinhos da faixa saem dela e o dia é filtrado daqui
-  const weekRange: [Date, Date] = [dayRange(week[0])[0], dayRange(week[6])[1]];
+  // Janela de semanas para a rolagem lateral da faixa; ao rolar além dela a faixa recentraliza
+  const weeks = Array.from({ length: 2 * WEEK_RADIUS + 1 }, (_, i) => weekOf(addDays(date, (i - WEEK_RADIUS) * 7)));
+  // Uma consulta para a janela toda: os pontinhos da faixa saem dela e o dia é filtrado daqui
+  const weekRange: [Date, Date] = [dayRange(weeks[0][0])[0], dayRange(weeks[weeks.length - 1][6])[1]];
 
   const { weekRows, dayBlocks, clients, services, openHours } = await withTenant(tenantId, async (tx) => ({
     openHours: await getHours(tx),
@@ -90,7 +94,9 @@ export async function DaySchedule({
             summary={summary}
             base={base}
             calendar={calendar}
-            days={week.map((w) => ({ date: w, has: busyDays.has(w), closed: !openHours[weekdayOf(w)] }))}
+            weeks={weeks.map((wk) =>
+              wk.map((w) => ({ date: w, has: busyDays.has(w), closed: !openHours[weekdayOf(w)] })),
+            )}
           />
         </div>
       ) : null}

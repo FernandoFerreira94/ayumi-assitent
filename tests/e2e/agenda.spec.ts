@@ -1,4 +1,5 @@
 import { expect, test } from "./fixtures";
+import { todayStr } from "../../src/lib/dates";
 
 test("cria serviço, cliente e agendamento; avisa conflito; cancela com desfazer", async ({ page }) => {
   await page.goto("/servicos");
@@ -16,7 +17,7 @@ test("cria serviço, cliente e agendamento; avisa conflito; cancela com desfazer
   await page.getByRole("button", { name: "Salvar" }).click();
   await expect(page.getByText("Cliente cadastrada")).toBeVisible();
 
-  await page.goto("/calendario");
+  await page.goto(`/calendario?d=${todayStr()}`);
   const agendar = async (hora: string) => {
     await page.getByRole("button", { name: "Agendar", exact: true }).first().click();
     // Seletores em lista por letra, como os contatos do iPhone
