@@ -228,6 +228,7 @@ export function listDay(tx: Tx, [from, to]: [Date, Date]) {
       clientPhone: clients.phoneE164,
       serviceId: appointments.serviceId,
       serviceName: serviceLabel,
+      serviceColor: services.color,
       serviceParts,
     })
     .from(appointments)

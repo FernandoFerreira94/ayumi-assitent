@@ -1,6 +1,6 @@
 import { withTenant } from "@/db/client";
 import { AgendaDay } from "@/features/appointments/AgendaDay";
-import { breakSpan, daySpan, gridWindow, serviceTone, weekOf } from "@/features/appointments/agenda-grid";
+import { breakSpan, daySpan, gridWindow, weekOf } from "@/features/appointments/agenda-grid";
 import { AgendaRefresh } from "@/features/appointments/AgendaRefresh";
 import { dayVersion } from "@/features/appointments/version";
 import { forecastCents, listDay } from "@/features/appointments/core";
@@ -68,7 +68,7 @@ export async function DaySchedule({
     serviceName: r.serviceName,
     price: formatBRL(r.priceCents),
     status: r.status,
-    tone: serviceTone(r.serviceId),
+    color: r.serviceColor,
   }));
   const blocks = dayBlocks.map((b) => ({
     kind: "block" as const,

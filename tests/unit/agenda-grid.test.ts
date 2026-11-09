@@ -6,7 +6,6 @@ import {
   nextFree,
   gridWindow,
   layoutColumns,
-  serviceTone,
   snap,
   weekOf,
   type Occupant,
@@ -101,12 +100,5 @@ describe("grade da agenda do dia", () => {
     expect(nextFree(h("14:20"), 60, hours, others)).toBe(h("14:30"));
     expect(nextFree(h("17:30"), 60, hours, others)).toBeNull();
     expect(nextFree(0, 60, null, [])).toBeNull();
-  });
-
-  it("cor do serviço é estável", () => {
-    const id = "6f1d2c3a-0000-4000-8000-000000000001";
-    expect(serviceTone(id)).toBe(serviceTone(id));
-    expect(serviceTone(id)).toBeGreaterThanOrEqual(0);
-    expect(serviceTone(id)).toBeLessThan(5);
   });
 });
