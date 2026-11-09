@@ -5,15 +5,11 @@ import { Drawer } from "vaul";
 import { notify } from "@/components/feedback/toast";
 import type { PickerOption } from "@/components/ui/LetterPicker";
 import { messageFor, type ErrorCode } from "@/lib/errors";
+import { timeOptions } from "@/lib/time-grid";
 import { editAppointmentAction, loadBookingOptions } from "./actions";
 import { warnSync } from "./sync-warning";
 
 const input = "min-h-13 w-full rounded-2xl border px-4 text-base font-semibold";
-/** Mesma grade de horários da folha de agendar: 07:00 a 21:00, de meia em meia hora. */
-const TIMES = Array.from({ length: 29 }, (_, i) => {
-  const m = 7 * 60 + i * 30;
-  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${m % 60 ? "30" : "00"}`;
-});
 
 /** Folha para reagendar (dia/horário) ou trocar o serviço do atendimento, sem sair da agenda. */
 export function EditAppointmentSheet({
@@ -71,7 +67,7 @@ export function EditAppointmentSheet({
 
   return (
     <Root open={open} onOpenChange={onOpenChange}>
-      <Drawer.Trigger className={triggerClassName}>Reagendar ou editar</Drawer.Trigger>
+      <Drawer.Trigger className={triggerClassName}>Remarcar</Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
         <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
@@ -107,8 +103,8 @@ export function EditAppointmentSheet({
             </label>
             <label className="grid gap-1 text-sm font-bold">
               Horário
-              <select name="time" required defaultValue={TIMES.includes(start) ? start : "09:00"} className={input} aria-invalid={error === "SLOT_TAKEN"}>
-                {TIMES.map((t) => (
+              <select name="time" required defaultValue={start} className={input} aria-invalid={error === "SLOT_TAKEN"}>
+                {timeOptions({ include: start }).map((t) => (
                   <option key={t}>{t}</option>
                 ))}
               </select>

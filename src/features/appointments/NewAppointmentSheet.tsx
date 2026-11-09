@@ -6,6 +6,7 @@ import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import { LetterPicker, type PickerOption } from "@/components/ui/LetterPicker";
 import { LoadingRegion, Skeleton } from "@/components/ui/Skeleton";
 import { formatDayTitle } from "@/lib/dates";
+import { timeOptions } from "@/lib/time-grid";
 import { messageFor, type ErrorCode } from "@/lib/errors";
 import { whatsappStatus } from "@/features/whatsapp/actions";
 import { BookingOverlay, type Booking, type Step } from "./BookingOverlay";
@@ -13,10 +14,6 @@ import { warnSync } from "./sync-warning";
 import { createAppointment } from "./actions";
 
 const input = "min-h-13 w-full rounded-2xl border px-4 text-base font-semibold";
-const TIMES = Array.from({ length: 29 }, (_, i) => {
-  const m = 7 * 60 + i * 30;
-  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${m % 60 ? "30" : "00"}`;
-});
 /** Mesmo com resposta instantânea a Bolha trabalha um pouco, para a tela não piscar. */
 const MIN_MS = 900;
 const SLOW_MS = 4000;
@@ -82,7 +79,7 @@ export function NewAppointmentSheet({
   const loading = clients === null || services === null;
   const missing = !loading && (clients.length === 0 || services.length === 0);
   const working = booking !== null && booking.result === null;
-  const times = time && !TIMES.includes(time) ? [...TIMES, time].sort() : TIMES;
+  const times = timeOptions({ include: time });
   const closedRef = useRef(onClosed);
   useEffect(() => {
     closedRef.current = onClosed;

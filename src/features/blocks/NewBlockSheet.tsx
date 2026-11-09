@@ -6,13 +6,12 @@ import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import { messageFor, type ActionResult } from "@/lib/errors";
+import { timeOptions } from "@/lib/time-grid";
 import { createBlock } from "./actions";
 
 const input = "min-h-13 w-full rounded-2xl border px-4 text-base font-semibold";
-const TIMES = Array.from({ length: 33 }, (_, i) => {
-  const m = 6 * 60 + i * 30;
-  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${m % 60 ? "30" : "00"}`;
-});
+/** De 15 em 15, como a agenda: dá para bloquear 12:15–12:45. */
+const TIMES = timeOptions();
 
 export function NewBlockSheet({ date }: { date: string }) {
   const [open, setOpen] = useState(false);
