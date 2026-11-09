@@ -1,9 +1,16 @@
 import "server-only";
-import { and, asc, eq, gt, inArray, isNotNull, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { getDb, withTenant } from "@/db/client";
 import { appointments, clients, messages, tenants } from "@/db/schema";
 import { sendToAll } from "@/features/push/core";
 import type { PushPort } from "@/features/push/port";
+import {
+  CORRECTION_HOURS,
+  OWNER_QUIET_HOURS,
+  planAiReply,
+  type AiPlan,
+  type AiVerdict,
+} from "./ai-policy";
 import type { MessagingPort } from "./port";
 import { ackText, parseIntent, phoneCandidates, type InboundText, type Intent } from "./replies";
 import { recordMessage } from "./store";
@@ -18,25 +25,28 @@ const STATUS_FOR: Record<Intent, "confirmed" | "reschedule_requested"> = {
   reschedule: "reschedule_requested",
 };
 
-const pushTitle = (name: string, intent: Intent | null) => {
-  const first = name.trim().split(/\s+/)[0];
-  if (intent === "confirm") return `${first} confirmou o horário`;
-  if (intent === "cancel") return `${first} quer cancelar`;
-  if (intent === "reschedule") return `${first} quer remarcar`;
-  return `${first} mandou mensagem`;
-};
-
 const GUESS_LABEL: Record<Intent, string> = {
   confirm: "confirmar",
   cancel: "cancelar",
   reschedule: "remarcar",
 };
 
+const firstName = (name: string) => name.trim().split(/\s+/)[0];
+
+const pushTitle = (name: string, intent: Intent | null, guess: Intent | null, correction: boolean) => {
+  const first = firstName(name);
+  if (correction && intent) return `${first} corrigiu a resposta: ${GUESS_LABEL[intent]}`;
+  if (intent === "confirm") return `${first} confirmou o horário`;
+  if (intent === "cancel") return `${first} quer cancelar`;
+  if (intent === "reschedule") return `${first} quer remarcar`;
+  return guess ? `${first} mandou mensagem (parece: ${GUESS_LABEL[guess]})` : `${first} mandou mensagem`;
+};
+
 export type InboundDeps = {
   portFor: (instance: string) => MessagingPort | null;
   push: PushPort | null;
-  /** Palpite de intenção para mensagens que as regras não entendem (opcional; só vira texto no aviso) */
-  suggest?: (text: string) => Promise<Intent | null>;
+  /** Modelo que entende mensagens que as regras simples não entenderam (opcional; sem ele, só avisa a dona) */
+  classify?: (text: string, rules: string | null) => Promise<AiVerdict | null>;
   now?: Date;
 };
 
@@ -44,17 +54,24 @@ export type InboundResult =
   | { handled: false; reason: "tenant" | "client" | "duplicate" }
   | { handled: true; intent: Intent | null; appointmentId: string | null };
 
+type Target = { id: string; handedOff: boolean; correction: boolean; status: string };
+
 /**
  * Uma mensagem chegou pelo webhook. Liga ao estúdio (pela instância) e à cliente (pelo telefone),
- * guarda na conversa e, se havia lembrete esperando resposta, entende 1/2/3, atualiza o
- * agendamento, responde à cliente e avisa a dona. Qualquer outra mensagem só avisa a dona (sem
- * resposta automática). Webhook repetido não faz nada duas vezes.
+ * guarda na conversa e, se havia lembrete esperando resposta (ou resposta recente que ela pode corrigir),
+ * entende a mensagem: primeiro pelas regras simples (1/2/3, "ok"...), depois, com a IA ligada, pelo modelo.
+ * O que nenhum dos dois entende vai para a profissional, avisando a cliente uma vez por agendamento.
+ * Webhook repetido não faz nada duas vezes.
  */
 export async function handleInbound(msg: InboundText, deps: InboundDeps): Promise<InboundResult> {
   const now = deps.now ?? new Date();
-  const [t] = await getDb().select({ id: tenants.id }).from(tenants).where(eq(tenants.whatsappInstance, msg.instance));
+  const [t] = await getDb()
+    .select({ id: tenants.id, aiEnabled: tenants.aiEnabled, aiRules: tenants.aiRules })
+    .from(tenants)
+    .where(eq(tenants.whatsappInstance, msg.instance));
   if (!t) return { handled: false, reason: "tenant" };
   const tenantId = t.id;
+  const hoursAgo = (h: number) => new Date(now.getTime() - h * 3_600_000);
 
   const step = await withTenant(tenantId, async (tx) => {
     const found = await tx
@@ -89,9 +106,11 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
     });
     if (!messageId) return { kind: "skip", reason: "duplicate" } as const;
 
-    // Só vale como resposta se o lembrete do próximo horário ainda espera resposta
+    // Alvo da mensagem: o lembrete do próximo horário que ainda espera resposta; se não há, a resposta
+    // dada há pouco (a cliente pode ter errado o número e corrigir)
+    let target: Target | null = null;
     const [open] = await tx
-      .select({ id: appointments.id })
+      .select({ id: appointments.id, handoff: appointments.aiHandoffAt, status: appointments.status })
       .from(appointments)
       .where(
         and(
@@ -104,35 +123,119 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
       )
       .orderBy(asc(appointments.startsAt))
       .limit(1);
-    const intent = open ? parseIntent(msg.text) : null;
-    if (open && intent) {
-      await tx.update(messages).set({ intent, appointmentId: open.id }).where(eq(messages.id, messageId));
-      await tx
-        .update(appointments)
-        .set({ status: STATUS_FOR[intent], replyAt: now })
-        .where(eq(appointments.id, open.id));
-      return { kind: "reply", client: cli, intent, appointmentId: open.id } as const;
+    if (open) target = { id: open.id, handedOff: !!open.handoff, correction: false, status: open.status };
+    else {
+      const [recent] = await tx
+        .select({ id: appointments.id, handoff: appointments.aiHandoffAt, status: appointments.status })
+        .from(appointments)
+        .where(
+          and(
+            eq(appointments.clientId, cli.id),
+            gte(appointments.replyAt, hoursAgo(CORRECTION_HOURS)),
+            inArray(appointments.status, ["confirmed", "reschedule_requested"]),
+            gt(appointments.startsAt, now),
+          ),
+        )
+        .orderBy(desc(appointments.replyAt))
+        .limit(1);
+      if (recent) target = { id: recent.id, handedOff: !!recent.handoff, correction: true, status: recent.status };
     }
-    // Conversa solta: não responde nada, só avisa a profissional (push e sino)
-    return { kind: "reply", client: cli, intent: null, appointmentId: null } as const;
+
+    // Regras simples primeiro: de graça e previsíveis
+    const ruleIntent = target && !msg.media ? parseIntent(msg.text) : null;
+
+    // Contexto para a IA (só quando as regras não entenderam e a IA está ligada)
+    let ai: { ownerWroteRecently: boolean; autoRepliesLast24h: number } | null = null;
+    if (target && !ruleIntent && t.aiEnabled) {
+      const [{ owner }] = await tx
+        .select({ owner: sql<number>`count(*)::int` })
+        .from(messages)
+        .where(
+          and(
+            eq(messages.clientId, cli.id),
+            eq(messages.direction, "out"),
+            inArray(messages.kind, ["phone", "manual"]),
+            gte(messages.createdAt, hoursAgo(OWNER_QUIET_HOURS)),
+          ),
+        );
+      const [{ auto }] = await tx
+        .select({ auto: sql<number>`count(*)::int` })
+        .from(messages)
+        .where(
+          and(
+            eq(messages.clientId, cli.id),
+            eq(messages.direction, "out"),
+            eq(messages.kind, "auto_reply"),
+            gte(messages.createdAt, hoursAgo(24)),
+          ),
+        );
+      ai = { ownerWroteRecently: owner > 0, autoRepliesLast24h: auto };
+    }
+    return { kind: "reply", client: cli, messageId, target, ruleIntent, ai } as const;
   });
 
   if (step.kind === "skip") return { handled: false, reason: step.reason };
   if (step.kind === "done") return { handled: true, intent: null, appointmentId: null };
 
-  // Fora da transação: envio e push vão para a rede e não devem segurar o banco
-  const { client, intent, appointmentId } = step;
-  // A única resposta automática é à resposta do lembrete
-  const body = intent ? ackText(intent, client.name) : null;
-  if (body) {
+  const { client, messageId, target, ruleIntent, ai } = step;
+
+  // Decisão. Fora da transação: o modelo vai para a rede e não deve segurar o banco
+  let plan: AiPlan;
+  if (ruleIntent) plan = { action: "apply", intent: ruleIntent, sendAck: true };
+  else if (ai && target && deps.classify) {
+    const classify = deps.classify;
+    plan = await planAiReply(
+      { ...ai, media: !!msg.media, text: msg.text, alreadyHandedOff: target.handedOff },
+      () => classify(msg.text, t.aiRules),
+    );
+  } else plan = { action: "silent", guess: null };
+
+  let intent: Intent | null = null;
+  let appointmentId: string | null = null;
+  let correction = false;
+  let ack: string | null = null;
+  let handedOff = false;
+  if (target && plan.action === "apply") {
+    // Correção que não muda nada (mesmo status) só fica na conversa
+    const changes = !target.correction || STATUS_FOR[plan.intent] !== target.status;
+    if (changes) {
+      intent = plan.intent;
+      appointmentId = target.id;
+      correction = target.correction;
+      if (plan.sendAck) ack = ackText(plan.intent, client.name);
+    }
+  } else if (target && plan.action === "handoff") {
+    handedOff = true;
+    ack = plan.text;
+  }
+
+  if (appointmentId && intent) {
+    const apptId = appointmentId;
+    const applied = intent;
+    await withTenant(tenantId, async (tx) => {
+      await tx.update(messages).set({ intent: applied, appointmentId: apptId }).where(eq(messages.id, messageId));
+      await tx
+        .update(appointments)
+        .set({ status: STATUS_FOR[applied], replyAt: now })
+        .where(eq(appointments.id, apptId));
+    });
+  } else if (target && handedOff) {
+    const apptId = target.id;
+    await withTenant(tenantId, (tx) =>
+      tx.update(appointments).set({ aiHandoffAt: now }).where(and(eq(appointments.id, apptId), isNull(appointments.aiHandoffAt))),
+    );
+  }
+
+  if (ack) {
     const port = deps.portFor(msg.instance);
+    const body = ack;
     try {
       const sent = port ? await port.sendText(client.phone, body) : null;
       if (sent)
         await withTenant(tenantId, (tx) =>
           recordMessage(tx, tenantId, {
             clientId: client.id,
-            appointmentId,
+            appointmentId: target?.id ?? null,
             direction: "out",
             kind: "auto_reply",
             body,
@@ -144,11 +247,11 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
       console.error(JSON.stringify({ level: "warn", msg: "auto_reply_failed", err: String(e) }));
     }
   }
+
   if (deps.push) {
     const push = deps.push;
-    // Regras não entenderam: o modelo só sugere no aviso; quem decide é a profissional
-    const guess = !intent && deps.suggest ? await deps.suggest(msg.text) : null;
-    const title = guess ? `${pushTitle(client.name, null)} (parece: ${GUESS_LABEL[guess]})` : pushTitle(client.name, intent);
+    const guess = plan.action === "apply" ? null : plan.guess;
+    const title = pushTitle(client.name, intent, guess, correction);
     await withTenant(tenantId, (tx) =>
       sendToAll(tx, push, { title, body: msg.text.slice(0, 140), url: "/agenda" }),
     ).catch((e) => console.error(JSON.stringify({ level: "warn", msg: "reply_push_failed", err: String(e) })));

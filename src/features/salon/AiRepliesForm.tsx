@@ -48,7 +48,7 @@ export function AiRepliesForm({ enabled, rules }: { enabled: boolean; rules: str
             onChange={(e) => setText(e.target.value)}
             rows={4}
             maxLength={AI_RULES_MAX}
-            aria-invalid={invalid}
+            aria-invalid={invalid || undefined}
             className="min-h-28 w-full resize-y rounded-3xl border px-5 py-3 text-base font-semibold leading-6"
           />
           <span className="text-xs font-semibold text-muted tabular-nums">

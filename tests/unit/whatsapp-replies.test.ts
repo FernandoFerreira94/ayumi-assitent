@@ -124,10 +124,15 @@ describe("webhook da Evolution", () => {
         ?.phoneDigits,
     ).toBe("5511987654321");
   });
-  it("ignora grupo, mídia sem texto e outros eventos", () => {
+  it("ignora grupo e outros eventos", () => {
     expect(parseUpsert(body({ remoteJid: "1203630@g.us", id: "A" }))).toBeNull();
-    expect(parseUpsert(body({ remoteJid: "5511987654321@s.whatsapp.net", id: "A" }, { imageMessage: {} }))).toBeNull();
     expect(parseUpsert({ event: "connection.update", instance: "x" })).toBeNull();
+  });
+  it("áudio, foto e figurinha sem legenda chegam marcados como mídia; os da própria dona são ignorados", () => {
+    const jid = { remoteJid: "5511987654321@s.whatsapp.net", id: "A" };
+    expect(parseUpsert(body(jid, { imageMessage: {} }))).toMatchObject({ media: true, text: "[foto]" });
+    expect(parseUpsert(body(jid, { audioMessage: {} }))).toMatchObject({ media: true, text: "[áudio]" });
+    expect(parseUpsert(body({ ...jid, fromMe: true }, { audioMessage: {} }))).toBeNull();
   });
   it("aceita texto estendido (resposta citando o lembrete)", () => {
     expect(
