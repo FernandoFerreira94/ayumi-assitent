@@ -412,23 +412,36 @@ function CardSheet({
 }) {
   const [data, setData] = useState<ClientCard | null>(null);
   const [failed, setFailed] = useState(false);
+  /** Muda a cada abertura ou "Tentar de novo" e dispara a busca. */
+  const [attempt, setAttempt] = useState(0);
 
-  async function load() {
+  // A cada abertura busca de novo: um agendamento novo já aparece no cartão.
+  // (A folha abre pelo estado do pai; o onOpenChange do vaul só avisa o que ela mesma muda.)
+  useEffect(() => {
+    if (!open) return;
+    let alive = true;
+    loadClientCard(client.id)
+      .catch(() => null)
+      .then((res) => {
+        if (!alive) return;
+        setFailed(!res?.ok);
+        if (res?.ok) setData(res.data);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [open, attempt, client.id]);
+
+  const load = () => {
     setFailed(false);
-    const res = await loadClientCard(client.id).catch(() => null);
-    if (res?.ok) setData(res.data);
-    else setFailed(true);
-  }
+    setAttempt((n) => n + 1);
+  };
 
   const action = "flex min-h-13 items-center justify-center gap-2 rounded-2xl px-4 font-bold";
   return (
     <Drawer.Root
       open={open}
-      onOpenChange={(v) => {
-        onOpenChange(v);
-        // A cada abertura busca de novo: um agendamento novo já aparece no cartão
-        if (v) void load();
-      }}
+      onOpenChange={onOpenChange}
     >
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
@@ -442,7 +455,7 @@ function CardSheet({
           {failed ? (
             <div role="alert" className="mb-3 flex items-center justify-between gap-3 rounded-2xl bg-fail-bg px-4 py-3 text-sm font-semibold text-fail">
               Não deu para carregar o histórico.
-              <button type="button" onClick={() => void load()} className="min-h-11 px-2 font-bold underline">
+              <button type="button" onClick={load} className="min-h-11 px-2 font-bold underline">
                 Tentar de novo
               </button>
             </div>

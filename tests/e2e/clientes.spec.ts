@@ -39,8 +39,12 @@ test("tocar no nome abre o cartão da cliente com histórico e ações", async (
   await page.getByRole("button", { name: "Salvar" }).click();
   await expect(page.getByText("Cliente cadastrada")).toBeVisible();
 
-  await page.getByRole("button", { name: /^Bia Souza/ }).click();
   const cartao = page.getByRole("dialog", { name: "Bia Souza" });
+  // Antes da hidratação o toque não abre a folha: repete até abrir
+  await expect(async () => {
+    await page.getByRole("button", { name: /^Bia Souza/ }).click({ timeout: 1000 });
+    await expect(cartao).toBeVisible({ timeout: 1000 });
+  }).toPass();
   await expect(cartao.getByText("Nenhum marcado")).toBeVisible();
   await expect(cartao.getByText("visitas")).toBeVisible();
   await expect(cartao.getByRole("button", { name: "Agendar" })).toBeVisible();
