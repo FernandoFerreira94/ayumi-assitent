@@ -371,24 +371,61 @@ button {
   transform: scale(0.92);
 }
 
-/* Barra de abas embaixo: ícones sem texto, aba atual preenchida com um "pop", fundo branco translúcido */
+/* Barra de vidro flutuante (iOS 26): pílula translúcida + lente lavanda que desliza + botão de ação à parte */
 .tabbar {
+  --tab-h: 62px;
+  --tab-bottom: max(12px, calc(env(safe-area-inset-bottom) - 10px));
   position: fixed;
-  inset-inline: 0;
-  bottom: 0;
+  left: max(12px, calc(50% - 248px));
+  right: max(12px, calc(50% - 248px));
+  bottom: var(--tab-bottom);
   z-index: 30;
-  padding-bottom: env(safe-area-inset-bottom);
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(20px) saturate(1.8);
-  -webkit-backdrop-filter: blur(20px) saturate(1.8);
-  border-top: 0.5px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.tabbar ul {
+.tab-pill {
+  position: relative;
+  flex: 1;
+  height: var(--tab-h);
+  padding: 5px;
+  border-radius: 31px;
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(18px) saturate(1.8);
+  -webkit-backdrop-filter: blur(18px) saturate(1.8);
+  box-shadow:
+    0 10px 30px -12px rgba(40, 24, 110, 0.35),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.tab-lens {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  left: 0;
+  width: var(--lens-w, 0px);
+  transform: translateX(var(--lens-x, 0px));
+  border-radius: 26px;
+  background: rgba(109, 74, 255, 0.13);
+  box-shadow: inset 0 0 0 0.5px rgba(109, 74, 255, 0.12);
+  transition:
+    transform 0.5s var(--spring),
+    width 0.5s var(--spring),
+    opacity 0.2s ease;
+}
+.tab-pill[data-lens="init"] .tab-lens {
+  transition: none;
+}
+.tab-pill:not([data-lens]) .tab-lens,
+.tab-pill[data-lens="off"] .tab-lens {
+  opacity: 0;
+}
+.tab-pill ul {
+  position: relative;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  max-width: 520px;
-  height: 50px;
-  margin: 0 auto;
+  grid-template-columns: repeat(4, 1fr);
+  height: 100%;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
@@ -399,12 +436,17 @@ button {
   display: grid;
   place-items: center;
   min-height: 44px;
+  border-radius: 26px;
   color: var(--fg);
   -webkit-tap-highlight-color: transparent;
+  transition: color 0.2s ease;
+}
+.tab-link[aria-current="page"] {
+  color: var(--primary);
 }
 .tab-link svg {
-  width: 27px;
-  height: 27px;
+  width: 26px;
+  height: 26px;
   transition: transform 0.15s ease;
 }
 .tab-link:active svg {
@@ -416,22 +458,38 @@ button {
 .tab-link[aria-current="page"] .tab-icon {
   animation: tab-pop 0.34s var(--spring);
 }
-/* Avatar na ponta: anel escuro quando o menu está aberto ou numa tela dele */
-.tab-avatar {
+.tab-act {
   display: grid;
+  flex: none;
   place-content: center;
+  width: var(--tab-h);
+  height: var(--tab-h);
+  border-radius: 50%;
+  color: #fff;
+  background: var(--primary);
+  box-shadow:
+    0 10px 24px -8px rgba(109, 74, 255, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s var(--spring);
+}
+.tab-act svg {
   width: 28px;
   height: 28px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #fff;
+  stroke-width: 2.4;
 }
-.tab-link[aria-current="page"] .tab-avatar,
-.tab-link[aria-expanded="true"] .tab-avatar {
-  box-shadow:
-    0 0 0 2px #fff,
-    0 0 0 3.5px var(--fg);
+.tab-act:active {
+  transform: scale(0.92);
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .tab-pill {
+    background: var(--surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow:
+      0 10px 30px -12px rgba(40, 24, 110, 0.35),
+      inset 0 0 0 1px var(--line);
+  }
 }
 @keyframes tab-pop {
   0% {
@@ -448,7 +506,9 @@ button {
   .tab-link[aria-current="page"] .tab-icon {
     animation: none;
   }
-  .tab-link svg {
+  .tab-link svg,
+  .tab-lens,
+  .tab-act {
     transition: none;
   }
 }
@@ -2031,7 +2091,7 @@ html.cal-zooming body {
 .cal-fab {
   position: fixed;
   left: max(16px, calc(50% - 244px));
-  bottom: calc(env(safe-area-inset-bottom) + 62px);
+  bottom: calc(max(12px, calc(env(safe-area-inset-bottom) - 10px)) + 74px);
   z-index: 24;
 }
 @media (prefers-reduced-motion: reduce) {
