@@ -341,7 +341,7 @@ d("lembretes (núcleo)", () => {
 
   it("respeita a antecedência configurada pelo estúdio", async () => {
     const { withTenant } = await import("@/db/client");
-    const { sendReminders, getReminderHours, saveReminderHours } = await import("@/features/reminders/core");
+    const { sendReminders, getReminderHours, saveReminderConfig } = await import("@/features/reminders/core");
     const admin = postgres(url!, { max: 1 });
     await admin`truncate tenants cascade`;
     const [{ id: T }] = await admin`insert into tenants (name) values ('Estúdio H') returning id`;
@@ -354,10 +354,10 @@ d("lembretes (núcleo)", () => {
     const ok = { sendText: async () => ({ id: null }) };
 
     expect(await withTenant(T, getReminderHours)).toBe(24);
-    await withTenant(T, (tx) => saveReminderHours(tx, T, 2));
+    await withTenant(T, (tx) => saveReminderConfig(tx, T, { hours: 2, secondHours: 1, includePrice: true }));
     expect(await withTenant(T, getReminderHours)).toBe(2);
     expect(await withTenant(T, (tx) => sendReminders(tx, ok, now))).toMatchObject({ sent: 0 }); // 19h > 2h
-    await withTenant(T, (tx) => saveReminderHours(tx, T, 24));
+    await withTenant(T, (tx) => saveReminderConfig(tx, T, { hours: 24, secondHours: 3, includePrice: false }));
     expect(await withTenant(T, (tx) => sendReminders(tx, ok, now))).toMatchObject({ sent: 1 });
     await admin.end();
   });

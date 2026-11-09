@@ -11,8 +11,6 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
   let handleInbound: typeof import("@/features/messaging/inbound").handleInbound;
   const now = new Date("2026-11-10T15:00:00Z");
   const sent: string[] = [];
-  const pushes: string[] = [];
-  const synced: string[] = [];
   const deps = {
     portFor: () => ({
       sendText: async (to: string, t: string) => {
@@ -21,7 +19,6 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
       },
     }),
     push: null,
-    syncAppointment: async (_t: string, a: string) => void synced.push(a),
     now,
   };
   const msg = (id: string, text: string, over: object = {}) => ({
@@ -38,17 +35,27 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     ({ handleInbound } = await import("@/features/messaging/inbound"));
     admin = postgres(url!, { max: 1 });
     await admin`truncate tenants cascade`;
-    [{ id: T }] = await admin`insert into tenants (name, whatsapp_instance) values ('Estúdio R', 'studio-r') returning id`;
-    const [{ id: S }] = await admin`insert into services (tenant_id,name,duration_min,price_cents) values (${T},'Gel',60,10000) returning id`;
-    [{ id: C }] = await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Bia Souza','+5511987655555') returning id`;
-    [{ id: A }] = await admin`insert into appointments (tenant_id,client_id,service_id,starts_at,ends_at,price_cents,status,reminder_sent_at)
+    [{ id: T }] =
+      await admin`insert into tenants (name, whatsapp_instance) values ('Estúdio R', 'studio-r') returning id`;
+    const [{ id: S }] =
+      await admin`insert into services (tenant_id,name,duration_min,price_cents) values (${T},'Gel',60,10000) returning id`;
+    [{ id: C }] =
+      await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Bia Souza','+5511987655555') returning id`;
+    [{ id: A }] =
+      await admin`insert into appointments (tenant_id,client_id,service_id,starts_at,ends_at,price_cents,status,reminder_sent_at)
       values (${T},${C},${S},'2026-11-11T13:00:00Z','2026-11-11T14:00:00Z',10000,'pending_confirmation',${now.toISOString()}) returning id`;
   });
   afterAll(async () => admin.end());
 
   it("número que não é cliente não grava nada", async () => {
-    expect(await handleInbound(msg("x1", "oi", { phoneDigits: "5521999998888" }), deps)).toEqual({ handled: false, reason: "client" });
-    expect(await handleInbound(msg("x2", "oi", { instance: "outra" }), deps)).toEqual({ handled: false, reason: "tenant" });
+    expect(await handleInbound(msg("x1", "oi", { phoneDigits: "5521999998888" }), deps)).toEqual({
+      handled: false,
+      reason: "client",
+    });
+    expect(await handleInbound(msg("x2", "oi", { instance: "outra" }), deps)).toEqual({
+      handled: false,
+      reason: "tenant",
+    });
     expect((await admin`select count(*)::int as n from messages`)[0].n).toBe(0);
   });
 
@@ -59,7 +66,10 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     expect(a.reply_at).not.toBeNull();
     expect(sent.at(-1)).toContain("+5511987655555|Obrigada, Bia! Seu horário está confirmado");
     const conv = await admin`select direction, kind, intent from messages where client_id = ${C} order by created_at`;
-    expect(conv.map((m) => `${m.direction}:${m.kind}:${m.intent ?? ""}`)).toEqual(["in:client:confirm", "out:auto_reply:"]);
+    expect(conv.map((m) => `${m.direction}:${m.kind}:${m.intent ?? ""}`)).toEqual([
+      "in:client:confirm",
+      "out:auto_reply:",
+    ]);
   });
 
   it("webhook repetido não faz nada duas vezes", async () => {
@@ -75,64 +85,45 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
   });
 
   it("eco do que o app mandou não duplica; o que a dona escreve pelo celular entra", async () => {
-    expect(await handleInbound(msg("ack1", "Obrigada, Bia!", { fromMe: true }), deps)).toEqual({ handled: false, reason: "duplicate" });
+    expect(await handleInbound(msg("ack1", "Obrigada, Bia!", { fromMe: true }), deps)).toEqual({
+      handled: false,
+      reason: "duplicate",
+    });
     expect(await handleInbound(msg("p1", "Te espero!", { fromMe: true }), deps)).toMatchObject({ handled: true });
     expect((await admin`select kind from messages where external_id = 'p1'`)[0].kind).toBe("phone");
   });
 
   const reopen = (status = "pending_confirmation") =>
-    admin`update appointments set reply_at = null, cancel_asked_at = null, status = ${status}::appointment_status where id = ${A}`;
-  const apptRow = async () => (await admin`select status, cancel_asked_at from appointments where id = ${A}`)[0];
+    admin`update appointments set reply_at = null, status = ${status}::appointment_status where id = ${A}`;
+  const apptRow = async () => (await admin`select status from appointments where id = ${A}`)[0];
 
-  it("pedido de cancelar só pergunta: horário e Google ficam como estavam", async () => {
+  it("pedido de cancelar não cancela: vira 'quer remarcar' e a cliente só recebe que a profissional vai verificar", async () => {
     await reopen();
-    await admin`update messages set created_at = created_at - interval '3 days'`;
     sent.length = 0;
-    expect(await handleInbound(msg("m3", "cancela por favor"), deps)).toMatchObject({ handled: true, appointmentId: A });
-    const a = await apptRow();
-    expect(a.status).toBe("pending_confirmation");
-    expect(a.cancel_asked_at).not.toBeNull();
-    expect(synced).toEqual([]);
-    expect(sent).toHaveLength(1);
-    expect(sent[0]).toContain("quer cancelar mesmo ou prefere remarcar?");
-  });
-
-  it("'1' depois da pergunta cancela, libera e leva ao Google", async () => {
-    expect(await handleInbound(msg("m3b", "1"), deps)).toMatchObject({ intent: "cancel", appointmentId: A });
-    expect((await apptRow()).status).toBe("cancelled");
-    expect(synced).toEqual([A]);
-    expect(sent.at(-1)).toContain("Cancelei seu horário");
-  });
-
-  it("'2' depois da pergunta vira 'Quer remarcar'", async () => {
-    await reopen();
-    await handleInbound(msg("m5", "não vou conseguir"), deps);
-    expect(await handleInbound(msg("m5b", "2"), deps)).toMatchObject({ intent: "reschedule" });
+    expect(await handleInbound(msg("m3", "cancela por favor"), deps)).toMatchObject({
+      handled: true,
+      intent: "cancel",
+      appointmentId: A,
+    });
     expect((await apptRow()).status).toBe("reschedule_requested");
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toContain("verificar com a profissional o melhor horário");
   });
 
-  it("pergunta que expirou volta a valer 1/2/3 do lembrete", async () => {
-    await reopen();
-    await admin`update appointments set cancel_asked_at = ${new Date(now.getTime() - 13 * 3600_000).toISOString()} where id = ${A}`;
-    expect(await handleInbound(msg("m6", "1"), deps)).toMatchObject({ intent: "confirm" });
-    expect((await apptRow()).status).toBe("confirmed");
-  });
-
-  it("'3' pede para remarcar sem mexer no horário", async () => {
+  it("'3' pede para remarcar sem mexer no horário e recebe a mesma resposta", async () => {
     await reopen("confirmed");
+    sent.length = 0;
     expect(await handleInbound(msg("m4", "3"), deps)).toMatchObject({ intent: "reschedule" });
     expect((await apptRow()).status).toBe("reschedule_requested");
+    expect(sent[0]).toContain("verificar com a profissional");
   });
 
-  it("texto livre recebe um aviso só uma vez", async () => {
-    await admin`update messages set created_at = created_at - interval '3 days'`;
+  it("texto livre não recebe resposta automática nenhuma", async () => {
     sent.length = 0;
-    expect(await handleInbound(msg("f1", "Oi! Vocês fazem unha de fibra?"), deps)).toMatchObject({ handled: true, intent: null });
-    expect(sent).toHaveLength(1);
-    expect(sent[0]).toContain("Recebi! Estúdio R vai te responder em breve");
-    // O relógio do teste é fixo; a resposta automática "aconteceu" no mesmo instante
-    await admin`update messages set created_at = ${now.toISOString()} where external_id = 'ack' || ${sent.length}::text`;
-    await handleInbound(msg("f2", "Oi, tem horário sexta?"), deps);
-    expect(sent).toHaveLength(1);
+    expect(await handleInbound(msg("f1", "Oi! Vocês fazem unha de fibra?"), deps)).toMatchObject({
+      handled: true,
+      intent: null,
+    });
+    expect(sent).toHaveLength(0);
   });
 });

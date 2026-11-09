@@ -6,6 +6,7 @@ import { withTenant } from "@/db/client";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
 import { syncAppointmentSafe } from "@/features/google/server";
+import { sendBookingMessage } from "@/features/messaging/booking-send";
 import type { SyncResult } from "@/features/google/sync";
 import { searchClients } from "@/features/clients/core";
 import { listBookable } from "@/features/services/core";
@@ -59,7 +60,9 @@ export async function createAppointment(_prev: ActionResult<{ id: string }> | nu
     revalidatePath("/agenda");
     revalidatePath("/calendario");
     const sync = await syncAppointmentSafe(tenantId, res.data.id);
-    return ok({ id: res.data.id, sync });
+    // Avisa a cliente que deu certo (dia, horário e, se a profissional quiser, o valor)
+    const message = await sendBookingMessage(tenantId, res.data.id);
+    return ok({ id: res.data.id, sync, message });
   } catch {
     return fail("UNKNOWN");
   }

@@ -20,9 +20,12 @@ function arc(a0: number, a1: number) {
   return `M${p(R, a0)}A${R} ${R} 0 ${big} 1 ${p(R, a1)}L${p(r, a1)}A${r} ${r} 0 ${big} 0 ${p(r, a0)}Z`;
 }
 
+/** Anel inteiro, para quando há uma fatia só (um arco de 360° começa e termina no mesmo ponto e não desenha). */
+const RING = `M100 ${100 - R}A${R} ${R} 0 1 1 100 ${100 + R}A${R} ${R} 0 1 1 100 ${100 - R}Z M100 ${100 - r}A${r} ${r} 0 1 0 100 ${100 + r}A${r} ${r} 0 1 0 100 ${100 - r}Z`;
+
 /**
- * Divisão do total por fatia (serviço ou categoria de gasto). Com menos de 3 fatias a pizza não diz nada que a lista não diga,
- * então só a lista aparece. Tocar numa fatia ou linha mostra o valor dela no centro.
+ * Divisão do total por fatia (serviço ou categoria de gasto), sempre com o gráfico, mesmo com uma ou duas fatias.
+ * Tocar numa fatia ou linha mostra o valor dela no centro.
  */
 export function ServicePie({ slices, total, label }: { slices: Slice[]; total: number; label: string }) {
   const [sel, setSel] = useState<number | null>(null);
@@ -34,12 +37,13 @@ export function ServicePie({ slices, total, label }: { slices: Slice[]; total: n
 
   return (
     <div className="grid gap-4">
-      {slices.length >= 3 ? (
+      {slices.length >= 1 ? (
         <svg viewBox="0 0 200 200" className="mx-auto w-52" role="img" aria-label={`Divisão de ${label}`}>
           {slices.map((s, i) => (
             <path
               key={s.name}
-              d={arc(arcs[i].a0, arcs[i].a1)}
+              d={slices.length === 1 ? RING : arc(arcs[i].a0, arcs[i].a1)}
+              fillRule="evenodd"
               fill={colorOf(s, i)}
               stroke="var(--surface)"
               strokeWidth="2"

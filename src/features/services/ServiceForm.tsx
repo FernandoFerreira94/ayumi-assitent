@@ -5,15 +5,8 @@ import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import type { ActionResult } from "@/lib/errors";
 import { maskMoney } from "@/lib/money";
-import { saveCategory, saveService } from "./actions";
-import {
-  BUFFER_OPTIONS,
-  formatDuration,
-  nameTaken,
-  SERVICE_COLORS,
-  type CatalogService,
-  type Category,
-} from "./catalog";
+import { saveService } from "./actions";
+import { BUFFER_OPTIONS, formatDuration, nameTaken, SERVICE_COLORS, type CatalogService } from "./catalog";
 
 const label = "grid gap-1.5 text-xs font-bold uppercase tracking-wide text-muted";
 const field =
@@ -25,7 +18,6 @@ type Draft = Omit<CatalogService, "id" | "upcoming" | "priceCents"> & { price: s
 
 const blank = (preset: Partial<Draft>): Draft => ({
   name: "",
-  categoryId: null,
   durationMin: 60,
   price: "",
   priceFrom: false,
@@ -48,8 +40,6 @@ export function ServiceForm({
   service,
   preset = {},
   services,
-  categories,
-  onCategoryCreated,
   onSaved,
   onDuplicate,
   onDelete,
@@ -57,8 +47,6 @@ export function ServiceForm({
   service?: CatalogService;
   preset?: Partial<Draft>;
   services: CatalogService[];
-  categories: Category[];
-  onCategoryCreated: (c: Category) => void;
   onSaved: () => void;
   onDuplicate: (s: CatalogService) => void;
   onDelete: (s: CatalogService) => void;
@@ -83,12 +71,10 @@ export function ServiceForm({
   }, null);
 
   const serverField = state && !state.ok ? state.field : undefined;
-  const categoryName = categories.find((c) => c.id === d.categoryId)?.name;
   const errorFor = (f: string) => {
     if (local?.field === f) return local.text;
     if (serverField !== f) return null;
-    if (state && !state.ok && state.code === "NAME_TAKEN")
-      return `Já existe "${d.name.trim()}" ${categoryName ? `em ${categoryName}` : "aqui"}.`;
+    if (state && !state.ok && state.code === "NAME_TAKEN") return `Já existe "${d.name.trim()}" na lista.`;
     return f === "price" ? "Digite o preço. Use 0 se for cortesia." : "Confira este campo.";
   };
 
@@ -97,8 +83,8 @@ export function ServiceForm({
     const err =
       name.length < 2
         ? { field: "name", text: "Dê um nome ao serviço." }
-        : nameTaken(services, name, d.categoryId, service?.id)
-          ? { field: "name", text: `Já existe "${name}" ${categoryName ? `em ${categoryName}` : "aqui"}.` }
+        : nameTaken(services, name, service?.id)
+          ? { field: "name", text: `Já existe "${name}" na lista.` }
           : !d.price.trim()
             ? { field: "price", text: "Digite o preço. Use 0 se for cortesia." }
             : null;
@@ -116,7 +102,6 @@ export function ServiceForm({
   return (
     <form action={action} onSubmit={check} noValidate className="grid gap-4">
       {service ? <input type="hidden" name="id" value={service.id} /> : null}
-      <input type="hidden" name="categoryId" value={d.categoryId ?? ""} />
       <input type="hidden" name="durationMin" value={d.durationMin} />
       <input type="hidden" name="bufferMin" value={d.bufferMin} />
       <input type="hidden" name="color" value={d.color} />
@@ -142,16 +127,6 @@ export function ServiceForm({
           </span>
         ) : null}
       </label>
-
-      <CategoryPicker
-        categories={categories}
-        value={d.categoryId}
-        onChange={(id) => set("categoryId", id)}
-        onCreated={(c) => {
-          onCategoryCreated(c);
-          set("categoryId", c.id);
-        }}
-      />
 
       <div className="grid grid-cols-2 gap-3">
         <div className={label}>
@@ -359,108 +334,6 @@ function Toggle({
         onClick={() => onChange(!on)}
         className="relative h-8 w-13 shrink-0 rounded-full bg-[#dcd7ea] transition-colors aria-checked:bg-ok after:absolute after:left-[3px] after:top-[3px] after:h-[26px] after:w-[26px] after:rounded-full after:bg-white after:shadow after:transition-transform aria-checked:after:translate-x-5"
       />
-    </div>
-  );
-}
-
-/** Chips de categoria; "+ Nova" abre um campo ali mesmo, sem perder o que já foi preenchido. */
-function CategoryPicker({
-  categories,
-  value,
-  onChange,
-  onCreated,
-}: {
-  categories: Category[];
-  value: string | null;
-  onChange: (id: string | null) => void;
-  onCreated: (c: Category) => void;
-}) {
-  const [adding, setAdding] = useState(false);
-  const [name, setName] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  async function create() {
-    if (!name.trim()) return setError("Dê um nome à categoria.");
-    setBusy(true);
-    const res = await saveCategory(name);
-    setBusy(false);
-    if (!res.ok)
-      return setError(
-        res.code === "NAME_TAKEN"
-          ? `Já existe a categoria "${name.trim()}".`
-          : "Não deu para criar agora. Tente de novo.",
-      );
-    onCreated(res.data);
-    setAdding(false);
-    setName("");
-    setError(null);
-  }
-
-  return (
-    <div className={label}>
-      <span id="svc-cat">Categoria</span>
-      <div role="group" aria-labelledby="svc-cat" className="flex flex-wrap gap-1.5">
-        {categories.length === 0 || value === null ? (
-          <button
-            type="button"
-            aria-pressed={value === null}
-            onClick={() => onChange(null)}
-            className={`${pill} ${pressed}`}
-          >
-            Sem categoria
-          </button>
-        ) : null}
-        {categories.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            aria-pressed={value === c.id}
-            onClick={() => onChange(c.id)}
-            className={`${pill} ${pressed}`}
-          >
-            {c.name}
-          </button>
-        ))}
-        {!adding ? (
-          <button type="button" onClick={() => setAdding(true)} className={`${pill} border-dashed text-primary-text`}>
-            + Nova
-          </button>
-        ) : null}
-      </div>
-      {adding ? (
-        <div className="flex gap-2">
-          <input
-            autoFocus
-            aria-label="Nome da nova categoria"
-            placeholder="Ex.: Estética"
-            value={name}
-            maxLength={30}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                void create();
-              }
-            }}
-            className={field}
-            aria-invalid={!!error}
-          />
-          <button
-            type="button"
-            disabled={busy}
-            onClick={create}
-            className="btn-tint min-h-12 shrink-0 rounded-full px-5 text-sm font-bold normal-case tracking-normal"
-          >
-            {busy ? "Criando…" : "Criar"}
-          </button>
-        </div>
-      ) : null}
-      {error ? (
-        <span role="alert" className="text-xs font-semibold normal-case tracking-normal text-fail">
-          {error}
-        </span>
-      ) : null}
     </div>
   );
 }

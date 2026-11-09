@@ -100,15 +100,22 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
 
         <section aria-labelledby="por-servico" className={card}>
           <h2 id="por-servico" className={h2}>
-            Ganhos por serviço
+            {s.received > 0 || s.forecast === 0 ? "Ganhos por serviço" : "Previsto por serviço"}
           </h2>
-          {s.received === 0 ? (
+          {s.received > 0 ? (
+            <ServicePie slices={s.slices} total={s.received} label="recebido" />
+          ) : s.forecast > 0 ? (
+            <>
+              <ServicePie slices={s.forecastSlices} total={s.forecast} label="previsto" />
+              <p className="text-center text-xs font-semibold text-muted">
+                Ainda não há atendimento concluído. Mostrando o que está agendado no mês.
+              </p>
+            </>
+          ) : (
             <EmptyState
               title="Nada recebido nesse mês"
               description="O ganho conta os atendimentos marcados como concluídos na agenda."
             />
-          ) : (
-            <ServicePie slices={s.slices} total={s.received} label="recebido" />
           )}
         </section>
 

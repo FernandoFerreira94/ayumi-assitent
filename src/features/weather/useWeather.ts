@@ -5,6 +5,8 @@ import type { Weather } from "./mood";
 
 const CACHE = "mimo:clima";
 const ASKED = "mimo:clima-pedido";
+/** A pessoa desligou o interruptor: nada de buscar o clima nem pedir permissão sozinho. */
+const OFF = "mimo:clima-desligado";
 const TTL = 30 * 60_000;
 
 const read = <T>(key: string): T | null => {
@@ -67,12 +69,27 @@ async function savedWeather(place: Place): Promise<Weather> {
 /** Pede a localização (o aviso do navegador aparece aqui), guarda o ponto e o clima para a agenda já abrir com ele. */
 export async function enableWeather(): Promise<Weather> {
   write(ASKED, true);
+  try {
+    localStorage.removeItem(OFF);
+  } catch {}
   const { coords } = await locate();
   const place = { lat: coords.latitude, lon: coords.longitude };
   write(PLACE, place);
   const w = await fetchWeather(place);
   write(CACHE, { at: Date.now(), w });
   return w;
+}
+
+/** A localização está ligada neste aparelho (já existe um ponto guardado). */
+export const hasSavedPlace = () => read<Place>(PLACE) !== null;
+
+/** Desliga: esquece o ponto e o clima, e o Mimo não busca nem pede de novo até ligar outra vez. */
+export function disableWeather() {
+  write(OFF, true);
+  try {
+    localStorage.removeItem(PLACE);
+    localStorage.removeItem(CACHE);
+  } catch {}
 }
 
 /** Se o ponto já foi guardado, só busca o clima; senão cai no pedido de localização. */
@@ -99,6 +116,7 @@ export function useWeather() {
   }, []);
 
   useEffect(() => {
+    if (read(OFF)) return;
     // Ponto já guardado: nunca mais passa pela permissão, só atualiza o clima de tempos em tempos
     if (read<Place>(PLACE)) {
       loadWeather().then(setWeather, () => setWeather(null));

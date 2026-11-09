@@ -17,7 +17,6 @@ export const BUFFER_OPTIONS = [0, 10, 15, 30] as const;
 export type CatalogService = {
   id: string;
   name: string;
-  categoryId: string | null;
   durationMin: number;
   priceCents: number;
   priceFrom: boolean;
@@ -29,7 +28,6 @@ export type CatalogService = {
   /** atendimentos marcados daqui para frente (avisados ao excluir) */
   upcoming: number;
 };
-export type Category = { id: string; name: string };
 
 /** Busca e nome repetido ignoram acento e maiúscula. */
 export const normalizeName = (s: string) =>
@@ -42,32 +40,15 @@ export const normalizeName = (s: string) =>
 export const formatDuration = (min: number) =>
   min < 60 ? `${min} min` : `${Math.floor(min / 60)}h${min % 60 ? String(min % 60).padStart(2, "0") : ""}`;
 
-/** Nome já usado na mesma categoria, fora o próprio serviço. */
-export const nameTaken = (
-  list: Pick<CatalogService, "id" | "name" | "categoryId">[],
-  name: string,
-  categoryId: string | null,
-  exceptId?: string,
-) =>
-  list.some((s) => s.id !== exceptId && s.categoryId === categoryId && normalizeName(s.name) === normalizeName(name));
+/** Nome já usado por outro serviço (sem diferenciar maiúsculas e acentos), fora o próprio serviço. */
+export const nameTaken = (list: Pick<CatalogService, "id" | "name">[], name: string, exceptId?: string) =>
+  list.some((s) => s.id !== exceptId && normalizeName(s.name) === normalizeName(name));
 
-export const NO_CATEGORY = "sem-categoria";
-
-/**
- * Agrupa na ordem das categorias (a lista já vem na ordem salva), filtrando por categoria e busca.
- * Serviços sem categoria ficam num grupo no fim; grupos vazios somem.
- */
-export function groupServices(services: CatalogService[], categories: Category[], filter: string, query: string) {
+/** Filtra pela busca (sem diferenciar maiúsculas e acentos); a lista já vem na ordem salva. */
+export const filterServices = <T extends Pick<CatalogService, "name">>(services: T[], query: string) => {
   const q = normalizeName(query);
-  const visible = services.filter(
-    (s) => (filter === "all" || (s.categoryId ?? NO_CATEGORY) === filter) && (!q || normalizeName(s.name).includes(q)),
-  );
-  const groups = [...categories, { id: NO_CATEGORY, name: "Sem categoria" }].map((c) => ({
-    category: c,
-    services: visible.filter((s) => (s.categoryId ?? NO_CATEGORY) === c.id),
-  }));
-  return groups.filter((g) => g.services.length > 0);
-}
+  return q ? services.filter((s) => normalizeName(s.name).includes(q)) : services;
+};
 
 /** Move `id` para a posição de `overId` dentro da lista inteira (a ordem é a mesma do novo agendamento). */
 export function moveService<T extends { id: string }>(list: T[], id: string, overId: string): T[] {
