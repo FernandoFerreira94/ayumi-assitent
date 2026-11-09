@@ -42,7 +42,7 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
 
   if (services.length === 0) {
     return (
-      <PageShell title="Vagas">
+      <PageShell back title="Vagas">
         <EmptyState
           title="Nenhum serviço cadastrado"
           description="Para ver os horários livres, adicione um serviço."
@@ -76,7 +76,7 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
     : "";
 
   return (
-    <PageShell title="Vagas" subtitle="Toque num horário para agendar">
+    <PageShell back title="Vagas" subtitle="Toque num horário para agendar">
       <nav aria-label="Serviço" className="mb-4 flex gap-2 overflow-x-auto pb-1">
         {services.map((x) => (
           <Link

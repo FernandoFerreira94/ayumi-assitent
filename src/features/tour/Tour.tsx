@@ -43,9 +43,6 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
   const next = useCallback(() => {
     setStep((s) => {
       if (s === null) return null;
-      // Sair do passo do leque fecha o leque, para o sino ficar à vista
-      if (TOUR_STEPS[s].target?.includes("fan-link"))
-        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
       return s + 1 < TOUR_STEPS.length ? s + 1 : s;
     });
   }, []);

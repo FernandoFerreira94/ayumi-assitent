@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Mascot } from "@/components/brand/Mascot";
 import type { WhatsAppState } from "@/features/shell/status";
 import { NAV_ICONS } from "./nav-icons";
@@ -24,12 +24,9 @@ const icon = (d: React.ReactNode) => (
 );
 
 const ITEMS = [
-  { href: "/agenda", label: "Painel", icon: icon(NAV_ICONS.painel) },
-  { href: "/calendario", label: "Calendário", icon: icon(NAV_ICONS.calendario) },
-  { href: "/servicos", label: "Serviços", icon: icon(NAV_ICONS.servicos) },
-  { href: "/clientes", label: "Clientes", icon: icon(NAV_ICONS.clientes) },
-  { href: "/financeiro", label: "Financeiro", icon: icon(NAV_ICONS.financeiro) },
   { href: "/vagas", label: "Vagas", icon: icon(NAV_ICONS.vagas) },
+  { href: "/servicos", label: "Serviços", icon: icon(NAV_ICONS.servicos) },
+  { href: "/financeiro", label: "Financeiro", icon: icon(NAV_ICONS.financeiro) },
   { href: "/pendencias", label: "Pendências", icon: icon(NAV_ICONS.pendencias) },
   { href: "/ajustes", label: "Ajustes", icon: icon(NAV_ICONS.ajustes) },
 ] as const;
@@ -46,7 +43,8 @@ export function initials(name: string | null | undefined): string {
 }
 
 /**
- * Avatar do header que abre o menu numa folha de vidro que desce do topo, sem trocar de página.
+ * Avatar na ponta da barra de abas: abre o menu (as telas que não têm aba) numa folha de vidro
+ * que desce do topo, sem trocar de página.
  * <dialog> modal dá foco preso, Esc e fundo inerte de graça.
  */
 export function AppMenu({
@@ -66,6 +64,9 @@ export function AppMenu({
   const dragFrom = useRef<number | null>(null);
   const pathname = usePathname();
   const abbr = initials(userName);
+  const [open, setOpen] = useState(false);
+  // Anel no avatar quando a tela atual é uma das do menu, como o perfil no Instagram
+  const here = ITEMS.some((i) => pathname === i.href || pathname.startsWith(`${i.href}/`));
 
   const close = () => ref.current?.close();
   const follow = (dy: number) => {
@@ -86,14 +87,22 @@ export function AppMenu({
         type="button"
         aria-label="Abrir menu"
         aria-haspopup="dialog"
-        onClick={() => ref.current?.showModal()}
-        className="avatar grid size-11 shrink-0 place-content-center rounded-full text-sm font-bold text-white"
+        aria-expanded={open}
+        aria-current={here ? "page" : undefined}
+        onClick={() => {
+          ref.current?.showModal();
+          setOpen(true);
+        }}
+        className="tab-link w-full"
       >
-        {abbr}
+        <span className="tab-icon">
+          <span className="avatar tab-avatar">{abbr}</span>
+        </span>
       </button>
       <dialog
         ref={ref}
         aria-label="Menu"
+        onClose={() => setOpen(false)}
         // Toque no fundo: o alvo é o próprio <dialog>, porque o conteúdo fica num div por dentro
         onClick={(e) => {
           if (e.target === e.currentTarget) close();
@@ -124,13 +133,6 @@ export function AppMenu({
               ) : null}
             </div>
             <Mascot idle size={64} className="ml-auto shrink-0" />
-          </Link>
-          <Link
-            href="/perfil"
-            onClick={close}
-            className="btn-tint flex min-h-11 items-center justify-center rounded-full px-4 text-sm font-bold"
-          >
-            Meu perfil
           </Link>
           {whatsapp === "open" ? (
             <span className="inline-flex items-center gap-1.5 justify-self-start rounded-full bg-ok-bg px-2.5 py-1 text-xs font-bold text-ok">

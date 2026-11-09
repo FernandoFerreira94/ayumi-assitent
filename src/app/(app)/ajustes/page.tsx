@@ -42,7 +42,7 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
   const admin = adminFromEnv();
   if (wa === "open" && admin && salon?.i) await ensureWebhook(admin, salon.i).catch(() => undefined);
   return (
-    <PageShell title="Ajustes">
+    <PageShell back title="Ajustes">
       {/* Grupos como os Ajustes do iPhone: o que conecta, o que a cliente recebe, a agenda e o aparelho */}
       <Group title="Conexões" first>
         <section id="whatsapp" aria-label="WhatsApp" className="scroll-mt-6">

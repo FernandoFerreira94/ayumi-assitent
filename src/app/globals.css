@@ -371,102 +371,84 @@ button {
   transform: scale(0.92);
 }
 
-/* Nav em leque: botão lavanda central; os itens saem dele em semicírculo (--x/--y vêm do componente) */
-.fan {
+/* Barra de abas embaixo: ícones sem texto, aba atual preenchida com um "pop", fundo branco translúcido */
+.tabbar {
   position: fixed;
-  left: 50%;
-  bottom: max(18px, env(safe-area-inset-bottom));
+  inset-inline: 0;
+  bottom: 0;
   z-index: 30;
-  width: 60px;
-  height: 60px;
-  transform: translateX(-50%);
+  padding-bottom: env(safe-area-inset-bottom);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  border-top: 0.5px solid var(--line);
 }
-.fan ul {
-  margin: 0;
+.tabbar ul {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  max-width: 520px;
+  height: 50px;
+  margin: 0 auto;
   padding: 0;
   list-style: none;
 }
-.fan-toggle {
-  position: relative;
-  z-index: 1;
-  width: 60px;
-  height: 60px;
+.tabbar li {
+  display: grid;
 }
-.fan-toggle svg {
-  transition: transform 0.4s var(--spring);
-}
-.fan[data-open] .fan-toggle svg {
-  transform: rotate(135deg);
-}
-.fan-item {
-  position: absolute;
-  left: 6px;
-  top: 6px;
-  transform: translate(0, 0) scale(0.4);
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    transform 0.45s var(--spring),
-    opacity 0.2s var(--ease);
-}
-.fan[data-open] .fan-item {
-  transform: translate(var(--x), var(--y)) scale(1);
-  opacity: 1;
-  pointer-events: auto;
-  transition-delay: var(--d);
-}
-.fan-link {
-  position: relative;
+.tab-link {
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
+  min-height: 44px;
+  color: var(--fg);
+  -webkit-tap-highlight-color: transparent;
+}
+.tab-link svg {
+  width: 27px;
+  height: 27px;
+  transition: transform 0.15s ease;
+}
+.tab-link:active svg {
+  transform: scale(0.86);
+}
+.tab-icon {
+  display: grid;
+}
+.tab-link[aria-current="page"] .tab-icon {
+  animation: tab-pop 0.34s var(--spring);
+}
+/* Avatar na ponta: anel escuro quando o menu está aberto ou numa tela dele */
+.tab-avatar {
+  display: grid;
+  place-content: center;
+  width: 28px;
+  height: 28px;
   border-radius: 999px;
-  background: var(--surface);
-  color: var(--primary-text);
-  box-shadow:
-    0 6px 18px rgba(40, 24, 110, 0.16),
-    0 1px 2px rgba(40, 24, 110, 0.1);
-  transition: transform 0.3s var(--spring);
-}
-.fan-link:active {
-  transform: scale(0.92);
-}
-.fan-link[aria-current="page"] {
-  background: var(--surface);
-  /* Folga branca entre o botão e o anel rosa */
-  box-shadow:
-    0 0 0 3px var(--surface),
-    0 0 0 5.5px var(--accent),
-    0 6px 18px rgba(40, 24, 110, 0.16);
-}
-.fan-label {
-  position: absolute;
-  top: calc(100% + 3px);
   font-size: 12px;
   font-weight: 700;
-  color: var(--fg);
-  white-space: nowrap;
+  color: #fff;
 }
-.fan-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 25;
-  background: rgba(248, 247, 252, 0.4);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.25s var(--ease);
+.tab-link[aria-current="page"] .tab-avatar,
+.tab-link[aria-expanded="true"] .tab-avatar {
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 3.5px var(--fg);
 }
-.fan-backdrop[data-open] {
-  opacity: 1;
-  pointer-events: auto;
+@keyframes tab-pop {
+  0% {
+    transform: scale(0.78);
+  }
+  60% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .fan-item,
-  .fan-toggle svg,
-  .fan-backdrop {
+  .tab-link[aria-current="page"] .tab-icon {
+    animation: none;
+  }
+  .tab-link svg {
     transition: none;
   }
 }
@@ -2049,7 +2031,7 @@ html.cal-zooming body {
 .cal-fab {
   position: fixed;
   left: max(16px, calc(50% - 244px));
-  bottom: max(18px, env(safe-area-inset-bottom));
+  bottom: calc(env(safe-area-inset-bottom) + 62px);
   z-index: 24;
 }
 @media (prefers-reduced-motion: reduce) {

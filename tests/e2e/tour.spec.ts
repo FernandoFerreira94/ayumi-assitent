@@ -15,9 +15,7 @@ test("primeiro acesso: o tour pede toques, avança e não volta depois", async (
   await expect(card.getByRole("heading", { name: "Agendar e bloquear" })).toBeVisible();
   await card.getByRole("button", { name: "Próximo" }).click();
 
-  await expect(card.getByRole("heading", { name: "O menu fica aqui" })).toBeVisible();
-  await page.getByRole("button", { name: "Abrir navegação" }).click();
-  await expect(card.getByRole("heading", { name: "Tudo a um toque" })).toBeVisible();
+  await expect(card.getByRole("heading", { name: "O menu fica embaixo" })).toBeVisible();
   await card.getByRole("button", { name: "Próximo" }).click();
   await card.getByRole("button", { name: "Próximo" }).click();
   await card.getByRole("button", { name: "Começar a usar" }).click();
