@@ -14,6 +14,7 @@ import { WhatsAppCard } from "@/features/whatsapp/WhatsAppCard";
 import { InstallGuide } from "@/features/install/InstallGuide";
 import { adminFromEnv } from "@/features/messaging/evolution-admin";
 import { ensureWebhook } from "@/features/whatsapp/webhook";
+import { UpdateButton } from "@/features/update/UpdateButton";
 import { ReplayTourButton } from "@/features/tour/ReplayTourButton";
 import { LocationCard } from "@/features/weather/LocationCard";
 import { requireTenant } from "@/lib/tenant";
@@ -58,6 +59,9 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
       </section>
       <section aria-label="Expediente" className="mt-6">
         <HoursForm week={week} />
+      </section>
+      <section aria-label="Atualização" className="mt-6">
+        <UpdateButton />
       </section>
       <section aria-label="Tour e instalação" className="mt-6 grid gap-3">
         <InstallGuide />

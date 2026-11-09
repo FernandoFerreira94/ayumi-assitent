@@ -53,76 +53,99 @@ export function SalonForm({
   }
 
   return (
-    <form action={action} className="glass grid gap-3 rounded-[1.75rem] p-5">
-      <h2 className="font-bold">Seu salão</h2>
-      <label className="grid gap-1 text-sm font-bold">
-        Como se chama o salão
-        <input
-          name="name"
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Ex.: Studio Yumi"
-          className={input}
-          aria-invalid={field === "name"}
-        />
-        {field === "name" ? (
-          <span role="alert" className="text-xs text-primary-text">
-            Dê um nome ao salão
-          </span>
-        ) : null}
-      </label>
-      <label className="grid gap-1 text-sm font-bold">
-        Tipo de salão
-        <select name="businessType" required defaultValue={initial.businessType ?? ""} className={input} aria-invalid={field === "businessType"}>
-          <option value="" disabled>
-            Escolha…
-          </option>
-          {BUSINESS_TYPES.map(([v, label]) => (
-            <option key={v} value={v}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="grid gap-1 text-sm font-bold">
-        Mensagem de confirmação
-        <span className="text-xs font-semibold text-muted">Vai no WhatsApp da cliente na véspera do horário.</span>
-        <textarea
-          ref={area}
-          name="reminderTemplate"
-          value={template}
-          onChange={(e) => setTemplate(e.target.value)}
-          rows={4}
-          maxLength={600}
-          className="min-h-28 w-full resize-y rounded-3xl border px-5 py-3 text-base font-semibold leading-6"
-          aria-invalid={field === "reminderTemplate"}
-        />
-      </label>
-      <div className="flex flex-wrap gap-1.5" aria-label="Inserir dados do horário">
-        {CHIPS.map(([token, hint]) => (
-          <button
-            key={token}
-            type="button"
-            onClick={() => insert(token)}
-            title={hint}
-            aria-label={`Inserir ${hint}`}
-            className="min-h-9 rounded-full bg-soft px-3 text-xs font-bold text-primary-text"
+    <form action={action} className="grid gap-6">
+      <section aria-label="Seu salão" className="glass grid gap-3 rounded-[1.75rem] p-5">
+        <h2 className="font-bold">Seu salão</h2>
+        <label className="grid gap-1 text-sm font-bold">
+          Como se chama o salão
+          <input
+            name="name"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Ex.: Studio Yumi"
+            className={input}
+            aria-invalid={field === "name"}
+          />
+          {field === "name" ? (
+            <span role="alert" className="text-xs text-primary-text">
+              Dê um nome ao salão
+            </span>
+          ) : null}
+        </label>
+        <label className="grid gap-1 text-sm font-bold">
+          Tipo de salão
+          <select
+            name="businessType"
+            required
+            defaultValue={initial.businessType ?? ""}
+            className={input}
+            aria-invalid={field === "businessType"}
           >
-            {token}
+            <option value="" disabled>
+              Escolha…
+            </option>
+            {BUSINESS_TYPES.map(([v, label]) => (
+              <option key={v} value={v}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </section>
+      <section aria-label="Mensagem de confirmação" className="glass grid gap-3 rounded-[1.75rem] p-5">
+        <h2 className="font-bold">Mensagem de confirmação</h2>
+        <label className="grid gap-1 text-sm font-bold">
+          Texto enviado à cliente
+          <span className="text-xs font-semibold text-muted">Vai no WhatsApp da cliente na véspera do horário.</span>
+          <textarea
+            ref={area}
+            name="reminderTemplate"
+            value={template}
+            onChange={(e) => setTemplate(e.target.value)}
+            rows={4}
+            maxLength={600}
+            className="min-h-28 w-full resize-y rounded-3xl border px-5 py-3 text-base font-semibold leading-6"
+            aria-invalid={field === "reminderTemplate"}
+          />
+        </label>
+        <div className="flex flex-wrap gap-1.5" aria-label="Inserir dados do horário">
+          {CHIPS.map(([token, hint]) => (
+            <button
+              key={token}
+              type="button"
+              onClick={() => insert(token)}
+              title={hint}
+              aria-label={`Inserir ${hint}`}
+              className="min-h-9 rounded-full bg-soft px-3 text-xs font-bold text-primary-text"
+            >
+              {token}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setTemplate(DEFAULT_REMINDER)}
+            className="min-h-9 rounded-full px-3 text-xs font-bold text-muted underline"
+          >
+            Voltar ao padrão
           </button>
-        ))}
-        <button type="button" onClick={() => setTemplate(DEFAULT_REMINDER)} className="min-h-9 rounded-full px-3 text-xs font-bold text-muted underline">
-          Voltar ao padrão
-        </button>
-      </div>
-      <div className="grid gap-1">
-        <p className="text-xs font-bold uppercase tracking-wide text-muted">Como a cliente recebe</p>
-        <p className="whitespace-pre-wrap rounded-2xl rounded-tr-sm bg-chat-out px-4 py-3 text-sm font-semibold leading-5" aria-live="polite">
-          {reminderText({ client: "Maria Silva", service: "Alongamento", startsAt: sampleStart }, sampleNow, { template, name })}
-        </p>
-        <p className="text-xs font-semibold text-muted">As opções 1, 2 e 3 vão sempre no fim: é por elas que o app entende a resposta.</p>
-      </div>
+        </div>
+        <div className="grid gap-1">
+          <p className="text-xs font-bold uppercase tracking-wide text-muted">Como a cliente recebe</p>
+          <p
+            className="whitespace-pre-wrap rounded-2xl rounded-tr-sm bg-chat-out px-4 py-3 text-sm font-semibold leading-5"
+            aria-live="polite"
+          >
+            {reminderText({ client: "Maria Silva", service: "Alongamento", startsAt: sampleStart }, sampleNow, {
+              template,
+              name,
+            })}
+          </p>
+          <p className="text-xs font-semibold text-muted">
+            As opções 1, 2 e 3 vão sempre no fim: é por elas que o app entende a resposta.
+          </p>
+        </div>
+      </section>
       <SubmitButton pendingLabel="Salvando…">Salvar</SubmitButton>
     </form>
   );
