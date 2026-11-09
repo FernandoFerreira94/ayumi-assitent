@@ -1,7 +1,8 @@
 import { expect, test } from "./fixtures";
+import { todayStr } from "../../src/lib/dates";
 
 test("o previsto da agenda abre o Financeiro, que troca de período", async ({ page }) => {
-  await page.goto("/calendario");
+  await page.goto(`/calendario?d=${todayStr()}`);
   await page.getByRole("link", { name: /Ver financeiro/ }).click();
   await expect(page).toHaveURL(/\/financeiro$/);
   await expect(page.getByRole("heading", { name: "Financeiro" })).toBeVisible();

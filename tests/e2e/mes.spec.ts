@@ -1,4 +1,5 @@
 import { expect, test } from "./fixtures";
+import { todayStr } from "../../src/lib/dates";
 
 test("Painel: o nome do mês abre o seletor e pula para outro mês", async ({ page }) => {
   const next = new Date().getFullYear() + 1;
@@ -16,7 +17,7 @@ test("Painel: o nome do mês abre o seletor e pula para outro mês", async ({ pa
 
 test("Calendário: do dia para o mês, do mês para o ano e de volta", async ({ page }) => {
   const year = String(new Date().getFullYear());
-  await page.goto("/calendario");
+  await page.goto(`/calendario?d=${todayStr()}`);
   await page.getByRole("link", { name: /Voltar para o mês/ }).click();
   await expect(page).toHaveURL(/v=mes/);
   await page.getByRole("link", { name: year, exact: true }).click();
@@ -28,4 +29,10 @@ test("Calendário: do dia para o mês, do mês para o ano e de volta", async ({ 
     .first()
     .click();
   await expect(page).toHaveURL(new RegExp(`d=${year}-03-01`));
+});
+
+test("Calendário abre no mês, com as semanas", async ({ page }) => {
+  await page.goto("/calendario");
+  await expect(page.getByRole("heading", { name: "Calendário" })).toBeVisible();
+  await expect(page.getByRole("link", { name: String(new Date().getFullYear()), exact: true })).toBeVisible();
 });
