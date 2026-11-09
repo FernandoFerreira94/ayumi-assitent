@@ -13,7 +13,7 @@ import { Drawer } from "vaul";
 import { notify } from "@/components/feedback/toast";
 import type { PickerOption } from "@/components/ui/LetterPicker";
 import { BlockCard } from "@/features/blocks/BlockCard";
-import { formatDayTitle } from "@/lib/dates";
+import { formatDayTitle, formatShortDate } from "@/lib/dates";
 import { AppointmentCard } from "./AppointmentCard";
 import { rescheduleAppointment } from "./actions";
 import {
@@ -30,7 +30,7 @@ import type { Status } from "./schema";
 import { warnSync } from "./sync-warning";
 import { duration, hhmm, type Span } from "./timeline";
 
-const HOUR_PX = 64;
+const HOUR_PX = 80;
 const PPM = HOUR_PX / 60;
 /** Coluna das horas à esquerda e o respiro entre blocos lado a lado. */
 const LEFT = 48;
@@ -422,7 +422,7 @@ export function AgendaDay({
             const sel = selId === a.id;
             const cls = [
               "ag-ev",
-              span.end - span.start < 40 ? "short" : "",
+              span.end - span.start < 45 ? "tight" : "",
               sel && !lifted ? "sel" : "",
               lifted ? "lift" : "",
               dragging?.bad ? "bad" : "",
@@ -450,23 +450,20 @@ export function AgendaDay({
                 {(sel || lifted) && canDrag(a.status) ? (
                   <span className="ag-hd t" data-h="t" aria-hidden="true" />
                 ) : null}
-                <b>{a.clientName}</b>
-                {/* Cabe o quanto a altura deixa: 40 min numa linha, 1 h serviço e valor, 90 min telefone e situação */}
-                {span.end - span.start >= 60 ? (
-                  <span>
-                    {a.serviceName} · {a.price}
-                  </span>
-                ) : null}
-                {span.end - span.start >= 90 ? (
-                  <span>
-                    {a.clientPhone} · {STATUS_SHORT[a.status]}
-                  </span>
-                ) : null}
-                <span className="tm">
-                  {span.end - span.start >= 40 && span.end - span.start < 60 ? `${a.serviceName} · ` : ""}
-                  {range(span)}
-                  {span.end - span.start >= 60 ? ` · ${duration(span)}` : ""}
+                {/* Cabe o quanto a altura deixa: 30 min nome, valor, horário e serviço; 45 min a data; 90 min telefone e situação */}
+                <span className="row">
+                  <b>{a.clientName}</b>
+                  <i>{a.price}</i>
                 </span>
+                <span className="tm">
+                  {range(span)} · {a.serviceName}
+                </span>
+                {span.end - span.start >= 45 ? (
+                  <span className="sub">
+                    {formatShortDate(date)} · {duration(span)}
+                    {span.end - span.start >= 90 ? ` · ${a.clientPhone} · ${STATUS_SHORT[a.status]}` : ""}
+                  </span>
+                ) : null}
                 {(sel || lifted) && canDrag(a.status) ? (
                   <span className="ag-hd b" data-h="b" aria-hidden="true" />
                 ) : null}

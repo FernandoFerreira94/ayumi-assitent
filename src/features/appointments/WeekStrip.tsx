@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { addDays, formatDayTitle } from "@/lib/dates";
+import { addDays, formatCalendarTitle, formatDayTitle, formatMonthYear } from "@/lib/dates";
 import { MonthPicker } from "./MonthPicker";
 
 const WEEKDAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
@@ -12,7 +12,7 @@ const SWIPE_PX = 50;
 
 export type WeekDay = { date: string; has: boolean; closed: boolean };
 
-const href = (day: string, today: string) => (day === today ? "/calendario" : `/calendario?d=${day}`);
+const href = (day: string, today: string, base: string) => (day === today ? base : `${base}?d=${day}`);
 
 /** Domingo a sábado do dia escolhido. Arrastar para o lado vai para a mesma data da semana vizinha. */
 export function WeekStrip({
@@ -20,11 +20,17 @@ export function WeekStrip({
   today,
   days,
   summary,
+  base = "/calendario",
+  calendar = false,
 }: {
   date: string;
   today: string;
   days: WeekDay[];
   summary: string;
+  /** Página que recebe o dia escolhido (?d=): Painel ou Calendário. */
+  base?: string;
+  /** No Calendário: botão voltar para o mês e título do dia, como no iPhone. */
+  calendar?: boolean;
 }) {
   const router = useRouter();
   // Seleção otimista: o dia acende no toque, sem esperar o servidor
@@ -40,9 +46,32 @@ export function WeekStrip({
   return (
     <div className="mb-3">
       <div className="mb-1 flex min-h-11 items-center justify-between gap-3 px-1">
-        <MonthPicker date={date} today={today} />
+        {calendar ? (
+          <Link
+            href={`/calendario?v=mes&m=${date.slice(0, 7)}`}
+            scroll={false}
+            aria-label={`Voltar para o mês de ${formatMonthYear(date)}`}
+            className="btn-glass flex min-h-11 items-center gap-1 rounded-full pl-3 pr-4 text-[15px] font-bold text-primary-text"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="size-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+            {formatMonthYear(date).split(" de ")[0]}
+          </Link>
+        ) : (
+          <MonthPicker date={date} today={today} base={base} />
+        )}
         <Link
-          href="/calendario"
+          href={base}
           scroll={false}
           onClick={() => setSel(today)}
           className="btn-glass min-h-9 rounded-full px-4 text-[13px] font-bold leading-9 text-primary-text"
@@ -65,7 +94,7 @@ export function WeekStrip({
           swiped.current = true;
           const next = addDays(sel, dx < 0 ? 7 : -7);
           setSel(next);
-          router.push(href(next, today), { scroll: false });
+          router.push(href(next, today, base), { scroll: false });
         }}
         // Depois de arrastar, o clique que o navegador solta no fim não abre o dia
         onClickCapture={(e) => {
@@ -78,7 +107,7 @@ export function WeekStrip({
           return (
             <Link
               key={d.date}
-              href={href(d.date, today)}
+              href={href(d.date, today, base)}
               scroll={false}
               draggable={false}
               onClick={() => setSel(d.date)}
@@ -96,6 +125,7 @@ export function WeekStrip({
           );
         })}
       </nav>
+      {calendar ? <h2 className="pt-3 text-center text-[15px] font-bold">{formatCalendarTitle(date)}</h2> : null}
       {/* O resumo do dia leva ao Financeiro (semana, mês, semestre) */}
       <p className="pt-1.5 text-center text-xs font-bold text-muted" aria-live="polite">
         <Link href="/financeiro" aria-label={`${summary}. Ver financeiro`} className="rounded-full px-2 py-1">

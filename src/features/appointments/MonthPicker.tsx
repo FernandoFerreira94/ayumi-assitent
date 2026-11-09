@@ -22,9 +22,9 @@ const NAMES = [
 ];
 
 /** Destino ao escolher um mês: o dia 1, ou hoje quando é o mês corrente (a agenda já abre nele). */
-export function monthHref(year: number, month: number, today: string): string {
+export function monthHref(year: number, month: number, today: string, base = "/calendario"): string {
   const first = `${year}-${String(month).padStart(2, "0")}-01`;
-  return first.slice(0, 7) === today.slice(0, 7) ? "/calendario" : `/calendario?d=${first}`;
+  return first.slice(0, 7) === today.slice(0, 7) ? base : `${base}?d=${first}`;
 }
 
 const chevron = (d: string) => (
@@ -43,7 +43,7 @@ const chevron = (d: string) => (
 );
 
 /** O nome do mês acima da faixa de dias abre esta folha para pular para outro mês. */
-export function MonthPicker({ date, today }: { date: string; today: string }) {
+export function MonthPicker({ date, today, base = "/calendario" }: { date: string; today: string; base?: string }) {
   const [open, setOpen] = useState(false);
   const selYear = Number(date.slice(0, 4));
   const selMonth = Number(date.slice(5, 7));
@@ -119,7 +119,7 @@ export function MonthPicker({ date, today }: { date: string; today: string }) {
               return (
                 <li key={label}>
                   <Link
-                    href={monthHref(year, month, today)}
+                    href={monthHref(year, month, today, base)}
                     scroll={false}
                     onClick={() => setOpen(false)}
                     aria-label={`${NAMES[i]} de ${year}`}
