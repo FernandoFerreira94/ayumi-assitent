@@ -89,6 +89,20 @@ const firstName = (n: string) => n.trim().split(/\s+/)[0];
 const range = (s: Span) => `${hhmm(s.start)}–${hhmm(s.end)}`;
 const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+const TIP_KEY = "mimo:dica-arrastar";
+const TIP_TIMES = 3;
+/** A dica de arrastar aparece nas 3 primeiras vezes que um atendimento é aberto neste aparelho. */
+function takeTip(): boolean {
+  try {
+    const n = Number(localStorage.getItem(TIP_KEY) ?? 0);
+    if (n >= TIP_TIMES) return false;
+    localStorage.setItem(TIP_KEY, String(n + 1));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // Último dia mostrado, para o dia novo entrar deslizando do lado certo
 let lastDate: string | null = null;
 
@@ -131,6 +145,7 @@ export function AgendaDay({
   const [drag, setDrag] = useState<{ id: string; span: Span; from: Span; bad: string | null } | null>(null);
   const [shakeId, setShakeId] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [showTip, setShowTip] = useState(false);
   const [temp, setTemp] = useState<Span | null>(null);
   const [newKey, setNewKey] = useState(0);
   const [enter] = useState(() =>
@@ -258,9 +273,20 @@ export function AgendaDay({
     };
   }, []);
 
-  // Sempre abre no topo; a linha da hora atual já aparece marcada na grade
+  // Ao abrir, desce até o que importa: em hoje, o próximo atendimento (ou a hora atual);
+  // nos outros dias, o primeiro atendimento. Deixa 1 hora de respiro acima e não mexe se a pessoa já rolou.
   useEffect(() => {
     lastDate = date;
+    const grid = gridRef.current;
+    if (!grid || window.scrollY > 40) return;
+    const starts = appointments
+      .filter((a) => a.status !== "cancelled")
+      .map((a) => a.start)
+      .sort((a, b) => a - b);
+    const target = nowMin !== null ? (starts.find((s) => s >= nowMin - 30) ?? nowMin) : starts[0];
+    if (target === undefined) return;
+    const top = grid.getBoundingClientRect().top + window.scrollY + y(Math.max(win.start, target - 60)) - 120;
+    if (top > window.scrollY + 40) window.scrollTo({ top, behavior: "instant" });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- só ao abrir o dia
   }, []);
 
@@ -444,6 +470,7 @@ export function AgendaDay({
                   if (Date.now() < suppressClickUntil.current) return;
                   setSelId(a.id);
                   setDetailId(a.id);
+                  setShowTip(canDrag(a.status) && takeTip());
                 }}
                 aria-label={`${a.clientName}, ${a.serviceName}, ${hhmm(span.start)} a ${hhmm(span.end)}${canDrag(a.status) ? ". Segure para mover." : ""}`}
               >
@@ -553,20 +580,11 @@ export function AgendaDay({
                 />
               ) : null}
             </ul>
-            {detailAppt && canDrag(detailAppt.status) ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setDetailId(null);
-                  notify.info(
-                    "Segure o atendimento e arraste",
-                    "Ou puxe a bolinha de cima ou de baixo para mudar a duração.",
-                  );
-                }}
-                className="btn-glass mt-2 min-h-11 w-full rounded-full px-4 text-sm font-bold"
-              >
-                Remarcar
-              </button>
+            {detailAppt && canDrag(detailAppt.status) && showTip ? (
+              <p className="mt-3 rounded-2xl bg-soft px-4 py-3 text-sm font-semibold text-primary-text">
+                Dica: na agenda, segure o atendimento e arraste para mudar o horário, ou puxe a bolinha de cima ou de
+                baixo para mudar a duração.
+              </p>
             ) : null}
           </Drawer.Content>
         </Drawer.Portal>

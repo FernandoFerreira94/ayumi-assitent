@@ -27,6 +27,13 @@ type Props = {
   inSheet?: boolean;
 };
 
+/** Mudanças que mostram Desfazer em vez do aviso simples. */
+const UNDO_TEXT: Partial<Record<Status, string>> = {
+  cancelled: "Agendamento cancelado",
+  no_show: "Marcado como faltou",
+  done: "Atendimento concluído",
+};
+
 const LABEL: Record<Status, string> = {
   pending_confirmation: "Aguardando confirmação",
   confirmed: "Confirmado",
@@ -39,8 +46,6 @@ const LABEL: Record<Status, string> = {
 export function AppointmentCard({ id, time, date, start: startHHMM, clientId, clientName, clientPhone, serviceId, serviceName, price, status, inSheet = false }: Props) {
   const [pending, start] = useTransition();
   const [busy, setBusy] = useState<Status | null>(null);
-  // Cancelar pede um segundo toque: o primeiro só troca o texto do botão
-  const [askCancel, setAskCancel] = useState(false);
 
   function change(next: Status, undoTo?: Status) {
     setBusy(next);
@@ -52,8 +57,9 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
         return;
       }
       warnSync(res.data.sync);
-      if (next === "cancelled" && undoTo) {
-        notify.undoable("Agendamento cancelado", () => change(undoTo));
+      // Cancelar, Faltou e Concluir valem na hora e trazem Desfazer (6 s), sem pedir segundo toque
+      if (undoTo && UNDO_TEXT[next]) {
+        notify.undoable(UNDO_TEXT[next], () => change(undoTo));
       } else {
         notify.success(LABEL[next]);
       }
@@ -92,7 +98,7 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
             <button
               type="button"
               disabled={pending}
-              onClick={() => change("done")}
+              onClick={() => change("done", status)}
               className={`${btn} btn-tint`}
             >
               {busy === "done" ? "Salvando…" : "Concluir"}
@@ -101,7 +107,7 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
           <button
             type="button"
             disabled={pending}
-            onClick={() => change("no_show")}
+            onClick={() => change("no_show", status)}
             className={`${btn} btn-glass`}
           >
             {busy === "no_show" ? "Salvando…" : "Faltou"}
@@ -119,10 +125,10 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
           <button
             type="button"
             disabled={pending}
-            onClick={() => (askCancel ? change("cancelled", status) : setAskCancel(true))}
-            className={`${btn} btn-glass ${askCancel ? "text-fail" : ""}`}
+            onClick={() => change("cancelled", status)}
+            className={`${btn} btn-glass`}
           >
-            {busy === "cancelled" ? "Cancelando…" : askCancel ? "Toque de novo para cancelar" : "Cancelar"}
+            {busy === "cancelled" ? "Cancelando…" : "Cancelar"}
           </button>
         </div>
       ) : null}
