@@ -1719,15 +1719,21 @@ button {
   }
 }
 
-/* Barra de status do iPhone (hora, Wi-Fi) na cor primária: o app desenha por baixo dela (PWA black-translucent) */
+/* Barra de status do iPhone na cor primária. O iOS 26 só deixa de pintar o desfoque do topo (e passa a usar a cor
+   do app na barra) se houver um elemento fixo, opaco, colado nos 4px de cima: por isso a altura mínima de 6px,
+   mesmo quando o safe-area é 0 (statusBarStyle "default"). */
 .status-fill {
   position: fixed;
   inset: 0 0 auto 0;
-  height: env(safe-area-inset-top, 0px);
+  height: max(env(safe-area-inset-top, 0px), 6px);
   background: var(--primary);
-  /* Acima de sheets, diálogos e do fundo escurecido (só o splash, 100, passa por cima): a faixa não "apaga" ao abrir um painel */
+  /* Acima de sheets e do fundo escurecido (só o splash, 100, passa por cima) */
   z-index: 90;
   pointer-events: none;
+}
+/* O menu é um <dialog> na top layer (acima de qualquer z-index): leva a própria faixa por dentro */
+.app-menu .status-fill {
+  position: absolute;
 }
 
 /* Cartão de atendimento da linha do dia: nome e valor, horário e serviço, data */
