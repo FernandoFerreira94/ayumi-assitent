@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { OfflineBanner } from "@/components/feedback/OfflineBanner";
 import { NavHistory } from "@/components/nav/BackButton";
-import { HeaderMenu } from "@/components/nav/HeaderMenu";
 import { TabBar } from "@/components/nav/TabBar";
 import { QuickBook } from "@/features/appointments/QuickBook";
 import { TourGate } from "@/features/tour/TourGate";
@@ -28,7 +27,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
       >
         <AuthGate>{children}</AuthGate>
       </Suspense>
-      <TabBar avatar={<HeaderMenu />} />
+      <TabBar />
       <NavHistory />
       <Suspense fallback={null}>
         <QuickBook />

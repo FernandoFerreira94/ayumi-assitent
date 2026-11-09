@@ -4,6 +4,7 @@ import { expect, test } from "./fixtures";
 const TABS = [
   { href: "/agenda", name: "Painel", heading: /^(Bom dia|Boa tarde|Boa noite)/ },
   { href: "/calendario", name: "Calendário", heading: "Calendário" },
+  { href: "/financeiro", name: "Financeiro", heading: "Financeiro" },
   { href: "/clientes", name: "Clientes", heading: "Clientes" },
 ];
 
@@ -25,20 +26,16 @@ test("as abas navegam e marcam a aba atual", async ({ page }) => {
   }
 });
 
-test("a barra aparece em toda tela, com o avatar e o +, e as telas com aba não têm seta", async ({ page }) => {
-  for (const t of TABS) {
-    await page.goto(t.href);
-    const nav = page.getByRole("navigation", { name: "Navegação" });
-    await expect(nav.getByRole("button", { name: "Abrir menu" })).toBeVisible();
-    await expect(nav.getByRole("button", { name: "Novo agendamento", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Voltar" })).toHaveCount(0);
+test("as telas principais mostram o avatar do menu, sem seta", async ({ page }) => {
+  for (const href of ["/agenda", "/calendario", "/financeiro", "/clientes", "/vagas", "/ajustes"]) {
+    await page.goto(href);
+    await expect(page.getByRole("button", { name: "Abrir menu" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Voltar", exact: true })).toHaveCount(0);
   }
-  await page.goto("/financeiro");
-  await expect(page.getByRole("button", { name: "Abrir menu" })).toBeVisible();
 });
 
 test("tela secundária: a seta volta para onde estava e, aberta direto, cai na agenda", async ({ page }) => {
-  await page.goto("/financeiro");
+  await page.goto("/servicos");
   await page.getByRole("link", { name: "Voltar" }).click();
   await expect(page).toHaveURL(/\/agenda$/);
 
@@ -49,8 +46,8 @@ test("tela secundária: a seta volta para onde estava e, aberta direto, cai na a
     await page.getByRole("button", { name: "Abrir menu" }).click({ timeout: 1000 });
     await expect(menu).toBeVisible({ timeout: 1000 });
   }).toPass();
-  await menu.getByRole("link", { name: "Financeiro" }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "Financeiro" })).toBeVisible();
+  await menu.getByRole("link", { name: "Serviços" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Serviços" })).toBeVisible();
   await page.getByRole("link", { name: "Voltar" }).click();
   await expect(page).toHaveURL(/\/clientes$/);
 });
@@ -58,11 +55,7 @@ test("tela secundária: a seta volta para onde estava e, aberta direto, cai na a
 test("alvos de toque da barra têm pelo menos 44 px", async ({ page }) => {
   await page.goto("/agenda");
   const nav = page.getByRole("navigation", { name: "Navegação" });
-  for (const el of [
-    ...TABS.map((t) => tab(page, t.name)),
-    nav.getByRole("button", { name: "Novo agendamento", exact: true }),
-    nav.getByRole("button", { name: "Abrir menu" }),
-  ]) {
+  for (const el of [...TABS.map((t) => tab(page, t.name)), nav.getByRole("button", { name: "Novo agendamento", exact: true })]) {
     const box = await el.boundingBox();
     expect(box!.height).toBeGreaterThanOrEqual(44);
     expect(box!.width).toBeGreaterThanOrEqual(44);

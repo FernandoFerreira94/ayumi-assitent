@@ -28,13 +28,7 @@ async function MenuWithData() {
 
 export function HeaderMenu() {
   return (
-    <Suspense
-      fallback={
-        <span className="tab-link" aria-hidden="true">
-          <span className="avatar tab-avatar opacity-60" />
-        </span>
-      }
-    >
+    <Suspense fallback={<span aria-hidden="true" className="avatar size-11 shrink-0 rounded-full opacity-60" />}>
       <MenuWithData />
     </Suspense>
   );

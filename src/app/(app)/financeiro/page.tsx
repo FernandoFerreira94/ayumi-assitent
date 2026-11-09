@@ -51,7 +51,7 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
   const sheetDate = ym === today.slice(0, 7) ? today : dates[0];
 
   return (
-    <PageShell back title="Financeiro" subtitle={label}>
+    <PageShell title="Financeiro" subtitle={label}>
       <nav aria-label="Mês" className={`${card} mb-4 grid-cols-[auto_1fr_auto] items-center py-2`}>
         <Link
           href={`/financeiro?m=${shiftMonth(ym, -1)}`}

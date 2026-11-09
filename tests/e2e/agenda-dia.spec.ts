@@ -49,13 +49,14 @@ test("horário fora da meia hora continua o mesmo ao abrir Remarcar", async ({ p
   await expect(page.getByLabel("Horário")).toHaveValue("09:15");
 });
 
-test("o dia abre já no primeiro atendimento", async ({ page }) => {
+test("o dia abre no topo, sem rolar sozinho", async ({ page }) => {
   await prepara(page);
   const dia = addDays(todayStr(), 2);
   await agenda(page, dia, "18:00");
 
   await page.goto(`/calendario?d=${dia}`);
-  await expect(page.getByRole("button", { name: /Ana Lima, Escova, 18:00/ })).toBeInViewport();
+  await expect(page.getByRole("button", { name: /Ana Lima, Escova, 18:00/ })).toBeAttached();
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
 });
 
 test("Faltou mostra Desfazer e volta ao status anterior", async ({ page }) => {

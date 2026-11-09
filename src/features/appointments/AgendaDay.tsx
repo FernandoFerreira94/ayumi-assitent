@@ -278,20 +278,9 @@ export function AgendaDay({
     };
   }, []);
 
-  // Ao abrir, desce até o que importa: em hoje, o próximo atendimento (ou a hora atual);
-  // nos outros dias, o primeiro atendimento. Deixa 1 hora de respiro acima e não mexe se a pessoa já rolou.
+  // A página abre sempre no topo: rolar sozinho até o atendimento jogava a tela para o fim
   useEffect(() => {
     lastDate = date;
-    const grid = gridRef.current;
-    if (!grid || window.scrollY > 40) return;
-    const starts = appointments
-      .filter((a) => a.status !== "cancelled")
-      .map((a) => a.start)
-      .sort((a, b) => a - b);
-    const target = nowMin !== null ? (starts.find((s) => s >= nowMin - 30) ?? nowMin) : starts[0];
-    if (target === undefined) return;
-    const top = grid.getBoundingClientRect().top + window.scrollY + y(Math.max(win.start, target - 60)) - 120;
-    if (top > window.scrollY + 40) window.scrollTo({ top, behavior: "instant" });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- só ao abrir o dia
   }, []);
 
