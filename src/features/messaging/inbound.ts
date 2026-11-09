@@ -5,7 +5,17 @@ import { appointments, clients, messages, tenants } from "@/db/schema";
 import { sendToAll } from "@/features/push/core";
 import type { PushPort } from "@/features/push/port";
 import type { MessagingPort } from "./port";
-import { ackText, parseIntent, phoneCandidates, type InboundText, type Intent } from "./replies";
+import {
+  ackText,
+  CANCEL_ASK_TTL_MS,
+  cancelAskText,
+  freeTextAck,
+  parseCancelFollowUp,
+  parseIntent,
+  phoneCandidates,
+  type InboundText,
+  type Intent,
+} from "./replies";
 import { recordMessage } from "./store";
 
 const STATUS_FOR: Record<Intent, "confirmed" | "cancelled" | "reschedule_requested"> = {
@@ -14,8 +24,12 @@ const STATUS_FOR: Record<Intent, "confirmed" | "cancelled" | "reschedule_request
   reschedule: "reschedule_requested",
 };
 
-const pushTitle = (name: string, intent: Intent | null) => {
+/** Cancelar só vale depois da 2ª resposta; "ask" = ainda perguntando, "apply" = status mudou, "free" = conversa */
+type Action = "ask" | "apply" | "free" | "none";
+
+const pushTitle = (name: string, intent: Intent | null, action: Action) => {
   const first = name.trim().split(/\s+/)[0];
+  if (action === "ask") return `${first} quer cancelar (esperando confirmação)`;
   if (intent === "confirm") return `${first} confirmou o horário`;
   if (intent === "cancel") return `${first} cancelou o horário`;
   if (intent === "reschedule") return `${first} quer remarcar`;
@@ -66,7 +80,7 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
 
     // Só vale como resposta se o lembrete do próximo horário ainda espera resposta
     const [open] = await tx
-      .select({ id: appointments.id })
+      .select({ id: appointments.id, cancelAskedAt: appointments.cancelAskedAt })
       .from(appointments)
       .where(
         and(
@@ -79,36 +93,63 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
       )
       .orderBy(asc(appointments.startsAt))
       .limit(1);
-    const intent = open ? parseIntent(msg.text) : null;
+    // Pergunta "cancelar ou remarcar?" ainda de pé: 1/2 passam a responder a ela
+    const asking = !!open?.cancelAskedAt && now.getTime() - open.cancelAskedAt.getTime() < CANCEL_ASK_TTL_MS;
+    const intent = open ? (asking ? parseCancelFollowUp(msg.text) : parseIntent(msg.text)) : null;
+    const [salon] = await tx.select({ name: tenants.name }).from(tenants);
     if (open && intent) {
-      await tx.update(appointments).set({ status: STATUS_FOR[intent], replyAt: now }).where(eq(appointments.id, open.id));
       await tx.update(messages).set({ intent, appointmentId: open.id }).where(eq(messages.id, messageId));
+      // Primeiro pedido de cancelar: só pergunta; o horário continua ocupado até ela confirmar
+      if (intent === "cancel" && !asking) {
+        await tx.update(appointments).set({ cancelAskedAt: now }).where(eq(appointments.id, open.id));
+        return { kind: "reply", client: cli, intent, appointmentId: open.id, action: "ask", salon: salon?.name ?? null } as const;
+      }
+      await tx.update(appointments).set({ status: STATUS_FOR[intent], replyAt: now }).where(eq(appointments.id, open.id));
+      return { kind: "reply", client: cli, intent, appointmentId: open.id, action: "apply", salon: salon?.name ?? null } as const;
     }
-    return { kind: "reply", client: cli, intent: open && intent ? intent : null, appointmentId: open && intent ? open.id : null } as const;
+    // Conversa solta: avisa uma vez que a dona vai responder (não repete se já houve resposta recente)
+    let action: Action = "none";
+    if (!asking) {
+      const [recent] = await tx
+        .select({ id: messages.id })
+        .from(messages)
+        .where(
+          and(
+            eq(messages.clientId, cli.id),
+            eq(messages.direction, "out"),
+            inArray(messages.kind, ["auto_reply", "manual", "phone"]),
+            gt(messages.createdAt, new Date(now.getTime() - 24 * 3600_000)),
+          ),
+        )
+        .limit(1);
+      if (!recent) action = "free";
+    }
+    return { kind: "reply", client: cli, intent: null, appointmentId: null, action, salon: salon?.name ?? null } as const;
   });
 
   if (step.kind === "skip") return { handled: false, reason: step.reason };
   if (step.kind === "done") return { handled: true, intent: null, appointmentId: null };
 
   // Fora da transação: envio e push vão para a rede e não devem segurar o banco
-  const { client, intent, appointmentId } = step;
-  if (intent && appointmentId) {
-    if (intent === "cancel") await deps.syncAppointment(tenantId, appointmentId);
+  const { client, intent, appointmentId, action, salon } = step;
+  if (action === "apply" && intent === "cancel" && appointmentId) await deps.syncAppointment(tenantId, appointmentId);
+  const body =
+    action === "ask" ? cancelAskText(client.name) : action === "apply" && intent ? ackText(intent, client.name) : action === "free" ? freeTextAck(salon) : null;
+  if (body) {
     const port = deps.portFor(msg.instance);
-    const body = ackText(intent, client.name);
     try {
       const sent = port ? await port.sendText(client.phone, body) : null;
       if (sent) await withTenant(tenantId, (tx) => recordMessage(tx, tenantId, { clientId: client.id, appointmentId, direction: "out", kind: "auto_reply", body, externalId: sent.id }));
     } catch (e) {
-      // O status já mudou; sem o agradecimento a cliente só não recebe o "obrigada"
+      // O status já mudou; sem a resposta automática a cliente só não recebe o texto
       console.error(JSON.stringify({ level: "warn", msg: "auto_reply_failed", err: String(e) }));
     }
   }
   if (deps.push) {
     const push = deps.push;
     await withTenant(tenantId, (tx) =>
-      sendToAll(tx, push, { title: pushTitle(client.name, intent), body: msg.text.slice(0, 140), url: "/agenda" }),
+      sendToAll(tx, push, { title: pushTitle(client.name, intent, action), body: msg.text.slice(0, 140), url: "/agenda" }),
     ).catch((e) => console.error(JSON.stringify({ level: "warn", msg: "reply_push_failed", err: String(e) })));
   }
-  return { handled: true, intent, appointmentId };
+  return { handled: true, intent: action === "ask" ? null : intent, appointmentId };
 }

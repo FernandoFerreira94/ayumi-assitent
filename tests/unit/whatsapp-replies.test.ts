@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ackText, parseIntent, parseUpsert, phoneCandidates } from "@/features/messaging/replies";
+import { ackText, cancelAskText, freeTextAck, nudgeText, parseCancelFollowUp, parseIntent, parseUpsert, phoneCandidates } from "@/features/messaging/replies";
 
 describe("resposta ao lembrete", () => {
   it("entende as opções numeradas", () => {
@@ -60,5 +60,32 @@ describe("webhook da Evolution", () => {
   });
   it("aceita texto estendido (resposta citando o lembrete)", () => {
     expect(parseUpsert(body({ remoteJid: "5511987654321@s.whatsapp.net", id: "A" }, { extendedTextMessage: { text: "Confirmo" } }))?.text).toBe("Confirmo");
+  });
+});
+
+describe("resposta à pergunta de cancelamento", () => {
+  it("1 cancela, 2 remarca", () => {
+    expect(parseCancelFollowUp("1")).toBe("cancel");
+    expect(parseCancelFollowUp("Opção 2")).toBe("reschedule");
+    expect(parseCancelFollowUp("3")).toBeNull();
+  });
+  it("entende palavras", () => {
+    for (const t of ["sim", "cancelar", "quero cancelar", "não vou conseguir"]) expect(parseCancelFollowUp(t), t).toBe("cancel");
+    for (const t of ["remarcar", "prefiro reagendar", "outro dia"]) expect(parseCancelFollowUp(t), t).toBe("reschedule");
+    for (const t of ["manter", "não quero cancelar", "vou sim"]) expect(parseCancelFollowUp(t), t).toBe("confirm");
+  });
+  it("conversa solta não decide nada", () => {
+    expect(parseCancelFollowUp("Qual o endereço mesmo?")).toBeNull();
+  });
+});
+
+describe("textos automáticos", () => {
+  it("pergunta de cancelamento com opções", () => {
+    expect(cancelAskText("Bia Souza")).toBe("Bia, quer cancelar mesmo ou prefere remarcar?\n1 - Cancelar\n2 - Remarcar");
+  });
+  it("reforço e aviso de texto livre", () => {
+    expect(nudgeText("Maria Silva")).toBe("Ainda não recebi sua confirmação, Maria 😊 Responda 1 para confirmar");
+    expect(freeTextAck("Studio Yumi")).toBe("Recebi! Studio Yumi vai te responder em breve 💜");
+    expect(freeTextAck(null)).toContain("Recebi!");
   });
 });

@@ -37,6 +37,41 @@ export function parseIntent(raw: string): Intent | null {
   return null;
 }
 
+// Depois de "Quer cancelar mesmo?": 1/sim/cancelar = cancela; 2/remarcar = remarca; "manter"/confirmação = fica
+const KEEP = /\b(manter|mantenho|mantem|nao (quero )?cancel\w*|deixa (como )?(esta|ta)|vou sim|confirm\w*)\b/;
+const ASK_BY_OPTION: Record<string, Intent> = { "1": "cancel", "2": "reschedule" };
+
+/**
+ * Resposta à pergunta "Quer cancelar mesmo ou prefere remarcar?". Os números aqui têm outro
+ * sentido (1 = cancelar, 2 = remarcar). Texto que não casa volta null e a pergunta segue de pé.
+ */
+export function parseCancelFollowUp(raw: string): Intent | null {
+  const t = plain(raw.trim());
+  if (!t || t.split(" ").length > 12) return null;
+  const option = OPTION.exec(t);
+  if (option) return ASK_BY_OPTION[option[2]] ?? null;
+  if (RESCHEDULE.test(t)) return "reschedule";
+  if (KEEP.test(t)) return "confirm";
+  if (CANCEL.test(t) || t === "sim" || t === "quero cancelar") return "cancel";
+  return null;
+}
+
+/** Quanto tempo a pergunta de cancelamento espera a resposta; depois disso o horário segue como estava. */
+export const CANCEL_ASK_TTL_MS = 12 * 3600_000;
+
+/** Pergunta que sai quando a cliente pede para cancelar; o horário só é liberado depois da resposta. */
+export const cancelAskText = (clientName: string) =>
+  `${clientName.trim().split(/\s+/)[0]}, quer cancelar mesmo ou prefere remarcar?\n1 - Cancelar\n2 - Remarcar`;
+
+/** Reforço único, ~3 h antes, para quem não respondeu ao lembrete. Nunca cancela sozinho. */
+export const NUDGE_HOURS = 3;
+export const nudgeText = (clientName: string) =>
+  `Ainda não recebi sua confirmação, ${clientName.trim().split(/\s+/)[0]} 😊 Responda 1 para confirmar`;
+
+/** Primeira mensagem livre da cliente (não é 1/2/3): avisa que a dona vai ler e responder. */
+export const freeTextAck = (salonName?: string | null) =>
+  salonName?.trim() ? `Recebi! ${salonName.trim()} vai te responder em breve 💜` : "Recebi! Já já te respondo 💜";
+
 /** Agradecimento curto que sai na hora para a cliente. */
 export function ackText(intent: Intent, clientName: string): string {
   const first = clientName.trim().split(/\s+/)[0];

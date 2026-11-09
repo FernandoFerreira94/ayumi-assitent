@@ -107,6 +107,10 @@ export const appointments = pgTable(
     reminderSentAt: timestamp("reminder_sent_at", { withTimezone: true }),
     /** Quando a cliente respondeu ao lembrete; só a primeira resposta muda o status */
     replyAt: timestamp("reply_at", { withTimezone: true }),
+    /** Quando perguntamos "cancelar ou remarcar?"; enquanto vale, 1/2 respondem a essa pergunta */
+    cancelAskedAt: timestamp("cancel_asked_at", { withTimezone: true }),
+    /** Reforço único de confirmação já enviado */
+    nudgeSentAt: timestamp("nudge_sent_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("appointments_tenant_start").on(t.tenantId, t.startsAt)],
