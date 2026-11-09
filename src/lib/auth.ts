@@ -25,6 +25,8 @@ export const auth = betterAuth({
   // A agenda do estúdio pode estar num Gmail diferente do e-mail de login (Conectar em Ajustes).
   // Ligar exige sessão aberta, então isso não abre entrada nova na conta.
   account: { accountLinking: { allowDifferentEmails: true } },
+  // Railway repassa o IP real em x-forwarded-for; sem isso o limite de requisições vira um balde único para todos.
+  advanced: { ipAddress: { ipAddressHeaders: ["x-forwarded-for", "x-real-ip"] } },
   session: { expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24 },
   databaseHooks: {
     user: {

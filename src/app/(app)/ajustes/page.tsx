@@ -24,7 +24,7 @@ export const metadata: Metadata = { title: "Ajustes" };
 
 export default async function AjustesPage({ searchParams }: PageProps<"/ajustes">) {
   const { tenantId } = await requireTenant();
-  const { google: googleResult } = await searchParams;
+  const { google: googleResult, error: googleError } = await searchParams;
   const { week, reminderHours } = await withTenant(tenantId, async (tx) => ({
     week: await getHours(tx),
     reminderHours: await getReminderHours(tx),
@@ -32,10 +32,7 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
   const [wa, google, [salon]] = await Promise.all([
     whatsappState(tenantId),
     isGoogleConnected(tenantId),
-    getDb()
-      .select({ i: tenants.whatsappInstance })
-      .from(tenants)
-      .where(eq(tenants.id, tenantId)),
+    getDb().select({ i: tenants.whatsappInstance }).from(tenants).where(eq(tenants.id, tenantId)),
   ]);
   // WhatsApp conectado antes de existir o webhook: abrir Ajustes já liga as respostas
   const admin = adminFromEnv();
@@ -46,7 +43,11 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
         <WhatsAppCard initial={wa} />
       </section>
       <section id="google" aria-label="Google Agenda" className="mt-6 scroll-mt-6">
-        <GoogleCard connected={google} failed={googleResult === "erro"} />
+        <GoogleCard
+          connected={google}
+          failed={googleResult === "erro" || !!googleError}
+          errorCode={typeof googleError === "string" ? googleError.slice(0, 60) : undefined}
+        />
       </section>
       <section aria-label="Localização" className="mt-6">
         <LocationCard />
