@@ -61,6 +61,23 @@ describe("resumo do ganho", () => {
     expect(s).toMatchObject({ received: 20000, forecast: 25000, doneCount: 2, averageCents: 10000 });
     expect(s.slices).toEqual([{ name: "Gel", cents: 20000 }]);
   });
+  it("atendimento com dois serviços conta nas duas fatias, com o desconto dividido", () => {
+    const s = summarize([
+      {
+        ...row("Escova + Hidratação", 13500),
+        serviceParts: [
+          { name: "Escova", cents: 8000 },
+          { name: "Hidratação", cents: 7000 },
+        ],
+      },
+      { ...row("Escova", 8000), serviceParts: JSON.stringify([{ name: "Escova", cents: 8000 }]) },
+    ]);
+    expect(s.received).toBe(21500);
+    expect(s.slices).toEqual([
+      { name: "Escova", cents: 8000 + 7200 },
+      { name: "Hidratação", cents: 6300 },
+    ]);
+  });
   it("mais de 6 serviços: os 5 maiores e o resto em Outros", () => {
     const s = summarize(["A", "B", "C", "D", "E", "F", "G"].map((n, i) => row(n, (10 - i) * 100)));
     expect(s.slices.map((x) => x.name)).toEqual(["A", "B", "C", "D", "E", "Outros"]);

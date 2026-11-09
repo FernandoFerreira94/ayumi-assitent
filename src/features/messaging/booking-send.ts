@@ -6,6 +6,7 @@ import { bookingText } from "./booking";
 import { messagingForInstance } from "./evolution";
 import { sendDirect } from "./send";
 import { recordMessage } from "./store";
+import { serviceLabel } from "@/features/appointments/core";
 
 /** sent = a cliente recebeu; failed = o WhatsApp não enviou; skipped = nada a enviar (sem WhatsApp configurado) */
 export type BookingMessageResult = "sent" | "failed" | "skipped";
@@ -34,7 +35,7 @@ export async function sendBookingMessage(
           clientId: clients.id,
           client: clients.name,
           phone: clients.phoneE164,
-          service: services.name,
+          service: serviceLabel,
           startsAt: appointments.startsAt,
           priceCents: appointments.priceCents,
         })

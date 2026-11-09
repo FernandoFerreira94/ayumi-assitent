@@ -29,6 +29,7 @@ import { NewAppointmentSheet } from "./NewAppointmentSheet";
 import type { Status } from "./schema";
 import { warnSync } from "./sync-warning";
 import { duration, hhmm, type Span } from "./timeline";
+import type { ServiceOption } from "./options";
 
 const HOUR_PX = 80;
 const PPM = HOUR_PX / 60;
@@ -131,7 +132,7 @@ export function AgendaDay({
   /** Só no dia de hoje: posição da linha da hora atual. */
   nowMin: number | null;
   clients: PickerOption[];
-  services: PickerOption[];
+  services: ServiceOption[];
   blockButton: ReactNode;
 }) {
   // Horário otimista depois do arraste, até o servidor mandar a agenda nova

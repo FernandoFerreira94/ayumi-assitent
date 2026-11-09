@@ -15,6 +15,7 @@ import { dayRange, isDateStr, toInstant } from "@/lib/dates";
 import { editAppointment, insertAppointment, listDay, moveAppointment, setStatus } from "./core";
 import { dayVersion } from "./version";
 import { bookingOptions, type BookingOptions } from "./options";
+import { parseDiscount } from "./pricing";
 import { appointmentInput, STATUSES } from "./schema";
 
 /** Opções da folha aberta pelo "Novo" do nav, que pode estar em qualquer tela. */
@@ -49,13 +50,16 @@ export async function createAppointment(_prev: ActionResult<{ id: string }> | nu
   const { tenantId } = await requireTenant();
   const parsed = appointmentInput.safeParse({
     clientId: formData.get("clientId") ?? "",
-    serviceId: formData.get("serviceId") ?? "",
+    // Cada serviço escolhido vem num campo "serviceIds"; vazios são seletores extras ainda sem escolha
+    serviceIds: [...new Set(formData.getAll("serviceIds").map(String).filter(Boolean))],
     date: formData.get("date") ?? "",
     time: formData.get("time") ?? "",
   });
   if (!parsed.success) return fail("VALIDATION", String(parsed.error.issues[0]?.path[0] ?? ""));
+  const discount = parseDiscount(formData.get("discountKind"), formData.get("discountValue"));
+  if (discount === "invalid") return fail("VALIDATION", "discountValue");
   try {
-    const res = await withTenant(tenantId, (tx) => insertAppointment(tx, tenantId, parsed.data));
+    const res = await withTenant(tenantId, (tx) => insertAppointment(tx, tenantId, { ...parsed.data, discount }));
     if (!res.ok) return res;
     revalidatePath("/agenda");
     revalidatePath("/calendario");
@@ -108,6 +112,7 @@ const editInput = z.object({
   serviceId: z.string().uuid(),
   date: z.string().refine(isDateStr),
   time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  single: z.boolean().optional(),
 });
 
 /** Reagenda e/ou troca o serviço pelo card da agenda (a cliente pediu "3" ou combinou por conversa). */
@@ -116,6 +121,8 @@ export async function editAppointmentAction(input: {
   serviceId: string;
   date: string;
   time: string;
+  /** Tinha vários serviços e a pessoa escolheu um só. */
+  single?: boolean;
 }): Promise<ActionResult<{ sync: SyncResult }>> {
   const { tenantId } = await requireTenant();
   const p = editInput.safeParse(input);

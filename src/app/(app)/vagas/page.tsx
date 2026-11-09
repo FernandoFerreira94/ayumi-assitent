@@ -9,6 +9,7 @@ import { listBlocks } from "@/features/blocks/core";
 import { importExternalEvents } from "@/features/google/server";
 import { getHours } from "@/features/hours/core";
 import { CopyButton } from "@/features/hours/CopyButton";
+import { SlotButton } from "@/features/hours/SlotButton";
 import { freeSlots, weekdayOf } from "@/features/hours/slots";
 import { listBookable } from "@/features/services/core";
 import { addDays, dayRange, formatDayTitle, todayStr } from "@/lib/dates";
@@ -75,7 +76,7 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
     : "";
 
   return (
-    <PageShell title="Vagas" subtitle="Próximos 7 dias">
+    <PageShell title="Vagas" subtitle="Toque num horário para agendar">
       <nav aria-label="Serviço" className="mb-4 flex gap-2 overflow-x-auto pb-1">
         {services.map((x) => (
           <Link
@@ -108,8 +109,8 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
               <h2 className="pb-2 text-sm font-bold capitalize">{formatDayTitle(d.date)}</h2>
               <ul className="flex flex-wrap gap-2">
                 {d.slots.map((t) => (
-                  <li key={t} className="rounded-full bg-soft px-3 py-1.5 text-sm font-bold text-primary-text">
-                    {t}
+                  <li key={t}>
+                    <SlotButton date={d.date} time={t} serviceId={service.id} dayLabel={formatDayTitle(d.date)} />
                   </li>
                 ))}
               </ul>

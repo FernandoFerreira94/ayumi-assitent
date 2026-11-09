@@ -3,7 +3,7 @@ import { isDateStr } from "@/lib/dates";
 
 export const appointmentInput = z.object({
   clientId: z.string().uuid("Escolha a cliente"),
-  serviceId: z.string().uuid("Escolha o serviço"),
+  serviceIds: z.array(z.string().uuid("Escolha o serviço")).min(1, "Escolha o serviço").max(5),
   date: z.string().refine(isDateStr, "Data inválida"),
   time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Horário inválido"),
 });

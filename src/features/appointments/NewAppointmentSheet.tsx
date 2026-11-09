@@ -10,6 +10,8 @@ import { timeOptions } from "@/lib/time-grid";
 import { messageFor, type ErrorCode } from "@/lib/errors";
 import { whatsappStatus } from "@/features/whatsapp/actions";
 import { BookingOverlay, type Booking, type Step } from "./BookingOverlay";
+import { BookingServices } from "./BookingServices";
+import type { ServiceOption } from "./options";
 import { warnSync } from "./sync-warning";
 import { createAppointment } from "./actions";
 
@@ -46,18 +48,21 @@ export function NewAppointmentSheet({
   openKey,
   time,
   clientId,
+  serviceIds,
   onClosed,
 }: {
   date: string;
   /** null enquanto as opções chegam (a folha do "Novo" do nav busca na hora de abrir). */
   clients: PickerOption[] | null;
-  services: PickerOption[] | null;
+  services: ServiceOption[] | null;
   /** Aberta pelo "Novo" do nav: sem botão próprio, e cada valor novo abre a folha. */
   openKey?: number;
   /** Horário já escolhido (toque num vazio da linha do dia). */
   time?: string;
   /** Cliente já escolhida (deslizar a linha em Clientes). */
   clientId?: string;
+  /** Serviços já escolhidos (toque num horário em Vagas). */
+  serviceIds?: string[];
   /** Avisa quando a folha fecha, para a agenda tirar o bloco provisório. */
   onClosed?: () => void;
 }) {
@@ -96,7 +101,11 @@ export function NewAppointmentSheet({
     lastData.current = fd;
     setFieldErr(null);
     const client = clients?.find((c) => c.id === fd.get("clientId"))?.label ?? "";
-    const service = services?.find((s) => s.id === fd.get("serviceId"))?.label ?? "";
+    const service = fd
+      .getAll("serviceIds")
+      .map((id) => services?.find((s) => s.id === id)?.label)
+      .filter(Boolean)
+      .join(" + ");
     setBooking({
       steps: ["run", "wait", "wait"],
       slow: false,
@@ -221,7 +230,7 @@ export function NewAppointmentSheet({
             ) : missing ? null : (
               // Fica montado por trás da Bolha: se der erro, a folha volta preenchida
               <form
-                key={`${formKey}-${time ?? ""}-${clientId ?? ""}`}
+                key={`${formKey}-${date}-${time ?? ""}-${clientId ?? ""}-${serviceIds?.join(",") ?? ""}`}
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (!working) void book(new FormData(e.currentTarget));
@@ -235,7 +244,11 @@ export function NewAppointmentSheet({
                   options={clients}
                   defaultId={clientId}
                 />
-                <LetterPicker name="serviceId" label="Serviço" placeholder="Escolha o serviço…" options={services} />
+                <BookingServices
+                  services={services}
+                  defaultIds={serviceIds}
+                  discountError={fieldErr?.field === "discountValue"}
+                />
                 <label className="grid gap-1 text-sm font-bold">
                   Dia
                   <input name="date" type="date" required defaultValue={date} className={input} />
@@ -254,7 +267,7 @@ export function NewAppointmentSheet({
                     ))}
                   </select>
                 </label>
-                {fieldErr ? (
+                {fieldErr && fieldErr.field !== "discountValue" ? (
                   <p role="alert" className="rounded-2xl bg-soft px-4 py-3 text-sm font-semibold">
                     {messageFor(fieldErr.code)}
                   </p>
