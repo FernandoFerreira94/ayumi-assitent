@@ -66,13 +66,7 @@ export const markRead = (tx: Tx, clientId: string) =>
     .set({ readAt: sql`now()` })
     .where(and(eq(messages.clientId, clientId), eq(messages.direction, "in"), isNull(messages.readAt)));
 
-export type Unread = {
-  clientId: string;
-  clientName: string;
-  count: number;
-  lastBody: string;
-  lastIntent: Intent | null;
-};
+export type Unread = { clientId: string; clientName: string; count: number; lastBody: string; lastIntent: Intent | null };
 
 /** Clientes com mensagem nova não lida, com a última recebida (para o sino). */
 export async function listUnread(tx: Tx): Promise<Unread[]> {
@@ -90,13 +84,7 @@ export async function listUnread(tx: Tx): Promise<Unread[]> {
     .orderBy(asc(messages.createdAt));
   const by = new Map<string, Unread>();
   for (const r of rows) {
-    const u = by.get(r.clientId) ?? {
-      clientId: r.clientId,
-      clientName: r.clientName,
-      count: 0,
-      lastBody: "",
-      lastIntent: null,
-    };
+    const u = by.get(r.clientId) ?? { clientId: r.clientId, clientName: r.clientName, count: 0, lastBody: "", lastIntent: null };
     u.count++;
     u.lastBody = r.body;
     u.lastIntent = (r.intent as Intent | null) ?? u.lastIntent;

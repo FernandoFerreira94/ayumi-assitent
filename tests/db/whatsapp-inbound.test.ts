@@ -38,27 +38,17 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     ({ handleInbound } = await import("@/features/messaging/inbound"));
     admin = postgres(url!, { max: 1 });
     await admin`truncate tenants cascade`;
-    [{ id: T }] =
-      await admin`insert into tenants (name, whatsapp_instance) values ('Estúdio R', 'studio-r') returning id`;
-    const [{ id: S }] =
-      await admin`insert into services (tenant_id,name,duration_min,price_cents) values (${T},'Gel',60,10000) returning id`;
-    [{ id: C }] =
-      await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Bia Souza','+5511987655555') returning id`;
-    [{ id: A }] =
-      await admin`insert into appointments (tenant_id,client_id,service_id,starts_at,ends_at,price_cents,status,reminder_sent_at)
+    [{ id: T }] = await admin`insert into tenants (name, whatsapp_instance) values ('Estúdio R', 'studio-r') returning id`;
+    const [{ id: S }] = await admin`insert into services (tenant_id,name,duration_min,price_cents) values (${T},'Gel',60,10000) returning id`;
+    [{ id: C }] = await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Bia Souza','+5511987655555') returning id`;
+    [{ id: A }] = await admin`insert into appointments (tenant_id,client_id,service_id,starts_at,ends_at,price_cents,status,reminder_sent_at)
       values (${T},${C},${S},'2026-11-11T13:00:00Z','2026-11-11T14:00:00Z',10000,'pending_confirmation',${now.toISOString()}) returning id`;
   });
   afterAll(async () => admin.end());
 
   it("número que não é cliente não grava nada", async () => {
-    expect(await handleInbound(msg("x1", "oi", { phoneDigits: "5521999998888" }), deps)).toEqual({
-      handled: false,
-      reason: "client",
-    });
-    expect(await handleInbound(msg("x2", "oi", { instance: "outra" }), deps)).toEqual({
-      handled: false,
-      reason: "tenant",
-    });
+    expect(await handleInbound(msg("x1", "oi", { phoneDigits: "5521999998888" }), deps)).toEqual({ handled: false, reason: "client" });
+    expect(await handleInbound(msg("x2", "oi", { instance: "outra" }), deps)).toEqual({ handled: false, reason: "tenant" });
     expect((await admin`select count(*)::int as n from messages`)[0].n).toBe(0);
   });
 
@@ -69,10 +59,7 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     expect(a.reply_at).not.toBeNull();
     expect(sent.at(-1)).toContain("+5511987655555|Obrigada, Bia! Seu horário está confirmado");
     const conv = await admin`select direction, kind, intent from messages where client_id = ${C} order by created_at`;
-    expect(conv.map((m) => `${m.direction}:${m.kind}:${m.intent ?? ""}`)).toEqual([
-      "in:client:confirm",
-      "out:auto_reply:",
-    ]);
+    expect(conv.map((m) => `${m.direction}:${m.kind}:${m.intent ?? ""}`)).toEqual(["in:client:confirm", "out:auto_reply:"]);
   });
 
   it("webhook repetido não faz nada duas vezes", async () => {
@@ -88,10 +75,7 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
   });
 
   it("eco do que o app mandou não duplica; o que a dona escreve pelo celular entra", async () => {
-    expect(await handleInbound(msg("ack1", "Obrigada, Bia!", { fromMe: true }), deps)).toEqual({
-      handled: false,
-      reason: "duplicate",
-    });
+    expect(await handleInbound(msg("ack1", "Obrigada, Bia!", { fromMe: true }), deps)).toEqual({ handled: false, reason: "duplicate" });
     expect(await handleInbound(msg("p1", "Te espero!", { fromMe: true }), deps)).toMatchObject({ handled: true });
     expect((await admin`select kind from messages where external_id = 'p1'`)[0].kind).toBe("phone");
   });

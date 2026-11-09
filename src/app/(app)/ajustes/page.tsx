@@ -31,7 +31,10 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
   const [wa, google, [salon]] = await Promise.all([
     whatsappState(tenantId),
     isGoogleConnected(tenantId),
-    getDb().select({ i: tenants.whatsappInstance }).from(tenants).where(eq(tenants.id, tenantId)),
+    getDb()
+      .select({ i: tenants.whatsappInstance })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId)),
   ]);
   // WhatsApp conectado antes de existir o webhook: abrir Ajustes já liga as respostas
   const admin = adminFromEnv();

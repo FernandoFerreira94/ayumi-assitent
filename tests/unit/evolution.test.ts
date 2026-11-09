@@ -8,16 +8,9 @@ const res = (status: number) => ({ ok: status < 300, status }) as Response;
 describe("Evolution (WhatsApp)", () => {
   it("envia texto com apikey e número só com dígitos, e devolve o id da mensagem", async () => {
     const f = vi.fn().mockResolvedValue({ ...res(201), json: async () => ({ key: { id: "3EB0ABC" } }) });
-    expect(await evolutionMessaging(cfg, f as unknown as typeof fetch).sendText("+5511987654321", "oi")).toEqual({
-      id: "3EB0ABC",
-    });
+    expect(await evolutionMessaging(cfg, f as unknown as typeof fetch).sendText("+5511987654321", "oi")).toEqual({ id: "3EB0ABC" });
     // Resposta sem corpo: a mensagem saiu, só fica sem id
-    expect(
-      await evolutionMessaging(cfg, vi.fn().mockResolvedValue(res(201)) as unknown as typeof fetch).sendText(
-        "+55119",
-        "x",
-      ),
-    ).toEqual({ id: null });
+    expect(await evolutionMessaging(cfg, vi.fn().mockResolvedValue(res(201)) as unknown as typeof fetch).sendText("+55119", "x")).toEqual({ id: null });
     const [url, init] = f.mock.calls[0];
     expect(url).toBe("https://evo.test/message/sendText/ayumi");
     expect(init.headers.apikey).toBe("k");
@@ -79,17 +72,9 @@ describe("Evolution admin", () => {
     const [url, init] = f.mock.calls[0];
     expect(url).toBe("https://evo.test/webhook/set/studio-x");
     expect(JSON.parse(init.body)).toEqual({
-      webhook: {
-        enabled: true,
-        url: "https://app.test/api/whatsapp/webhook?token=t",
-        byEvents: false,
-        base64: false,
-        events: ["MESSAGES_UPSERT"],
-      },
+      webhook: { enabled: true, url: "https://app.test/api/whatsapp/webhook?token=t", byEvents: false, base64: false, events: ["MESSAGES_UPSERT"] },
     });
-    await expect(mk(vi.fn().mockResolvedValue(json(400))).setWebhook("i", "u")).rejects.toBeInstanceOf(
-      WhatsAppAdminError,
-    );
+    await expect(mk(vi.fn().mockResolvedValue(json(400))).setWebhook("i", "u")).rejects.toBeInstanceOf(WhatsAppAdminError);
   });
   it("nome da instância é estável e fluxo valida o telefone", async () => {
     const id = "123e4567-e89b-12d3-a456-426614174000";

@@ -47,9 +47,7 @@ export function EditAppointmentSheet({
     setError(null);
     // Serviços só ao abrir: a linha do dia não carrega a lista para cada card
     if (next && !services)
-      void loadBookingOptions().then((r) =>
-        setServices(r.ok ? r.data.services : [{ id: serviceId, label: serviceName }]),
-      );
+      void loadBookingOptions().then((r) => setServices(r.ok ? r.data.services : [{ id: serviceId, label: serviceName }]));
   }
 
   function submit(form: FormData) {
@@ -109,13 +107,7 @@ export function EditAppointmentSheet({
             </label>
             <label className="grid gap-1 text-sm font-bold">
               Horário
-              <select
-                name="time"
-                required
-                defaultValue={TIMES.includes(start) ? start : "09:00"}
-                className={input}
-                aria-invalid={error === "SLOT_TAKEN"}
-              >
+              <select name="time" required defaultValue={TIMES.includes(start) ? start : "09:00"} className={input} aria-invalid={error === "SLOT_TAKEN"}>
                 {TIMES.map((t) => (
                   <option key={t}>{t}</option>
                 ))}

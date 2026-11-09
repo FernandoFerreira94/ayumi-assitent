@@ -10,12 +10,5 @@ export const appointmentInput = z.object({
 export type AppointmentInput = z.infer<typeof appointmentInput>;
 
 // reschedule_requested: a cliente respondeu "3" ao lembrete; o horário segue reservado até a dona resolver
-export const STATUSES = [
-  "pending_confirmation",
-  "confirmed",
-  "cancelled",
-  "done",
-  "no_show",
-  "reschedule_requested",
-] as const;
+export const STATUSES = ["pending_confirmation", "confirmed", "cancelled", "done", "no_show", "reschedule_requested"] as const;
 export type Status = (typeof STATUSES)[number];

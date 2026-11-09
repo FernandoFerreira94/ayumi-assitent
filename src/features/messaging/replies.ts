@@ -13,8 +13,7 @@ const plain = (s: string) =>
 // Ordem importa: "nao vou" antes de "vou"; "remarcar" e "cancelar" antes do "ok" que pode vir junto
 const RESCHEDULE = /\b(reagend\w*|remarc\w*|outro (horario|dia)|mudar (o )?horario|trocar (o )?horario)\b/;
 const CANCEL = /\b(cancel\w*|desmarc\w*|nao (vou|posso|consigo|da)|nao vai dar)\b/;
-const CONFIRM =
-  /\b(ok|okay|sim|confirm\w*|certo|combinado|beleza|blz|pode ser|estarei|vou sim|vou|claro|perfeito|fechado)\b/;
+const CONFIRM = /\b(ok|okay|sim|confirm\w*|certo|combinado|beleza|blz|pode ser|estarei|vou sim|vou|claro|perfeito|fechado)\b/;
 // O número só vale sozinho ("2", "opção 2"): em "posso ir às 2?" ele é hora, não opção
 const OPTION = /^(opcao |numero )?([123])$/;
 const BY_OPTION: Record<string, Intent> = { "1": "confirm", "2": "cancel", "3": "reschedule" };
@@ -42,8 +41,7 @@ export function parseIntent(raw: string): Intent | null {
 export function ackText(intent: Intent, clientName: string): string {
   const first = clientName.trim().split(/\s+/)[0];
   if (intent === "confirm") return `Obrigada, ${first}! Seu horário está confirmado. Até lá! 💜`;
-  if (intent === "cancel")
-    return `Tudo bem, ${first}. Cancelei seu horário. Quando quiser marcar outro, é só chamar. 💜`;
+  if (intent === "cancel") return `Tudo bem, ${first}. Cancelei seu horário. Quando quiser marcar outro, é só chamar. 💜`;
   return `Certo, ${first}! Já avisei aqui e vou te chamar para combinar um novo horário. 💜`;
 }
 
@@ -73,8 +71,7 @@ type Upsert = {
   data?: { key?: Key; message?: { conversation?: string; extendedTextMessage?: { text?: string } } };
 };
 
-const jidDigits = (jid?: string) =>
-  jid && /@s\.whatsapp\.net$/.test(jid) ? jid.split("@")[0].replace(/\D/g, "") : null;
+const jidDigits = (jid?: string) => (jid && /@s\.whatsapp\.net$/.test(jid) ? jid.split("@")[0].replace(/\D/g, "") : null);
 
 /**
  * Tira do corpo do webhook só o que importa. Ignora grupos, status, áudio/foto sem legenda e

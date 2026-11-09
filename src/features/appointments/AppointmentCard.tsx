@@ -36,20 +36,7 @@ const LABEL: Record<Status, string> = {
   reschedule_requested: "Quer remarcar",
 };
 
-export function AppointmentCard({
-  id,
-  time,
-  date,
-  start: startHHMM,
-  clientId,
-  clientName,
-  clientPhone,
-  serviceId,
-  serviceName,
-  price,
-  status,
-  inSheet = false,
-}: Props) {
+export function AppointmentCard({ id, time, date, start: startHHMM, clientId, clientName, clientPhone, serviceId, serviceName, price, status, inSheet = false }: Props) {
   const [pending, start] = useTransition();
   const [busy, setBusy] = useState<Status | null>(null);
   // Cancelar pede um segundo toque: o primeiro só troca o texto do botão
@@ -93,15 +80,30 @@ export function AppointmentCard({
       {status === "pending_confirmation" || status === "confirmed" || status === "reschedule_requested" ? (
         <div className="flex flex-wrap gap-2">
           {status !== "confirmed" ? (
-            <button type="button" disabled={pending} onClick={() => change("confirmed")} className={`${btn} btn-tint`}>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => change("confirmed")}
+              className={`${btn} btn-tint`}
+            >
               {busy === "confirmed" ? "Confirmando…" : "Confirmar"}
             </button>
           ) : (
-            <button type="button" disabled={pending} onClick={() => change("done")} className={`${btn} btn-tint`}>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => change("done")}
+              className={`${btn} btn-tint`}
+            >
               {busy === "done" ? "Salvando…" : "Concluir"}
             </button>
           )}
-          <button type="button" disabled={pending} onClick={() => change("no_show")} className={`${btn} btn-glass`}>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => change("no_show")}
+            className={`${btn} btn-glass`}
+          >
             {busy === "no_show" ? "Salvando…" : "Faltou"}
           </button>
           <EditAppointmentSheet
@@ -125,13 +127,7 @@ export function AppointmentCard({
         </div>
       ) : null}
       {/* Em qualquer status: dá para falar com a cliente mesmo depois de concluído ou se faltou */}
-      <ChatSheet
-        nested={inSheet}
-        clientId={clientId}
-        clientName={clientName}
-        phone={clientPhone}
-        triggerClassName={`${btn} ${CHAT_BUTTON}`}
-      >
+      <ChatSheet nested={inSheet} clientId={clientId} clientName={clientName} phone={clientPhone} triggerClassName={`${btn} ${CHAT_BUTTON}`}>
         <ChatGlyph />
         Mensagem no WhatsApp
       </ChatSheet>
