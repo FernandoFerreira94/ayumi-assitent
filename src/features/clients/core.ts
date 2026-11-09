@@ -1,6 +1,7 @@
-import { and, asc, eq, ilike, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, ilike, inArray, lt, ne, or, sum } from "drizzle-orm";
 import type { Tx } from "@/db/client";
-import { appointments, clients } from "@/db/schema";
+import { appointments, clients, services } from "@/db/schema";
+import { serviceLabel } from "@/features/appointments/core";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import type { ClientInput } from "./schema";
 
@@ -63,4 +64,36 @@ export async function deleteClientRow(tx: Tx, id: string): Promise<ActionResult>
   if (used) return fail("CLIENT_HAS_APPOINTMENTS");
   await tx.delete(clients).where(eq(clients.id, id));
   return ok();
+}
+
+/** Resumo do cartão da cliente: próximo horário, última visita, quantas vezes veio, quanto gastou e faltas. */
+export async function clientSummary(tx: Tx, clientId: string, now = new Date()) {
+  const label = (where: ReturnType<typeof and>, order: "asc" | "desc") =>
+    tx
+      .select({ startsAt: appointments.startsAt, service: serviceLabel })
+      .from(appointments)
+      .innerJoin(services, eq(services.id, appointments.serviceId))
+      .where(where)
+      .orderBy(order === "asc" ? asc(appointments.startsAt) : desc(appointments.startsAt))
+      .limit(1);
+  const mine = eq(appointments.clientId, clientId);
+  const [[next], [last], [totals], [faltas]] = await Promise.all([
+    label(and(mine, gte(appointments.startsAt, now), ne(appointments.status, "cancelled")), "asc"),
+    label(and(mine, lt(appointments.startsAt, now), eq(appointments.status, "done")), "desc"),
+    tx
+      .select({ visits: count(), spent: sum(appointments.priceCents) })
+      .from(appointments)
+      .where(and(mine, eq(appointments.status, "done"))),
+    tx
+      .select({ n: count() })
+      .from(appointments)
+      .where(and(mine, inArray(appointments.status, ["no_show"]))),
+  ]);
+  return {
+    next: next ?? null,
+    last: last ?? null,
+    visits: totals?.visits ?? 0,
+    spentCents: Number(totals?.spent ?? 0),
+    noShows: faltas?.n ?? 0,
+  };
 }

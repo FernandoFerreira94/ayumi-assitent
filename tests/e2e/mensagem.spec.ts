@@ -2,7 +2,7 @@ import { expect, test } from "./fixtures";
 import { todayStr } from "../../src/lib/dates";
 
 // No teste não há WhatsApp conectado: nenhuma mensagem sai de verdade, e a tela mostra o aviso de reconectar
-test("tocar na cliente abre a conversa; sem WhatsApp, a mensagem fica como não enviada", async ({ page }) => {
+test("o balão da cliente abre a conversa; sem WhatsApp, a mensagem fica como não enviada", async ({ page }) => {
   await page.goto("/clientes");
   await page.getByRole("button", { name: "Nova cliente" }).click();
   await page.getByLabel("Nome").fill("Maria Silva");
@@ -10,7 +10,7 @@ test("tocar na cliente abre a conversa; sem WhatsApp, a mensagem fica como não 
   await page.getByRole("button", { name: "Salvar" }).click();
   await expect(page.getByText("Cliente cadastrada")).toBeVisible();
 
-  await page.getByRole("button", { name: /Maria Silva/ }).click();
+  await page.getByRole("button", { name: "Conversa com Maria Silva" }).click();
   const conversa = page.getByRole("dialog", { name: "Maria Silva" });
   await expect(conversa.getByText("(11) 98765-4321 · pelo WhatsApp do salão")).toBeVisible();
   const enviar = conversa.getByRole("button", { name: "Enviar" });

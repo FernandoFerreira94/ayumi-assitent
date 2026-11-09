@@ -9,7 +9,8 @@ import { ChatGlyph, ChatSheet } from "@/features/messaging/ChatSheet";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import { messageFor, type ActionResult } from "@/lib/errors";
 import { maskPhone } from "@/lib/phone";
-import { deleteClient, updateClient } from "./actions";
+import { deleteClient, loadClientCard, updateClient, type ClientCard } from "./actions";
+import { formatBRL } from "@/lib/dates";
 
 const input = "min-h-13 w-full rounded-2xl border px-4 text-base font-semibold";
 /** Largura de cada botão revelado. */
@@ -35,13 +36,15 @@ const icon = {
 
 /**
  * Linha de cliente que desliza como no iPhone: para a esquerda revela Editar e Excluir,
- * para a direita revela Agendar. Tocar na linha abre a conversa; tocar com ela aberta só fecha.
+ * para a direita revela Agendar. Tocar no nome abre o cartão dela; o balão ao lado abre a conversa.
+ * Com a linha aberta, o toque só fecha.
  */
 export function ClientRow({ client }: { client: Client }) {
   const [x, setX] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [card, setCard] = useState(false);
   const drag = useRef<{ id: number; sx: number; sy: number; base: number; live: boolean } | null>(null);
   const moved = useRef(false);
   const xRef = useRef(0);
@@ -166,14 +169,14 @@ export function ClientRow({ client }: { client: Client }) {
         </button>
       </div>
 
-      {/* Linha: tocar abre a conversa no WhatsApp do salão */}
+      {/* Linha: o nome abre o cartão da cliente; o balão, a conversa no WhatsApp do salão */}
       <div
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={end}
         onPointerCancel={end}
         onClickCapture={(e) => {
-          // Depois de arrastar, ou com a linha aberta, o toque não abre a conversa
+          // Depois de arrastar, ou com a linha aberta, o toque não abre nada
           if (moved.current || xRef.current !== 0) {
             e.preventDefault();
             e.stopPropagation();
@@ -182,22 +185,40 @@ export function ClientRow({ client }: { client: Client }) {
           }
         }}
         style={{ transform: `translateX(${x}px)`, transition: ease, touchAction: "pan-y" }}
-        className="relative"
+        className="glass relative flex items-center gap-2 rounded-2xl pr-2"
       >
+        <button
+          type="button"
+          onClick={() => setCard(true)}
+          className="min-w-0 flex-1 rounded-2xl py-3 pl-4 text-left transition-transform active:scale-[0.99]"
+        >
+          <span className="block truncate font-bold">{client.name}</span>
+          <span className="block text-sm font-semibold text-muted">{client.phone}</span>
+        </button>
         <ChatSheet
           clientId={client.id}
           clientName={client.name}
           phone={client.phone}
-          triggerClassName="glass flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left transition-transform active:scale-[0.99]"
+          triggerClassName="grid size-11 shrink-0 place-content-center rounded-full bg-soft/70 active:scale-95"
+          triggerLabel={`Conversa com ${client.name}`}
         >
-          <span className="min-w-0">
-            <span className="block truncate font-bold">{client.name}</span>
-            <span className="block text-sm font-semibold text-muted">{client.phone}</span>
-          </span>
           <ChatGlyph />
         </ChatSheet>
       </div>
 
+      <CardSheet
+        client={client}
+        open={card}
+        onOpenChange={setCard}
+        onEdit={() => {
+          setCard(false);
+          setEditing(true);
+        }}
+        onDelete={() => {
+          setCard(false);
+          setDeleting(true);
+        }}
+      />
       <EditSheet client={client} open={editing} onOpenChange={setEditing} />
       <DeleteSheet client={client} open={deleting} onOpenChange={setDeleting} />
     </li>
@@ -368,6 +389,143 @@ function DeleteSheet({
             >
               Cancelar
             </button>
+          </div>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.Root>
+  );
+}
+
+/** Cartão da cliente: o que importa antes de agendar ou conversar, e as ações num lugar só. */
+function CardSheet({
+  client,
+  open,
+  onOpenChange,
+  onEdit,
+  onDelete,
+}: {
+  client: Client;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const [data, setData] = useState<ClientCard | null>(null);
+  const [failed, setFailed] = useState(false);
+  /** Muda a cada abertura ou "Tentar de novo" e dispara a busca. */
+  const [attempt, setAttempt] = useState(0);
+
+  // A cada abertura busca de novo: um agendamento novo já aparece no cartão.
+  // (A folha abre pelo estado do pai; o onOpenChange do vaul só avisa o que ela mesma muda.)
+  useEffect(() => {
+    if (!open) return;
+    let alive = true;
+    loadClientCard(client.id)
+      .catch(() => null)
+      .then((res) => {
+        if (!alive) return;
+        setFailed(!res?.ok);
+        if (res?.ok) setData(res.data);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [open, attempt, client.id]);
+
+  const load = () => {
+    setFailed(false);
+    setAttempt((n) => n + 1);
+  };
+
+  const action = "flex min-h-13 items-center justify-center gap-2 rounded-2xl px-4 font-bold";
+  return (
+    <Drawer.Root
+      open={open}
+      onOpenChange={onOpenChange}
+    >
+      <Drawer.Portal>
+        <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
+        <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
+          <Drawer.Title className="text-xl font-bold">{client.name}</Drawer.Title>
+          <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
+            {client.phone}
+            {client.email ? ` · ${client.email}` : ""}
+          </Drawer.Description>
+
+          {failed ? (
+            <div role="alert" className="mb-3 flex items-center justify-between gap-3 rounded-2xl bg-fail-bg px-4 py-3 text-sm font-semibold text-fail">
+              Não deu para carregar o histórico.
+              <button type="button" onClick={load} className="min-h-11 px-2 font-bold underline">
+                Tentar de novo
+              </button>
+            </div>
+          ) : data === null ? (
+            <div className="mb-3 grid gap-2" aria-busy="true" aria-label="Carregando histórico">
+              <div className="skel h-16 rounded-2xl" />
+              <div className="skel h-16 rounded-2xl" />
+            </div>
+          ) : (
+            <div className="mb-4 grid gap-2">
+              <p className="glass rounded-2xl px-4 py-3">
+                <span className="block text-xs font-bold uppercase tracking-wide text-muted">Próximo horário</span>
+                {data.next ? (
+                  <span className="block font-bold first-letter:uppercase">
+                    {data.next.when} <span className="font-semibold text-muted">· {data.next.service}</span>
+                  </span>
+                ) : (
+                  <span className="block font-semibold text-muted">Nenhum marcado</span>
+                )}
+              </p>
+              <dl className="grid grid-cols-3 gap-2 text-center">
+                {(
+                  [
+                    [String(data.visits), data.visits === 1 ? "visita" : "visitas"],
+                    [formatBRL(data.spentCents), "gastou"],
+                    [String(data.noShows), data.noShows === 1 ? "falta" : "faltas"],
+                  ] as const
+                ).map(([value, label]) => (
+                  // dt antes do dd (ordem do HTML); o valor aparece em cima pelo flex invertido
+                  <div key={label} className="glass flex flex-col-reverse rounded-2xl px-2 py-3">
+                    <dt className="text-xs font-semibold text-muted">{label}</dt>
+                    <dd className="font-bold">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              {data.last ? (
+                <p className="px-1 text-xs font-semibold text-muted first-letter:uppercase">Última visita: {data.last}</p>
+              ) : null}
+            </div>
+          )}
+
+          <div className="grid gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                onOpenChange(false);
+                openNewAppointment({ clientId: client.id });
+              }}
+              className={`btn-tint ${action}`}
+            >
+              Agendar
+            </button>
+            <ChatSheet
+              clientId={client.id}
+              clientName={client.name}
+              phone={client.phone}
+              nested
+              triggerClassName={`btn-glass w-full ${action}`}
+            >
+              <ChatGlyph />
+              Conversar
+            </ChatSheet>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={onEdit} className={`btn-glass ${action}`}>
+                Editar
+              </button>
+              <button type="button" onClick={onDelete} className={`btn-glass ${action} text-fail`}>
+                Excluir
+              </button>
+            </div>
           </div>
         </Drawer.Content>
       </Drawer.Portal>

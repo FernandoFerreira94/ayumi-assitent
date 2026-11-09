@@ -73,6 +73,7 @@ export function ChatSheet({
   phone,
   nested = false,
   triggerClassName,
+  triggerLabel,
   children,
 }: {
   clientId: string;
@@ -81,6 +82,8 @@ export function ChatSheet({
   phone: string;
   nested?: boolean;
   triggerClassName: string;
+  /** Nome acessível quando o gatilho é só um ícone. */
+  triggerLabel?: string;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -144,7 +147,9 @@ export function ChatSheet({
 
   return (
     <Root open={open} onOpenChange={setOpen}>
-      <Drawer.Trigger className={triggerClassName}>{children}</Drawer.Trigger>
+      <Drawer.Trigger className={triggerClassName} aria-label={triggerLabel}>
+        {children}
+      </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
         <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 mx-auto flex h-[85dvh] max-w-[520px] flex-col overflow-hidden rounded-t-3xl bg-chat-bg outline-none">
