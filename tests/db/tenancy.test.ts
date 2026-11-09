@@ -198,7 +198,12 @@ d("expediente (núcleo)", () => {
     expect(def[0]).toBeNull();
     expect(def[1]).toEqual({ opens: "09:00", closes: "18:00" });
 
-    const week = [null, { opens: "10:00", closes: "16:00" }, null, null, null, null, null];
+    const week = [
+      null,
+      { opens: "10:00", closes: "16:00", breakStart: null, breakEnd: null },
+      { opens: "09:00", closes: "18:00", breakStart: "12:00", breakEnd: "13:00" },
+      null, null, null, null,
+    ];
     await withTenant(T, (tx) => saveHours(tx, T, week));
     expect(await withTenant(T, (tx) => getHours(tx))).toEqual(week);
     await expect(
