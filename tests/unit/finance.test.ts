@@ -1,29 +1,46 @@
 import { describe, expect, it } from "vitest";
-import { periodRange } from "@/features/finance/period";
+import { expenseInput, expenseSlices } from "@/features/finance/expenses";
+import { isMonth, monthRange, shiftMonth } from "@/features/finance/period";
 import { summarize } from "@/features/finance/summary";
 
 const iso = ([a, b]: [Date, Date]) => [a.toISOString(), b.toISOString()];
 
-describe("períodos do financeiro no fuso de SP", () => {
-  it("semana vai de segunda a domingo (domingo 08/11/2026 fica na semana do dia 2)", () => {
-    const w = periodRange("semana", "2026-11-08");
-    expect(iso(w.range)).toEqual(["2026-11-02T03:00:00.000Z", "2026-11-09T03:00:00.000Z"]);
-    expect(w.label).toBe("2 de nov a 8 de nov");
+describe("mês do financeiro no fuso de SP", () => {
+  it("vai do dia 1 ao dia 1 do mês seguinte, atravessando a virada do ano", () => {
+    const m = monthRange("2026-12");
+    expect(iso(m.range)).toEqual(["2026-12-01T03:00:00.000Z", "2027-01-01T03:00:00.000Z"]);
+    expect(m.dates).toEqual(["2026-12-01", "2027-01-01"]);
+    expect(m.label).toBe("Dezembro de 2026");
   });
-  it("mês atravessa a virada do ano", () => {
-    expect(iso(periodRange("mes", "2026-12-15").range)).toEqual([
-      "2026-12-01T03:00:00.000Z",
-      "2027-01-01T03:00:00.000Z",
-    ]);
+  it("navega entre meses", () => {
+    expect(shiftMonth("2026-01", -1)).toBe("2025-12");
+    expect(shiftMonth("2026-11", 1)).toBe("2026-12");
   });
-  it("semestre é janeiro–junho ou julho–dezembro", () => {
-    expect(iso(periodRange("semestre", "2026-03-10").range)).toEqual([
-      "2026-01-01T03:00:00.000Z",
-      "2026-07-01T03:00:00.000Z",
+  it("só aceita YYYY-MM", () => {
+    expect(isMonth("2026-11")).toBe(true);
+    expect(isMonth("2026-13")).toBe(false);
+    expect(isMonth("mes")).toBe(false);
+    expect(isMonth(undefined)).toBe(false);
+  });
+});
+
+describe("gastos", () => {
+  it("valor em reais vira centavos e precisa ser maior que zero", () => {
+    const ok = expenseInput.safeParse({ spentOn: "2026-11-08", amount: "1.234,50", category: "aluguel" });
+    expect(ok.success && ok.data.amount).toBe(123450);
+    expect(expenseInput.safeParse({ spentOn: "2026-11-08", amount: "0,00", category: "aluguel" }).success).toBe(false);
+    expect(expenseInput.safeParse({ spentOn: "2026-11-08", amount: "10", category: "luxo" }).success).toBe(false);
+  });
+  it("pizza por categoria soma e ordena", () => {
+    const s = expenseSlices([
+      { category: "produtos", amountCents: 1000 },
+      { category: "aluguel", amountCents: 5000 },
+      { category: "produtos", amountCents: 2000 },
     ]);
-    const s2 = periodRange("semestre", "2026-11-08");
-    expect(iso(s2.range)).toEqual(["2026-07-01T03:00:00.000Z", "2027-01-01T03:00:00.000Z"]);
-    expect(s2.label).toBe("2º semestre de 2026");
+    expect(s).toEqual([
+      { name: "Aluguel", cents: 5000 },
+      { name: "Produtos", cents: 3000 },
+    ]);
   });
 });
 

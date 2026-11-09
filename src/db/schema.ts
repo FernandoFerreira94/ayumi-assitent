@@ -10,6 +10,7 @@ import {
   unique,
   uuid,
   boolean,
+  date,
 } from "drizzle-orm/pg-core";
 
 export const tenants = pgTable("tenants", {
@@ -176,4 +177,22 @@ export const messages = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [unique().on(t.tenantId, t.externalId), index("messages_client_created").on(t.clientId, t.createdAt)],
+);
+
+export const expenses = pgTable(
+  "expenses",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    /** Dia do gasto (YYYY-MM-DD, calendário do estúdio) */
+    spentOn: date("spent_on", { mode: "string" }).notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    /** Um dos EXPENSE_CATEGORIES de features/finance/expenses */
+    category: text("category").notNull(),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("expenses_tenant_spent").on(t.tenantId, t.spentOn)],
 );
