@@ -9,6 +9,7 @@ import { getHours } from "@/features/hours/core";
 import { HoursForm } from "@/features/hours/HoursForm";
 import { getReminderSettings } from "@/features/reminders/core";
 import { ReminderForm } from "@/features/reminders/ReminderForm";
+import { AiRepliesForm } from "@/features/salon/AiRepliesForm";
 import { ReminderMessageForm } from "@/features/salon/ReminderMessageForm";
 import { PushToggle } from "@/features/push/PushToggle";
 import { WhatsAppCard } from "@/features/whatsapp/WhatsAppCard";
@@ -33,7 +34,7 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
     whatsappState(tenantId),
     isGoogleConnected(tenantId),
     getDb()
-      .select({ i: tenants.whatsappInstance, name: tenants.name, template: tenants.reminderTemplate })
+      .select({ i: tenants.whatsappInstance, name: tenants.name, template: tenants.reminderTemplate, aiEnabled: tenants.aiEnabled, aiRules: tenants.aiRules })
       .from(tenants)
       .where(eq(tenants.id, tenantId)),
   ]);
@@ -61,6 +62,9 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
         </section>
         <section aria-label="Lembrete">
           <ReminderForm settings={reminder} />
+        </section>
+        <section aria-label="Respostas com IA">
+          <AiRepliesForm enabled={salon?.aiEnabled ?? false} rules={salon?.aiRules ?? ""} />
         </section>
       </Group>
       <Group title="Agenda">

@@ -52,3 +52,10 @@ export type SalonInput = z.infer<typeof salonInput>;
 export const reminderTemplateInput = z.object({
   reminderTemplate: z.string().trim().max(600, "Até 600 caracteres"),
 });
+
+/** Resposta automática por IA: liga/desliga e regras da profissional (texto livre). */
+export const AI_RULES_MAX = 1000;
+export const aiSettingsInput = z.object({
+  aiEnabled: z.boolean(),
+  aiRules: z.string().trim().max(AI_RULES_MAX, `Até ${AI_RULES_MAX} caracteres`),
+});

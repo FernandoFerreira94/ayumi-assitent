@@ -77,7 +77,8 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     expect(sent).toHaveLength(1);
   });
 
-  it("depois de respondido, outra mensagem só entra na conversa (e fica não lida)", async () => {
+  it("depois de 2h do fechamento, outra mensagem só entra na conversa (e fica não lida)", async () => {
+    await admin`update appointments set reply_at = now() - interval '3 hours' where id = ${A}`;
     expect(await handleInbound(msg("m2", "2"), deps)).toEqual({ handled: true, intent: null, appointmentId: null });
     expect((await admin`select status from appointments where id = ${A}`)[0].status).toBe("confirmed");
     const unread = await admin`select count(*)::int as n from messages where direction = 'in' and read_at is null`;
@@ -125,5 +126,92 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
       intent: null,
     });
     expect(sent).toHaveLength(0);
+  });
+
+  describe("com a IA ligada (modelo simulado)", () => {
+    const handoff = "Vou passar para a profissional e ela continua a conversa com você 💜";
+    let verdict: { intent: string; confidence: number } | null;
+    const ai = {
+      ...deps,
+      now: new Date(),
+      classify: async () => verdict as never,
+    };
+    const fresh = async () => {
+      await admin`delete from messages where kind in ('auto_reply','phone')`;
+      // Horário sempre no futuro, já que aqui o "agora" é o relógio real
+      await admin`update appointments set reply_at = null, ai_handoff_at = null, status = 'pending_confirmation',
+        starts_at = now() + interval '1 day', ends_at = now() + interval '1 day 1 hour' where id = ${A}`;
+      sent.length = 0;
+    };
+    const handoffAt = async () => (await admin`select ai_handoff_at from appointments where id = ${A}`)[0].ai_handoff_at;
+    let n = 0;
+    const m = (text: string, over: object = {}) => msg(`ai${++n}`, text, over);
+
+    it("desligada, a mensagem que as regras não entendem não recebe resposta", async () => {
+      await fresh();
+      verdict = { intent: "confirm", confidence: 1 };
+      await handleInbound(m("pode contar comigo, até amanhã"), ai);
+      expect(sent).toHaveLength(0);
+      expect((await apptRow()).status).toBe("pending_confirmation");
+    });
+
+    it("com certeza alta confirma sozinha e agradece", async () => {
+      await admin`update tenants set ai_enabled = true where id = ${T}`;
+      await fresh();
+      verdict = { intent: "confirm", confidence: 0.95 };
+      expect(await handleInbound(m("pode contar comigo, até amanhã"), ai)).toMatchObject({ intent: "confirm" });
+      expect((await apptRow()).status).toBe("confirmed");
+      expect(sent[0]).toContain("Seu horário está confirmado");
+    });
+
+    it("correção até 2h depois aplica a nova intenção (cancelar vira 'quer remarcar')", async () => {
+      sent.length = 0;
+      expect(await handleInbound(m("ops, errei, preciso remarcar"), ai)).toMatchObject({ intent: "reschedule" });
+      expect((await apptRow()).status).toBe("reschedule_requested");
+    });
+
+    it("baixa confiança ou outro assunto: avisa que a profissional continua, uma vez por agendamento", async () => {
+      await fresh();
+      verdict = { intent: "other", confidence: 0.99 };
+      await handleInbound(m("vocês trabalham no sábado? e quanto custa o gel?"), ai);
+      expect(sent).toEqual([`+5511987655555|${handoff}`]);
+      expect(await handoffAt()).not.toBeNull();
+      expect((await apptRow()).status).toBe("pending_confirmation");
+      await handleInbound(m("e aí?"), ai);
+      expect(sent).toHaveLength(1);
+    });
+
+    it("sem resposta do modelo (erro ou sem chave) também passa para a profissional", async () => {
+      await fresh();
+      verdict = null;
+      await handleInbound(m("vou me atrasar uns minutinhos"), ai);
+      expect(sent).toEqual([`+5511987655555|${handoff}`]);
+    });
+
+    it("áudio ou foto passa direto, sem perguntar ao modelo", async () => {
+      await fresh();
+      verdict = { intent: "confirm", confidence: 1 };
+      await handleInbound(m("[áudio]", { media: true }), ai);
+      expect(sent[0]).toContain("Recebi! Vou passar para a profissional");
+      expect((await apptRow()).status).toBe("pending_confirmation");
+    });
+
+    it("fica quieta se a dona escreveu pelo celular nas últimas 12h", async () => {
+      await fresh();
+      await handleInbound(m("Oi Bia, tudo bem?", { fromMe: true }), ai);
+      verdict = { intent: "confirm", confidence: 1 };
+      await handleInbound(m("pode contar comigo, até amanhã"), ai);
+      expect(sent).toHaveLength(0);
+      expect((await apptRow()).status).toBe("pending_confirmation");
+    });
+
+    it("no máximo 3 respostas automáticas por cliente em 24h", async () => {
+      await fresh();
+      for (let i = 0; i < 3; i++)
+        await admin`insert into messages (tenant_id, client_id, direction, kind, body) values (${T}, ${C}, 'out', 'auto_reply', 'x')`;
+      verdict = { intent: "other", confidence: 1 };
+      await handleInbound(m("vocês trabalham no sábado?"), ai);
+      expect(sent).toHaveLength(0);
+    });
   });
 });

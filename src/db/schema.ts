@@ -40,6 +40,10 @@ export const tenants = pgTable("tenants", {
   secondReminderHours: integer("second_reminder_hours").default(3),
   /** Se a mensagem de agendamento confirmado inclui o valor do serviço */
   messageIncludePrice: boolean("message_include_price").notNull().default(false),
+  /** Respostas automáticas por IA às mensagens da cliente (desligado por padrão) */
+  aiEnabled: boolean("ai_enabled").notNull().default(false),
+  /** Regras da profissional para a IA (até 1000 caracteres) */
+  aiRules: text("ai_rules"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -120,6 +124,8 @@ export const appointments = pgTable(
     status: appointmentStatus("status").notNull().default("pending_confirmation"),
     googleEventId: text("google_event_id"),
     reminderSentAt: timestamp("reminder_sent_at", { withTimezone: true }),
+    /** Quando a IA passou a conversa para a profissional (só uma vez por agendamento) */
+    aiHandoffAt: timestamp("ai_handoff_at", { withTimezone: true }),
     /** Quando a cliente respondeu ao lembrete; só a primeira resposta muda o status */
     replyAt: timestamp("reply_at", { withTimezone: true }),
     /** Quando perguntamos "cancelar ou remarcar?"; enquanto vale, 1/2 respondem a essa pergunta */

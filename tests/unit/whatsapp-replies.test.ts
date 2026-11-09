@@ -19,6 +19,59 @@ describe("resposta ao lembrete", () => {
     expect(parseIntent("posso chegar 2 minutos antes?")).not.toBe("cancel");
     expect(parseIntent("chego 10 min atrasada")).toBeNull();
   });
+  it("dúvida, ressalva ou pergunta nunca confirma", () => {
+    for (const t of [
+      "não sei se vou",
+      "ok, mas dá pra ser às 15h?",
+      "vou atrasar uns 10 min",
+      "ok mas...",
+      "vou?",
+      "ok?",
+      "se der eu vou",
+      "talvez",
+      "acho que vou",
+    ])
+      expect(parseIntent(t), t).toBeNull();
+  });
+  it("confirmações claras seguem valendo", () => {
+    for (const t of ["1", "sim", "ok", "pode confirmar", "confirmado", "👍", "✅", "estarei lá", "Estarei aí!"])
+      expect(parseIntent(t), t).toBe("confirm");
+  });
+  it("negação nunca vira confirmação nem pedido", () => {
+    for (const t of [
+      "não confirmo",
+      "não precisa confirmar",
+      "não posso confirmar",
+      "não esqueci",
+      "vou ver e te falo",
+      "ainda não sei",
+      "te aviso depois",
+      "sim, mas vou atrasar",
+    ])
+      expect(parseIntent(t), t).toBeNull();
+    // Negou a ação de cancelar/remarcar: a dona lê, o sistema não mexe no horário
+    for (const t of ["não cancele", "não quero cancelar", "não vou cancelar", "não quero remarcar", "não precisa cancelar, vou sim"])
+      expect(parseIntent(t), t).toBeNull();
+  });
+  it('"não vou faltar" é confirmação, não cancelamento', () => {
+    for (const t of ["não vou faltar", "não vou deixar de ir", "nao vou esquecer"])
+      expect(parseIntent(t), t).toBe("confirm");
+  });
+  it("pedido misto fica para a dona decidir", () => {
+    for (const t of ["sim e cancela o outro", "cancela o de sexta, esse eu vou", "sim não vou cancelar"])
+      expect(parseIntent(t), t).toBeNull();
+    expect(parseIntent("vou ter que cancelar")).toBe("cancel");
+  });
+  it("entende variações comuns de sim, número por extenso e emoji com tom de pele", () => {
+    for (const t of ["okk", "simm", "ta bom", "tá ótimo", "aham", "uhum", "show", "com certeza", "pode deixar", "yes", "um", "👍🏽", "💜", "1️⃣"])
+      expect(parseIntent(t), t).toBe("confirm");
+    expect(parseIntent("dois")).toBe("cancel");
+    expect(parseIntent("três")).toBe("reschedule");
+  });
+  it("perguntas e assuntos soltos não mexem no agendamento", () => {
+    for (const t of ["quanto custa?", "onde fica?", "posso ir às 16h?", "tô doente", "bom dia", "obrigada", "kkk", "?"])
+      expect(parseIntent(t), t).toBeNull();
+  });
   it("conversa que não é resposta fica sem intenção", () => {
     expect(parseIntent("Oi! Você faz unha de fibra também?")).toBeNull();
     expect(
@@ -71,10 +124,15 @@ describe("webhook da Evolution", () => {
         ?.phoneDigits,
     ).toBe("5511987654321");
   });
-  it("ignora grupo, mídia sem texto e outros eventos", () => {
+  it("ignora grupo e outros eventos", () => {
     expect(parseUpsert(body({ remoteJid: "1203630@g.us", id: "A" }))).toBeNull();
-    expect(parseUpsert(body({ remoteJid: "5511987654321@s.whatsapp.net", id: "A" }, { imageMessage: {} }))).toBeNull();
     expect(parseUpsert({ event: "connection.update", instance: "x" })).toBeNull();
+  });
+  it("áudio, foto e figurinha sem legenda chegam marcados como mídia; os da própria dona são ignorados", () => {
+    const jid = { remoteJid: "5511987654321@s.whatsapp.net", id: "A" };
+    expect(parseUpsert(body(jid, { imageMessage: {} }))).toMatchObject({ media: true, text: "[foto]" });
+    expect(parseUpsert(body(jid, { audioMessage: {} }))).toMatchObject({ media: true, text: "[áudio]" });
+    expect(parseUpsert(body({ ...jid, fromMe: true }, { audioMessage: {} }))).toBeNull();
   });
   it("aceita texto estendido (resposta citando o lembrete)", () => {
     expect(
