@@ -562,6 +562,7 @@ export function AgendaDay({
                   serviceName={detailAppt.serviceName}
                   price={detailAppt.price}
                   status={detailAppt.status}
+                  onSettled={() => setDetailId(null)}
                 />
               ) : detailBlock?.external ? (
                 <li className="glass rounded-2xl px-4 py-3">

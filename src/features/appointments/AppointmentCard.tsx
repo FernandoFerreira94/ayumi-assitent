@@ -25,6 +25,11 @@ type Props = {
   status: Status;
   /** Já está dentro de uma folha (a da linha do dia): a conversa abre como folha aninhada. */
   inSheet?: boolean;
+  /**
+   * Chamado quando Cancelar, Faltou ou Concluir dá certo. A folha da agenda fecha aqui: com ela aberta,
+   * o fundo do vaul fica por cima do toast e o Desfazer não recebe o toque.
+   */
+  onSettled?: () => void;
 };
 
 /** Mudanças que mostram Desfazer em vez do aviso simples. */
@@ -43,7 +48,7 @@ const LABEL: Record<Status, string> = {
   reschedule_requested: "Quer remarcar",
 };
 
-export function AppointmentCard({ id, time, date, start: startHHMM, clientId, clientName, clientPhone, serviceId, serviceName, price, status, inSheet = false }: Props) {
+export function AppointmentCard({ id, time, date, start: startHHMM, clientId, clientName, clientPhone, serviceId, serviceName, price, status, inSheet = false, onSettled }: Props) {
   const [pending, start] = useTransition();
   const [busy, setBusy] = useState<Status | null>(null);
 
@@ -59,6 +64,7 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
       warnSync(res.data.sync);
       // Cancelar, Faltou e Concluir valem na hora e trazem Desfazer (6 s), sem pedir segundo toque
       if (undoTo && UNDO_TEXT[next]) {
+        onSettled?.();
         notify.undoable(UNDO_TEXT[next], () => change(undoTo));
       } else {
         notify.success(LABEL[next]);
