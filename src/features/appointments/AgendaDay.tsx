@@ -58,7 +58,7 @@ export type AgendaAppointment = Span & {
   /** Uma das 5 cores, pelo serviço. */
   tone: number;
 };
-export type AgendaBlock = Span & { kind: "block"; id: string; reason: string | null };
+export type AgendaBlock = Span & { kind: "block"; id: string; reason: string | null; external?: boolean };
 
 type Gesture = {
   id: string;
@@ -402,10 +402,10 @@ export function AgendaDay({
             <button
               key={b.id}
               type="button"
-              className={`ag-ev pause ${b.end - b.start < 40 ? "short" : ""}`}
+              className={`ag-ev pause ${b.external ? "ext" : ""} ${b.end - b.start < 40 ? "short" : ""}`}
               style={place(b, b.id)}
               onClick={() => setDetailId(b.id)}
-              aria-label={`Bloqueado${b.reason ? ` · ${b.reason}` : ""}, ${range(b)}`}
+              aria-label={`${b.external ? "Google Agenda" : "Bloqueado"}${b.reason ? ` · ${b.reason}` : ""}, ${range(b)}`}
             >
               <b>{b.reason ?? "Bloqueado"}</b>
               <span className="tm">{range(b)}</span>
@@ -506,7 +506,11 @@ export function AgendaDay({
           <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
           <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
             <Drawer.Title className="pb-1 text-xl font-bold">
-              {detailAppt ? detailAppt.clientName : "Horário bloqueado"}
+              {detailAppt
+                ? detailAppt.clientName
+                : detailBlock?.external
+                  ? (detailBlock.reason ?? "Evento do Google")
+                  : "Horário bloqueado"}
             </Drawer.Title>
             <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
               {dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1)}
@@ -532,6 +536,13 @@ export function AgendaDay({
                   price={detailAppt.price}
                   status={detailAppt.status}
                 />
+              ) : detailBlock?.external ? (
+                <li className="glass rounded-2xl px-4 py-3">
+                  <p className="font-bold">Evento do Google Agenda</p>
+                  <p className="text-sm font-semibold text-muted">
+                    Somente leitura. Para mudar ou apagar, use o Google Agenda.
+                  </p>
+                </li>
               ) : detailBlock ? (
                 <BlockCard
                   id={detailBlock.id}

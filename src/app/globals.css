@@ -717,6 +717,10 @@ button {
   background: repeating-linear-gradient(-45deg, #eeeaf7 0 6px, #f7f5fc 6px 12px);
   box-shadow: inset 3px 0 0 #c9c2dd;
 }
+.ag-ev.pause.ext {
+  background: repeating-linear-gradient(-45deg, #e8f0fb 0 6px, #f3f7fd 6px 12px);
+  box-shadow: inset 3px 0 0 #8fb3e6;
+}
 .ag-ev:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;

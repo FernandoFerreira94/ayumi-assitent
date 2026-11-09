@@ -29,7 +29,11 @@ export async function insertBlock(tx: Tx, tenantId: string, input: BlockInput): 
 }
 
 export async function removeBlock(tx: Tx, id: string): Promise<ActionResult> {
-  const rows = await tx.delete(blocks).where(eq(blocks.id, id)).returning({ id: blocks.id });
+  // evento importado do Google é somente leitura: some ao apagar no Google
+  const rows = await tx
+    .delete(blocks)
+    .where(and(eq(blocks.id, id), eq(blocks.source, "app")))
+    .returning({ id: blocks.id });
   return rows.length ? ok() : fail("NOT_ALLOWED");
 }
 

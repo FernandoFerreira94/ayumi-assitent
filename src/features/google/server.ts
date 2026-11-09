@@ -1,10 +1,23 @@
 import "server-only";
 import { sql } from "drizzle-orm";
 import { getDb, withTenant } from "@/db/client";
-import { googleCalendar, GoogleApiError, GoogleAuthError, refreshAccessToken, type CalendarPort } from "./calendar";
+import {
+  googleCalendar,
+  googleCalendarReader,
+  GoogleApiError,
+  GoogleAuthError,
+  refreshAccessToken,
+  type CalendarPort,
+} from "./calendar";
+import { importGoogleEvents } from "./import";
 import { syncAppointment, type SyncResult } from "./sync";
 
-type AccountRow = { id: string; accessToken: string | null; refreshToken: string | null; expiresAt: Date | string | null };
+type AccountRow = {
+  id: string;
+  accessToken: string | null;
+  refreshToken: string | null;
+  expiresAt: Date | string | null;
+};
 
 /** Conta Google do dono do estúdio (a agenda é dele). */
 async function ownerGoogleAccount(tenantId: string): Promise<AccountRow | null> {
@@ -58,4 +71,32 @@ export async function syncAppointmentSafe(tenantId: string, appointmentId: strin
 export async function isGoogleConnected(tenantId: string): Promise<boolean> {
   const acc = await ownerGoogleAccount(tenantId);
   return !!acc && !!(acc.accessToken || acc.refreshToken);
+}
+
+/** Janela importada: um pouco do passado (histórico do mês) e ~6 meses à frente. */
+const PAST_DAYS = 14;
+const FUTURE_DAYS = 180;
+/** Não bate no Google a cada tela: no máximo uma vez por intervalo, por estúdio. */
+const MIN_INTERVAL_MS = 2 * 60_000;
+const lastImport = new Map<string, number>();
+
+/**
+ * Traz os eventos que já existem no Google Agenda para a agenda do app (somente leitura).
+ * Nunca lança: sem Google ou com falha, a agenda segue só com o que há no app.
+ */
+export async function importExternalEvents(tenantId: string, force = false): Promise<void> {
+  const last = lastImport.get(tenantId) ?? 0;
+  if (!force && Date.now() - last < MIN_INTERVAL_MS) return;
+  lastImport.set(tenantId, Date.now());
+  try {
+    const token = await googleAccessToken(tenantId);
+    if (!token) return;
+    const day = 86_400_000;
+    const from = new Date(Date.now() - PAST_DAYS * day);
+    const to = new Date(Date.now() + FUTURE_DAYS * day);
+    await withTenant(tenantId, (tx) => importGoogleEvents(tx, tenantId, googleCalendarReader(token), from, to));
+  } catch (e) {
+    lastImport.delete(tenantId); // tenta de novo na próxima tela
+    console.error("google_import_failed", { error: e instanceof Error ? e.message : String(e) });
+  }
 }

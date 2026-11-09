@@ -6,6 +6,7 @@ import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
 import { listDay } from "@/features/appointments/core";
 import { listBlocks } from "@/features/blocks/core";
+import { importExternalEvents } from "@/features/google/server";
 import { getHours } from "@/features/hours/core";
 import { CopyButton } from "@/features/hours/CopyButton";
 import { freeSlots, weekdayOf } from "@/features/hours/slots";
@@ -25,6 +26,7 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
   const today = todayStr();
   const now = new Date();
 
+  await importExternalEvents(tenantId);
   const { services, week, busy } = await withTenant(tenantId, async (tx) => {
     const range: [Date, Date] = [dayRange(today)[0], dayRange(addDays(today, 6))[1]];
     const [appts, blks] = await Promise.all([listDay(tx, range), listBlocks(tx, range)]);
