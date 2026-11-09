@@ -25,6 +25,8 @@ type Props = {
   status: Status;
   /** Já está dentro de uma folha (a da linha do dia): a conversa abre como folha aninhada. */
   inSheet?: boolean;
+  /** Já passou (Pendências → Para fechar): a ação principal é Concluir, mesmo sem confirmação. */
+  past?: boolean;
   /**
    * Chamado quando Cancelar, Faltou ou Concluir dá certo. A folha da agenda fecha aqui: com ela aberta,
    * o fundo do vaul fica por cima do toast e o Desfazer não recebe o toque.
@@ -48,9 +50,12 @@ const LABEL: Record<Status, string> = {
   reschedule_requested: "Quer remarcar",
 };
 
-export function AppointmentCard({ id, time, date, start: startHHMM, clientId, clientName, clientPhone, serviceId, serviceName, price, status, inSheet = false, onSettled }: Props) {
+export function AppointmentCard({ id, time, date, start: startHHMM, clientId, clientName, clientPhone, serviceId, serviceName, price, status, inSheet = false, past = false, onSettled }: Props) {
   const [pending, start] = useTransition();
   const [busy, setBusy] = useState<Status | null>(null);
+  const open = status === "pending_confirmation" || status === "confirmed" || status === "reschedule_requested";
+  // Quem pediu para remarcar já abre com Remarcar à vista
+  const [more, setMore] = useState(status === "reschedule_requested");
 
   function change(next: Status, undoTo?: Status) {
     setBusy(next);
@@ -89,14 +94,15 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
           Ela pediu para remarcar. Combine pela conversa; se ficar neste horário, toque em Confirmar.
         </p>
       ) : null}
-      {status === "pending_confirmation" || status === "confirmed" || status === "reschedule_requested" ? (
-        <div className="flex flex-wrap gap-2">
-          {status !== "confirmed" ? (
+      {open ? (
+        <>
+          {/* Uma ação principal grande; o resto fica em "Mais" para o cartão não virar um muro de botões */}
+          {status !== "confirmed" && !past ? (
             <button
               type="button"
               disabled={pending}
               onClick={() => change("confirmed")}
-              className={`${btn} btn-tint`}
+              className={`${btn} btn-tint w-full`}
             >
               {busy === "confirmed" ? "Confirmando…" : "Confirmar"}
             </button>
@@ -105,44 +111,65 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
               type="button"
               disabled={pending}
               onClick={() => change("done", status)}
-              className={`${btn} btn-tint`}
+              className={`${btn} btn-tint w-full`}
             >
               {busy === "done" ? "Salvando…" : "Concluir"}
             </button>
           )}
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => change("no_show", status)}
-            className={`${btn} btn-glass`}
-          >
-            {busy === "no_show" ? "Salvando…" : "Faltou"}
-          </button>
-          <EditAppointmentSheet
-            id={id}
-            clientName={clientName}
-            serviceId={serviceId}
-            serviceName={serviceName}
-            date={date}
-            start={startHHMM}
-            nested={inSheet}
-            triggerClassName={`${btn} ${status === "reschedule_requested" ? "btn-tint" : "btn-glass"}`}
-          />
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => change("cancelled", status)}
-            className={`${btn} btn-glass`}
-          >
-            {busy === "cancelled" ? "Cancelando…" : "Cancelar"}
-          </button>
-        </div>
-      ) : null}
-      {/* Em qualquer status: dá para falar com a cliente mesmo depois de concluído ou se faltou */}
-      <ChatSheet nested={inSheet} clientId={clientId} clientName={clientName} phone={clientPhone} triggerClassName={`${btn} ${CHAT_BUTTON}`}>
-        <ChatGlyph />
-        Mensagem no WhatsApp
-      </ChatSheet>
+          <div className="flex flex-wrap gap-2">
+            <ChatSheet nested={inSheet} clientId={clientId} clientName={clientName} phone={clientPhone} triggerClassName={`${btn} ${CHAT_BUTTON}`}>
+              <ChatGlyph />
+              Mensagem no WhatsApp
+            </ChatSheet>
+            <button
+              type="button"
+              aria-expanded={more}
+              aria-controls={`mais-${id}`}
+              aria-label="Mais ações"
+              onClick={() => setMore((v) => !v)}
+              className={`${btn} btn-glass`}
+            >
+              {more ? "Menos" : "Mais"}
+            </button>
+          </div>
+          {more ? (
+            <div id={`mais-${id}`} className="flex flex-wrap gap-2">
+              <EditAppointmentSheet
+                id={id}
+                clientName={clientName}
+                serviceId={serviceId}
+                serviceName={serviceName}
+                date={date}
+                start={startHHMM}
+                nested={inSheet}
+                triggerClassName={`${btn} ${status === "reschedule_requested" ? "btn-tint" : "btn-glass"}`}
+              />
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => change("no_show", status)}
+                className={`${btn} btn-glass`}
+              >
+                {busy === "no_show" ? "Salvando…" : "Faltou"}
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => change("cancelled", status)}
+                className={`${btn} btn-glass`}
+              >
+                {busy === "cancelled" ? "Cancelando…" : "Cancelar"}
+              </button>
+            </div>
+          ) : null}
+        </>
+      ) : (
+        /* Concluído, faltou ou cancelado: ainda dá para falar com a cliente */
+        <ChatSheet nested={inSheet} clientId={clientId} clientName={clientName} phone={clientPhone} triggerClassName={`${btn} ${CHAT_BUTTON}`}>
+          <ChatGlyph />
+          Mensagem no WhatsApp
+        </ChatSheet>
+      )}
     </li>
   );
 }

@@ -38,7 +38,7 @@ export function HourlyForecast({ weather }: { weather: Weather }) {
               </span>
               <b className="text-sm tabular-nums">{Math.round(h.temp)}°</b>
               <span
-                className={`text-[11px] font-bold tabular-nums ${rain ? "text-primary-text" : "text-muted/60"}`}
+                className={`text-xs font-bold tabular-nums ${rain ? "text-primary-text" : "text-muted/60"}`}
                 aria-label={`${h.rainChance}% de chance de chuva`}
               >
                 {rain ? `💧${h.rainChance}%` : "–"}

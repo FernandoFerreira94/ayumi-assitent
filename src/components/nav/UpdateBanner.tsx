@@ -7,8 +7,8 @@ const CURRENT = process.env.NEXT_PUBLIC_BUILD_ID ?? "";
 const EVERY = 10 * 60_000;
 
 /**
- * Aviso fixo de "nova versão". Confere ao abrir, ao voltar para o app e a cada 10 min. Fica na tela
- * até a pessoa tocar no botão de baixar à direita: nada é atualizado sozinho.
+ * Aviso fixo de "nova versão". Confere ao abrir, ao voltar para o app e a cada 10 min. Fica embaixo,
+ * acima do botão do menu (os toasts ficam no topo), até a pessoa tocar em "Atualizar": nada muda sozinho.
  */
 export function UpdateBanner() {
   const [available, setAvailable] = useState(false);
@@ -39,7 +39,7 @@ export function UpdateBanner() {
 
   if (!available) return null;
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-[54px] z-[95] flex justify-center px-3.5">
+    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(max(18px,env(safe-area-inset-bottom))+76px)] z-[25] flex justify-center px-3.5">
       <div
         role="status"
         aria-live="polite"
@@ -54,21 +54,9 @@ export function UpdateBanner() {
           }}
           disabled={busy}
           aria-busy={busy}
-          aria-label="Atualizar o app"
-          className="btn-tint grid size-11 shrink-0 place-items-center rounded-full disabled:opacity-60"
+          className="btn-tint h-11 shrink-0 rounded-full px-5 text-sm font-bold disabled:opacity-60"
         >
-          <svg
-            viewBox="0 0 24 24"
-            className={`size-5 ${busy ? "animate-pulse" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M12 4v11M7 11l5 5 5-5M5 20h14" />
-          </svg>
+          {busy ? "Atualizando…" : "Atualizar"}
         </button>
       </div>
     </div>

@@ -153,7 +153,7 @@ export function WeekStrip({
       {calendar ? <h2 className="pt-3 text-center text-[15px] font-bold">{formatCalendarTitle(date)}</h2> : null}
       {/* O resumo do dia leva ao Financeiro (semana, mês, semestre) */}
       <p className="pt-1.5 text-center text-xs font-bold text-muted" aria-live="polite">
-        <Link href="/financeiro" aria-label={`${summary}. Ver financeiro`} className="rounded-full px-2 py-1">
+        <Link href="/financeiro" aria-label={`${summary}. Ver financeiro`} className="glass inline-flex min-h-8 items-center rounded-full px-3 py-1 text-fg">
           {summary} ›
         </Link>
       </p>

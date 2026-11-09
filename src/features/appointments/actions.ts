@@ -148,8 +148,50 @@ export async function updateStatus(id: string, status: string): Promise<ActionRe
     if (!res.ok) return res;
     revalidatePath("/agenda");
     revalidatePath("/calendario");
+    revalidatePath("/pendencias");
     return ok({ sync: await syncAppointmentSafe(tenantId, p.data.id) });
   } catch {
     return fail("UNKNOWN");
   }
+}
+
+const manyInput = z
+  .array(z.object({ id: z.string().uuid(), status: z.enum(STATUSES) }))
+  .min(1)
+  .max(50);
+
+class Rollback {
+  constructor(readonly res: ActionResult<never>) {}
+}
+
+/**
+ * Vários status de uma vez ("Concluir todos" em Pendências e o Desfazer dele). Tudo numa transação:
+ * se um falhar, nenhum muda. O Google é avisado depois, um por um; falha dele não desfaz nada.
+ */
+export async function updateStatuses(
+  items: { id: string; status: string }[],
+): Promise<ActionResult<{ sync: SyncResult }>> {
+  const { tenantId } = await requireTenant();
+  const p = manyInput.safeParse(items);
+  if (!p.success) return fail("VALIDATION");
+  try {
+    await withTenant(tenantId, async (tx) => {
+      for (const it of p.data) {
+        const r = await setStatus(tx, it.id, it.status);
+        if (!r.ok) throw new Rollback(r);
+      }
+    });
+  } catch (e) {
+    return e instanceof Rollback ? e.res : fail("UNKNOWN");
+  }
+  revalidatePath("/agenda");
+  revalidatePath("/calendario");
+  revalidatePath("/pendencias");
+  let sync: SyncResult = "synced";
+  for (const it of p.data) {
+    const s = await syncAppointmentSafe(tenantId, it.id);
+    if (s === "auth" || s === "failed") sync = s;
+    else if (sync === "synced") sync = s;
+  }
+  return ok({ sync });
 }

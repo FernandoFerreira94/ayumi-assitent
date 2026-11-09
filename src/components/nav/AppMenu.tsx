@@ -162,7 +162,7 @@ export function AppMenu({
                     {item.icon}
                     {item.label}
                     {badge ? (
-                      <span className="absolute right-2 top-1.5 rounded-full bg-fail px-1.5 text-[11px] font-bold leading-5 text-white">
+                      <span className="absolute right-2 top-1.5 rounded-full bg-fail px-1.5 text-xs font-bold leading-5 text-white">
                         <span className="sr-only">, </span>
                         {badge > 9 ? "9+" : badge}
                       </span>
@@ -174,7 +174,7 @@ export function AppMenu({
           </ul>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <SignOutButton />
-            <span className="px-2.5 font-mono text-[11px] text-muted">Mimo {version}</span>
+            <span className="px-2.5 font-mono text-xs text-muted">Mimo {version}</span>
           </div>
           <button type="button" onClick={close} className="sr-only focus:not-sr-only">
             Fechar menu
