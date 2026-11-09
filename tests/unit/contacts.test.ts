@@ -105,3 +105,13 @@ describe("contatos: Google People", () => {
     await expect(fetchGoogleContacts("tok", f)).rejects.toBeInstanceOf(GoogleAuthError);
   });
 });
+
+describe("telefone BR", () => {
+  it("aceita +55, 0 inicial e operadora", async () => {
+    const { toE164 } = await import("@/lib/phone");
+    expect(toE164("+55 (12) 99102-4918")).toBe("+5512991024918");
+    expect(toE164("012 99102-4918")).toBe("+5512991024918");
+    expect(toE164("0 15 12 99102-4918")).toBe("+5512991024918");
+    expect(toE164("99102-4918")).toBeNull();
+  });
+});

@@ -19,6 +19,7 @@ export function ImportSheet() {
   const keyboard = useKeyboardInset(open);
   const [list, setList] = useState<Preview | null>(null);
   const [ignored, setIgnored] = useState(0);
+  const [source, setSource] = useState<"google" | "file">("file");
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [pending, start] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -41,10 +42,12 @@ export function ImportSheet() {
   }
 
   function fromGoogle() {
+    setSource("google");
     start(async () => receive(await previewFromGoogle(), fromGoogle));
   }
 
   function fromFile(file: File) {
+    setSource("file");
     const fd = new FormData();
     fd.set("file", file);
     start(async () => receive(await previewFromFile(fd), () => fromFile(file)));
@@ -126,7 +129,16 @@ export function ImportSheet() {
             </div>
           ) : list.length === 0 ? (
             <div className="grid gap-3">
-              <p className="font-semibold">Nenhum contato com nome e telefone válido foi encontrado.</p>
+              <p className="font-semibold">
+                Nenhum contato com nome e telefone válido foi encontrado
+                {ignored > 0 ? ` (${ignored} ignorado(s): sem nome ou telefone com DDD).` : "."}
+              </p>
+              {source === "google" && (
+                <p className="text-sm font-semibold text-muted">
+                  O Google Contatos só traz contatos salvos na conta Google. Se os seus ficam no iCloud do iPhone,
+                  exporte em icloud.com (Contatos → Exportar vCard) e use “De um arquivo”.
+                </p>
+              )}
               <button type="button" className={btn} onClick={reset}>
                 Voltar
               </button>

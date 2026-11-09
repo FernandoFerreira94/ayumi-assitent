@@ -10,6 +10,12 @@ export function maskPhone(value: string): string {
 
 /** Telefone BR em E.164 (+55...). Retorna null se incompleto. */
 export function toE164(value: string): string | null {
-  const d = value.replace(/\D/g, "").replace(/^55(?=\d{10,11}$)/, "");
+  // Aceita +55, 0 inicial e prefixo de operadora (015...), comuns em contatos antigos.
+  let d = value.replace(/\D/g, "");
+  if (d.startsWith("0")) {
+    d = d.replace(/^0+/, "");
+    if (d.length === 12 || d.length === 13) d = d.slice(2);
+  }
+  if (d.startsWith("55") && (d.length === 12 || d.length === 13)) d = d.slice(2);
   return d.length === 10 || d.length === 11 ? `+55${d}` : null;
 }
