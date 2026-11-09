@@ -52,7 +52,7 @@ export function MonthView({
             return (
               <Link
                 key={day}
-                href={day === today ? "/calendario" : `/calendario?d=${day}`}
+                href={`/calendario?d=${day}`}
                 scroll={false}
                 className="cal-cell"
                 data-today={day === today || undefined}

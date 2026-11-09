@@ -22,6 +22,8 @@ export const metadata: Metadata = {
     startupImage: STARTUP_IMAGES.map(({ url, media }) => ({ url, media })),
   },
   formatDetection: { telephone: false },
+  // O Next só emite mobile-web-app-capable; o iOS só aplica o estilo da barra de status com a versão da Apple
+  other: { "apple-mobile-web-app-capable": "yes" },
 };
 
 export const viewport: Viewport = {

@@ -2,30 +2,36 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
-import { addDays, formatCalendarTitle, formatDayTitle, formatMonthYear } from "@/lib/dates";
+import { useLayoutEffect, useRef, useState } from "react";
+import { formatCalendarTitle, formatDayTitle, formatMonthYear } from "@/lib/dates";
 import { MonthPicker } from "./MonthPicker";
 
 const WEEKDAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
-/** Arraste de lado maior que isso troca de semana. */
-const SWIPE_PX = 50;
+/** Tempo parado depois de rolar para considerar que a semana foi escolhida. */
+const SETTLE_MS = 140;
 
 export type WeekDay = { date: string; has: boolean; closed: boolean };
 
-const href = (day: string, today: string, base: string) => (day === today ? base : `${base}?d=${day}`);
+// No Calendário a URL sem ?d= abre o mês, então o dia (inclusive hoje) sempre leva ?d=
+const href = (day: string, today: string, base: string, calendar: boolean) =>
+  day === today && !calendar ? base : `${base}?d=${day}`;
 
-/** Domingo a sábado do dia escolhido. Arrastar para o lado vai para a mesma data da semana vizinha. */
+/**
+ * Semanas (domingo a sábado) em rolagem lateral contínua, com encaixe de uma semana por vez.
+ * Ao parar numa semana, escolhe o mesmo dia da semana nela. Hoje/o dia escolhido já abre visível.
+ */
 export function WeekStrip({
   date,
   today,
-  days,
+  weeks,
   summary,
   base = "/calendario",
   calendar = false,
 }: {
   date: string;
   today: string;
-  days: WeekDay[];
+  /** Janela de semanas ao redor do dia escolhido; a rolagem vai além dela recentralizando. */
+  weeks: WeekDay[][];
   summary: string;
   /** Página que recebe o dia escolhido (?d=): Painel ou Calendário. */
   base?: string;
@@ -40,8 +46,35 @@ export function WeekStrip({
     setPrevDate(date);
     setSel(date);
   }
-  const x0 = useRef<number | null>(null);
-  const swiped = useRef(false);
+  const scroller = useRef<HTMLDivElement>(null);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const weekIdx = (d: string) => weeks.findIndex((w) => w.some((x) => x.date === d));
+
+  // Posiciona na semana do dia escolhido antes de pintar (abertura e recentralização depois de rolar)
+  useLayoutEffect(() => {
+    const el = scroller.current;
+    if (el) {
+      const i = weekIdx(date);
+      if (i >= 0) el.scrollLeft = i * el.clientWidth;
+      el.dataset.ready = "1"; // direto no DOM: o React não gerencia este atributo
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date, weeks]);
+
+  const onScroll = () => {
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      const el = scroller.current;
+      if (!el || !el.clientWidth) return;
+      const page = Math.round(el.scrollLeft / el.clientWidth);
+      const cur = weekIdx(sel);
+      if (page === cur || !weeks[page]) return;
+      const dow = weeks[cur >= 0 ? cur : 0].findIndex((x) => x.date === sel);
+      const next = weeks[page][Math.max(dow, 0)].date;
+      setSel(next);
+      router.push(href(next, today, base, calendar), { scroll: false });
+    }, SETTLE_MS);
+  };
 
   return (
     <div className="mb-3">
@@ -71,7 +104,7 @@ export function WeekStrip({
           <MonthPicker date={date} today={today} base={base} />
         )}
         <Link
-          href={base}
+          href={calendar ? `${base}?d=${today}` : base}
           scroll={false}
           onClick={() => setSel(today)}
           className="btn-glass min-h-9 rounded-full px-4 text-[13px] font-bold leading-9 text-primary-text"
@@ -79,51 +112,35 @@ export function WeekStrip({
           Hoje
         </Link>
       </div>
-      <nav
-        aria-label="Dias da semana"
-        className="wk-days glass"
-        onPointerDown={(e) => {
-          x0.current = e.clientX;
-          swiped.current = false;
-        }}
-        onPointerUp={(e) => {
-          if (x0.current === null) return;
-          const dx = e.clientX - x0.current;
-          x0.current = null;
-          if (Math.abs(dx) < SWIPE_PX) return;
-          swiped.current = true;
-          const next = addDays(sel, dx < 0 ? 7 : -7);
-          setSel(next);
-          router.push(href(next, today, base), { scroll: false });
-        }}
-        // Depois de arrastar, o clique que o navegador solta no fim não abre o dia
-        onClickCapture={(e) => {
-          if (swiped.current) e.preventDefault();
-          swiped.current = false;
-        }}
-      >
-        {days.map((d) => {
-          const isToday = d.date === today;
-          return (
-            <Link
-              key={d.date}
-              href={href(d.date, today, base)}
-              scroll={false}
-              draggable={false}
-              onClick={() => setSel(d.date)}
-              className="wk-d"
-              data-today={isToday || undefined}
-              data-has={d.has || undefined}
-              data-closed={d.closed || undefined}
-              aria-current={d.date === sel ? "date" : undefined}
-              aria-label={`${formatDayTitle(d.date)}${isToday ? " (hoje)" : ""}${d.closed ? ", salão fechado" : ""}`}
-            >
-              <small>{WEEKDAYS[new Date(`${d.date}T12:00:00`).getDay()]}</small>
-              <b>{Number(d.date.slice(8))}</b>
-              <i aria-hidden="true" />
-            </Link>
-          );
-        })}
+      <nav aria-label="Dias da semana" className="wk-days glass">
+        <div ref={scroller} className="wk-scroll" onScroll={onScroll}>
+          {weeks.map((week) => (
+            <div key={week[0].date} className="wk-week">
+              {week.map((d) => {
+                const isToday = d.date === today;
+                return (
+                  <Link
+                    key={d.date}
+                    href={href(d.date, today, base, calendar)}
+                    scroll={false}
+                    draggable={false}
+                    onClick={() => setSel(d.date)}
+                    className="wk-d"
+                    data-today={isToday || undefined}
+                    data-has={d.has || undefined}
+                    data-closed={d.closed || undefined}
+                    aria-current={d.date === sel ? "date" : undefined}
+                    aria-label={`${formatDayTitle(d.date)}${isToday ? " (hoje)" : ""}${d.closed ? ", salão fechado" : ""}`}
+                  >
+                    <small>{WEEKDAYS[new Date(`${d.date}T12:00:00`).getDay()]}</small>
+                    <b>{Number(d.date.slice(8))}</b>
+                    <i aria-hidden="true" />
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </nav>
       {calendar ? <h2 className="pt-3 text-center text-[15px] font-bold">{formatCalendarTitle(date)}</h2> : null}
       {/* O resumo do dia leva ao Financeiro (semana, mês, semestre) */}
