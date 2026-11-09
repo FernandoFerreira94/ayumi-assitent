@@ -177,6 +177,9 @@ export const workingHours = pgTable(
     weekday: smallint("weekday").notNull(),
     opens: text("opens").notNull(),
     closes: text("closes").notNull(),
+    /** Pausa fixa do dia (HH:MM); as duas nulas = sem pausa. */
+    breakStart: text("break_start"),
+    breakEnd: text("break_end"),
   },
   (t) => [primaryKey({ columns: [t.tenantId, t.weekday] })],
 );

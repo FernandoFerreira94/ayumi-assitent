@@ -68,6 +68,10 @@ export function conflictReason(span: Placed, hours: Span | null, others: Occupan
 
 const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
 
+/** Pausa fixa do dia em minutos; null = sem pausa (ou salão fechado). */
+export const breakSpan = (day: Day): Span | null =>
+  day?.breakStart && day.breakEnd ? { start: toMin(day.breakStart), end: toMin(day.breakEnd) } : null;
+
 /** Expediente do dia em minutos; null = salão fechado. */
 export const daySpan = (day: Day): Span | null => (day ? { start: toMin(day.opens), end: toMin(day.closes) } : null);
 

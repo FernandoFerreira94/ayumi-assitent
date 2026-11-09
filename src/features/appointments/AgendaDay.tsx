@@ -115,6 +115,7 @@ export function AgendaDay({
   date,
   win,
   hours,
+  pause = null,
   appointments,
   blocks,
   nowMin,
@@ -127,6 +128,8 @@ export function AgendaDay({
   win: Span;
   /** Expediente; null = salão fechado. */
   hours: Span | null;
+  /** Pausa fixa do expediente (ex.: almoço): faixa sem toque, que o arraste evita. */
+  pause?: Span | null;
   appointments: AgendaAppointment[];
   blocks: AgendaBlock[];
   /** Só no dia de hoje: posição da linha da hora atual. */
@@ -157,6 +160,7 @@ export function AgendaDay({
   const occupants: Occupant[] = [
     ...appts.map((a) => ({ id: a.id, kind: "appointment" as const, label: a.clientName, start: a.start, end: a.end })),
     ...blocks.map((b) => ({ id: b.id, kind: "block" as const, label: b.reason ?? "", start: b.start, end: b.end })),
+    ...(pause ? [{ id: "pausa", kind: "block" as const, label: "Pausa", ...pause }] : []),
   ];
   const lay = layoutColumns([...occupants, ...(temp ? [{ id: "temp", ...temp }] : [])]);
 
@@ -424,6 +428,12 @@ export function AgendaDay({
             </div>
           ))}
           {hours ? null : <div className="ag-closed">Salão fechado</div>}
+          {pause && hours ? (
+            <div className="ag-ev pause fixed-pause" style={place(pause, "pausa")} aria-label={`Pausa, ${range(pause)}`} role="img">
+              <b>Pausa</b>
+              <span className="tm">{range(pause)}</span>
+            </div>
+          ) : null}
 
           {blocks.map((b) => (
             <button

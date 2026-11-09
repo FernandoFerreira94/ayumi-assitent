@@ -22,6 +22,16 @@ describe("horários livres", () => {
     const busy = [{ startsAt: at("10:00"), endsAt: at("11:00") }];
     expect(freeSlots({ date: "2026-11-10", day, durationMin: 60, busy })).toEqual(["09:00", "11:00"]);
   });
+  it("a pausa do dia funciona como horário ocupado", () => {
+    const comPausa = { ...day, breakStart: "10:00", breakEnd: "10:30" };
+    expect(freeSlots({ date: "2026-11-10", day: comPausa, durationMin: 30, busy: [] })).toEqual([
+      "09:00",
+      "09:30",
+      "10:30",
+      "11:00",
+      "11:30",
+    ]);
+  });
   it("estúdio fechado não tem vagas", () => {
     expect(freeSlots({ date: "2026-11-10", day: null, durationMin: 60, busy: [] })).toEqual([]);
   });

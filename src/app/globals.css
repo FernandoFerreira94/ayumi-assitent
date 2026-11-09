@@ -725,6 +725,11 @@ button {
   background: repeating-linear-gradient(-45deg, #eeeaf7 0 6px, #f7f5fc 6px 12px);
   box-shadow: inset 3px 0 0 #c9c2dd;
 }
+/* Pausa do expediente: só mostra a faixa; tocar passa para a grade (abre agendamento no vazio ao lado) */
+.ag-ev.fixed-pause {
+  pointer-events: none;
+  opacity: 0.85;
+}
 .ag-ev.pause.ext {
   background: repeating-linear-gradient(-45deg, #e8f0fb 0 6px, #f3f7fd 6px 12px);
   box-shadow: inset 3px 0 0 #8fb3e6;

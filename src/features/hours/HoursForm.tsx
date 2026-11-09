@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import type { ActionResult } from "@/lib/errors";
@@ -22,6 +22,9 @@ export function HoursForm({ week }: { week: Day[] }) {
     return res;
   }, null);
   const badDay = state && !state.ok && state.code === "VALIDATION" ? Number(state.field) : null;
+  const badBreak = state && !state.ok && state.code === "VALIDATION" && state.field === "break";
+  const saved = week.find((d) => d?.breakStart && d.breakEnd);
+  const [pauseOn, setPauseOn] = useState(Boolean(saved));
 
   return (
     <form action={action} className="glass grid gap-3 rounded-[1.75rem] p-5">
@@ -57,6 +60,50 @@ export function HoursForm({ week }: { week: Day[] }) {
           </div>
         );
       })}
+      <div className="grid gap-2 border-t border-line pt-3">
+        <div className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
+          <label className="flex min-h-11 items-center gap-2 text-sm font-bold">
+            <input
+              type="checkbox"
+              name="break-on"
+              checked={pauseOn}
+              onChange={(e) => setPauseOn(e.target.checked)}
+              className="check-round"
+            />
+            Pausa
+          </label>
+          <select
+            name="break-start"
+            aria-label="Pausa: começa"
+            defaultValue={saved?.breakStart ?? "12:00"}
+            disabled={!pauseOn}
+            className={`${sel} disabled:opacity-50`}
+          >
+            {TIMES.map((t) => (
+              <option key={t}>{t}</option>
+            ))}
+          </select>
+          <select
+            name="break-end"
+            aria-label="Pausa: termina"
+            defaultValue={saved?.breakEnd ?? "13:00"}
+            disabled={!pauseOn}
+            className={`${sel} disabled:opacity-50`}
+          >
+            {TIMES.map((t) => (
+              <option key={t}>{t}</option>
+            ))}
+          </select>
+        </div>
+        <p className="text-xs font-semibold text-muted">
+          Todo dia aberto. Vagas não oferece esse horário e a agenda mostra a faixa.
+        </p>
+        {badBreak ? (
+          <p role="alert" className="text-xs font-semibold text-primary-text">
+            A pausa precisa terminar depois de começar.
+          </p>
+        ) : null}
+      </div>
       <SubmitButton pendingLabel="Salvando…">Salvar expediente</SubmitButton>
     </form>
   );
