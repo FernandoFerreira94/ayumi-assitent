@@ -13,11 +13,11 @@ async function MenuWithData() {
   const { tenantId, userName } = await requireTenant();
   const [{ whatsapp, pendencias }, [tenant]] = await Promise.all([
     shellStatus(tenantId),
-    getDb().select({ name: tenants.name }).from(tenants).where(eq(tenants.id, tenantId)),
+    getDb().select({ name: tenants.name, ownerName: tenants.ownerName }).from(tenants).where(eq(tenants.id, tenantId)),
   ]);
   return (
     <AppMenu
-      userName={userName}
+      userName={tenant?.ownerName || userName}
       studioName={tenant?.name ?? null}
       whatsapp={whatsapp}
       pendencias={countPendencias(pendencias)}

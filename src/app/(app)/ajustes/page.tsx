@@ -9,6 +9,7 @@ import { getHours } from "@/features/hours/core";
 import { HoursForm } from "@/features/hours/HoursForm";
 import { getReminderSettings } from "@/features/reminders/core";
 import { ReminderForm } from "@/features/reminders/ReminderForm";
+import { ReminderMessageForm } from "@/features/salon/ReminderMessageForm";
 import { PushToggle } from "@/features/push/PushToggle";
 import { WhatsAppCard } from "@/features/whatsapp/WhatsAppCard";
 import { InstallGuide } from "@/features/install/InstallGuide";
@@ -32,7 +33,10 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
   const [wa, google, [salon]] = await Promise.all([
     whatsappState(tenantId),
     isGoogleConnected(tenantId),
-    getDb().select({ i: tenants.whatsappInstance }).from(tenants).where(eq(tenants.id, tenantId)),
+    getDb()
+      .select({ i: tenants.whatsappInstance, name: tenants.name, template: tenants.reminderTemplate })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId)),
   ]);
   // WhatsApp conectado antes de existir o webhook: abrir Ajustes já liga as respostas
   const admin = adminFromEnv();
@@ -41,6 +45,9 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
     <PageShell title="Ajustes">
       <section id="whatsapp" aria-label="WhatsApp" className="scroll-mt-6">
         <WhatsAppCard initial={wa} />
+      </section>
+      <section aria-label="Mensagem de confirmação" className="mt-6">
+        <ReminderMessageForm initial={salon?.template ?? null} salonName={salon?.name ?? ""} />
       </section>
       <section id="google" aria-label="Google Agenda" className="mt-6 scroll-mt-6">
         <GoogleCard

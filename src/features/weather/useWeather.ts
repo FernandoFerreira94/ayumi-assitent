@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { Weather } from "./mood";
+import type { HourForecast, Weather } from "./mood";
 
 const CACHE = "mimo:clima";
 const ASKED = "mimo:clima-pedido";
@@ -39,13 +39,23 @@ async function fetchWeather({ lat, lon }: Place): Promise<Weather> {
     longitude: lon.toFixed(2),
     current: "temperature_2m,weather_code,is_day,precipitation",
     daily: "precipitation_probability_max",
+    hourly: "temperature_2m,weather_code,is_day,precipitation_probability",
     forecast_days: "1",
     timezone: "auto",
   });
   const res = await fetch(`https://api.open-meteo.com/v1/forecast?${q}`, { signal: AbortSignal.timeout(6000) });
   if (!res.ok) throw new Error(`Open-Meteo respondeu ${res.status}`);
   const j = await res.json();
+  const h = j.hourly;
+  const hours: HourForecast[] | undefined = h?.time?.map((t: string, i: number) => ({
+    hour: Number(t.slice(11, 13)),
+    temp: h.temperature_2m[i],
+    code: h.weather_code[i],
+    isDay: h.is_day[i] === 1,
+    rainChance: h.precipitation_probability?.[i] ?? 0,
+  }));
   return {
+    hours,
     temp: j.current.temperature_2m,
     code: j.current.weather_code,
     isDay: j.current.is_day === 1,
@@ -60,7 +70,8 @@ async function fetchWeather({ lat, lon }: Place): Promise<Weather> {
  */
 async function savedWeather(place: Place): Promise<Weather> {
   const cached = read<{ at: number; w: Weather }>(CACHE);
-  if (cached && Date.now() - cached.at < TTL) return cached.w;
+  // Cache de versões antigas não tem o hora a hora: busca de novo
+  if (cached && Date.now() - cached.at < TTL && cached.w.hours) return cached.w;
   const w = await fetchWeather(place);
   write(CACHE, { at: Date.now(), w });
   return w;

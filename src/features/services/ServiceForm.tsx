@@ -128,8 +128,8 @@ export function ServiceForm({
         ) : null}
       </label>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className={label}>
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
+        <div className={`${label} min-w-0`}>
           <span id="svc-dur">Duração</span>
           <div
             role="group"
@@ -162,9 +162,9 @@ export function ServiceForm({
             </button>
           </div>
         </div>
-        <label className={label}>
+        <label className={`${label} min-w-0`}>
           Preço
-          <span className="flex min-h-12 items-center rounded-2xl border-[1.5px] border-line bg-surface pl-3.5 text-base font-semibold normal-case tracking-normal text-fg focus-within:border-primary has-aria-invalid:border-fail">
+          <span className="flex min-h-12 min-w-0 items-center rounded-2xl border-[1.5px] border-line bg-surface pl-3.5 text-base font-semibold normal-case tracking-normal text-fg focus-within:border-primary has-aria-invalid:border-fail">
             R$
             <input
               name="price"

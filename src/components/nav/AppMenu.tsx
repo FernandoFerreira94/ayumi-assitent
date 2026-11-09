@@ -185,12 +185,7 @@ export function AppMenu({
       >
         <div className="status-fill" aria-hidden="true" />
         <div className="mx-auto grid max-w-[520px] gap-3 px-4 pb-3 pt-[max(env(safe-area-inset-top),16px)]">
-          <Link
-            href="/perfil"
-            onClick={close}
-            aria-label="Meu perfil"
-            className="flex items-center gap-3 outline-none focus:outline-none"
-          >
+          <Link href="/perfil" onClick={close} aria-label="Meu perfil" className="profile-link flex items-center gap-3">
             <span
               aria-hidden="true"
               className="avatar grid size-13 shrink-0 place-content-center rounded-full text-[17px] font-bold text-white"
@@ -237,7 +232,7 @@ export function AppMenu({
                     href={item.href}
                     onClick={close}
                     aria-current={active ? "page" : undefined}
-                    className="relative flex min-h-16 flex-col items-center justify-center gap-1.5 rounded-2xl border border-line bg-surface px-1 py-3 text-center text-[13px] font-semibold hover:bg-soft aria-[current=page]:bg-soft"
+                    className="relative flex min-h-16 flex-col items-center justify-center gap-1.5 rounded-2xl border border-line bg-surface px-1 py-3 text-center text-[13px] font-semibold shadow-[0_6px_16px_-6px_rgba(40,24,110,0.28)] hover:bg-soft aria-[current=page]:bg-soft"
                   >
                     {item.icon}
                     {item.label}
