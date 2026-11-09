@@ -22,9 +22,30 @@ test("cadastra cliente, avisa duplicado e busca", async ({ page }) => {
   await expect(page.getByRole("alert").filter({ hasText: "Este número já é de outra cliente" })).toBeVisible();
   await page.keyboard.press("Escape");
 
-  await page.getByRole("searchbox", { name: "Buscar cliente" }).fill("zzz");
-  await page.keyboard.press("Enter");
+  // Busca enquanto digita, sem Enter
+  const busca = page.getByRole("searchbox", { name: "Buscar cliente" });
+  await busca.fill("zzz");
   await expect(page.getByText("Ninguém encontrada")).toBeVisible();
+  await busca.fill("mar");
+  await expect(page.getByText("Maria Silva")).toBeVisible();
+  await expect(page).toHaveURL(/\?q=mar$/);
+});
+
+test("tocar no nome abre o cartão da cliente com histórico e ações", async ({ page }) => {
+  await page.goto("/clientes");
+  await page.getByRole("button", { name: "Nova cliente" }).click();
+  await page.getByLabel("Nome").fill("Bia Souza");
+  await page.getByLabel("WhatsApp").fill("11912345678");
+  await page.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByText("Cliente cadastrada")).toBeVisible();
+
+  await page.getByRole("button", { name: /^Bia Souza/ }).click();
+  const cartao = page.getByRole("dialog", { name: "Bia Souza" });
+  await expect(cartao.getByText("Nenhum marcado")).toBeVisible();
+  await expect(cartao.getByText("visitas")).toBeVisible();
+  await expect(cartao.getByRole("button", { name: "Agendar" })).toBeVisible();
+  await cartao.getByRole("button", { name: "Editar" }).click();
+  await expect(page.getByRole("dialog", { name: "Editar cliente" })).toBeVisible();
 });
 
 test("o sino abre um diálogo no meio da tela e marca tudo como lido", async ({ page }) => {

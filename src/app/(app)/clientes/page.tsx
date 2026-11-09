@@ -6,6 +6,7 @@ import { searchClients } from "@/features/clients/core";
 import { ImportSheet } from "@/features/contacts/ImportSheet";
 import { NewClientSheet } from "@/features/clients/NewClientSheet";
 import { ClientRow } from "@/features/clients/ClientRow";
+import { ClientSearch } from "@/features/clients/ClientSearch";
 import { groupByLetter } from "@/lib/groupByLetter";
 import { maskPhone } from "@/lib/phone";
 import { requireTenant } from "@/lib/tenant";
@@ -20,16 +21,7 @@ export default async function ClientesPage({ searchParams }: PageProps<"/cliente
 
   return (
     <PageShell title="Clientes">
-      <form role="search" className="pb-2">
-        <input
-          name="q"
-          defaultValue={q}
-          type="search"
-          aria-label="Buscar cliente"
-          placeholder="Buscar por nome ou telefone"
-          className="min-h-12 w-full rounded-full border px-4 text-base font-semibold"
-        />
-      </form>
+      <ClientSearch initial={q} />
       <div className="grid grid-cols-2 gap-2 pb-3">
         <ImportSheet />
         <NewClientSheet />
