@@ -1725,7 +1725,8 @@ button {
   inset: 0 0 auto 0;
   height: env(safe-area-inset-top, 0px);
   background: var(--primary);
-  z-index: 60;
+  /* Acima de sheets, diálogos e do fundo escurecido (só o splash, 100, passa por cima): a faixa não "apaga" ao abrir um painel */
+  z-index: 90;
   pointer-events: none;
 }
 
