@@ -77,7 +77,8 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     expect(sent).toHaveLength(1);
   });
 
-  it("depois de respondido, outra mensagem só entra na conversa (e fica não lida)", async () => {
+  it("depois de 2h do fechamento, outra mensagem só entra na conversa (e fica não lida)", async () => {
+    await admin`update appointments set reply_at = now() - interval '3 hours' where id = ${A}`;
     expect(await handleInbound(msg("m2", "2"), deps)).toEqual({ handled: true, intent: null, appointmentId: null });
     expect((await admin`select status from appointments where id = ${A}`)[0].status).toBe("confirmed");
     const unread = await admin`select count(*)::int as n from messages where direction = 'in' and read_at is null`;
