@@ -28,15 +28,9 @@ export const TOUR_STEPS: TourStep[] = [
     advance: "next",
   },
   {
-    target: ".fan-toggle",
-    title: "O menu fica aqui",
-    text: "Toque no botão para abrir o menu.",
-    advance: "tap",
-  },
-  {
-    target: ".fan[data-open] .fan-link",
-    title: "Tudo a um toque",
-    text: "Painel, Clientes, Vagas e Ajustes ficam no leque, e o Novo marca um horário de qualquer tela. Calendário, Serviços e Financeiro ficam no menu da sua foto, no canto de cima.",
+    target: ".tabbar",
+    title: "O menu fica embaixo",
+    text: "Painel, Calendário, o + para agendar de qualquer tela e Clientes. Na sua foto, na ponta, ficam Vagas, Serviços, Financeiro, Pendências e Ajustes.",
     advance: "next",
   },
   {

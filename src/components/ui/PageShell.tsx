@@ -1,9 +1,8 @@
 import { BackButton } from "@/components/nav/BackButton";
-import { HeaderMenu } from "@/components/nav/HeaderMenu";
 import { NotificationBell } from "@/components/nav/NotificationBell";
 
 /**
- * Telas do leque (Painel, Clientes, Vagas, Ajustes) e o Calendário são raiz: o avatar à esquerda abre o menu.
+ * Telas com aba (Painel, Calendário, Clientes) não têm nada à esquerda: o menu fica no avatar da barra.
  * `back` marca as telas secundárias (abertas pelo menu ou por um atalho): a seta volta para onde a pessoa estava.
  * O sino fica sempre à direita.
  */
@@ -22,7 +21,7 @@ export function PageShell({
     <main className="mx-auto min-h-dvh max-w-[520px] px-4 pb-36 pt-[max(env(safe-area-inset-top),14px)]">
       <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-1 pb-3 pt-2">
         <div className="flex justify-start">
-          {back ? <BackButton /> : <HeaderMenu />}
+          {back ? <BackButton /> : null}
         </div>
         <div className="flex min-w-0 flex-col text-center leading-tight">
           <h1 className="truncate text-[17px] font-bold">{title}</h1>
