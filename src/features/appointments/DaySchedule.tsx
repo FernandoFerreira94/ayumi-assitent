@@ -24,10 +24,15 @@ export async function DaySchedule({
   tenantId,
   date,
   withStrip,
+  base = "/calendario",
+  calendar = false,
 }: {
   tenantId: string;
   date: string;
   withStrip: boolean;
+  /** Página que recebe o dia escolhido na faixa da semana. */
+  base?: string;
+  calendar?: boolean;
 }) {
   const today = todayStr();
   const week = weekOf(date);
@@ -83,6 +88,8 @@ export async function DaySchedule({
             date={date}
             today={today}
             summary={summary}
+            base={base}
+            calendar={calendar}
             days={week.map((w) => ({ date: w, has: busyDays.has(w), closed: !openHours[weekdayOf(w)] }))}
           />
         </div>
