@@ -69,6 +69,15 @@ export async function DaySchedule({
     price: formatBRL(r.priceCents),
     status: r.status,
     color: r.serviceColor,
+    discount:
+      r.discountCents > 0
+        ? {
+            label: r.discountKind === "pct" ? `${r.discountValue}%` : formatBRL(r.discountCents),
+            from: formatBRL(r.priceCents + r.discountCents),
+            off: formatBRL(r.discountCents),
+          }
+        : null,
+    notes: r.notes,
   }));
   const blocks = dayBlocks.map((b) => ({
     kind: "block" as const,

@@ -58,8 +58,9 @@ export async function createAppointment(_prev: ActionResult<{ id: string }> | nu
   if (!parsed.success) return fail("VALIDATION", String(parsed.error.issues[0]?.path[0] ?? ""));
   const discount = parseDiscount(formData.get("discountKind"), formData.get("discountValue"));
   if (discount === "invalid") return fail("VALIDATION", "discountValue");
+  const notes = String(formData.get("notes") ?? "").trim().slice(0, 300) || null;
   try {
-    const res = await withTenant(tenantId, (tx) => insertAppointment(tx, tenantId, { ...parsed.data, discount }));
+    const res = await withTenant(tenantId, (tx) => insertAppointment(tx, tenantId, { ...parsed.data, discount, notes }));
     if (!res.ok) return res;
     revalidatePath("/agenda");
     revalidatePath("/calendario");

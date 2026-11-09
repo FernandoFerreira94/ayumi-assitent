@@ -23,6 +23,9 @@ type Props = {
   serviceName: string;
   price: string;
   status: Status;
+  /** Desconto dado e observação: ficam à vista para lembrar o motivo do valor. */
+  discount?: { label: string; from: string; off: string } | null;
+  notes?: string | null;
   /** Já está dentro de uma folha (a da linha do dia): a conversa abre como folha aninhada. */
   inSheet?: boolean;
   /** Já passou (Pendências → Para fechar): a ação principal é Concluir, mesmo sem confirmação. */
@@ -50,7 +53,7 @@ const LABEL: Record<Status, string> = {
   reschedule_requested: "Quer remarcar",
 };
 
-export function AppointmentCard({ id, time, date, start: startHHMM, clientId, clientName, clientPhone, serviceId, serviceName, price, status, inSheet = false, past = false, onSettled }: Props) {
+export function AppointmentCard({ id, time, date, start: startHHMM, clientId, clientName, clientPhone, serviceId, serviceName, price, status, discount, notes, inSheet = false, past = false, onSettled }: Props) {
   const [pending, start] = useTransition();
   const [busy, setBusy] = useState<Status | null>(null);
   const open = status === "pending_confirmation" || status === "confirmed" || status === "reschedule_requested";
@@ -89,6 +92,17 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
       <p className="text-sm font-semibold text-muted">
         {serviceName} · {LABEL[status]}
       </p>
+      {discount ? (
+        <p className="rounded-xl bg-ok-bg px-3 py-2 text-sm font-semibold text-ok">
+          Desconto de {discount.label}: <s>{discount.from}</s> − {discount.off} = {price}
+        </p>
+      ) : null}
+      {notes ? (
+        <p className="rounded-xl bg-soft px-3 py-2 text-sm font-semibold">
+          <span className="text-muted">Observação: </span>
+          {notes}
+        </p>
+      ) : null}
       {status === "reschedule_requested" ? (
         <p className="rounded-xl bg-wait-bg px-3 py-2 text-sm font-semibold text-wait">
           Ela pediu para remarcar. Combine pela conversa; se ficar neste horário, toque em Confirmar.

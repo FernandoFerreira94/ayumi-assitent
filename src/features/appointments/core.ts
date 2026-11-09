@@ -30,6 +30,8 @@ export type BookingInput = {
   /** Forma antiga (um serviço só). */
   serviceId?: string;
   discount?: Discount | null;
+  /** Observação livre, ex.: motivo do desconto. */
+  notes?: string | null;
 };
 
 /** Busca os serviços na ordem pedida; null se algum não existe, está pausado ou foi excluído. */
@@ -104,6 +106,7 @@ export async function insertAppointment(
           discountKind: input.discount?.kind ?? null,
           discountValue: input.discount?.value ?? null,
           discountCents,
+          notes: input.notes || null,
           // Fica confirmado quando a cliente responder "1" ao lembrete da véspera
           status: "pending_confirmation",
         })
@@ -229,6 +232,10 @@ export function listDay(tx: Tx, [from, to]: [Date, Date]) {
       serviceId: appointments.serviceId,
       serviceName: serviceLabel,
       serviceColor: services.color,
+      discountKind: appointments.discountKind,
+      discountValue: appointments.discountValue,
+      discountCents: appointments.discountCents,
+      notes: appointments.notes,
       serviceParts,
     })
     .from(appointments)

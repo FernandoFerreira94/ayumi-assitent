@@ -58,6 +58,9 @@ export type AgendaAppointment = Span & {
   status: Status;
   /** Cor que a profissional escolheu para o serviço (lav, rosa, mel, verde, lilas, azul). */
   color: string;
+  /** Desconto dado neste agendamento, já formatado para exibir. */
+  discount: { label: string; from: string; off: string } | null;
+  notes: string | null;
 };
 export type AgendaBlock = Span & { kind: "block"; id: string; reason: string | null; external?: boolean };
 
@@ -580,6 +583,8 @@ export function AgendaDay({
                   serviceName={detailAppt.serviceName}
                   price={detailAppt.price}
                   status={detailAppt.status}
+                  discount={detailAppt.discount}
+                  notes={detailAppt.notes}
                   onSettled={() => setDetailId(null)}
                 />
               ) : detailBlock?.external ? (
