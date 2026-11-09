@@ -9,3 +9,13 @@ export async function fetchServerBuild(signal?: AbortSignal): Promise<string | n
     return null;
   }
 }
+
+/** Limpa o service worker e o cache do app e recarrega para pegar a versão nova. */
+export async function applyUpdate(): Promise<void> {
+  try {
+    const regs = (await navigator.serviceWorker?.getRegistrations()) ?? [];
+    await Promise.all(regs.map((r) => r.unregister()));
+    if ("caches" in window) await Promise.all((await caches.keys()).map((k) => caches.delete(k)));
+  } catch {}
+  window.location.reload();
+}

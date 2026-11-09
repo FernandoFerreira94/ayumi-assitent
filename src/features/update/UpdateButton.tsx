@@ -3,19 +3,9 @@
 import { useState } from "react";
 import { Mascot } from "@/components/brand/Mascot";
 import { notify } from "@/components/feedback/toast";
-import { fetchServerBuild } from "@/lib/update-check";
+import { applyUpdate, fetchServerBuild } from "@/lib/update-check";
 
 const CURRENT = process.env.NEXT_PUBLIC_BUILD_ID ?? "";
-
-/** Limpa o service worker e o cache do app e recarrega para pegar a versão nova. */
-async function applyUpdate() {
-  try {
-    const regs = (await navigator.serviceWorker?.getRegistrations()) ?? [];
-    await Promise.all(regs.map((r) => r.unregister()));
-    if ("caches" in window) await Promise.all((await caches.keys()).map((k) => caches.delete(k)));
-  } catch {}
-  window.location.reload();
-}
 
 /** Atualização manual: só acontece quando a pessoa toca no botão. */
 export function UpdateButton() {
