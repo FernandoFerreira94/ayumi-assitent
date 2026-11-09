@@ -6,7 +6,6 @@ const flag = z.preprocess((v) => v === "on" || v === "true" || v === true, z.boo
 
 export const serviceInput = z.object({
   name: z.string().trim().min(2, "Informe o nome").max(60),
-  categoryId: z.preprocess((v) => (v ? v : null), z.string().uuid().nullable()),
   // de 15 em 15 min, como no seletor
   durationMin: z.coerce.number().int().min(15).max(480).multipleOf(15),
   // aceita "150" ou "150,50"; vazio não vale (0 vale, para cortesia)
@@ -28,5 +27,3 @@ export const serviceInput = z.object({
   showInSlots: flag,
 });
 export type ServiceInput = z.infer<typeof serviceInput>;
-
-export const categoryName = z.string().trim().min(1, "Dê um nome à categoria").max(30);

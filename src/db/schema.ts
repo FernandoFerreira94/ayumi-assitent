@@ -26,6 +26,10 @@ export const tenants = pgTable("tenants", {
   reminderTemplate: text("reminder_template"),
   /** Horas antes do horário em que sai o lembrete (1 a 72) */
   reminderHours: integer("reminder_hours").notNull().default(24),
+  /** Horas antes do horário do segundo aviso (para quem não respondeu); null = só um aviso */
+  secondReminderHours: integer("second_reminder_hours").default(3),
+  /** Se a mensagem de agendamento confirmado inclui o valor do serviço */
+  messageIncludePrice: boolean("message_include_price").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -1,4 +1,3 @@
-import { syncAppointmentSafe } from "@/features/google/server";
 import { messagingForInstance } from "@/features/messaging/evolution";
 import { handleInbound } from "@/features/messaging/inbound";
 import { parseUpsert } from "@/features/messaging/replies";
@@ -15,7 +14,6 @@ export async function POST(req: Request) {
     const r = await handleInbound(msg, {
       portFor: (i) => messagingForInstance(i),
       push: pushFromEnv(),
-      syncAppointment: (t, a) => syncAppointmentSafe(t, a),
     });
     // Sem ids na resposta: só se foi tratada (útil para conferir no log da Evolution)
     return Response.json({ ok: true, handled: r.handled });

@@ -10,7 +10,15 @@ export { reminderText } from "./text";
 
 export const DEFAULT_REMINDER_HOURS = 24;
 
-type Due = { id: string; tenantId: string; clientId: string; startsAt: Date; client: string; phone: string; service: string };
+type Due = {
+  id: string;
+  tenantId: string;
+  clientId: string;
+  startsAt: Date;
+  client: string;
+  phone: string;
+  service: string;
+};
 
 /**
  * Reserva (de forma atômica) os agendamentos que precisam de lembrete agora.
@@ -87,7 +95,15 @@ export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Pro
       // a mensagem já saiu e não pode voltar para a fila (a cliente receberia duas vezes)
       await tx
         .transaction((sp) =>
-          recordMessage(sp, a.tenantId, { clientId: a.clientId, appointmentId: a.id, direction: "out", kind: "reminder", body: text, externalId: id, createdAt: now }),
+          recordMessage(sp, a.tenantId, {
+            clientId: a.clientId,
+            appointmentId: a.id,
+            direction: "out",
+            kind: "reminder",
+            body: text,
+            externalId: id,
+            createdAt: now,
+          }),
         )
         .catch((e) => console.error(JSON.stringify({ level: "warn", msg: "reminder_record_failed", err: String(e) })));
     } catch (e) {
@@ -102,5 +118,22 @@ export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Pro
 export const getReminderHours = async (tx: Tx) =>
   (await tx.select({ hours: tenants.reminderHours }).from(tenants))[0]?.hours ?? DEFAULT_REMINDER_HOURS;
 
-export const saveReminderHours = (tx: Tx, tenantId: string, hours: number) =>
-  tx.update(tenants).set({ reminderHours: hours }).where(eq(tenants.id, tenantId));
+/** Avisos configuráveis em Ajustes: 1º aviso, 2º aviso opcional e valor na mensagem de agendamento. */
+export type ReminderSettings = { hours: number; secondHours: number | null; includePrice: boolean };
+
+export async function getReminderSettings(tx: Tx): Promise<ReminderSettings> {
+  const [row] = await tx
+    .select({ hours: tenants.reminderHours, second: tenants.secondReminderHours, price: tenants.messageIncludePrice })
+    .from(tenants);
+  return {
+    hours: row?.hours ?? DEFAULT_REMINDER_HOURS,
+    secondHours: row?.second ?? null,
+    includePrice: row?.price ?? false,
+  };
+}
+
+export const saveReminderConfig = (tx: Tx, tenantId: string, s: ReminderSettings) =>
+  tx
+    .update(tenants)
+    .set({ reminderHours: s.hours, secondReminderHours: s.secondHours, messageIncludePrice: s.includePrice })
+    .where(eq(tenants.id, tenantId));

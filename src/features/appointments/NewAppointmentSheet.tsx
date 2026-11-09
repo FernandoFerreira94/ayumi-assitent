@@ -132,8 +132,17 @@ export function NewAppointmentSheet({
     steps(["done", "wait", "wait"]);
     await sleep(200);
     steps(["done", "done", "run"]);
-    const wa = await settle(whatsappStatus(), 8000);
-    const reminder = typeof wa === "string" || !wa.v.ok ? "unavailable" : wa.v.data.state === "open" ? "ok" : "off";
+    // Mensagem de agendamento já saiu: o WhatsApp está de pé, não precisa consultar
+    const wa = created.message === "sent" ? null : await settle(whatsappStatus(), 8000);
+    const reminder = !wa
+      ? "ok"
+      : typeof wa === "string" || !wa.v.ok
+        ? "unavailable"
+        : wa.v.data.state === "open"
+          ? created.message === "failed"
+            ? "unavailable"
+            : "ok"
+          : "off";
     steps(["done", "done", reminder === "ok" ? "done" : "warn"]);
     patch((b) => ({
       ...b,

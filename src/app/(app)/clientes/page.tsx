@@ -6,6 +6,7 @@ import { searchClients } from "@/features/clients/core";
 import { ImportSheet } from "@/features/contacts/ImportSheet";
 import { NewClientSheet } from "@/features/clients/NewClientSheet";
 import { ClientRow } from "@/features/clients/ClientRow";
+import { groupByLetter } from "@/lib/groupByLetter";
 import { maskPhone } from "@/lib/phone";
 import { requireTenant } from "@/lib/tenant";
 
@@ -40,19 +41,32 @@ export default async function ClientesPage({ searchParams }: PageProps<"/cliente
           <EmptyState title="Nenhuma cliente ainda" description="Cadastre a primeira cliente para começar a agendar." />
         )
       ) : (
-        <ul className="grid gap-2">
-          {list.map((c) => (
-            <ClientRow
-              key={c.id}
-              client={{
-                id: c.id,
-                name: c.name,
-                email: c.email,
-                phone: maskPhone(c.phoneE164.replace(/^\+55/, "")),
-              }}
-            />
+        // Como os Contatos do iPhone: uma seção por letra, com o rótulo fixo no topo enquanto rola
+        <div className="grid gap-3">
+          {groupByLetter(list.map((c) => ({ label: c.name, c }))).map((g) => (
+            <section key={g.letter} aria-labelledby={`letra-${g.letter === "#" ? "outros" : g.letter}`}>
+              <h2
+                id={`letra-${g.letter === "#" ? "outros" : g.letter}`}
+                className="sticky top-[max(env(safe-area-inset-top),6px)] z-10 -mx-1 mb-1.5 rounded-full bg-[color-mix(in_srgb,var(--bg)_82%,transparent)] px-3 py-1 text-sm font-bold text-primary-text backdrop-blur-md"
+              >
+                {g.letter}
+              </h2>
+              <ul className="grid gap-2">
+                {g.items.map(({ c }) => (
+                  <ClientRow
+                    key={c.id}
+                    client={{
+                      id: c.id,
+                      name: c.name,
+                      email: c.email,
+                      phone: maskPhone(c.phoneE164.replace(/^\+55/, "")),
+                    }}
+                  />
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
       )}
     </PageShell>
   );

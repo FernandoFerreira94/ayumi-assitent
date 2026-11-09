@@ -15,6 +15,8 @@ test("cadastra cliente, avisa duplicado e busca", async ({ page }) => {
   await expect(page.getByText("Cliente cadastrada")).toBeVisible();
   await expect(page.getByText("Maria Silva")).toBeVisible();
   await expect(page.getByText("(11) 98765-4321")).toBeVisible();
+  // Agrupada por letra, como os Contatos do iPhone
+  await expect(page.getByRole("heading", { name: "M", exact: true })).toBeVisible();
 
   await cadastrar("Outra Pessoa", "11987654321");
   await expect(page.getByRole("alert").filter({ hasText: "Este número já é de outra cliente" })).toBeVisible();
@@ -23,4 +25,15 @@ test("cadastra cliente, avisa duplicado e busca", async ({ page }) => {
   await page.getByRole("searchbox", { name: "Buscar cliente" }).fill("zzz");
   await page.keyboard.press("Enter");
   await expect(page.getByText("Ninguém encontrada")).toBeVisible();
+});
+
+test("o sino abre um diálogo no meio da tela e marca tudo como lido", async ({ page }) => {
+  await page.goto("/agenda");
+  await page.getByRole("button", { name: /^Notificações/ }).click();
+  const dialog = page.getByRole("dialog", { name: "Notificações" });
+  await expect(dialog).toBeVisible();
+  // Conta nova sem WhatsApp nem Google: há avisos de integração para limpar
+  await dialog.getByRole("button", { name: "Marcar todas como lidas" }).click();
+  await expect(page.getByText("Tudo marcado como lido")).toBeVisible();
+  await expect(dialog.getByText("Tudo em dia por aqui.")).toBeVisible();
 });

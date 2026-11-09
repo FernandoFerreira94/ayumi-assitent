@@ -13,7 +13,8 @@ const plain = (s: string) =>
 // Ordem importa: "nao vou" antes de "vou"; "remarcar" e "cancelar" antes do "ok" que pode vir junto
 const RESCHEDULE = /\b(reagend\w*|remarc\w*|outro (horario|dia)|mudar (o )?horario|trocar (o )?horario)\b/;
 const CANCEL = /\b(cancel\w*|desmarc\w*|nao (vou|posso|consigo|da)|nao vai dar)\b/;
-const CONFIRM = /\b(ok|okay|sim|confirm\w*|certo|combinado|beleza|blz|pode ser|estarei|vou sim|vou|claro|perfeito|fechado)\b/;
+const CONFIRM =
+  /\b(ok|okay|sim|confirm\w*|certo|combinado|beleza|blz|pode ser|estarei|vou sim|vou|claro|perfeito|fechado)\b/;
 // O número só vale sozinho ("2", "opção 2"): em "posso ir às 2?" ele é hora, não opção
 const OPTION = /^(opcao |numero )?([123])$/;
 const BY_OPTION: Record<string, Intent> = { "1": "confirm", "2": "cancel", "3": "reschedule" };
@@ -37,47 +38,18 @@ export function parseIntent(raw: string): Intent | null {
   return null;
 }
 
-// Depois de "Quer cancelar mesmo?": 1/sim/cancelar = cancela; 2/remarcar = remarca; "manter"/confirmação = fica
-const KEEP = /\b(manter|mantenho|mantem|nao (quero )?cancel\w*|deixa (como )?(esta|ta)|vou sim|confirm\w*)\b/;
-const ASK_BY_OPTION: Record<string, Intent> = { "1": "cancel", "2": "reschedule" };
-
-/**
- * Resposta à pergunta "Quer cancelar mesmo ou prefere remarcar?". Os números aqui têm outro
- * sentido (1 = cancelar, 2 = remarcar). Texto que não casa volta null e a pergunta segue de pé.
- */
-export function parseCancelFollowUp(raw: string): Intent | null {
-  const t = plain(raw.trim());
-  if (!t || t.split(" ").length > 12) return null;
-  const option = OPTION.exec(t);
-  if (option) return ASK_BY_OPTION[option[2]] ?? null;
-  if (RESCHEDULE.test(t)) return "reschedule";
-  if (KEEP.test(t)) return "confirm";
-  if (CANCEL.test(t) || t === "sim" || t === "quero cancelar") return "cancel";
-  return null;
-}
-
-/** Quanto tempo a pergunta de cancelamento espera a resposta; depois disso o horário segue como estava. */
-export const CANCEL_ASK_TTL_MS = 12 * 3600_000;
-
-/** Pergunta que sai quando a cliente pede para cancelar; o horário só é liberado depois da resposta. */
-export const cancelAskText = (clientName: string) =>
-  `${clientName.trim().split(/\s+/)[0]}, quer cancelar mesmo ou prefere remarcar?\n1 - Cancelar\n2 - Remarcar`;
-
-/** Reforço único, ~3 h antes, para quem não respondeu ao lembrete. Nunca cancela sozinho. */
-export const NUDGE_HOURS = 3;
+/** 2º aviso (horas definidas pela dona) para quem não respondeu ao lembrete. Nunca cancela sozinho. */
 export const nudgeText = (clientName: string) =>
   `Ainda não recebi sua confirmação, ${clientName.trim().split(/\s+/)[0]} 😊 Responda 1 para confirmar`;
 
-/** Primeira mensagem livre da cliente (não é 1/2/3): avisa que a dona vai ler e responder. */
-export const freeTextAck = (salonName?: string | null) =>
-  salonName?.trim() ? `Recebi! ${salonName.trim()} vai te responder em breve 💜` : "Recebi! Já já te respondo 💜";
-
-/** Agradecimento curto que sai na hora para a cliente. */
+/**
+ * Única resposta automática à resposta do lembrete. Confirmar agradece; cancelar ou remarcar não muda
+ * nada sozinho: só diz que a profissional vai ver o melhor horário e retornar.
+ */
 export function ackText(intent: Intent, clientName: string): string {
   const first = clientName.trim().split(/\s+/)[0];
   if (intent === "confirm") return `Obrigada, ${first}! Seu horário está confirmado. Até lá! 💜`;
-  if (intent === "cancel") return `Tudo bem, ${first}. Cancelei seu horário. Quando quiser marcar outro, é só chamar. 💜`;
-  return `Certo, ${first}! Já avisei aqui e vou te chamar para combinar um novo horário. 💜`;
+  return `Certo, ${first}! Vou verificar com a profissional o melhor horário para você e já te retorno. 💜`;
 }
 
 /**
@@ -106,7 +78,8 @@ type Upsert = {
   data?: { key?: Key; message?: { conversation?: string; extendedTextMessage?: { text?: string } } };
 };
 
-const jidDigits = (jid?: string) => (jid && /@s\.whatsapp\.net$/.test(jid) ? jid.split("@")[0].replace(/\D/g, "") : null);
+const jidDigits = (jid?: string) =>
+  jid && /@s\.whatsapp\.net$/.test(jid) ? jid.split("@")[0].replace(/\D/g, "") : null;
 
 /**
  * Tira do corpo do webhook só o que importa. Ignora grupos, status, áudio/foto sem legenda e

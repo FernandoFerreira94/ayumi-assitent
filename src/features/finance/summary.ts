@@ -18,19 +18,25 @@ export function topSlices(sorted: Slice[]): Slice[] {
       ];
 }
 
-/** Ganho do período: o recebido vem dos concluídos, o previsto soma o que ainda não faltou. */
+const bySlice = (rows: Row[]) => {
+  const byService = new Map<string, number>();
+  for (const r of rows) byService.set(r.serviceName, (byService.get(r.serviceName) ?? 0) + r.priceCents);
+  return topSlices([...byService].map(([name, cents]) => ({ name, cents })).sort((a, b) => b.cents - a.cents));
+};
+
+/**
+ * Ganho do período: o recebido vem dos concluídos, o previsto soma o que ainda não faltou.
+ * `forecastSlices` divide o previsto por serviço: a pizza usa quando ainda não há nada concluído.
+ */
 export function summarize(rows: Row[]) {
   const done = rows.filter((r) => r.status === "done");
   const received = receivedCents(rows);
-  const byService = new Map<string, number>();
-  for (const r of done) byService.set(r.serviceName, (byService.get(r.serviceName) ?? 0) + r.priceCents);
-  const sorted = [...byService].map(([name, cents]) => ({ name, cents })).sort((a, b) => b.cents - a.cents);
-  const slices = topSlices(sorted);
   return {
     received,
     forecast: forecastCents(rows),
     doneCount: done.length,
     averageCents: done.length ? Math.round(received / done.length) : 0,
-    slices,
+    slices: bySlice(done),
+    forecastSlices: bySlice(rows.filter((r) => r.status !== "no_show" && r.priceCents > 0)),
   };
 }
