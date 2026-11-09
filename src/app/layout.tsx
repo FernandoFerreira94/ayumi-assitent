@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Quicksand, Varela_Round } from "next/font/google";
 import { Splash, splashGate } from "@/components/brand/Splash";
+import { UpdateBanner } from "@/components/nav/UpdateBanner";
 import { AppToaster } from "@/components/feedback/toast";
 import { STARTUP_IMAGES } from "@/lib/startup-images";
-import { UpdateGate } from "@/components/nav/UpdateGate";
 import { ServiceWorkerRegister } from "@/components/nav/ServiceWorkerRegister";
 import "./globals.css";
 
@@ -49,9 +49,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <div className="status-fill" aria-hidden="true" />
         <Splash />
         {children}
+        <UpdateBanner />
         <AppToaster />
         <ServiceWorkerRegister />
-        <UpdateGate />
       </body>
     </html>
   );

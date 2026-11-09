@@ -1,14 +1,3 @@
-/** Bloqueia a atualização enquanto a pessoa está no meio de algo (campo em foco, diálogo aberto ou texto digitado). */
-export function isBusyEditing(doc: Document, typed: boolean): boolean {
-  const el = doc.activeElement;
-  if (el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) {
-    const t = (el as HTMLInputElement).type;
-    if (!["button", "submit", "checkbox", "radio"].includes(t)) return true;
-  }
-  if (doc.querySelector('[role="dialog"], [data-vaul-drawer]')) return true;
-  return typed;
-}
-
 /** Pergunta ao servidor qual a versão atual; null se não deu (offline, erro). */
 export async function fetchServerBuild(signal?: AbortSignal): Promise<string | null> {
   try {
@@ -19,4 +8,14 @@ export async function fetchServerBuild(signal?: AbortSignal): Promise<string | n
   } catch {
     return null;
   }
+}
+
+/** Limpa o service worker e o cache do app e recarrega para pegar a versão nova. */
+export async function applyUpdate(): Promise<void> {
+  try {
+    const regs = (await navigator.serviceWorker?.getRegistrations()) ?? [];
+    await Promise.all(regs.map((r) => r.unregister()));
+    if ("caches" in window) await Promise.all((await caches.keys()).map((k) => caches.delete(k)));
+  } catch {}
+  window.location.reload();
 }
