@@ -8,7 +8,23 @@ import { authClient } from "@/lib/auth-client";
  * Liga a conta Google à conta do app para os agendamentos irem para o Google Agenda.
  * Reconectar refaz o mesmo vínculo e só renova o acesso (o better-auth atualiza os tokens da conta já ligada).
  */
-export function GoogleCard({ connected, failed }: { connected: boolean; failed: boolean }) {
+const ERROR_HINTS: Record<string, string> = {
+  access_denied: "O acesso à agenda foi negado. Toque em Conectar e marque a permissão da agenda.",
+  state_mismatch: "A sessão do navegador mudou no meio do caminho. Toque em Conectar de novo sem sair do app.",
+  please_restart_the_process: "A sessão do navegador mudou no meio do caminho. Toque em Conectar de novo.",
+  social_account_already_linked: "Essa conta Google já está ligada a outro usuário do app.",
+  unable_to_link_account: "Não foi possível ligar essa conta Google. Tente de novo.",
+};
+
+export function GoogleCard({
+  connected,
+  failed,
+  errorCode,
+}: {
+  connected: boolean;
+  failed: boolean;
+  errorCode?: string;
+}) {
   const [pending, setPending] = useState(false);
 
   async function connect() {
@@ -16,7 +32,7 @@ export function GoogleCard({ connected, failed }: { connected: boolean; failed: 
     const { error } = await authClient.linkSocial({
       provider: "google",
       callbackURL: "/ajustes#google",
-      errorCallbackURL: "/ajustes?google=erro#google",
+      errorCallbackURL: "/ajustes?google=erro",
     });
     if (error) {
       setPending(false);
@@ -28,7 +44,12 @@ export function GoogleCard({ connected, failed }: { connected: boolean; failed: 
   const btn = "min-h-11 shrink-0 rounded-full px-4 text-sm font-bold disabled:opacity-60";
   let hint = "Conecte para os agendamentos aparecerem no seu calendário do Google.";
   if (connected) hint = "Conectado. Os agendamentos vão para o seu calendário.";
-  if (failed) hint = "Não deu para conectar. Tente de novo e aceite o acesso à agenda.";
+  if (failed) {
+    const known = errorCode ? ERROR_HINTS[errorCode.toLowerCase()] : undefined;
+    hint =
+      known ??
+      `Não deu para conectar. Tente de novo e aceite o acesso à agenda.${errorCode ? ` (código: ${errorCode})` : ""}`;
+  }
 
   return (
     <div className="flex items-center justify-between gap-3 glass rounded-[1.75rem] px-5 py-4">
