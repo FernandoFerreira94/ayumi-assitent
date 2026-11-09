@@ -21,6 +21,10 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
   const [code, setCode] = useState("");
   const [qr, setQr] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  /** Primeiro toque em Desconectar só pergunta: os lembretes param de sair. */
+  const [confirming, setConfirming] = useState(false);
+  /** O código passou do prazo sem conectar: a tela diz isso, em vez de um erro genérico. */
+  const [expired, setExpired] = useState(false);
 
   // Enquanto mostra o código, acompanha o estado até conectar (ou expirar).
   useEffect(() => {
@@ -37,7 +41,7 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
         router.refresh();
       } else if (tries >= POLL_MAX) {
         setView("disconnected");
-        notify.error("NETWORK");
+        setExpired(true);
       }
     }, POLL_MS);
     return () => {
@@ -54,6 +58,7 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
         else notify.error(res.code, generate);
         return;
       }
+      setExpired(false);
       setCode(res.data.pairingCode);
       setQr(res.data.qr);
       setView("pairing");
@@ -67,6 +72,7 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
         notify.error(res.code, disconnect);
         return;
       }
+      setConfirming(false);
       setView("disconnected");
       notify.success("WhatsApp desconectado");
     });
@@ -84,14 +90,43 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
     );
 
   if (view === "connected")
-    return (
+    return confirming ? (
+      <div className={`${box} grid gap-3`} role="alertdialog" aria-label="Desconectar o WhatsApp?">
+        <div>
+          <p className="font-bold">Desconectar o WhatsApp?</p>
+          <p className="text-sm font-semibold text-muted">
+            Lembretes e confirmações param de sair até você conectar de novo.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            className={btn}
+            onClick={() => setConfirming(false)}
+            disabled={pending}
+            autoFocus
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            className="min-h-11 rounded-full bg-fail px-4 text-sm font-bold text-white disabled:opacity-60"
+            onClick={disconnect}
+            disabled={pending}
+            aria-busy={pending}
+          >
+            {pending ? "Desconectando…" : "Desconectar"}
+          </button>
+        </div>
+      </div>
+    ) : (
       <div className={`${box} flex items-center justify-between gap-3`}>
         <div>
           <p className="font-bold">WhatsApp</p>
           <p className="text-sm font-semibold text-muted">Conectado. Os lembretes saem por aqui.</p>
         </div>
-        <button type="button" className={btn} onClick={disconnect} disabled={pending} aria-busy={pending}>
-          {pending ? "Aguarde…" : "Desconectar"}
+        <button type="button" className={btn} onClick={() => setConfirming(true)}>
+          Desconectar
         </button>
       </div>
     );
@@ -139,6 +174,11 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
           Conecte o número do estúdio para enviar lembretes às clientes.
         </p>
       </div>
+      {expired ? (
+        <p role="alert" className="rounded-2xl bg-soft px-4 py-3 text-sm font-semibold">
+          O código expirou antes de conectar. Gere outro e digite no WhatsApp logo em seguida.
+        </p>
+      ) : null}
       <input
         inputMode="tel"
         autoComplete="off"

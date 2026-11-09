@@ -1,6 +1,6 @@
 import { toInstant } from "@/lib/dates";
 
-export type Day = { opens: string; closes: string } | null;
+export type Day = { opens: string; closes: string; breakStart?: string | null; breakEnd?: string | null } | null;
 export type Busy = { startsAt: Date; endsAt: Date };
 
 /** Expediente padrão enquanto o estúdio não configurar: seg–sáb, 09:00–18:00. */
@@ -8,6 +8,12 @@ export const DEFAULT_HOURS: Day[] = [null, ...Array.from({ length: 6 }, () => ({
 
 const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
 const toHHmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+
+/** Pausa do dia como intervalo ocupado, ou null quando não há. */
+export function dayBreak(date: string, day: Day): Busy | null {
+  if (!day?.breakStart || !day.breakEnd) return null;
+  return { startsAt: toInstant(date, day.breakStart), endsAt: toInstant(date, day.breakEnd) };
+}
 
 /** Dia da semana (0 = domingo) de uma data YYYY-MM-DD, independente do fuso do servidor. */
 export const weekdayOf = (date: string) => new Date(`${date}T12:00:00Z`).getUTCDay();
@@ -25,9 +31,13 @@ export function freeSlots(args: {
   stepMin?: number;
   notBefore?: Date;
 }): string[] {
-  const { date, day, durationMin, busy, stepMin = 30, notBefore } = args;
+  const { date, day, durationMin, stepMin = 30, notBefore } = args;
+  let { busy } = args;
   if (!day) return [];
   const out: string[] = [];
+  // A pausa do dia conta como horário ocupado
+  const pause = dayBreak(date, day);
+  if (pause) busy = [...busy, pause];
   for (let m = toMin(day.opens); m + durationMin <= toMin(day.closes); m += stepMin) {
     const start = toInstant(date, toHHmm(m));
     const end = new Date(start.getTime() + durationMin * 60_000);

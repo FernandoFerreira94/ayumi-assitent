@@ -8,12 +8,26 @@ export async function getHours(tx: Tx): Promise<Day[]> {
   const rows = await tx.select().from(workingHours);
   if (rows.length === 0) return DEFAULT_HOURS;
   const week: Day[] = Array.from({ length: 7 }, () => null);
-  for (const r of rows) week[r.weekday] = { opens: r.opens, closes: r.closes };
+  for (const r of rows)
+    week[r.weekday] = { opens: r.opens, closes: r.closes, breakStart: r.breakStart, breakEnd: r.breakEnd };
   return week;
 }
 
 export async function saveHours(tx: Tx, tenantId: string, week: Day[]) {
   await tx.delete(workingHours).where(eq(workingHours.tenantId, tenantId));
-  const values = week.flatMap((d, weekday) => (d ? [{ tenantId, weekday, opens: d.opens, closes: d.closes }] : []));
+  const values = week.flatMap((d, weekday) =>
+    d
+      ? [
+          {
+            tenantId,
+            weekday,
+            opens: d.opens,
+            closes: d.closes,
+            breakStart: d.breakStart ?? null,
+            breakEnd: d.breakEnd ?? null,
+          },
+        ]
+      : [],
+  );
   if (values.length) await tx.insert(workingHours).values(values);
 }

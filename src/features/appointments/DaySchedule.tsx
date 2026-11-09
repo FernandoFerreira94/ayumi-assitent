@@ -1,6 +1,6 @@
 import { withTenant } from "@/db/client";
 import { AgendaDay } from "@/features/appointments/AgendaDay";
-import { daySpan, gridWindow, serviceTone, weekOf } from "@/features/appointments/agenda-grid";
+import { breakSpan, daySpan, gridWindow, serviceTone, weekOf } from "@/features/appointments/agenda-grid";
 import { AgendaRefresh } from "@/features/appointments/AgendaRefresh";
 import { dayVersion } from "@/features/appointments/version";
 import { forecastCents, listDay } from "@/features/appointments/core";
@@ -110,6 +110,7 @@ export async function DaySchedule({
           date={date}
           win={gridWindow([...appointments, ...blocks])}
           hours={hours}
+          pause={breakSpan(openHours[weekdayOf(date)])}
           appointments={appointments}
           blocks={blocks}
           nowMin={date === today ? minuteOf(new Date()) : null}

@@ -19,12 +19,18 @@ test("expediente salvo e vagas listadas com texto para copiar", async ({ page, c
     await page.locator(`select[name="opens-${i}"]`).selectOption("06:00");
     await page.locator(`select[name="closes-${i}"]`).selectOption("22:00");
   }
+  // Pausa de almoço: some das vagas
+  await page.getByLabel("Pausa", { exact: true }).check();
+  await page.getByLabel("Pausa: começa").selectOption("12:00");
+  await page.getByLabel("Pausa: termina").selectOption("13:00");
   await page.getByRole("button", { name: "Salvar expediente" }).click();
   await expect(page.getByText("Expediente salvo")).toBeVisible();
 
   await page.goto("/vagas");
   await expect(page.getByRole("link", { name: "Gel" })).toHaveAttribute("aria-current", "true");
   await expect(page.getByRole("list").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /às 14:00$/ }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /às 12:00$/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Copiar texto para divulgar" }).click();
   await expect(page.getByText("Texto copiado")).toBeVisible();
   const copied = await page.evaluate(() => navigator.clipboard.readText());

@@ -43,38 +43,56 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
   if (wa === "open" && admin && salon?.i) await ensureWebhook(admin, salon.i).catch(() => undefined);
   return (
     <PageShell title="Ajustes">
-      <section id="whatsapp" aria-label="WhatsApp" className="scroll-mt-6">
-        <WhatsAppCard initial={wa} />
-      </section>
-      <section aria-label="Mensagem de confirmação" className="mt-6">
-        <ReminderMessageForm initial={salon?.template ?? null} salonName={salon?.name ?? ""} />
-      </section>
-      <section id="google" aria-label="Google Agenda" className="mt-6 scroll-mt-6">
-        <GoogleCard
-          connected={google}
-          failed={googleResult === "erro" || !!googleError}
-          errorCode={typeof googleError === "string" ? googleError.slice(0, 60) : undefined}
-        />
-      </section>
-      <section aria-label="Localização" className="mt-6">
-        <LocationCard />
-      </section>
-      <section aria-label="Avisos" className="mt-6">
-        <PushToggle publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
-      </section>
-      <section aria-label="Lembrete" className="mt-6">
-        <ReminderForm settings={reminder} />
-      </section>
-      <section aria-label="Expediente" className="mt-6">
-        <HoursForm week={week} />
-      </section>
-      <section aria-label="Atualização" className="mt-6">
-        <UpdateButton />
-      </section>
-      <section aria-label="Tour e instalação" className="mt-6 grid gap-3">
-        <InstallGuide />
-        <ReplayTourButton />
-      </section>
+      {/* Grupos como os Ajustes do iPhone: o que conecta, o que a cliente recebe, a agenda e o aparelho */}
+      <Group title="Conexões" first>
+        <section id="whatsapp" aria-label="WhatsApp" className="scroll-mt-6">
+          <WhatsAppCard initial={wa} />
+        </section>
+        <section id="google" aria-label="Google Agenda" className="scroll-mt-6">
+          <GoogleCard
+            connected={google}
+            failed={googleResult === "erro" || !!googleError}
+            errorCode={typeof googleError === "string" ? googleError.slice(0, 60) : undefined}
+          />
+        </section>
+      </Group>
+      <Group title="Mensagens para a cliente">
+        <section aria-label="Mensagem de confirmação">
+          <ReminderMessageForm initial={salon?.template ?? null} salonName={salon?.name ?? ""} />
+        </section>
+        <section aria-label="Lembrete">
+          <ReminderForm settings={reminder} />
+        </section>
+      </Group>
+      <Group title="Agenda">
+        <section aria-label="Expediente">
+          <HoursForm week={week} />
+        </section>
+      </Group>
+      <Group title="Este aparelho">
+        <section aria-label="Avisos">
+          <PushToggle publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
+        </section>
+        <section aria-label="Localização">
+          <LocationCard />
+        </section>
+        <section aria-label="Atualização">
+          <UpdateButton />
+        </section>
+        <section aria-label="Tour e instalação" className="grid gap-3">
+          <InstallGuide />
+          <ReplayTourButton />
+        </section>
+      </Group>
     </PageShell>
+  );
+}
+
+function Group({ title, first = false, children }: { title: string; first?: boolean; children: React.ReactNode }) {
+  return (
+    <div className={`grid gap-3 ${first ? "" : "mt-8"}`}>
+      <h2 className="px-2 text-xs font-bold uppercase tracking-wide text-muted">{title}</h2>
+      {children}
+    </div>
   );
 }
