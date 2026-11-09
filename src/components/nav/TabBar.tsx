@@ -59,6 +59,8 @@ const TABS = [
   {
     href: "/financeiro",
     label: "Financeiro",
+    // Nome curto que aparece na aba atual (cabe na lente em telas estreitas)
+    short: "Finanças",
     icon: (on: boolean) =>
       on ? (
         svg(
@@ -95,7 +97,7 @@ const isAt = (pathname: string, href: string) => pathname === href || pathname.s
 
 /**
  * Barra de vidro flutuante no estilo do iOS 26: pílula translúcida com as abas e uma lente lavanda que
- * desliza com mola até a aba atual; o + fica num botão redondo à parte (é ação, não aba).
+ * desliza com mola até a aba atual, que mostra o nome embaixo do ícone; o + fica num botão redondo à parte (é ação, não aba).
  * O menu lateral continua no avatar do topo. Tocar de novo na aba atual sobe ao topo.
  */
 export function TabBar() {
@@ -151,6 +153,11 @@ export function TabBar() {
                   <span key={on ? "on" : "off"} className="tab-icon">
                     {t.icon(on)}
                   </span>
+                  {on && (
+                    <span className="tab-label" aria-hidden="true">
+                      {"short" in t ? t.short : t.label}
+                    </span>
+                  )}
                 </Link>
               </li>
             );
