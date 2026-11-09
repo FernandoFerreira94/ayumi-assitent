@@ -16,13 +16,22 @@ export function LetterPicker({
   placeholder,
   options,
   defaultId,
+  inputName,
+  onChange,
+  aside,
 }: {
+  /** Identifica o seletor na tela (rótulo, âncoras das letras). */
   name: string;
   label: string;
   placeholder: string;
   options: PickerOption[];
   /** Opção já escolhida ao abrir. */
   defaultId?: string;
+  /** Nome do campo no formulário, quando difere de `name` (vários seletores no mesmo campo). */
+  inputName?: string;
+  onChange?: (id: string) => void;
+  /** Ação ao lado do rótulo (ex.: tirar este serviço). */
+  aside?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -36,10 +45,17 @@ export function LetterPicker({
 
   return (
     <div className="grid gap-1 text-sm font-bold">
-      <span id={`${name}-label`}>{label}</span>
+      {aside ? (
+        <span className="flex items-center justify-between gap-2">
+          <span id={`${name}-label`}>{label}</span>
+          {aside}
+        </span>
+      ) : (
+        <span id={`${name}-label`}>{label}</span>
+      )}
       {/* Oculto mas validável: sem readOnly, que tiraria o campo da validação e o "required" não barraria o envio */}
       <input
-        name={name}
+        name={inputName ?? name}
         value={value?.id ?? ""}
         onChange={() => {}}
         required
@@ -100,6 +116,7 @@ export function LetterPicker({
                               type="button"
                               onClick={() => {
                                 setValue(o);
+                                onChange?.(o.id);
                                 setOpen(false);
                               }}
                               aria-pressed={value?.id === o.id}

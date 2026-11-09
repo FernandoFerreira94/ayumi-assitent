@@ -1,7 +1,21 @@
 import { forecastCents, receivedCents } from "@/features/appointments/core";
+import { splitTotal } from "@/features/appointments/pricing";
 import type { Status } from "@/features/appointments/schema";
 
-type Row = { priceCents: number; status: Status; serviceName: string };
+type Part = { name: string; cents: number };
+type Row = {
+  priceCents: number;
+  status: Status;
+  serviceName: string;
+  /** Serviços do atendimento com o valor cheio de cada um (json do banco; null nos antigos). */
+  serviceParts?: Part[] | string | null;
+};
+
+/** Um atendimento com escova + hidratação conta nas duas fatias, cada uma com a parte dela do total. */
+function partsOf(r: Row): Part[] {
+  const parts = typeof r.serviceParts === "string" ? (JSON.parse(r.serviceParts) as Part[]) : r.serviceParts;
+  return parts?.length ? splitTotal(r.priceCents, parts) : [{ name: r.serviceName, cents: r.priceCents }];
+}
 
 export type Slice = { name: string; cents: number };
 
@@ -20,8 +34,13 @@ export function topSlices(sorted: Slice[]): Slice[] {
 
 const bySlice = (rows: Row[]) => {
   const byService = new Map<string, number>();
-  for (const r of rows) byService.set(r.serviceName, (byService.get(r.serviceName) ?? 0) + r.priceCents);
-  return topSlices([...byService].map(([name, cents]) => ({ name, cents })).sort((a, b) => b.cents - a.cents));
+  for (const r of rows)
+    for (const p of partsOf(r)) byService.set(p.name, (byService.get(p.name) ?? 0) + p.cents);
+  return topSlices(
+    [...byService]
+      .map(([name, cents]) => ({ name, cents }))
+      .sort((a, b) => b.cents - a.cents),
+  );
 };
 
 /**

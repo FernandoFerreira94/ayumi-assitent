@@ -133,6 +133,58 @@ d("agendamentos (núcleo)", () => {
   });
 });
 
+d("agendamento com vários serviços e desconto", () => {
+  it("soma duração e valor, aplica o desconto e lista os nomes juntos", async () => {
+    const { withTenant } = await import("@/db/client");
+    const { editAppointment, insertAppointment, listDay } = await import("@/features/appointments/core");
+    const { dayRange } = await import("@/lib/dates");
+    const admin = postgres(url!, { max: 1 });
+    await admin`truncate tenants cascade`;
+    const [{ id: T }] = await admin`insert into tenants (name) values ('Estúdio M') returning id`;
+    const [{ id: S1 }] =
+      await admin`insert into services (tenant_id,name,duration_min,price_cents,buffer_min) values (${T},'Escova',60,8000,10) returning id`;
+    const [{ id: S2 }] =
+      await admin`insert into services (tenant_id,name,duration_min,price_cents,buffer_min) values (${T},'Hidratação',30,7000,15) returning id`;
+    const [{ id: C }] =
+      await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Bia','+5511900003333') returning id`;
+
+    const a = await withTenant(T, (tx) =>
+      insertAppointment(tx, T, {
+        clientId: C,
+        serviceIds: [S1, S2],
+        date: "2026-11-12",
+        time: "09:00",
+        discount: { kind: "pct", value: 10 },
+      }),
+    );
+    if (!a.ok) throw new Error(a.code);
+    const [row] = await withTenant(T, (tx) => listDay(tx, dayRange("2026-11-12")));
+    expect(row!.serviceName).toBe("Escova + Hidratação");
+    expect(row!.priceCents).toBe(13500);
+    expect((row!.endsAt.getTime() - row!.startsAt.getTime()) / 60_000).toBe(90);
+    // Um intervalo só, o maior
+    expect((row!.blockedUntil.getTime() - row!.endsAt.getTime()) / 60_000).toBe(15);
+    const [saved] = await admin`select service_id, discount_kind, discount_value, discount_cents from appointments where id=${a.data.id}`;
+    expect(saved).toMatchObject({ service_id: S1, discount_kind: "pct", discount_value: 10, discount_cents: 1500 });
+
+    // Serviço pausado ou de outro estúdio não entra
+    const bad = await withTenant(T, (tx) =>
+      insertAppointment(tx, T, { clientId: C, serviceIds: [S1, "00000000-0000-4000-8000-000000000000"], date: "2026-11-13", time: "09:00" }),
+    );
+    expect(bad).toMatchObject({ ok: false, code: "VALIDATION" });
+
+    // Escolher um serviço só na edição deixa só ele, com o valor cheio
+    const e = await withTenant(T, (tx) =>
+      editAppointment(tx, T, a.data.id, { date: "2026-11-12", time: "09:00", serviceId: S1, single: true }),
+    );
+    expect(e.ok).toBe(true);
+    const [after] = await withTenant(T, (tx) => listDay(tx, dayRange("2026-11-12")));
+    expect(after!.serviceName).toBe("Escova");
+    expect(after!.priceCents).toBe(8000);
+    await admin.end();
+  });
+});
+
 d("expediente (núcleo)", () => {
   it("usa o padrão sem configuração e grava/lê o que foi salvo", async () => {
     const { withTenant } = await import("@/db/client");

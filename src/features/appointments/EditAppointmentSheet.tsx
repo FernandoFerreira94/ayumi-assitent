@@ -37,6 +37,8 @@ export function EditAppointmentSheet({
   const [error, setError] = useState<ErrorCode | null>(null);
   const [pending, startTransition] = useTransition();
   const Root = nested ? Drawer.NestedRoot : Drawer.Root;
+  /** Mais de um serviço: a primeira opção mantém todos; escolher outra deixa só aquele. */
+  const multi = serviceName.includes(" + ");
 
   function onOpenChange(next: boolean) {
     setOpen(next);
@@ -51,7 +53,8 @@ export function EditAppointmentSheet({
     startTransition(async () => {
       const res = await editAppointmentAction({
         id,
-        serviceId: String(form.get("serviceId")),
+        serviceId: form.get("serviceId") === "keep" ? serviceId : String(form.get("serviceId")),
+        single: multi && form.get("serviceId") !== "keep",
         date: String(form.get("date")),
         time: String(form.get("time")),
       }).catch(() => null);
@@ -85,7 +88,8 @@ export function EditAppointmentSheet({
             <label className="grid gap-1 text-sm font-bold">
               Serviço
               {services ? (
-                <select name="serviceId" required defaultValue={serviceId} className={input}>
+                <select name="serviceId" required defaultValue={multi ? "keep" : serviceId} className={input}>
+                  {multi ? <option value="keep">{serviceName}</option> : null}
                   {services.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.label}

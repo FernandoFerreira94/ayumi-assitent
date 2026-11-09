@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { appointments, clients, services, tenants } from "@/db/schema";
 import { GoogleAuthError, type CalendarPort } from "./calendar";
+import { serviceLabel } from "@/features/appointments/core";
 
 export type SyncResult = "synced" | "skipped" | "auth" | "failed";
 
@@ -24,7 +25,7 @@ export async function syncAppointment(tx: Tx, port: CalendarPort | null, appoint
       client: clients.name,
       phone: clients.phoneE164,
       email: clients.email,
-      service: services.name,
+      service: serviceLabel,
       tz: tenants.timezone,
     })
     .from(appointments)

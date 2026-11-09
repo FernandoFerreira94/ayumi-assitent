@@ -126,9 +126,33 @@ export const appointments = pgTable(
     cancelAskedAt: timestamp("cancel_asked_at", { withTimezone: true }),
     /** Reforço único de confirmação já enviado */
     nudgeSentAt: timestamp("nudge_sent_at", { withTimezone: true }),
+    /** Desconto do agendamento: "pct" (value = %) ou "brl" (value = centavos). price_cents já vem descontado. */
+    discountKind: text("discount_kind").$type<"pct" | "brl">(),
+    discountValue: integer("discount_value"),
+    discountCents: integer("discount_cents").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("appointments_tenant_start").on(t.tenantId, t.startsAt)],
+);
+
+/** Serviços do atendimento, na ordem escolhida, com valor e duração do momento do agendamento. */
+export const appointmentServices = pgTable(
+  "appointment_services",
+  {
+    appointmentId: uuid("appointment_id")
+      .notNull()
+      .references(() => appointments.id, { onDelete: "cascade" }),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    serviceId: uuid("service_id")
+      .notNull()
+      .references(() => services.id),
+    position: smallint("position").notNull(),
+    priceCents: integer("price_cents").notNull(),
+    durationMin: integer("duration_min").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.appointmentId, t.position] })],
 );
 
 export const blocks = pgTable("blocks", {

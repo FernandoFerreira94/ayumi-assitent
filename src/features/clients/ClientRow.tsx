@@ -115,7 +115,7 @@ export function ClientRow({ client }: { client: Client }) {
           tabIndex={x > 0 ? 0 : -1}
           onClick={() => {
             close();
-            openNewAppointment(client.id);
+            openNewAppointment({ clientId: client.id });
           }}
           className="btn-tint grid shrink-0 place-content-center justify-items-center gap-0.5 text-xs font-bold"
           style={{ width: LEFT_W, minWidth: Math.max(x, LEFT_W) }}
