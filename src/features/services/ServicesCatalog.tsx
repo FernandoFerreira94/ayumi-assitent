@@ -267,7 +267,7 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
                       </button>
                       <span className={`text-right text-sm font-bold tabular-nums ${s.bookable ? "" : "opacity-45"}`}>
                         {s.priceFrom ? (
-                          <small className="block text-[11px] font-semibold text-muted">a partir de</small>
+                          <small className="block text-xs font-semibold text-muted">a partir de</small>
                         ) : null}
                         {formatBRL(s.priceCents)}
                       </span>

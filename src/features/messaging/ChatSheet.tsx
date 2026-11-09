@@ -189,22 +189,22 @@ export function ChatSheet({
               const out = m.direction === "out";
               return (
                 <div key={m.id} className="contents">
-                  {sep ? <p className="mx-auto my-1 rounded-lg bg-surface/80 px-2.5 py-0.5 text-[11px] font-bold text-muted">{day}</p> : null}
+                  {sep ? <p className="mx-auto my-1 rounded-lg bg-surface/80 px-2.5 py-0.5 text-xs font-bold text-muted">{day}</p> : null}
                   <div className={`grid max-w-[82%] gap-0.5 ${out ? "justify-items-end self-end" : "justify-items-start self-start"}`}>
-                    {KIND_LABEL[m.kind] ? <span className="px-1 text-[11px] font-bold text-muted">{KIND_LABEL[m.kind]}</span> : null}
+                    {KIND_LABEL[m.kind] ? <span className="px-1 text-xs font-bold text-muted">{KIND_LABEL[m.kind]}</span> : null}
                     <p
                       className={`whitespace-pre-wrap break-words rounded-xl px-3 pb-1 pt-1.5 text-[15px] leading-5 shadow-sm ${
                         out ? "rounded-tr-sm bg-chat-out" : "rounded-tl-sm bg-surface"
                       }`}
                     >
                       {m.body}
-                      <span className="float-right ml-2 mt-1.5 flex translate-y-0.5 items-center gap-0.5 text-[11px] font-semibold tabular-nums text-muted">
+                      <span className="float-right ml-2 mt-1.5 flex translate-y-0.5 items-center gap-0.5 text-xs font-semibold tabular-nums text-muted">
                         {formatTime(new Date(m.createdAt))}
                         {out ? <Status state="sent" /> : null}
                       </span>
                     </p>
                     {m.intent ? (
-                      <span className="rounded-full bg-surface px-2 text-[11px] font-bold leading-5 text-primary-text shadow-sm">
+                      <span className="rounded-full bg-surface px-2 text-xs font-bold leading-5 text-primary-text shadow-sm">
                         {INTENT_LABEL[m.intent]} · agenda atualizada
                       </span>
                     ) : null}
@@ -216,7 +216,7 @@ export function ChatSheet({
               <div key={`l${b.id}`} className="grid max-w-[82%] justify-items-end gap-1 self-end">
                 <p className="whitespace-pre-wrap break-words rounded-xl rounded-tr-sm bg-chat-out px-3 pb-1 pt-1.5 text-[15px] leading-5 shadow-sm">
                   {b.text}
-                  <span className="float-right ml-2 mt-1.5 flex translate-y-0.5 items-center gap-0.5 text-[11px] font-semibold tabular-nums text-muted">
+                  <span className="float-right ml-2 mt-1.5 flex translate-y-0.5 items-center gap-0.5 text-xs font-semibold tabular-nums text-muted">
                     {formatTime(b.at)}
                     <Status state={b.state} />
                   </span>

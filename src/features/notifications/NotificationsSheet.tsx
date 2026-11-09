@@ -114,7 +114,7 @@ export function NotificationsSheet({ avisos }: { avisos: Aviso[] }) {
         {count > 0 ? (
           <span
             aria-hidden="true"
-            className="absolute -right-0.5 -top-0.5 grid min-w-5 place-content-center rounded-full bg-primary px-1 text-[11px] font-bold leading-5 text-on-primary ring-2 ring-white/80"
+            className="absolute -right-0.5 -top-0.5 grid min-w-5 place-content-center rounded-full bg-primary px-1 text-xs font-bold leading-5 text-on-primary ring-2 ring-white/80"
           >
             {count > 9 ? "9+" : count}
           </span>

@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/feedback/EmptyState";
 import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
 import { AppointmentCard } from "@/features/appointments/AppointmentCard";
+import { CloseAllButton } from "@/features/appointments/CloseAllButton";
 import { countPendencias, listPendencias } from "@/features/appointments/pendencias";
 import { RetrySyncButton } from "@/features/google/RetrySyncButton";
 import { isGoogleConnected } from "@/features/google/server";
@@ -22,7 +23,7 @@ export default async function PendenciasPage() {
   const google = await isGoogleConnected(tenantId);
   const p = await withTenant(tenantId, (tx) => listPendencias(tx, new Date(), google));
 
-  const card = (r: (typeof p.toClose)[number]) => (
+  const card = (r: (typeof p.toClose)[number], past = false) => (
     <AppointmentCard
       key={r.id}
       id={r.id}
@@ -36,6 +37,7 @@ export default async function PendenciasPage() {
       serviceName={r.serviceName}
       price={formatBRL(r.priceCents)}
       status={r.status}
+      past={past}
     />
   );
 
@@ -53,15 +55,20 @@ export default async function PendenciasPage() {
               <h2 id="remarcar" className="px-1 text-sm font-bold uppercase tracking-wide text-muted">
                 Querem remarcar
               </h2>
-              <ul className="grid gap-2">{p.toReschedule.map(card)}</ul>
+              <ul className="grid gap-2">{p.toReschedule.map((r) => card(r))}</ul>
             </section>
           ) : null}
           {p.toClose.length > 0 ? (
             <section aria-labelledby="fechar" className="grid gap-2">
-              <h2 id="fechar" className="px-1 text-sm font-bold uppercase tracking-wide text-muted">
-                Para fechar (já passaram)
-              </h2>
-              <ul className="grid gap-2">{p.toClose.map(card)}</ul>
+              <div className="flex items-center justify-between gap-3 px-1">
+                <h2 id="fechar" className="text-sm font-bold uppercase tracking-wide text-muted">
+                  Para fechar (já passaram)
+                </h2>
+                {p.toClose.length > 1 ? (
+                  <CloseAllButton items={p.toClose.map((r) => ({ id: r.id, status: r.status }))} />
+                ) : null}
+              </div>
+              <ul className="grid gap-2">{p.toClose.map((r) => card(r, true))}</ul>
             </section>
           ) : null}
           {p.toConfirm.length > 0 ? (
@@ -69,7 +76,7 @@ export default async function PendenciasPage() {
               <h2 id="confirmar" className="px-1 text-sm font-bold uppercase tracking-wide text-muted">
                 Aguardando confirmação
               </h2>
-              <ul className="grid gap-2">{p.toConfirm.map(card)}</ul>
+              <ul className="grid gap-2">{p.toConfirm.map((r) => card(r))}</ul>
             </section>
           ) : null}
           {p.unsynced.length > 0 ? (

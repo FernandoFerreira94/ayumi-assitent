@@ -44,6 +44,7 @@ test("horário fora da meia hora continua o mesmo ao abrir Remarcar", async ({ p
   await expect(page.getByText("Ana foi para 09:15")).toBeVisible();
 
   await page.getByRole("button", { name: /Ana Lima, Escova, 09:15/ }).click();
+  await page.getByRole("button", { name: "Mais ações" }).click();
   await page.getByRole("button", { name: "Remarcar" }).click();
   await expect(page.getByLabel("Horário")).toHaveValue("09:15");
 });
@@ -63,6 +64,7 @@ test("Faltou mostra Desfazer e volta ao status anterior", async ({ page }) => {
   await agenda(page, dia, "10:00");
 
   await page.getByRole("button", { name: /Ana Lima, Escova, 10:00/ }).click();
+  await page.getByRole("button", { name: "Mais ações" }).click();
   await page.getByRole("button", { name: "Faltou" }).click();
   await expect(page.getByText("Marcado como faltou")).toBeVisible();
   await page.getByRole("button", { name: "Desfazer" }).click();

@@ -158,7 +158,7 @@ export function LetterPicker({
                         e.preventDefault();
                         document.getElementById(anchor(g.letter))?.scrollIntoView({ block: "start" });
                       }}
-                      className="grid min-h-5 w-7 place-items-center text-[11px] font-bold text-primary-text"
+                      className="grid min-h-5 w-7 place-items-center text-xs font-bold text-primary-text"
                     >
                       {g.letter}
                     </a>

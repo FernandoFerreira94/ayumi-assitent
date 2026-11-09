@@ -56,7 +56,7 @@ export function ServicePie({ slices, total, label }: { slices: Slice[]; total: n
           <text x="100" y="96" textAnchor="middle" className="fill-fg text-[22px] font-bold">
             {focus ? pct(focus.cents, total) : formatBRL(total).replace(",00", "")}
           </text>
-          <text x="100" y="118" textAnchor="middle" className="fill-muted text-[11px] font-bold">
+          <text x="100" y="118" textAnchor="middle" className="fill-muted text-xs font-bold">
             {focus ? focus.name.slice(0, 18) : label}
           </text>
         </svg>

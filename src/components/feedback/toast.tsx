@@ -9,8 +9,8 @@ export function AppToaster() {
   return (
     <Toaster
       position="top-center"
-      offset={{ top: 54, left: 14, right: 14 }}
-      mobileOffset={{ top: 54, left: 14, right: 14 }}
+      offset={{ top: "max(calc(env(safe-area-inset-top) + 8px), 20px)", left: 14, right: 14 }}
+      mobileOffset={{ top: "max(calc(env(safe-area-inset-top) + 8px), 20px)", left: 14, right: 14 }}
       visibleToasts={3}
       toastOptions={{ unstyled: false, classNames: { toast: "app-toast" } }}
     />
