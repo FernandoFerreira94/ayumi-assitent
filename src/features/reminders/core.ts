@@ -10,7 +10,15 @@ export { reminderText } from "./text";
 
 export const DEFAULT_REMINDER_HOURS = 24;
 
-type Due = { id: string; tenantId: string; clientId: string; startsAt: Date; client: string; phone: string; service: string };
+type Due = {
+  id: string;
+  tenantId: string;
+  clientId: string;
+  startsAt: Date;
+  client: string;
+  phone: string;
+  service: string;
+};
 
 /**
  * Reserva (de forma atômica) os agendamentos que precisam de lembrete agora.
@@ -87,7 +95,15 @@ export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Pro
       // a mensagem já saiu e não pode voltar para a fila (a cliente receberia duas vezes)
       await tx
         .transaction((sp) =>
-          recordMessage(sp, a.tenantId, { clientId: a.clientId, appointmentId: a.id, direction: "out", kind: "reminder", body: text, externalId: id, createdAt: now }),
+          recordMessage(sp, a.tenantId, {
+            clientId: a.clientId,
+            appointmentId: a.id,
+            direction: "out",
+            kind: "reminder",
+            body: text,
+            externalId: id,
+            createdAt: now,
+          }),
         )
         .catch((e) => console.error(JSON.stringify({ level: "warn", msg: "reminder_record_failed", err: String(e) })));
     } catch (e) {

@@ -74,7 +74,13 @@ export function SalonForm({
       </label>
       <label className="grid gap-1 text-sm font-bold">
         Tipo de salão
-        <select name="businessType" required defaultValue={initial.businessType ?? ""} className={input} aria-invalid={field === "businessType"}>
+        <select
+          name="businessType"
+          required
+          defaultValue={initial.businessType ?? ""}
+          className={input}
+          aria-invalid={field === "businessType"}
+        >
           <option value="" disabled>
             Escolha…
           </option>
@@ -112,16 +118,28 @@ export function SalonForm({
             {token}
           </button>
         ))}
-        <button type="button" onClick={() => setTemplate(DEFAULT_REMINDER)} className="min-h-9 rounded-full px-3 text-xs font-bold text-muted underline">
+        <button
+          type="button"
+          onClick={() => setTemplate(DEFAULT_REMINDER)}
+          className="min-h-9 rounded-full px-3 text-xs font-bold text-muted underline"
+        >
           Voltar ao padrão
         </button>
       </div>
       <div className="grid gap-1">
         <p className="text-xs font-bold uppercase tracking-wide text-muted">Como a cliente recebe</p>
-        <p className="whitespace-pre-wrap rounded-2xl rounded-tr-sm bg-chat-out px-4 py-3 text-sm font-semibold leading-5" aria-live="polite">
-          {reminderText({ client: "Maria Silva", service: "Alongamento", startsAt: sampleStart }, sampleNow, { template, name })}
+        <p
+          className="whitespace-pre-wrap rounded-2xl rounded-tr-sm bg-chat-out px-4 py-3 text-sm font-semibold leading-5"
+          aria-live="polite"
+        >
+          {reminderText({ client: "Maria Silva", service: "Alongamento", startsAt: sampleStart }, sampleNow, {
+            template,
+            name,
+          })}
         </p>
-        <p className="text-xs font-semibold text-muted">As opções 1, 2 e 3 vão sempre no fim: é por elas que o app entende a resposta.</p>
+        <p className="text-xs font-semibold text-muted">
+          As opções 1, 2 e 3 vão sempre no fim: é por elas que o app entende a resposta.
+        </p>
       </div>
       <SubmitButton pendingLabel="Salvando…">Salvar</SubmitButton>
     </form>

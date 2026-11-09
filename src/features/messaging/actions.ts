@@ -36,8 +36,16 @@ export async function sendClientMessage(clientId: string, text: string): Promise
     }
     // Já saiu: falha ao gravar não pode virar "não enviada" (ela tentaria de novo e a cliente receberia duas)
     await withTenant(tenantId, (tx) =>
-      recordMessage(tx, tenantId, { clientId: p.data.clientId, direction: "out", kind: "manual", body: p.data.text, externalId: res.data.id }),
-    ).catch((e) => console.error(JSON.stringify({ level: "warn", msg: "client_message_record_failed", err: String(e) })));
+      recordMessage(tx, tenantId, {
+        clientId: p.data.clientId,
+        direction: "out",
+        kind: "manual",
+        body: p.data.text,
+        externalId: res.data.id,
+      }),
+    ).catch((e) =>
+      console.error(JSON.stringify({ level: "warn", msg: "client_message_record_failed", err: String(e) })),
+    );
     return ok();
   } catch {
     return fail("UNKNOWN");

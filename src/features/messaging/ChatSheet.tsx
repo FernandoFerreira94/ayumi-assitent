@@ -128,7 +128,9 @@ export function ChatSheet({
       await refresh();
       setLocals((ls) => ls.filter((l) => l.id !== id));
     } else {
-      setLocals((ls) => ls.map((l) => (l.id === id ? { ...l, state: { failed: res && !res.ok ? res.code : "NETWORK" } } : l)));
+      setLocals((ls) =>
+        ls.map((l) => (l.id === id ? { ...l, state: { failed: res && !res.ok ? res.code : "NETWORK" } } : l)),
+      );
     }
   }
 
@@ -167,11 +169,17 @@ export function ChatSheet({
             </div>
           </header>
 
-          <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto px-3 py-4" aria-live="polite" aria-busy={history === null}>
+          <div
+            className="flex flex-1 flex-col gap-1.5 overflow-y-auto px-3 py-4"
+            aria-live="polite"
+            aria-busy={history === null}
+          >
             <p className="mx-auto mb-2 max-w-[34ch] rounded-lg bg-surface/80 px-3 py-1.5 text-center text-xs font-semibold text-muted">
               As mensagens saem do WhatsApp conectado em Ajustes. As respostas da cliente aparecem aqui.
             </p>
-            {history === null && !loadFailed ? <div className="skel mx-auto h-8 w-40 rounded-xl" aria-label="Carregando conversa" /> : null}
+            {history === null && !loadFailed ? (
+              <div className="skel mx-auto h-8 w-40 rounded-xl" aria-label="Carregando conversa" />
+            ) : null}
             {loadFailed && history === null ? (
               <p role="alert" className="text-center text-xs font-semibold text-fail">
                 Não deu para carregar a conversa. Tentando de novo…
@@ -184,9 +192,17 @@ export function ChatSheet({
               const out = m.direction === "out";
               return (
                 <div key={m.id} className="contents">
-                  {sep ? <p className="mx-auto my-1 rounded-lg bg-surface/80 px-2.5 py-0.5 text-[11px] font-bold text-muted">{day}</p> : null}
-                  <div className={`grid max-w-[82%] gap-0.5 ${out ? "justify-items-end self-end" : "justify-items-start self-start"}`}>
-                    {KIND_LABEL[m.kind] ? <span className="px-1 text-[11px] font-bold text-muted">{KIND_LABEL[m.kind]}</span> : null}
+                  {sep ? (
+                    <p className="mx-auto my-1 rounded-lg bg-surface/80 px-2.5 py-0.5 text-[11px] font-bold text-muted">
+                      {day}
+                    </p>
+                  ) : null}
+                  <div
+                    className={`grid max-w-[82%] gap-0.5 ${out ? "justify-items-end self-end" : "justify-items-start self-start"}`}
+                  >
+                    {KIND_LABEL[m.kind] ? (
+                      <span className="px-1 text-[11px] font-bold text-muted">{KIND_LABEL[m.kind]}</span>
+                    ) : null}
                     <p
                       className={`whitespace-pre-wrap break-words rounded-xl px-3 pb-1 pt-1.5 text-[15px] leading-5 shadow-sm ${
                         out ? "rounded-tr-sm bg-chat-out" : "rounded-tl-sm bg-surface"

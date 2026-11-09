@@ -34,14 +34,26 @@ export function buildAvisos({ whatsapp, google }: Inputs): Aviso[] {
   return avisos;
 }
 
-type UnreadSummary = { clientId: string; clientName: string; count: number; lastBody: string; lastIntent: "confirm" | "cancel" | "reschedule" | null };
+type UnreadSummary = {
+  clientId: string;
+  clientName: string;
+  count: number;
+  lastBody: string;
+  lastIntent: "confirm" | "cancel" | "reschedule" | null;
+};
 
 /** Uma linha por cliente que mandou mensagem e a dona ainda não abriu a conversa. */
 export function messageAvisos(unread: UnreadSummary[]): Aviso[] {
   return unread.map((u) => {
     const first = u.clientName.trim().split(/\s+/)[0];
     const what =
-      u.lastIntent === "confirm" ? "confirmou o horário" : u.lastIntent === "cancel" ? "cancelou o horário" : u.lastIntent === "reschedule" ? "quer remarcar" : "mandou mensagem";
+      u.lastIntent === "confirm"
+        ? "confirmou o horário"
+        : u.lastIntent === "cancel"
+          ? "cancelou o horário"
+          : u.lastIntent === "reschedule"
+            ? "quer remarcar"
+            : "mandou mensagem";
     return {
       id: `message-${u.clientId}`,
       title: `${first} ${what}`,
@@ -55,7 +67,12 @@ export function messageAvisos(unread: UnreadSummary[]): Aviso[] {
 const atendimentos = (n: number) => (n === 1 ? "1 atendimento" : `${n} atendimentos`);
 
 /** Uma linha por tipo de pendência, só para os tipos que têm algo a resolver. */
-export function pendenciaAvisos(counts: { toClose: number; toConfirm: number; unsynced: number; toReschedule: number }): Aviso[] {
+export function pendenciaAvisos(counts: {
+  toClose: number;
+  toConfirm: number;
+  unsynced: number;
+  toReschedule: number;
+}): Aviso[] {
   const avisos: Aviso[] = [];
   if (counts.toReschedule > 0) {
     avisos.push({

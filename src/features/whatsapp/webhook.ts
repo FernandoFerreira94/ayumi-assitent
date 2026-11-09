@@ -9,12 +9,20 @@ import { webhookUrl } from "@/features/messaging/webhook-url";
 export async function ensureWebhook(admin: WhatsAppAdmin, instance: string): Promise<void> {
   const url = webhookUrl();
   if (!url) {
-    console.error(JSON.stringify({ level: "warn", msg: "whatsapp_webhook_skipped", reason: "sem BETTER_AUTH_URL ou segredo" }));
+    console.error(
+      JSON.stringify({ level: "warn", msg: "whatsapp_webhook_skipped", reason: "sem BETTER_AUTH_URL ou segredo" }),
+    );
     return;
   }
   try {
     await admin.setWebhook(instance, url);
   } catch (e) {
-    console.error(JSON.stringify({ level: "warn", msg: "whatsapp_webhook_failed", err: e instanceof Error ? e.message : String(e) }));
+    console.error(
+      JSON.stringify({
+        level: "warn",
+        msg: "whatsapp_webhook_failed",
+        err: e instanceof Error ? e.message : String(e),
+      }),
+    );
   }
 }

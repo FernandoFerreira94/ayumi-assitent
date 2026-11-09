@@ -4,7 +4,12 @@ import { getDb, withTenant } from "@/db/client";
 import { googleCalendar, GoogleApiError, GoogleAuthError, refreshAccessToken, type CalendarPort } from "./calendar";
 import { syncAppointment, type SyncResult } from "./sync";
 
-type AccountRow = { id: string; accessToken: string | null; refreshToken: string | null; expiresAt: Date | string | null };
+type AccountRow = {
+  id: string;
+  accessToken: string | null;
+  refreshToken: string | null;
+  expiresAt: Date | string | null;
+};
 
 /** Conta Google do dono do estúdio (a agenda é dele). */
 async function ownerGoogleAccount(tenantId: string): Promise<AccountRow | null> {

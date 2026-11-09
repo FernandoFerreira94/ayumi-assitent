@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Mascot } from "@/components/brand/Mascot";
-import { weatherLine, weatherMood } from "@/features/weather/mood";
+import { RainAmbient } from "@/features/weather/RainAmbient";
+import { isRaining, weatherLine, weatherMood } from "@/features/weather/mood";
 import { useWeather } from "@/features/weather/useWeather";
 import type { Briefing } from "./briefing";
 
@@ -22,6 +23,7 @@ export function DayBubble({ briefing, isToday }: { briefing: Briefing; isToday: 
 
   return (
     <div className="mb-3 flex items-center gap-2">
+      {today && isRaining(today) ? <RainAmbient /> : null}
       <button
         type="button"
         data-tour="bubble"

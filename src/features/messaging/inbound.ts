@@ -57,11 +57,25 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
 
     if (msg.fromMe) {
       // Eco do que o app mandou (mesmo id: some no conflito) ou a dona escrevendo pelo celular
-      const id = await recordMessage(tx, tenantId, { clientId: cli.id, direction: "out", kind: "phone", body: msg.text, externalId: msg.externalId });
-      return id ? ({ kind: "done", intent: null, appointmentId: null } as const) : ({ kind: "skip", reason: "duplicate" } as const);
+      const id = await recordMessage(tx, tenantId, {
+        clientId: cli.id,
+        direction: "out",
+        kind: "phone",
+        body: msg.text,
+        externalId: msg.externalId,
+      });
+      return id
+        ? ({ kind: "done", intent: null, appointmentId: null } as const)
+        : ({ kind: "skip", reason: "duplicate" } as const);
     }
 
-    const messageId = await recordMessage(tx, tenantId, { clientId: cli.id, direction: "in", kind: "client", body: msg.text, externalId: msg.externalId });
+    const messageId = await recordMessage(tx, tenantId, {
+      clientId: cli.id,
+      direction: "in",
+      kind: "client",
+      body: msg.text,
+      externalId: msg.externalId,
+    });
     if (!messageId) return { kind: "skip", reason: "duplicate" } as const;
 
     // Só vale como resposta se o lembrete do próximo horário ainda espera resposta
@@ -81,10 +95,18 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
       .limit(1);
     const intent = open ? parseIntent(msg.text) : null;
     if (open && intent) {
-      await tx.update(appointments).set({ status: STATUS_FOR[intent], replyAt: now }).where(eq(appointments.id, open.id));
+      await tx
+        .update(appointments)
+        .set({ status: STATUS_FOR[intent], replyAt: now })
+        .where(eq(appointments.id, open.id));
       await tx.update(messages).set({ intent, appointmentId: open.id }).where(eq(messages.id, messageId));
     }
-    return { kind: "reply", client: cli, intent: open && intent ? intent : null, appointmentId: open && intent ? open.id : null } as const;
+    return {
+      kind: "reply",
+      client: cli,
+      intent: open && intent ? intent : null,
+      appointmentId: open && intent ? open.id : null,
+    } as const;
   });
 
   if (step.kind === "skip") return { handled: false, reason: step.reason };
@@ -98,7 +120,17 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
     const body = ackText(intent, client.name);
     try {
       const sent = port ? await port.sendText(client.phone, body) : null;
-      if (sent) await withTenant(tenantId, (tx) => recordMessage(tx, tenantId, { clientId: client.id, appointmentId, direction: "out", kind: "auto_reply", body, externalId: sent.id }));
+      if (sent)
+        await withTenant(tenantId, (tx) =>
+          recordMessage(tx, tenantId, {
+            clientId: client.id,
+            appointmentId,
+            direction: "out",
+            kind: "auto_reply",
+            body,
+            externalId: sent.id,
+          }),
+        );
     } catch (e) {
       // O status já mudou; sem o agradecimento a cliente só não recebe o "obrigada"
       console.error(JSON.stringify({ level: "warn", msg: "auto_reply_failed", err: String(e) }));

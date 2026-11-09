@@ -104,7 +104,12 @@ export async function editAppointment(
   input: { date: string; time: string; serviceId: string },
 ): Promise<ActionResult> {
   const [a] = await tx
-    .select({ startsAt: appointments.startsAt, endsAt: appointments.endsAt, serviceId: appointments.serviceId, priceCents: appointments.priceCents })
+    .select({
+      startsAt: appointments.startsAt,
+      endsAt: appointments.endsAt,
+      serviceId: appointments.serviceId,
+      priceCents: appointments.priceCents,
+    })
     .from(appointments)
     .where(eq(appointments.id, id));
   if (!a) return fail("NOT_ALLOWED");
