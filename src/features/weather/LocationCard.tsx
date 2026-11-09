@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { Mascot } from "@/components/brand/Mascot";
 import { notify } from "@/components/feedback/toast";
 import { weatherMood, type Weather } from "./mood";
-import { enableWeather } from "./useWeather";
+import { enableWeather, loadWeather } from "./useWeather";
 
 type State = "checking" | "unsupported" | "prompt" | "denied" | "granted";
 
@@ -26,7 +26,7 @@ export function LocationCard() {
         setState(s);
         // Já liberada: não abre aviso, só busca o clima para mostrar a roupa de agora
         if (s === "granted")
-          enableWeather().then(
+          loadWeather().then(
             (w) => alive && setWeather(w),
             () => {},
           );
@@ -69,6 +69,17 @@ export function LocationCard() {
           <p className="text-sm font-semibold text-muted">{hint[state]}</p>
         </div>
       </div>
+      {state === "granted" && (
+        <button
+          type="button"
+          onClick={enable}
+          disabled={pending}
+          aria-busy={pending}
+          className="btn-tint min-h-12 rounded-full px-4 font-bold disabled:opacity-60"
+        >
+          {pending ? "Buscando o clima…" : "Atualizar minha localização"}
+        </button>
+      )}
       {state === "prompt" && (
         <>
           <button
