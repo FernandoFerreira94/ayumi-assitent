@@ -67,6 +67,16 @@ const ITEMS = [
     ),
   },
   {
+    href: "/financeiro",
+    label: "Financeiro",
+    icon: icon(
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 3v9h9" />
+      </>,
+    ),
+  },
+  {
     href: "/vagas",
     label: "Vagas",
     icon: icon(
@@ -174,7 +184,12 @@ export function AppMenu({
         className="app-menu"
       >
         <div className="mx-auto grid max-w-[520px] gap-3 px-4 pb-3 pt-[max(env(safe-area-inset-top),16px)]">
-          <Link href="/perfil" onClick={close} aria-label="Meu perfil" className="flex items-center gap-3 outline-none focus:outline-none">
+          <Link
+            href="/perfil"
+            onClick={close}
+            aria-label="Meu perfil"
+            className="flex items-center gap-3 outline-none focus:outline-none"
+          >
             <span
               aria-hidden="true"
               className="avatar grid size-13 shrink-0 place-content-center rounded-full text-[17px] font-bold text-white"

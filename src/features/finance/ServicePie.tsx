@@ -8,7 +8,7 @@ import type { Slice } from "./summary";
 // Rosa e verde-água ficam abaixo de 3:1 no fundo, por isso todo valor também aparece escrito na lista.
 const SLOTS = ["#6250d6", "#e87ba4", "#2a78d6", "#1baf7a", "#eb6834"];
 const OTHER = "#898781";
-const colorOf = (s: Slice, i: number) => (s.name === "Outros" ? OTHER : SLOTS[i]);
+const colorOf = (s: Slice, i: number) => (s.name === "Outros" ? OTHER : (SLOTS[i] ?? OTHER));
 
 const R = 80;
 const r = 54;
@@ -21,10 +21,10 @@ function arc(a0: number, a1: number) {
 }
 
 /**
- * Divisão do recebido por serviço. Com menos de 3 fatias a pizza não diz nada que a lista não diga,
+ * Divisão do total por fatia (serviço ou categoria de gasto). Com menos de 3 fatias a pizza não diz nada que a lista não diga,
  * então só a lista aparece. Tocar numa fatia ou linha mostra o valor dela no centro.
  */
-export function ServicePie({ slices, total }: { slices: Slice[]; total: number }) {
+export function ServicePie({ slices, total, label }: { slices: Slice[]; total: number; label: string }) {
   const [sel, setSel] = useState<number | null>(null);
   const pick = (i: number) => setSel((s) => (s === i ? null : i));
   // Ângulo final de cada fatia = soma acumulada das fatias até ela
@@ -35,7 +35,7 @@ export function ServicePie({ slices, total }: { slices: Slice[]; total: number }
   return (
     <div className="grid gap-4">
       {slices.length >= 3 ? (
-        <svg viewBox="0 0 200 200" className="mx-auto w-52" role="img" aria-label="Divisão do recebido por serviço">
+        <svg viewBox="0 0 200 200" className="mx-auto w-52" role="img" aria-label={`Divisão de ${label}`}>
           {slices.map((s, i) => (
             <path
               key={s.name}
@@ -53,7 +53,7 @@ export function ServicePie({ slices, total }: { slices: Slice[]; total: number }
             {focus ? pct(focus.cents, total) : formatBRL(total).replace(",00", "")}
           </text>
           <text x="100" y="118" textAnchor="middle" className="fill-muted text-[11px] font-bold">
-            {focus ? focus.name.slice(0, 18) : "recebido"}
+            {focus ? focus.name.slice(0, 18) : label}
           </text>
         </svg>
       ) : null}
