@@ -34,7 +34,7 @@ export function QuickBook() {
   }, []);
 
   // Na Agenda, agenda no dia que está na tela
-  const date = pathname === "/calendario" && d && isDateStr(d) ? d : todayStr();
+  const date = (pathname === "/calendario" || pathname === "/agenda") && d && isDateStr(d) ? d : todayStr();
   return (
     <NewAppointmentSheet
       date={date}

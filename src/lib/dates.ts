@@ -51,3 +51,22 @@ export function greeting(now: Date, name?: string | null): string {
 
 export const formatBRL = (cents: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
+
+/** "dom., 8 de nov.": dia curto para os cartões da agenda. */
+export const formatShortDate = (date: string) =>
+  new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, weekday: "short", day: "numeric", month: "short" }).format(
+    new Date(`${date}T12:00:00${OFFSET}`),
+  );
+
+/** "Domingo – 8 de nov. de 2026": título da visão de dia, como no Calendário do iPhone. */
+export function formatCalendarTitle(date: string): string {
+  const d = new Date(`${date}T12:00:00${OFFSET}`);
+  const wd = new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, weekday: "long" }).format(d);
+  const rest = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: TZ,
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(d);
+  return `${wd.charAt(0).toUpperCase()}${wd.slice(1)} – ${rest}`;
+}

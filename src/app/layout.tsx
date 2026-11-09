@@ -17,14 +17,15 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: "mimo",
-    statusBarStyle: "default",
+    // black-translucent: o app desenha por baixo da barra de status do iPhone, que fica roxa (.status-fill) com letras brancas
+    statusBarStyle: "black-translucent",
     startupImage: STARTUP_IMAGES.map(({ url, media }) => ({ url, media })),
   },
   formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F8F7FC",
+  themeColor: "#6D4AFF",
   colorScheme: "light",
   viewportFit: "cover",
   width: "device-width",
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: splashGate }} />
       </head>
       <body className="min-h-full">
+        <div className="status-fill" aria-hidden="true" />
         <Splash />
         {children}
         <AppToaster />

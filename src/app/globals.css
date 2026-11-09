@@ -1663,3 +1663,219 @@ button {
     transform: none;
   }
 }
+
+/* Barra de status do iPhone (hora, Wi-Fi) na cor primária: o app desenha por baixo dela (PWA black-translucent) */
+.status-fill {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: env(safe-area-inset-top, 0px);
+  background: var(--primary);
+  z-index: 60;
+  pointer-events: none;
+}
+
+/* Cartão de atendimento da linha do dia: nome e valor, horário e serviço, data */
+.ag-ev .row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+.ag-ev .row b {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.ag-ev .row i {
+  flex: none;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ag-ev.tight {
+  padding-block: 3px;
+  justify-content: center;
+}
+.ag-ev .sub {
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+/* Calendário estilo iPhone: ano, mês e dia */
+.cal-view {
+  animation: cal-in 0.34s var(--ease);
+}
+/* Ano -> mês: o mês cresce até a tela. Mês -> ano: o ano encolhe de volta */
+.cal-view[data-from="year"] {
+  animation-name: cal-in-out;
+}
+@keyframes cal-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@keyframes cal-in-zoom {
+  from {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+}
+@keyframes cal-in-out {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+.cal-view[data-from="month"] {
+  animation-name: cal-in-zoom;
+}
+.cal-year {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px 8px;
+}
+.cal-mini {
+  display: block;
+  padding: 4px 2px;
+  border-radius: 14px;
+  color: var(--fg);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.cal-mini:active {
+  background: var(--soft);
+}
+.cal-mini h3 {
+  padding: 0 4px 4px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.cal-mini[data-current] h3 {
+  color: var(--rose);
+}
+.cal-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  row-gap: 2px;
+  text-align: center;
+  font-size: 9.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.cal-mini-grid span {
+  display: grid;
+  place-items: center;
+  height: 15px;
+}
+.cal-mini-grid [data-has] {
+  color: var(--primary-text);
+  font-weight: 800;
+}
+.cal-mini-grid [data-today] {
+  border-radius: 999px;
+  background: var(--rose);
+  color: #fff;
+}
+.cal-wk {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line, #e6e1f3);
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.cal-month {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+.cal-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  min-height: 92px;
+  padding: 6px 1px 4px;
+  border-top: 1px solid var(--line, #e6e1f3);
+  color: var(--fg);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.cal-cell:active {
+  background: var(--soft);
+}
+.cal-cell[data-out] {
+  pointer-events: none;
+  border-top-color: transparent;
+}
+.cal-cell[data-closed] > b {
+  color: #a9a3c2;
+}
+.cal-cell > b {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  width: 28px;
+  height: 28px;
+  margin-bottom: 2px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.cal-cell[data-today] > b {
+  background: var(--rose);
+  color: #fff;
+}
+.cal-pill {
+  --c: var(--primary);
+  --c-soft: var(--soft);
+  --c-ink: #3b22b8;
+  display: block;
+  overflow: hidden;
+  padding: 1px 4px;
+  border-radius: 5px;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--c-ink);
+  background: var(--c-soft);
+}
+.cal-pill[data-tone="1"] {
+  --c-soft: #fde8ee;
+  --c-ink: #a3264c;
+}
+.cal-pill[data-tone="2"] {
+  --c-soft: #fdf1dc;
+  --c-ink: #6e470b;
+}
+.cal-pill[data-tone="3"] {
+  --c-soft: #e3f5ec;
+  --c-ink: #11543a;
+}
+.cal-pill[data-tone="4"] {
+  --c-soft: #f1ecff;
+  --c-ink: #4b33b8;
+}
+.cal-more {
+  padding-left: 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.cal-fab {
+  position: fixed;
+  left: max(16px, calc(50% - 244px));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  z-index: 24;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cal-view {
+    animation: none;
+  }
+}
