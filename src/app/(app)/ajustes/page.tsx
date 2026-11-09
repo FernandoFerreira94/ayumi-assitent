@@ -17,7 +17,6 @@ import { adminFromEnv } from "@/features/messaging/evolution-admin";
 import { ensureWebhook } from "@/features/whatsapp/webhook";
 import { UpdateButton } from "@/features/update/UpdateButton";
 import { ReplayTourButton } from "@/features/tour/ReplayTourButton";
-import { LocationCard } from "@/features/weather/LocationCard";
 import { requireTenant } from "@/lib/tenant";
 import { whatsappState } from "@/features/shell/status";
 
@@ -42,7 +41,7 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
   const admin = adminFromEnv();
   if (wa === "open" && admin && salon?.i) await ensureWebhook(admin, salon.i).catch(() => undefined);
   return (
-    <PageShell back title="Ajustes">
+    <PageShell title="Ajustes">
       {/* Grupos como os Ajustes do iPhone: o que conecta, o que a cliente recebe, a agenda e o aparelho */}
       <Group title="Conexões" first>
         <section id="whatsapp" aria-label="WhatsApp" className="scroll-mt-6">
@@ -72,9 +71,6 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
       <Group title="Este aparelho">
         <section aria-label="Avisos">
           <PushToggle publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
-        </section>
-        <section aria-label="Localização">
-          <LocationCard />
         </section>
         <section aria-label="Atualização">
           <UpdateButton />

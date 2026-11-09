@@ -30,7 +30,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     target: ".tabbar",
     title: "O menu fica embaixo",
-    text: "Painel, Calendário, o + para agendar de qualquer tela e Clientes. Na sua foto, na ponta, ficam Vagas, Serviços, Financeiro, Pendências e Ajustes.",
+    text: "Painel, Calendário, o + para agendar de qualquer tela, Financeiro e Clientes. O resto fica no menu da sua foto, no canto de cima.",
     advance: "next",
   },
   {

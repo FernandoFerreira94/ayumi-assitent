@@ -2,36 +2,25 @@
 
 import { useState } from "react";
 import { Mascot } from "@/components/brand/Mascot";
-import { HourlyForecast } from "@/features/weather/HourlyForecast";
-import { RainAmbient } from "@/features/weather/RainAmbient";
-import { isRaining, weatherLine, weatherMood } from "@/features/weather/mood";
-import { useWeather } from "@/features/weather/useWeather";
 import type { Briefing } from "./briefing";
 
 /**
  * Bolha à esquerda com o balão do dia; tocar nela faz pular e trocar para a próxima informação.
- * Em hoje, veste a roupa do clima. O resumo do salão segue na frente e o clima vem logo depois,
- * na ordem de prioridade da prancha de humores.
  */
-export function DayBubble({ briefing, isToday }: { briefing: Briefing; isToday: boolean }) {
+export function DayBubble({ briefing }: { briefing: Briefing; isToday?: boolean }) {
   const [i, setI] = useState(0);
   const [hop, setHop] = useState(0);
-  const { weather, ask } = useWeather();
-  const today = isToday && weather ? weather : null;
-  const extra = today ? weatherLine(today) : null;
-  const lines = extra ? [briefing.lines[0], extra, ...briefing.lines.slice(1)] : briefing.lines;
+  const lines = briefing.lines;
   const line = lines[i % lines.length];
 
   return (
     <>
       <div className="mb-3 flex items-center gap-2">
-        {today && isRaining(today) ? <RainAmbient /> : null}
         <button
           type="button"
           data-tour="bubble"
           aria-label={lines.length > 1 ? "Ver mais sobre o dia" : "Mimo"}
           onClick={() => {
-            ask();
             setI((n) => n + 1);
             setHop((n) => n + 1);
           }}
@@ -42,7 +31,6 @@ export function DayBubble({ briefing, isToday }: { briefing: Briefing; isToday: 
             <Mascot
               size={60}
               mood={i === 0 ? briefing.mood : "happy"}
-              weather={(today && weatherMood(today)) || undefined}
               idle
             />
           </span>
@@ -54,7 +42,6 @@ export function DayBubble({ briefing, isToday }: { briefing: Briefing; isToday: 
           {line}
         </p>
       </div>
-      {today?.hours?.length ? <HourlyForecast weather={today} /> : null}
     </>
   );
 }

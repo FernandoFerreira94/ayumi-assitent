@@ -57,6 +57,26 @@ const TABS = [
   },
   null,
   {
+    href: "/financeiro",
+    label: "Financeiro",
+    icon: (on: boolean) =>
+      on ? (
+        svg(
+          <>
+            <circle cx="12" cy="12" r="9" fill="currentColor" />
+            <path d="M12 3v9h9" stroke="#fff" />
+          </>,
+        )
+      ) : (
+        svg(
+          <>
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 3v9h9" />
+          </>,
+        )
+      ),
+  },
+  {
     href: "/clientes",
     label: "Clientes",
     icon: (on: boolean) =>
@@ -74,10 +94,10 @@ const TABS = [
 const isAt = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
 /**
- * Barra de abas fixa embaixo: ícones sem texto, a aba atual preenchida com um "pop" curto, o + no meio
- * agenda de qualquer tela e o avatar (menu com o resto) fica na ponta. Tocar de novo na aba atual sobe ao topo.
+ * Barra de abas fixa embaixo: ícones sem texto, a aba atual preenchida com um "pop" curto e o + no meio
+ * agenda de qualquer tela. O menu lateral continua no avatar do topo. Tocar de novo na aba atual sobe ao topo.
  */
-export function TabBar({ avatar }: { avatar: React.ReactNode }) {
+export function TabBar() {
   const pathname = usePathname();
   return (
     <nav className="tabbar" aria-label="Navegação">
@@ -120,7 +140,6 @@ export function TabBar({ avatar }: { avatar: React.ReactNode }) {
             </li>
           );
         })}
-        <li>{avatar}</li>
       </ul>
     </nav>
   );
