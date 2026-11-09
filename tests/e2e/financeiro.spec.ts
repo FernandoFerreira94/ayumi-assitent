@@ -15,7 +15,7 @@ test("o previsto da agenda abre o Financeiro, que troca de mês e lança um gast
 
   await page.getByRole("button", { name: "Lançar gasto" }).click();
   await page.getByLabel("Valor (R$)").fill("15000");
-  await page.getByLabel("Categoria").selectOption("aluguel");
+  await page.getByRole("combobox", { name: "Categoria" }).selectOption("aluguel");
   await page.getByRole("button", { name: "Lançar", exact: true }).click();
   await expect(page.getByText("Gasto lançado")).toBeVisible();
   await expect(page.getByText("Aluguel · ", { exact: false }).first()).toBeVisible();
