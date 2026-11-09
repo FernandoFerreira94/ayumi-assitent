@@ -1,5 +1,27 @@
 /** Agora e hoje no ponto da usuária, como a Open-Meteo devolve (temperatura em °C, código WMO). */
-export type Weather = { temp: number; code: number; isDay: boolean; rainChance: number; precip?: number };
+export type Weather = {
+  temp: number;
+  code: number;
+  isDay: boolean;
+  rainChance: number;
+  precip?: number;
+  /** Hora a hora do dia de hoje (0 a 23), na hora local do ponto */
+  hours?: HourForecast[];
+};
+
+export type HourForecast = { hour: number; temp: number; code: number; isDay: boolean; rainChance: number };
+
+/** Ícone (emoji do iOS) para o código WMO da Open-Meteo. */
+export function weatherIcon(code: number, isDay: boolean): string {
+  if (code === 0) return isDay ? "☀️" : "🌙";
+  if (code === 1 || code === 2) return isDay ? "🌤️" : "☁️";
+  if (code === 3) return "☁️";
+  if (code === 45 || code === 48) return "🌫️";
+  if (code >= 95) return "⛈️";
+  if (code >= 80) return "🌦️";
+  if (RAIN.has(code)) return "🌧️";
+  return isDay ? "🌤️" : "☁️";
+}
 
 export type WeatherMood = "rain" | "cold" | "hot" | "sun";
 

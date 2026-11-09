@@ -199,6 +199,14 @@ body::before {
   background: rgba(23, 20, 43, 0.22);
 }
 
+/* Atalho do perfil no topo do menu: o foco inicial do <dialog> cai nele e não deve desenhar o anel roxo quadrado */
+.app-menu .profile-link,
+.app-menu .profile-link:focus,
+.app-menu .profile-link:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 /* Folha inferior (drawers) em vidro fosco, como as sheets do iOS */
 .sheet {
   /* Quase opaca: com menos que isso o texto do dashboard aparece por trás do formulário */
@@ -1812,7 +1820,9 @@ button {
   background: var(--primary);
   /* Acima de sheets e do fundo escurecido (só o splash, 100, passa por cima) */
   z-index: 90;
-  pointer-events: none;
+  /* Sem pointer-events:none de propósito: o iOS 26 escolhe a cor da barra pelo elemento fixo que está no topo.
+     Com a faixa "invisível" ao toque, o fundo escurecido das sheets (bg-black/25) virava esse elemento e a barra
+     ficava translúcida. Ocupa só a altura da barra, então não tapa nada útil. */
 }
 /* O menu é um <dialog> na top layer (acima de qualquer z-index): leva a própria faixa por dentro */
 .app-menu .status-fill {

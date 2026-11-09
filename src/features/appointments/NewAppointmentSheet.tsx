@@ -202,7 +202,7 @@ export function NewAppointmentSheet({
           className={
             booking
               ? "booking-ov fixed inset-0 z-50 overflow-y-auto outline-none"
-              : "sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[92dvh] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none"
+              : "sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none"
           }
           style={booking ? undefined : keyboard}
         >

@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   index,
   smallint,
@@ -22,6 +23,15 @@ export const tenants = pgTable("tenants", {
   instagram: text("instagram"),
   /** Um dos BUSINESS_TYPES de features/salon/schema */
   businessType: text("business_type"),
+  /** Nome da pessoa dona do salão, data de nascimento (a idade sai dela) e profissão */
+  ownerName: text("owner_name"),
+  birthDate: date("birth_date"),
+  profession: text("profession"),
+  /** Segmentos de atuação, um ou mais dos SEGMENTS de features/salon/schema */
+  segments: text("segments")
+    .array()
+    .notNull()
+    .default(sql`'{}'`),
   /** Texto do lembrete; null = o padrão do app */
   reminderTemplate: text("reminder_template"),
   /** Horas antes do horário em que sai o lembrete (1 a 72) */

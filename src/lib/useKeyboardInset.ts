@@ -24,5 +24,9 @@ export function useKeyboardInset(active: boolean): CSSProperties {
   }, [active]);
 
   if (!inset.height) return {};
-  return { bottom: inset.bottom, maxHeight: inset.height - 12, overflowY: "auto" };
+  return {
+    bottom: inset.bottom,
+    maxHeight: `calc(${inset.height}px - env(safe-area-inset-top, 0px) - 28px)`,
+    overflowY: "auto",
+  };
 }

@@ -1,68 +1,108 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useState } from "react";
 import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import type { ActionResult } from "@/lib/errors";
-import { DEFAULT_REMINDER, reminderText } from "@/features/reminders/text";
 import { saveSalon } from "./actions";
-import { BUSINESS_TYPES, type BusinessType } from "./schema";
+import { ageFrom, SEGMENTS, type Segment } from "./schema";
 
-const input = "min-h-13 w-full rounded-full border px-5 text-base font-semibold";
-const CHIPS = [
-  ["{nome}", "nome da cliente"],
-  ["{servico}", "serviço"],
-  ["{dia}", "hoje, amanhã ou a data"],
-  ["{hora}", "horário"],
-  ["{salao}", "nome do salão"],
-] as const;
+const input = "min-h-13 w-full min-w-0 rounded-full border px-5 text-base font-semibold";
 
-// Prévia com um horário de exemplo: amanhã às 14:30
-const sampleNow = new Date();
-const sampleStart = new Date(sampleNow.getTime() + 24 * 3600_000);
-sampleStart.setUTCHours(17, 30, 0, 0);
-
-/** Nome, tipo de salão e o texto do lembrete que vai para a cliente na véspera. */
+/** Meu perfil: quem é a pessoa, o salão e os segmentos em que atua. */
 export function SalonForm({
   initial,
 }: {
-  initial: { name: string; businessType: BusinessType | null; reminderTemplate: string | null };
+  initial: {
+    name: string;
+    ownerName: string;
+    birthDate: string;
+    profession: string;
+    segments: Segment[];
+  };
 }) {
-  const [template, setTemplate] = useState(initial.reminderTemplate ?? DEFAULT_REMINDER);
-  const [name, setName] = useState(initial.name);
-  const area = useRef<HTMLTextAreaElement>(null);
+  const [birth, setBirth] = useState(initial.birthDate);
+  const [picked, setPicked] = useState<Set<Segment>>(new Set(initial.segments));
   const [state, action] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
     const res = await saveSalon(prev, fd);
-    if (res.ok) notify.success("Salão atualizado");
+    if (res.ok) notify.success("Perfil atualizado");
     else if (res.code !== "VALIDATION") notify.error(res.code);
     return res;
   }, null);
   const field = state && !state.ok ? state.field : undefined;
+  const age = birth ? ageFrom(birth) : null;
 
-  // Coloca a {chave} onde o cursor está, como num editor de mensagens
-  function insert(token: string) {
-    const el = area.current;
-    if (!el) return setTemplate((t) => t + token);
-    const { selectionStart: s, selectionEnd: e } = el;
-    const next = template.slice(0, s) + token + template.slice(e);
-    setTemplate(next);
-    requestAnimationFrame(() => {
-      el.focus();
-      el.setSelectionRange(s + token.length, s + token.length);
+  const toggle = (id: Segment) =>
+    setPicked((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
     });
-  }
 
   return (
     <form action={action} className="grid gap-6">
+      <section aria-label="Você" className="glass grid gap-3 rounded-[1.75rem] p-5">
+        <h2 className="font-bold">Você</h2>
+        <label className="grid gap-1 text-sm font-bold">
+          Seu nome
+          <input
+            name="ownerName"
+            defaultValue={initial.ownerName}
+            autoComplete="name"
+            placeholder="Ex.: Yumi Tanaka"
+            className={input}
+            aria-invalid={field === "ownerName"}
+          />
+        </label>
+        <div className="grid grid-cols-[minmax(0,1fr)_5.5rem] items-end gap-3">
+          <label className="grid min-w-0 gap-1 text-sm font-bold">
+            Data de nascimento
+            <input
+              name="birthDate"
+              type="date"
+              value={birth}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={(e) => setBirth(e.target.value)}
+              className={input}
+              aria-invalid={field === "birthDate"}
+            />
+          </label>
+          <p className="grid gap-1 text-sm font-bold">
+            Idade
+            <output
+              aria-live="polite"
+              className="grid min-h-13 place-items-center rounded-full bg-soft px-3 text-base font-bold text-primary-text"
+            >
+              {age === null ? "—" : `${age} anos`}
+            </output>
+          </p>
+        </div>
+        {field === "birthDate" ? (
+          <span role="alert" className="text-xs font-semibold text-primary-text">
+            Confira a data de nascimento
+          </span>
+        ) : null}
+        <label className="grid gap-1 text-sm font-bold">
+          Profissão
+          <input
+            name="profession"
+            defaultValue={initial.profession}
+            placeholder="Ex.: Nail designer, cabeleireira"
+            className={input}
+            aria-invalid={field === "profession"}
+          />
+        </label>
+      </section>
+
       <section aria-label="Seu salão" className="glass grid gap-3 rounded-[1.75rem] p-5">
         <h2 className="font-bold">Seu salão</h2>
         <label className="grid gap-1 text-sm font-bold">
-          Como se chama o salão
+          Nome do salão
           <input
             name="name"
             required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            defaultValue={initial.name}
             placeholder="Ex.: Studio Yumi"
             className={input}
             aria-invalid={field === "name"}
@@ -73,78 +113,31 @@ export function SalonForm({
             </span>
           ) : null}
         </label>
-        <label className="grid gap-1 text-sm font-bold">
-          Tipo de salão
-          <select
-            name="businessType"
-            required
-            defaultValue={initial.businessType ?? ""}
-            className={input}
-            aria-invalid={field === "businessType"}
-          >
-            <option value="" disabled>
-              Escolha…
-            </option>
-            {BUSINESS_TYPES.map(([v, label]) => (
-              <option key={v} value={v}>
-                {label}
-              </option>
+        <fieldset className="grid gap-2">
+          <legend className="pb-1 text-sm font-bold">Segmentos (marque quantos fizerem sentido)</legend>
+          <div className="flex flex-wrap gap-2">
+            {SEGMENTS.map(([id, label]) => (
+              <label key={id} className="relative">
+                <input
+                  type="checkbox"
+                  name="segments"
+                  value={id}
+                  checked={picked.has(id)}
+                  onChange={() => toggle(id)}
+                  className="peer sr-only"
+                />
+                <span className="flex min-h-10 items-center rounded-full border border-line bg-surface px-3.5 text-sm font-bold peer-checked:border-primary peer-checked:bg-primary peer-checked:text-on-primary peer-focus-visible:outline-2 peer-focus-visible:outline-primary">
+                  {label}
+                </span>
+              </label>
             ))}
-          </select>
-        </label>
-      </section>
-      <section aria-label="Mensagem de confirmação" className="glass grid gap-3 rounded-[1.75rem] p-5">
-        <h2 className="font-bold">Mensagem de confirmação</h2>
-        <label className="grid gap-1 text-sm font-bold">
-          Texto enviado à cliente
-          <span className="text-xs font-semibold text-muted">Vai no WhatsApp da cliente na véspera do horário.</span>
-          <textarea
-            ref={area}
-            name="reminderTemplate"
-            value={template}
-            onChange={(e) => setTemplate(e.target.value)}
-            rows={4}
-            maxLength={600}
-            className="min-h-28 w-full resize-y rounded-3xl border px-5 py-3 text-base font-semibold leading-6"
-            aria-invalid={field === "reminderTemplate"}
-          />
-        </label>
-        <div className="flex flex-wrap gap-1.5" aria-label="Inserir dados do horário">
-          {CHIPS.map(([token, hint]) => (
-            <button
-              key={token}
-              type="button"
-              onClick={() => insert(token)}
-              title={hint}
-              aria-label={`Inserir ${hint}`}
-              className="min-h-9 rounded-full bg-soft px-3 text-xs font-bold text-primary-text"
-            >
-              {token}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => setTemplate(DEFAULT_REMINDER)}
-            className="min-h-9 rounded-full px-3 text-xs font-bold text-muted underline"
-          >
-            Voltar ao padrão
-          </button>
-        </div>
-        <div className="grid gap-1">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted">Como a cliente recebe</p>
-          <p
-            className="whitespace-pre-wrap rounded-2xl rounded-tr-sm bg-chat-out px-4 py-3 text-sm font-semibold leading-5"
-            aria-live="polite"
-          >
-            {reminderText({ client: "Maria Silva", service: "Alongamento", startsAt: sampleStart }, sampleNow, {
-              template,
-              name,
-            })}
-          </p>
-          <p className="text-xs font-semibold text-muted">
-            As opções 1, 2 e 3 vão sempre no fim: é por elas que o app entende a resposta.
-          </p>
-        </div>
+          </div>
+          {field === "segments" ? (
+            <span role="alert" className="text-xs font-semibold text-primary-text">
+              Marque pelo menos um segmento
+            </span>
+          ) : null}
+        </fieldset>
       </section>
       <SubmitButton pendingLabel="Salvando…">Salvar</SubmitButton>
     </form>
