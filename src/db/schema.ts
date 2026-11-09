@@ -130,6 +130,8 @@ export const appointments = pgTable(
     discountKind: text("discount_kind").$type<"pct" | "brl">(),
     discountValue: integer("discount_value"),
     discountCents: integer("discount_cents").notNull().default(0),
+    /** Observação livre (ex.: motivo do desconto), até 300 caracteres */
+    notes: text("notes"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("appointments_tenant_start").on(t.tenantId, t.startsAt)],

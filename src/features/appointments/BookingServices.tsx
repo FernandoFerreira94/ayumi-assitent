@@ -138,6 +138,17 @@ export function BookingServices({
         ) : null}
       </fieldset>
 
+      <label className="grid gap-1 text-sm font-bold">
+        Observação <span className="font-semibold text-muted">(opcional)</span>
+        <input
+          name="notes"
+          maxLength={300}
+          autoComplete="off"
+          placeholder="Ex.: desconto de aniversário"
+          className="min-h-11 w-full rounded-full border px-4 text-base font-semibold"
+        />
+      </label>
+
       {picked.length ? (
         <p id={`${uid}-total`} className="glass flex items-baseline justify-between gap-3 rounded-2xl px-4 py-3" aria-live="polite">
           <span className="text-sm font-semibold text-muted">
