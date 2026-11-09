@@ -39,7 +39,7 @@ export function UpdateBanner() {
 
   if (!available) return null;
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(max(18px,env(safe-area-inset-bottom))+76px)] z-[25] flex justify-center px-3.5">
+    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(max(12px,calc(env(safe-area-inset-bottom)-10px))+76px)] z-[25] flex justify-center px-3.5">
       <div
         role="status"
         aria-live="polite"

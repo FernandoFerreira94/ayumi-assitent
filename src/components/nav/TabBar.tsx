@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLayoutEffect, useRef } from "react";
 import { openNewAppointment } from "@/features/appointments/QuickBook";
 
 const svg = (d: React.ReactNode, filled = false) => (
@@ -55,7 +56,6 @@ const TABS = [
         )
       ),
   },
-  null,
   {
     href: "/financeiro",
     label: "Financeiro",
@@ -94,53 +94,72 @@ const TABS = [
 const isAt = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
 /**
- * Barra de abas fixa embaixo: ícones sem texto, a aba atual preenchida com um "pop" curto e o + no meio
- * agenda de qualquer tela. O menu lateral continua no avatar do topo. Tocar de novo na aba atual sobe ao topo.
+ * Barra de vidro flutuante no estilo do iOS 26: pílula translúcida com as abas e uma lente lavanda que
+ * desliza com mola até a aba atual; o + fica num botão redondo à parte (é ação, não aba).
+ * O menu lateral continua no avatar do topo. Tocar de novo na aba atual sobe ao topo.
  */
 export function TabBar() {
   const pathname = usePathname();
+  const pill = useRef<HTMLDivElement>(null);
+
+  // Mede a aba atual e move a lente até ela (só transform/width, sem reflow da barra)
+  useLayoutEffect(() => {
+    const el = pill.current;
+    if (!el) return;
+    const place = () => {
+      const cur = el.querySelector<HTMLElement>('[aria-current="page"]');
+      if (!cur) {
+        el.dataset.lens = "off";
+        return;
+      }
+      const a = el.getBoundingClientRect();
+      const b = cur.getBoundingClientRect();
+      el.style.setProperty("--lens-x", `${b.left - a.left}px`);
+      el.style.setProperty("--lens-w", `${b.width}px`);
+      // Primeira medida entra sem animar; as seguintes deslizam
+      el.dataset.lens = el.dataset.lens ? "on" : "init";
+      if (el.dataset.lens === "init") requestAnimationFrame(() => (el.dataset.lens = "on"));
+    };
+    place();
+    window.addEventListener("resize", place);
+    return () => window.removeEventListener("resize", place);
+  }, [pathname]);
+
   return (
     <nav className="tabbar" aria-label="Navegação">
-      <ul>
-        {TABS.map((t) => {
-          if (t === null)
+      <div ref={pill} className="tab-pill">
+        <span className="tab-lens" aria-hidden="true" />
+        <ul>
+          {TABS.map((t) => {
+            const on = isAt(pathname, t.href);
             return (
-              <li key="novo">
-                <button type="button" className="tab-link" aria-label="Novo agendamento" onClick={() => openNewAppointment()}>
-                  {svg(
-                    <>
-                      <rect x="3" y="3" width="18" height="18" rx="5.5" />
-                      <path d="M12 8v8M8 12h8" />
-                    </>,
-                  )}
-                </button>
+              <li key={t.href}>
+                <Link
+                  href={t.href}
+                  aria-label={t.label}
+                  aria-current={on ? "page" : undefined}
+                  className="tab-link"
+                  onClick={(e) => {
+                    if (!on) return;
+                    // Já está aqui: o toque sobe a tela até o topo
+                    e.preventDefault();
+                    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+                    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+                  }}
+                >
+                  {/* key muda ao ativar: o ícone remonta e a animação de "pop" roda de novo */}
+                  <span key={on ? "on" : "off"} className="tab-icon">
+                    {t.icon(on)}
+                  </span>
+                </Link>
               </li>
             );
-          const on = isAt(pathname, t.href);
-          return (
-            <li key={t.href}>
-              <Link
-                href={t.href}
-                aria-label={t.label}
-                aria-current={on ? "page" : undefined}
-                className="tab-link"
-                onClick={(e) => {
-                  if (!on) return;
-                  // Já está aqui: como no Instagram, o toque sobe a tela até o topo
-                  e.preventDefault();
-                  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-                  window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
-                }}
-              >
-                {/* key muda ao ativar: o ícone remonta e a animação de "pop" roda de novo */}
-                <span key={on ? "on" : "off"} className="tab-icon">
-                  {t.icon(on)}
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+          })}
+        </ul>
+      </div>
+      <button type="button" className="tab-act" aria-label="Novo agendamento" onClick={() => openNewAppointment()}>
+        {svg(<path d="M12 5v14M5 12h14" />)}
+      </button>
     </nav>
   );
 }
