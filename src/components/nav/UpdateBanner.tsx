@@ -22,7 +22,7 @@ export function UpdateBanner() {
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") return;
-    void check();
+    const first = setTimeout(() => void check(), 0);
     const onVisible = () => void check();
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("pageshow", onVisible);
@@ -32,6 +32,7 @@ export function UpdateBanner() {
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("pageshow", onVisible);
       window.removeEventListener("online", onVisible);
+      clearTimeout(first);
       clearInterval(id);
     };
   }, [check]);
