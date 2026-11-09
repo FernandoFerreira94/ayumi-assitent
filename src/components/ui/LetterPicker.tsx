@@ -15,15 +15,18 @@ export function LetterPicker({
   label,
   placeholder,
   options,
+  defaultId,
 }: {
   name: string;
   label: string;
   placeholder: string;
   options: PickerOption[];
+  /** Opção já escolhida ao abrir. */
+  defaultId?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [value, setValue] = useState<PickerOption | null>(null);
+  const [value, setValue] = useState<PickerOption | null>(() => options.find((o) => o.id === defaultId) ?? null);
 
   const groups = useMemo(() => {
     const q = query.trim().toLocaleLowerCase("pt-BR");
