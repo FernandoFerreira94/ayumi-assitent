@@ -1758,34 +1758,38 @@ button {
   opacity: 0.85;
 }
 
-/* Calendário estilo iPhone: ano, mês e dia */
-.cal-view {
-  animation: cal-in 0.34s var(--ease);
+/* Calendário estilo iPhone: ano, mês e dia numa casca só (zoom entre visões, deslizar entre meses) */
+.cal-layer {
+  position: relative;
 }
-/* Ano -> mês: o mês cresce até a tela. Mês -> ano: o ano encolhe de volta */
-.cal-view[data-from="year"] {
-  animation-name: cal-in-out;
+/* Durante o zoom nada pode empurrar a página para o lado */
+html.cal-zooming,
+html.cal-zooming body {
+  overflow-x: clip;
 }
-@keyframes cal-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
+/* Carrossel: vai de ponta a ponta da tela, a página do lado espera fora dela */
+.cal-pager {
+  margin: 0 -16px;
+  padding: 0 16px;
+  overflow-x: clip;
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
 }
-@keyframes cal-in-zoom {
-  from {
-    opacity: 0;
-    transform: scale(1.06);
-  }
+.cal-track {
+  position: relative;
+  will-change: transform;
 }
-@keyframes cal-in-out {
-  from {
-    opacity: 0;
-    transform: scale(0.94);
-  }
+.cal-page[data-side] {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
 }
-.cal-view[data-from="month"] {
-  animation-name: cal-in-zoom;
+.cal-page[data-side="prev"] {
+  transform: translateX(calc(-100% - 32px));
+}
+.cal-page[data-side="next"] {
+  transform: translateX(calc(100% + 32px));
 }
 .cal-year {
   display: grid;
@@ -1863,6 +1867,20 @@ button {
 .cal-cell:active {
   background: var(--soft);
 }
+/* Dia tocado esperando o servidor: pulsa até o zoom abrir o dia */
+.cal-cell[data-pending] {
+  border-radius: 12px;
+  animation: cal-wait 0.9s ease-in-out infinite;
+}
+@keyframes cal-wait {
+  50% {
+    background: var(--soft);
+  }
+}
+/* Ano ainda carregando: os números ficam, as pílulas chegam depois */
+.cal-month[data-loading] .cal-cell > b {
+  opacity: 0.7;
+}
 .cal-cell[data-out] {
   pointer-events: none;
   border-top-color: transparent;
@@ -1931,7 +1949,8 @@ button {
   z-index: 24;
 }
 @media (prefers-reduced-motion: reduce) {
-  .cal-view {
+  .cal-cell[data-pending] {
     animation: none;
+    background: var(--soft);
   }
 }

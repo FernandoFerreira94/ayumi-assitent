@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLayoutEffect, useRef, useState } from "react";
 import { formatCalendarTitle, formatDayTitle, formatMonthYear } from "@/lib/dates";
+import { useCalendarNav } from "@/features/calendar/nav";
 import { MonthPicker } from "./MonthPicker";
 
 const WEEKDAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
@@ -39,6 +40,8 @@ export function WeekStrip({
   calendar?: boolean;
 }) {
   const router = useRouter();
+  // Dentro do Calendário, voltar ao mês é zoom na mesma tela, sem ir ao servidor
+  const nav = useCalendarNav();
   // Seleção otimista: o dia acende no toque, sem esperar o servidor
   const [sel, setSel] = useState(date);
   const [prevDate, setPrevDate] = useState(date);
@@ -83,6 +86,11 @@ export function WeekStrip({
           <Link
             href={`/calendario?v=mes&m=${date.slice(0, 7)}`}
             scroll={false}
+            onClick={(e) => {
+              if (!nav) return;
+              e.preventDefault();
+              nav.toMonth(date.slice(0, 7), date);
+            }}
             aria-label={`Voltar para o mês de ${formatMonthYear(date)}`}
             className="btn-glass flex min-h-11 items-center gap-1 rounded-full pl-3 pr-4 text-[15px] font-bold text-primary-text"
           >

@@ -1,68 +1,68 @@
 import Link from "next/link";
-import { serviceTone } from "@/features/appointments/agenda-grid";
-import { formatDayTitle, todayStr } from "@/lib/dates";
-import { CalendarBar, TodayFab } from "./CalendarBar";
-import { MONTH_NAMES, monthWeeks, shiftMonth, WEEKDAYS } from "./grid";
+import { formatDayTitle } from "@/lib/dates";
+import { MAX_PILLS, type YearDays } from "./data";
+import { MONTH_NAMES, monthWeeks, WEEKDAYS } from "./grid";
 
-export type CalendarAppt = { date: string; clientName: string; serviceId: string };
-
-const MAX_PILLS = 3;
-const first = (n: string) => n.trim().split(/\s+/)[0];
-
-/** Mês em grade: o número do dia e uma pílula por atendimento (nome da cliente), toque abre o dia. */
-export function MonthView({
+/** Mês em grade: título, número do dia e uma pílula por atendimento (nome da cliente). Toque abre o dia. */
+export function MonthGrid({
   month,
-  appts,
+  days,
+  today,
   closedWeekdays,
-  from,
+  pendingDay,
+  onDay,
 }: {
   month: string;
-  appts: CalendarAppt[];
+  /** undefined = o ano ainda está carregando. */
+  days: YearDays | undefined;
+  today: string;
   /** Dias da semana (0 = domingo) em que o salão não abre. */
   closedWeekdays: number[];
-  from?: "year";
+  pendingDay?: string | null;
+  onDay: (day: string, el: HTMLElement) => void;
 }) {
-  const today = todayStr();
-  const year = month.slice(0, 4);
-  const byDay = new Map<string, CalendarAppt[]>();
-  for (const a of appts) byDay.set(a.date, [...(byDay.get(a.date) ?? []), a]);
   const thisMonth = today.slice(0, 7) === month;
-
   return (
-    <div className="cal-view" data-from={from}>
-      <CalendarBar
-        back={{ href: `/calendario?v=ano&y=${year}`, label: year }}
-        title={MONTH_NAMES[Number(month.slice(5, 7)) - 1]}
-        titleTone={thisMonth ? "rose" : undefined}
-        prev={{ href: `/calendario?v=mes&m=${shiftMonth(month, -1)}`, label: "Mês anterior" }}
-        next={{ href: `/calendario?v=mes&m=${shiftMonth(month, 1)}`, label: "Próximo mês" }}
-      />
+    <div>
+      <h2 className={`px-1 pb-1 text-[34px] font-bold leading-tight ${thisMonth ? "text-rose" : ""}`}>
+        {MONTH_NAMES[Number(month.slice(5, 7)) - 1]}
+      </h2>
       <div className="cal-wk" aria-hidden="true">
         {WEEKDAYS.map((w, i) => (
           <span key={i}>{w}</span>
         ))}
       </div>
-      <div className="cal-month">
+      <div className="cal-month" data-loading={days ? undefined : true}>
         {monthWeeks(month)
           .flat()
           .map((day, i) => {
             if (!day) return <span key={i} className="cal-cell" data-out aria-hidden="true" />;
-            const list = byDay.get(day) ?? [];
-            const n = list.length;
+            const info = days?.[day];
+            const n = info?.n ?? 0;
+            const pills = info?.pills ?? [];
             return (
               <Link
                 key={day}
                 href={`/calendario?d=${day}`}
                 scroll={false}
+                prefetch={false}
+                draggable={false}
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey) return;
+                  e.preventDefault();
+                  onDay(day, e.currentTarget);
+                }}
                 className="cal-cell"
+                data-zoom={`d${day}`}
                 data-today={day === today || undefined}
+                data-pending={pendingDay === day || undefined}
                 data-closed={closedWeekdays.includes(i % 7) || undefined}
-                aria-label={`${formatDayTitle(day)}${day === today ? " (hoje)" : ""}, ${n === 0 ? "sem atendimentos" : `${n} atendimento${n === 1 ? "" : "s"}`}`}
+                aria-label={`${formatDayTitle(day)}${day === today ? " (hoje)" : ""}${days ? `, ${n === 0 ? "sem atendimentos" : `${n} atendimento${n === 1 ? "" : "s"}`}` : ""}`}
               >
                 <b>{Number(day.slice(8))}</b>
-                {list.slice(0, n > MAX_PILLS ? MAX_PILLS - 1 : MAX_PILLS).map((a, k) => (
-                  <span key={k} className="cal-pill" data-tone={serviceTone(a.serviceId)}>
-                    {first(a.clientName)}
+                {pills.slice(0, n > MAX_PILLS ? MAX_PILLS - 1 : MAX_PILLS).map((a, k) => (
+                  <span key={k} className="cal-pill" data-tone={a.tone}>
+                    {a.name}
                   </span>
                 ))}
                 {n > MAX_PILLS ? <span className="cal-more">+{n - (MAX_PILLS - 1)}</span> : null}
@@ -70,7 +70,6 @@ export function MonthView({
             );
           })}
       </div>
-      {thisMonth ? null : <TodayFab href="/calendario?v=mes" />}
     </div>
   );
 }

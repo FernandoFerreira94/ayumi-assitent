@@ -15,67 +15,76 @@ const chev = (d: string) => (
   </svg>
 );
 
-/** Topo das visões de mês e ano: botão voltar em pílula, título grande e setas para o vizinho. */
+/** Topo das visões de mês e ano: voltar em pílula (zoom de saída) e setas para o vizinho (deslizam). */
 export function CalendarBar({
   back,
-  title,
-  prev,
-  next,
-  titleTone,
+  onPrev,
+  onNext,
+  prevLabel,
+  nextLabel,
+  loading,
 }: {
-  back?: { href: string; label: string };
-  title: string;
-  prev: { href: string; label: string };
-  next: { href: string; label: string };
-  titleTone?: "rose";
+  back?: { label: string; aria: string; onClick: () => void };
+  onPrev: () => void;
+  onNext: () => void;
+  prevLabel: string;
+  nextLabel: string;
+  loading?: boolean;
 }) {
   return (
-    <div className="mb-2">
-      <div className="flex min-h-11 items-center justify-between gap-2">
-        {back ? (
-          <Link
-            href={back.href}
-            scroll={false}
-            className="btn-glass flex min-h-11 items-center gap-1 rounded-full pl-3 pr-4 text-[15px] font-bold text-primary-text"
-          >
-            {chev("M15 5l-7 7 7 7")}
-            {back.label}
-          </Link>
-        ) : (
-          <span />
-        )}
+    <div className="mb-1 flex min-h-11 items-center justify-between gap-2">
+      {back ? (
+        <button
+          type="button"
+          onClick={back.onClick}
+          aria-label={back.aria}
+          className="btn-glass flex min-h-11 items-center gap-1 rounded-full pl-3 pr-4 text-[15px] font-bold text-primary-text"
+        >
+          {chev("M15 5l-7 7 7 7")}
+          {back.label}
+        </button>
+      ) : (
+        <span />
+      )}
+      <div className="flex items-center gap-2">
+        {loading ? <span className="spin" role="status" aria-label="Carregando atendimentos" /> : null}
         <div className="btn-glass flex items-center rounded-full">
-          <Link
-            href={prev.href}
-            scroll={false}
-            aria-label={prev.label}
+          <button
+            type="button"
+            onClick={onPrev}
+            aria-label={prevLabel}
             className="grid size-11 place-content-center text-primary-text"
           >
             {chev("M15 5l-7 7 7 7")}
-          </Link>
-          <Link
-            href={next.href}
-            scroll={false}
-            aria-label={next.label}
+          </button>
+          <button
+            type="button"
+            onClick={onNext}
+            aria-label={nextLabel}
             className="grid size-11 place-content-center text-primary-text"
           >
             {chev("M9 5l7 7-7 7")}
-          </Link>
+          </button>
         </div>
       </div>
-      <h2 className={`px-1 pt-2 text-[34px] font-bold leading-tight ${titleTone === "rose" ? "text-rose" : ""}`}>
-        {title}
-      </h2>
     </div>
   );
 }
 
 /** "Hoje" flutuante no canto, como no Calendário do iPhone. */
-export function TodayFab({ href }: { href: string }) {
+export function TodayFab({ href, onClick }: { href: string; onClick?: () => void }) {
   return (
     <Link
       href={href}
       scroll={false}
+      onClick={
+        onClick
+          ? (e) => {
+              e.preventDefault();
+              onClick();
+            }
+          : undefined
+      }
       className="btn-glass cal-fab flex min-h-11 items-center rounded-full px-5 text-[15px] font-bold text-primary-text"
     >
       Hoje
