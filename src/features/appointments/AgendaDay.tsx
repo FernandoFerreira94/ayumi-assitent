@@ -56,8 +56,8 @@ export type AgendaAppointment = Span & {
   serviceName: string;
   price: string;
   status: Status;
-  /** Uma das 5 cores, pelo serviço. */
-  tone: number;
+  /** Cor que a profissional escolheu para o serviço (lav, rosa, mel, verde, lilas, azul). */
+  color: string;
 };
 export type AgendaBlock = Span & { kind: "block"; id: string; reason: string | null; external?: boolean };
 
@@ -84,6 +84,12 @@ const STATUS_SHORT: Record<Status, string> = {
   done: "concluído",
   no_show: "faltou",
   reschedule_requested: "quer remarcar",
+};
+/** Confirmação à vista em cada agendamento: "Confirmado" (cliente respondeu) ou "Pendente" (falta responder). */
+const CONFIRM_CHIP: Partial<Record<Status, { st: "ok" | "wait"; text: string }>> = {
+  confirmed: { st: "ok", text: "Confirmado" },
+  pending_confirmation: { st: "wait", text: "Pendente" },
+  reschedule_requested: { st: "wait", text: "Remarcar" },
 };
 const canDrag = (s: Status) => s === "pending_confirmation" || s === "confirmed" || s === "reschedule_requested";
 const firstName = (n: string) => n.trim().split(/\s+/)[0];
@@ -460,7 +466,7 @@ export function AgendaDay({
                 type="button"
                 className={cls}
                 style={box}
-                data-tone={a.tone}
+                data-color={a.color}
                 data-status={a.status}
                 data-appointment={a.id}
                 onPointerDown={(e) => press(e, a)}
@@ -480,6 +486,18 @@ export function AgendaDay({
                 {/* Cabe o quanto a altura deixa: 30 min nome, valor, horário e serviço; 45 min a data; 90 min telefone e situação */}
                 <span className="row">
                   <b>{a.clientName}</b>
+                  {CONFIRM_CHIP[a.status] ? (
+                    <em className="ag-st" data-st={CONFIRM_CHIP[a.status]!.st}>
+                      <svg viewBox="0 0 12 12" aria-hidden="true">
+                        {CONFIRM_CHIP[a.status]!.st === "ok" ? (
+                          <path d="M2.5 6.4 5 8.9l4.5-5.3" />
+                        ) : (
+                          <path d="M6 3.2V6l1.9 1.2" />
+                        )}
+                      </svg>
+                      <span>{CONFIRM_CHIP[a.status]!.text}</span>
+                    </em>
+                  ) : null}
                   <i>{a.price}</i>
                 </span>
                 <span className="tm">
@@ -488,7 +506,7 @@ export function AgendaDay({
                 {span.end - span.start >= 45 ? (
                   <span className="sub">
                     {formatShortDate(date)} · {duration(span)}
-                    {span.end - span.start >= 90 ? ` · ${a.clientPhone} · ${STATUS_SHORT[a.status]}` : ""}
+                    {span.end - span.start >= 90 ? ` · ${a.clientPhone}${CONFIRM_CHIP[a.status] ? "" : ` · ${STATUS_SHORT[a.status]}`}` : ""}
                   </span>
                 ) : null}
                 {(sel || lifted) && canDrag(a.status) ? (

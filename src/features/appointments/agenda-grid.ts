@@ -101,10 +101,3 @@ export function dragSpan(mode: DragMode, from: Span, deltaMin: number, win: Span
   }
   return { start: Math.max(win.start, Math.min(from.end - SNAP_MIN, snap(from.start + deltaMin))), end: from.end };
 }
-
-/** Cor do bloco pelo serviço: o mesmo serviço sempre cai na mesma das 5 cores. */
-export function serviceTone(serviceId: string): number {
-  let h = 0;
-  for (const ch of serviceId) h = (h * 31 + ch.charCodeAt(0)) | 0;
-  return Math.abs(h) % 5;
-}

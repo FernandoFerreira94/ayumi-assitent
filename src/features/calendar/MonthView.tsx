@@ -61,7 +61,7 @@ export function MonthGrid({
               >
                 <b>{Number(day.slice(8))}</b>
                 {pills.slice(0, n > MAX_PILLS ? MAX_PILLS - 1 : MAX_PILLS).map((a, k) => (
-                  <span key={k} className="cal-pill" data-tone={a.tone}>
+                  <span key={k} className="cal-pill" data-color={a.color} data-st={a.st}>
                     {a.name}
                   </span>
                 ))}
