@@ -17,8 +17,10 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: "mimo",
-    // black-translucent: o app desenha por baixo da barra de status do iPhone, que fica roxa (.status-fill) com letras brancas
-    statusBarStyle: "black-translucent",
+    // "default", não "black-translucent": no iOS 26 o translucent faz o sistema pintar um desfoque (scroll pocket)
+    // por cima do topo, o que deixava a faixa clara e embaçada. Com "default" o sistema pinta a barra de status
+    // com a cor do elemento fixo opaco do topo (.status-fill), roxo primário sólido.
+    statusBarStyle: "default",
     startupImage: STARTUP_IMAGES.map(({ url, media }) => ({ url, media })),
   },
   formatDetection: { telephone: false },

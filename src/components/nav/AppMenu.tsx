@@ -183,6 +183,7 @@ export function AppMenu({
         onPointerCancel={() => endDrag(dragFrom.current ?? 0)}
         className="app-menu"
       >
+        <div className="status-fill" aria-hidden="true" />
         <div className="mx-auto grid max-w-[520px] gap-3 px-4 pb-3 pt-[max(env(safe-area-inset-top),16px)]">
           <Link
             href="/perfil"
