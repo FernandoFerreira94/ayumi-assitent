@@ -1689,6 +1689,8 @@ button {
 @media (prefers-reduced-motion: reduce) {
   .rain-ambient {
     display: none;
+  }
+}
 
 /* Barra de status do iPhone (hora, Wi-Fi) na cor primária: o app desenha por baixo dela (PWA black-translucent) */
 .status-fill {
