@@ -100,17 +100,20 @@ export async function DaySchedule({
           />
         </div>
       ) : null}
-      <AgendaDay
-        key={date}
-        date={date}
-        win={gridWindow([...appointments, ...blocks])}
-        hours={hours}
-        appointments={appointments}
-        blocks={blocks}
-        nowMin={date === today ? minuteOf(new Date()) : null}
-        {...bookingOptions(clients, services)}
-        blockButton={<NewBlockSheet date={date} />}
-      />
+      {/* No Calendário o corpo do dia desliza para o lado ao trocar de dia */}
+      <div data-day-body={calendar || undefined}>
+        <AgendaDay
+          key={date}
+          date={date}
+          win={gridWindow([...appointments, ...blocks])}
+          hours={hours}
+          appointments={appointments}
+          blocks={blocks}
+          nowMin={date === today ? minuteOf(new Date()) : null}
+          {...bookingOptions(clients, services)}
+          blockButton={<NewBlockSheet date={date} />}
+        />
+      </div>
     </>
   );
 }

@@ -1,6 +1,7 @@
 import { LoadingRegion, Skeleton } from "@/components/ui/Skeleton";
 
-export default function Loading() {
+/** Esqueleto da primeira abertura do Calendário (depois as trocas de visão não passam mais por ele). */
+export function CalendarSkeleton() {
   return (
     <main className="mx-auto min-h-dvh max-w-[520px] px-4 pb-36 pt-[max(env(safe-area-inset-top),14px)]">
       <LoadingRegion label="Carregando o calendário">
