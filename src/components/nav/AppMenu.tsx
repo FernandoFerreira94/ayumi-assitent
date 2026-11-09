@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useRef } from "react";
 import { Mascot } from "@/components/brand/Mascot";
 import type { WhatsAppState } from "@/features/shell/status";
+import { NAV_ICONS } from "./nav-icons";
 import { SignOutButton } from "./SignOutButton";
 
 const icon = (d: React.ReactNode) => (
@@ -23,90 +24,14 @@ const icon = (d: React.ReactNode) => (
 );
 
 const ITEMS = [
-  {
-    href: "/agenda",
-    label: "Painel",
-    icon: icon(
-      <>
-        <rect x="3" y="3" width="8" height="8" rx="2.5" />
-        <rect x="13" y="3" width="8" height="5" rx="2" />
-        <rect x="13" y="11" width="8" height="10" rx="2.5" />
-        <rect x="3" y="14" width="8" height="7" rx="2" />
-      </>,
-    ),
-  },
-  {
-    href: "/calendario",
-    label: "Calendário",
-    icon: icon(
-      <>
-        <rect x="3" y="5" width="18" height="16" rx="3" />
-        <path d="M8 3v4M16 3v4M3 10h18" />
-      </>,
-    ),
-  },
-  {
-    href: "/servicos",
-    label: "Serviços",
-    icon: icon(
-      <>
-        <path d="M6 3l12 12M18 3L6 15" />
-        <circle cx="6" cy="18" r="3" />
-        <circle cx="18" cy="18" r="3" />
-      </>,
-    ),
-  },
-  {
-    href: "/clientes",
-    label: "Clientes",
-    icon: icon(
-      <>
-        <circle cx="9" cy="8" r="3.5" />
-        <path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6" />
-      </>,
-    ),
-  },
-  {
-    href: "/financeiro",
-    label: "Financeiro",
-    icon: icon(
-      <>
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 3v9h9" />
-      </>,
-    ),
-  },
-  {
-    href: "/vagas",
-    label: "Vagas",
-    icon: icon(
-      <>
-        <path d="M12 7v5l3 2" />
-        <circle cx="12" cy="12" r="9" />
-      </>,
-    ),
-  },
-  {
-    href: "/pendencias",
-    label: "Pendências",
-    icon: icon(
-      <>
-        <path d="M9 12l2 2 4-4" />
-        <rect x="4" y="3" width="16" height="18" rx="3" />
-      </>,
-    ),
-  },
-  {
-    href: "/ajustes",
-    label: "Ajustes",
-    icon: icon(
-      <>
-        <path d="M4 7h16M4 17h16" />
-        <circle cx="9" cy="7" r="2.5" />
-        <circle cx="15" cy="17" r="2.5" />
-      </>,
-    ),
-  },
+  { href: "/agenda", label: "Painel", icon: icon(NAV_ICONS.painel) },
+  { href: "/calendario", label: "Calendário", icon: icon(NAV_ICONS.calendario) },
+  { href: "/servicos", label: "Serviços", icon: icon(NAV_ICONS.servicos) },
+  { href: "/clientes", label: "Clientes", icon: icon(NAV_ICONS.clientes) },
+  { href: "/financeiro", label: "Financeiro", icon: icon(NAV_ICONS.financeiro) },
+  { href: "/vagas", label: "Vagas", icon: icon(NAV_ICONS.vagas) },
+  { href: "/pendencias", label: "Pendências", icon: icon(NAV_ICONS.pendencias) },
+  { href: "/ajustes", label: "Ajustes", icon: icon(NAV_ICONS.ajustes) },
 ] as const;
 
 /** Arrastar a folha para cima mais que isso fecha; menos, ela volta. */

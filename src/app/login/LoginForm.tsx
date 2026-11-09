@@ -213,7 +213,7 @@ export function LoginForm() {
           // Mantém o foco no campo: assim a Bolha passa de "tapando os olhos" para "espiando"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => setShowPass((v) => !v)}
-          className="absolute right-1.5 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-xl text-muted"
+          className="absolute right-1 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-xl text-muted"
         >
           <svg
             viewBox="0 0 24 24"

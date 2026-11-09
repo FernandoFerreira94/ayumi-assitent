@@ -126,7 +126,7 @@ export function SalonForm({
                   onChange={() => toggle(id)}
                   className="peer sr-only"
                 />
-                <span className="flex min-h-10 items-center rounded-full border border-line bg-surface px-3.5 text-sm font-bold peer-checked:border-primary peer-checked:bg-primary peer-checked:text-on-primary peer-focus-visible:outline-2 peer-focus-visible:outline-primary">
+                <span className="flex min-h-11 items-center rounded-full border border-line bg-surface px-3.5 text-sm font-bold peer-checked:border-primary peer-checked:bg-primary peer-checked:text-on-primary peer-focus-visible:outline-2 peer-focus-visible:outline-primary">
                   {label}
                 </span>
               </label>

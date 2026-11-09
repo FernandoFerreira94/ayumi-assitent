@@ -35,14 +35,30 @@ test("as 4 abas navegam e marcam a aba atual", async ({ page }) => {
   }
 });
 
-test("fora da agenda, a seta volta para ela", async ({ page }) => {
-  await page.goto("/agenda");
-  await expect(page.getByRole("link", { name: "Voltar para a agenda" })).toHaveCount(0);
-  for (const t of TABS.slice(1)) {
+test("as telas do leque mostram o avatar, sem seta", async ({ page }) => {
+  for (const t of TABS) {
     await page.goto(t.href);
-    await page.getByRole("link", { name: "Voltar para a agenda" }).click();
-    await expect(page).toHaveURL(/\/agenda$/);
+    await expect(page.getByRole("button", { name: "Abrir menu" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Voltar" })).toHaveCount(0);
   }
+});
+
+test("tela secundária: a seta volta para onde estava e, aberta direto, cai na agenda", async ({ page }) => {
+  await page.goto("/financeiro");
+  await page.getByRole("link", { name: "Voltar" }).click();
+  await expect(page).toHaveURL(/\/agenda$/);
+
+  await page.goto("/clientes");
+  // Antes da hidratação o avatar não abre o menu: repete até abrir
+  const menu = page.getByRole("dialog", { name: "Menu" });
+  await expect(async () => {
+    await page.getByRole("button", { name: "Abrir menu" }).click({ timeout: 1000 });
+    await expect(menu).toBeVisible({ timeout: 1000 });
+  }).toPass();
+  await menu.getByRole("link", { name: "Financeiro" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Financeiro" })).toBeVisible();
+  await page.getByRole("link", { name: "Voltar" }).click();
+  await expect(page).toHaveURL(/\/clientes$/);
 });
 
 test("alvos de toque do nav têm pelo menos 44 px", async ({ page }) => {

@@ -443,7 +443,7 @@ button {
 .fan-label {
   position: absolute;
   top: calc(100% + 3px);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--fg);
   white-space: nowrap;

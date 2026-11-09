@@ -22,7 +22,7 @@ export default async function PainelPage({ searchParams }: PageProps<"/agenda">)
   const label = formatDayTitle(date);
 
   return (
-    <PageShell home title={greeting(new Date(), userName)} subtitle={label.charAt(0).toUpperCase() + label.slice(1)}>
+    <PageShell title={greeting(new Date(), userName)} subtitle={label.charAt(0).toUpperCase() + label.slice(1)}>
       <DayBubble briefing={dayBriefing(rows, new Date(), date === today)} isToday={date === today} />
       <DaySchedule tenantId={tenantId} date={date} withStrip base="/agenda" />
     </PageShell>

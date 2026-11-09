@@ -11,7 +11,7 @@ import { BUFFER_OPTIONS, formatDuration, nameTaken, SERVICE_COLORS, type Catalog
 const label = "grid gap-1.5 text-xs font-bold uppercase tracking-wide text-muted";
 const field =
   "min-h-12 w-full rounded-2xl border-[1.5px] border-line bg-surface px-4 text-base font-semibold normal-case tracking-normal text-fg outline-none focus:border-primary aria-invalid:border-fail";
-const pill = "min-h-9 rounded-full border border-line bg-surface px-3.5 text-sm font-bold normal-case tracking-normal";
+const pill = "min-h-11 rounded-full border border-line bg-surface px-3.5 text-sm font-bold normal-case tracking-normal";
 const pressed = "aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-on-primary";
 
 type Draft = Omit<CatalogService, "id" | "upcoming" | "priceCents"> & { price: string };
@@ -141,7 +141,7 @@ export function ServiceForm({
               aria-label="Diminuir 15 minutos"
               disabled={d.durationMin <= 15}
               onClick={() => set("durationMin", Math.max(15, d.durationMin - 15))}
-              className="grid h-10 w-10 place-items-center rounded-full bg-soft text-xl font-bold text-primary-text disabled:opacity-40"
+              className="grid size-11 place-items-center rounded-full bg-soft text-xl font-bold text-primary-text disabled:opacity-40"
             >
               −
             </button>
@@ -156,7 +156,7 @@ export function ServiceForm({
               aria-label="Aumentar 15 minutos"
               disabled={d.durationMin >= 480}
               onClick={() => set("durationMin", Math.min(480, d.durationMin + 15))}
-              className="grid h-10 w-10 place-items-center rounded-full bg-soft text-xl font-bold text-primary-text disabled:opacity-40"
+              className="grid size-11 place-items-center rounded-full bg-soft text-xl font-bold text-primary-text disabled:opacity-40"
             >
               +
             </button>

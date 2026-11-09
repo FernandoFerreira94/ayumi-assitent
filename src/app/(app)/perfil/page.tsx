@@ -22,7 +22,7 @@ export default async function PerfilPage() {
     .from(tenants)
     .where(eq(tenants.id, tenantId));
   return (
-    <PageShell title="Meu perfil">
+    <PageShell back title="Meu perfil">
       <SalonForm
         initial={{
           name: t?.name ?? "",

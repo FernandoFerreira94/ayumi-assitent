@@ -143,7 +143,7 @@ export function NotificationsSheet({ avisos }: { avisos: Aviso[] }) {
                 type="button"
                 onClick={close}
                 aria-label="Fechar"
-                className="btn-glass grid size-9 shrink-0 place-content-center rounded-full"
+                className="btn-glass grid size-11 shrink-0 place-content-center rounded-full"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -275,7 +275,7 @@ function AvisoRow({ aviso, onOpen, onRead }: { aviso: Aviso; onOpen: () => void;
         type="button"
         onClick={onRead}
         aria-label={`Marcar como vista: ${aviso.title}`}
-        className="grid size-9 shrink-0 place-content-center rounded-full text-muted"
+        className="grid size-11 shrink-0 place-content-center rounded-full text-muted"
       >
         <svg
           viewBox="0 0 24 24"
