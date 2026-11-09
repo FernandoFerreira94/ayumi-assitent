@@ -6,7 +6,7 @@ import { getDb } from "@/db/client";
 import { tenants } from "@/db/schema";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
-import { reminderTemplateInput, salonInput } from "./schema";
+import { aiSettingsInput, reminderTemplateInput, salonInput } from "./schema";
 
 /** Dados do salão e da pessoa. O papel do app só lê `tenants`, então grava pelo dono. */
 export async function saveSalon(_prev: ActionResult | null, form: FormData): Promise<ActionResult> {
@@ -46,6 +46,26 @@ export async function saveReminderTemplate(_prev: ActionResult | null, form: For
     await getDb()
       .update(tenants)
       .set({ reminderTemplate: p.data.reminderTemplate || null })
+      .where(eq(tenants.id, tenantId));
+    revalidatePath("/ajustes");
+    return ok();
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+/** Liga a IA nas respostas da cliente e guarda as regras da profissional (Ajustes). */
+export async function saveAiSettings(_prev: ActionResult | null, form: FormData): Promise<ActionResult> {
+  const { tenantId } = await requireTenant();
+  const p = aiSettingsInput.safeParse({
+    aiEnabled: form.get("aiEnabled") === "1",
+    aiRules: form.get("aiRules") ?? "",
+  });
+  if (!p.success) return fail("VALIDATION", "aiRules");
+  try {
+    await getDb()
+      .update(tenants)
+      .set({ aiEnabled: p.data.aiEnabled, aiRules: p.data.aiRules || null })
       .where(eq(tenants.id, tenantId));
     revalidatePath("/ajustes");
     return ok();

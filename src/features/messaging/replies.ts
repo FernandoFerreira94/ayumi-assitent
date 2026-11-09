@@ -96,30 +96,63 @@ export function phoneCandidates(digits: string): string[] {
   return [...out];
 }
 
-/** Mensagem de texto do webhook "messages.upsert" da Evolution (v2), já filtrada. */
-export type InboundText = { instance: string; externalId: string; fromMe: boolean; phoneDigits: string; text: string };
+/**
+ * Mensagem do webhook "messages.upsert" da Evolution (v2), já filtrada. `media` marca áudio, foto ou
+ * figurinha sem legenda: o texto vira um rótulo ("[áudio]") para aparecer na conversa.
+ */
+export type InboundText = {
+  instance: string;
+  externalId: string;
+  fromMe: boolean;
+  phoneDigits: string;
+  text: string;
+  media?: boolean;
+};
 
 type Key = { remoteJid?: string; remoteJidAlt?: string; senderPn?: string; fromMe?: boolean; id?: string };
 type Upsert = {
   event?: string;
   instance?: string;
-  data?: { key?: Key; message?: { conversation?: string; extendedTextMessage?: { text?: string } } };
+  data?: {
+    key?: Key;
+    message?: {
+      conversation?: string;
+      extendedTextMessage?: { text?: string };
+      imageMessage?: { caption?: string };
+      videoMessage?: { caption?: string };
+      audioMessage?: object;
+      stickerMessage?: object;
+    };
+  };
 };
 
 const jidDigits = (jid?: string) =>
   jid && /@s\.whatsapp\.net$/.test(jid) ? jid.split("@")[0].replace(/\D/g, "") : null;
 
 /**
- * Tira do corpo do webhook só o que importa. Ignora grupos, status, áudio/foto sem legenda e
+ * Tira do corpo do webhook só o que importa. Ignora grupos, status, mídia enviada pela própria dona e
  * contatos que só aparecem por LID (identificador sem telefone) quando não vem o número junto.
  */
 export function parseUpsert(body: unknown): InboundText | null {
   const b = body as Upsert;
   if (!b || (b.event !== "messages.upsert" && b.event !== "MESSAGES_UPSERT") || !b.instance) return null;
   const key = b.data?.key;
-  const text = b.data?.message?.conversation ?? b.data?.message?.extendedTextMessage?.text;
-  if (!key?.id || !text?.trim()) return null;
+  const m = b.data?.message;
+  const text = m?.conversation ?? m?.extendedTextMessage?.text ?? m?.imageMessage?.caption ?? m?.videoMessage?.caption;
+  const fromMe = key?.fromMe === true;
+  const mediaLabel = m?.audioMessage
+    ? "[áudio]"
+    : m?.imageMessage
+      ? "[foto]"
+      : m?.videoMessage
+        ? "[vídeo]"
+        : m?.stickerMessage
+          ? "[figurinha]"
+          : null;
+  const media = !text?.trim() && !!mediaLabel && !fromMe;
+  if (!key?.id || (!text?.trim() && !media)) return null;
   const phoneDigits = jidDigits(key.remoteJid) ?? jidDigits(key.remoteJidAlt) ?? jidDigits(key.senderPn);
   if (!phoneDigits) return null;
-  return { instance: b.instance, externalId: key.id, fromMe: key.fromMe === true, phoneDigits, text: text.trim() };
+  const base = { instance: b.instance, externalId: key.id, fromMe, phoneDigits };
+  return media ? { ...base, text: mediaLabel!, media: true } : { ...base, text: text!.trim() };
 }
