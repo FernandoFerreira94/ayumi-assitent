@@ -115,7 +115,7 @@ export function WeekStrip({
           href={calendar ? `${base}?d=${today}` : base}
           scroll={false}
           onClick={() => setSel(today)}
-          className="btn-glass min-h-9 rounded-full px-4 text-[13px] font-bold leading-9 text-primary-text"
+          className="btn-glass min-h-11 rounded-full px-4 text-[13px] font-bold leading-[44px] text-primary-text"
         >
           Hoje
         </Link>

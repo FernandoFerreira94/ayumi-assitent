@@ -228,7 +228,7 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
               <button
                 type="button"
                 onClick={() => openSheet({ kind: "service", preset: newPreset(query.trim()) })}
-                className="min-h-10 rounded-full bg-soft px-4 font-bold text-primary-text"
+                className="min-h-11 rounded-full bg-soft px-4 font-bold text-primary-text"
               >
                 {query.trim() ? `Criar "${query.trim()}"` : "Criar serviço"}
               </button>

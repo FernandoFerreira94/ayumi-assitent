@@ -36,7 +36,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     target: ".fan[data-open] .fan-link",
     title: "Tudo a um toque",
-    text: "Painel, Clientes, Vagas e Ajustes ficam no leque; Calendário e Serviços ficam no menu do seu avatar. O + do topo marca um horário de qualquer tela.",
+    text: "Painel, Clientes, Vagas e Ajustes ficam no leque, e o Novo marca um horário de qualquer tela. Calendário, Serviços e Financeiro ficam no menu da sua foto, no canto de cima.",
     advance: "next",
   },
   {

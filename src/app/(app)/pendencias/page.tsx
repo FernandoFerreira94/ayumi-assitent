@@ -40,7 +40,7 @@ export default async function PendenciasPage() {
   );
 
   return (
-    <PageShell title="Pendências" subtitle={countPendencias(p) ? `${countPendencias(p)} para resolver` : undefined}>
+    <PageShell back title="Pendências" subtitle={countPendencias(p) ? `${countPendencias(p)} para resolver` : undefined}>
       {countPendencias(p) === 0 ? (
         <EmptyState
           title="Tudo em dia"

@@ -5,6 +5,6 @@ test("pendências vazia mostra 'Tudo em dia' e a agenda não mostra selo", async
   await expect(page.getByRole("link", { name: /Pendências para resolver/ })).toHaveCount(0);
   await page.goto("/pendencias");
   await expect(page.getByText("Tudo em dia")).toBeVisible();
-  await page.getByRole("link", { name: /Voltar para a agenda/ }).click();
+  await page.getByRole("link", { name: "Voltar" }).click();
   await expect(page).toHaveURL(/\/agenda/);
 });

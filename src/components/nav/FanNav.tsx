@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { openNewAppointment } from "@/features/appointments/QuickBook";
+import { NAV_ICONS } from "./nav-icons";
 
 const icon = (d: React.ReactNode) => (
   <svg
@@ -13,6 +14,7 @@ const icon = (d: React.ReactNode) => (
     stroke="currentColor"
     strokeWidth="2.1"
     strokeLinecap="round"
+    strokeLinejoin="round"
     aria-hidden="true"
   >
     {d}
@@ -21,43 +23,11 @@ const icon = (d: React.ReactNode) => (
 
 /** Da esquerda para a direita no semicírculo; "Novo" fica no topo, ao alcance do polegar, e abre a folha sem sair da tela. */
 const ITEMS = [
-  {
-    href: "/agenda",
-    label: "Painel",
-    icon: icon(
-      <>
-        <rect x="3.5" y="5" width="17" height="15" rx="4.5" />
-        <path d="M8 3v3.5M16 3v3.5M3.5 10h17" />
-      </>,
-    ),
-  },
-  {
-    href: "/clientes",
-    label: "Clientes",
-    icon: icon(
-      <>
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" />
-      </>,
-    ),
-  },
-  { href: null, label: "Novo", icon: icon(<path d="M12 5v14M5 12h14" />) },
-  {
-    href: "/vagas",
-    label: "Vagas",
-    icon: icon(<path d="M12 3.5 13.6 10.4 20.5 12 13.6 13.6 12 20.5 10.4 13.6 3.5 12 10.4 10.4Z" />),
-  },
-  {
-    href: "/ajustes",
-    label: "Ajustes",
-    icon: icon(
-      <>
-        <path d="M4 7h16M4 17h16" />
-        <circle cx="9" cy="7" r="2.5" />
-        <circle cx="15" cy="17" r="2.5" />
-      </>,
-    ),
-  },
+  { href: "/agenda", label: "Painel", icon: icon(NAV_ICONS.painel) },
+  { href: "/clientes", label: "Clientes", icon: icon(NAV_ICONS.clientes) },
+  { href: null, label: "Novo", icon: icon(NAV_ICONS.novo) },
+  { href: "/vagas", label: "Vagas", icon: icon(NAV_ICONS.vagas) },
+  { href: "/ajustes", label: "Ajustes", icon: icon(NAV_ICONS.ajustes) },
 ];
 /** Raio do semicírculo: 104px deixa ~82px entre os centros, folga para os rótulos não encostarem. */
 const RADIUS = 104;

@@ -71,7 +71,7 @@ export function ReminderMessageForm({ initial, salonName }: { initial: string | 
               onClick={() => insert(token)}
               title={hint}
               aria-label={`Inserir ${hint}`}
-              className="min-h-9 rounded-full bg-soft px-3 text-xs font-bold text-primary-text"
+              className="min-h-11 rounded-full bg-soft px-3 text-xs font-bold text-primary-text"
             >
               {token}
             </button>
@@ -79,7 +79,7 @@ export function ReminderMessageForm({ initial, salonName }: { initial: string | 
           <button
             type="button"
             onClick={() => setTemplate(DEFAULT_REMINDER)}
-            className="min-h-9 rounded-full px-3 text-xs font-bold text-muted underline"
+            className="min-h-11 rounded-full px-3 text-xs font-bold text-muted underline"
           >
             Voltar ao padrão
           </button>

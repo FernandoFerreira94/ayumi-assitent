@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { OfflineBanner } from "@/components/feedback/OfflineBanner";
+import { NavHistory } from "@/components/nav/BackButton";
 import { FanNav } from "@/components/nav/FanNav";
-import { NavSwitch } from "@/components/nav/NavSwitch";
 import { QuickBook } from "@/features/appointments/QuickBook";
 import { TourGate } from "@/features/tour/TourGate";
 import { LoadingRegion, Skeleton } from "@/components/ui/Skeleton";
@@ -27,10 +27,8 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
       >
         <AuthGate>{children}</AuthGate>
       </Suspense>
-      {/* useSearchParams precisa de Suspense para o shell continuar estático */}
-      <Suspense fallback={<FanNav />}>
-        <NavSwitch />
-      </Suspense>
+      <FanNav />
+      <NavHistory />
       <Suspense fallback={null}>
         <QuickBook />
       </Suspense>
