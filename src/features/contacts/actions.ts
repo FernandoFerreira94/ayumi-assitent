@@ -18,13 +18,21 @@ async function toPreview(tenantId: string, parsed: Parsed): Promise<ActionResult
   return ok({ list, ignored: parsed.ignored });
 }
 
+/** Decodifica UTF-8 ou UTF-16 (alguns exports de planilha/iOS vêm em UTF-16 com BOM). */
+async function readText(file: File): Promise<string> {
+  const buf = new Uint8Array(await file.arrayBuffer());
+  if (buf[0] === 0xff && buf[1] === 0xfe) return new TextDecoder("utf-16le").decode(buf);
+  if (buf[0] === 0xfe && buf[1] === 0xff) return new TextDecoder("utf-16be").decode(buf);
+  return new TextDecoder("utf-8").decode(buf);
+}
+
 export async function previewFromFile(fd: FormData): Promise<ActionResult<PreviewResult>> {
   const { tenantId } = await requireTenant();
   const file = fd.get("file");
   if (!(file instanceof File) || file.size === 0) return fail("VALIDATION", "file");
   if (file.size > MAX_FILE_BYTES) return fail("IMAGE_TOO_LARGE", "file");
   try {
-    return await toPreview(tenantId, parseContactsFile(file.name, await file.text()));
+    return await toPreview(tenantId, parseContactsFile(file.name, await readText(file)));
   } catch {
     return fail("UNKNOWN");
   }

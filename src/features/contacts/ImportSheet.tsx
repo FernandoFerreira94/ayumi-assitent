@@ -126,7 +126,10 @@ export function ImportSheet() {
             </div>
           ) : list.length === 0 ? (
             <div className="grid gap-3">
-              <p className="font-semibold">Nenhum contato com nome e telefone válido foi encontrado.</p>
+              <p className="font-semibold">
+                Nenhum contato com nome e telefone válido foi encontrado
+                {ignored > 0 ? ` (${ignored} ignorado(s): sem nome ou telefone com DDD).` : "."}
+              </p>
               <button type="button" className={btn} onClick={reset}>
                 Voltar
               </button>
