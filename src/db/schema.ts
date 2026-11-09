@@ -125,6 +125,9 @@ export const blocks = pgTable("blocks", {
   startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
   endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
   reason: text("reason"),
+  /** "app" = bloqueio criado aqui; "google" = evento importado do Google Agenda (somente leitura) */
+  source: text("source").notNull().default("app"),
+  googleEventId: text("google_event_id"),
 });
 
 export const workingHours = pgTable(

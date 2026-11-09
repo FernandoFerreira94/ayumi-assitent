@@ -15,6 +15,13 @@ export interface CalendarPort {
   deleteEvent(id: string): Promise<void>;
 }
 
+/** Evento de entrada (já existia no Google Agenda). */
+export type ExternalEvent = { id: string; title: string; startsAt: Date; endsAt: Date };
+
+export interface CalendarReader {
+  listEvents(from: Date, to: Date): Promise<ExternalEvent[]>;
+}
+
 /** Acesso ao Google expirou/foi revogado: precisa reconectar. */
 export class GoogleAuthError extends Error {}
 /** Qualquer outra falha (rede, 5xx, cota). */
@@ -31,6 +38,78 @@ const body = (e: CalendarEventInput) => ({
   end: { dateTime: e.endsAt.toISOString(), timeZone: e.timeZone },
   ...(e.attendeeEmail ? { attendees: [{ email: e.attendeeEmail }] } : {}),
 });
+
+type RawEvent = {
+  id?: string;
+  status?: string;
+  summary?: string;
+  transparency?: string;
+  start?: { dateTime?: string };
+  end?: { dateTime?: string };
+  attendees?: { self?: boolean; responseStatus?: string }[];
+};
+
+/** Só vira horário ocupado o evento com hora marcada, confirmado, que "mostra como ocupado" e que a dona não recusou. */
+export function toExternalEvent(r: RawEvent): ExternalEvent | null {
+  if (!r.id || r.status === "cancelled" || r.transparency === "transparent") return null;
+  if (!r.start?.dateTime || !r.end?.dateTime) return null; // dia inteiro: aniversários, feriados
+  if (r.attendees?.some((a) => a.self && a.responseStatus === "declined")) return null;
+  const startsAt = new Date(r.start.dateTime);
+  const endsAt = new Date(r.end.dateTime);
+  if (!(endsAt > startsAt)) return null;
+  return { id: r.id, title: r.summary?.trim() || "Evento do Google", startsAt, endsAt };
+}
+
+const MAX_PAGES = 10;
+
+export function googleCalendarReader(accessToken: string, fetchImpl: typeof fetch = fetch): CalendarReader {
+  return {
+    async listEvents(from, to) {
+      const out: ExternalEvent[] = [];
+      let pageToken: string | undefined;
+      for (let page = 0; page < MAX_PAGES; page++) {
+        const q = new URLSearchParams({
+          timeMin: from.toISOString(),
+          timeMax: to.toISOString(),
+          singleEvents: "true",
+          orderBy: "startTime",
+          maxResults: "250",
+          fields: "nextPageToken,items(id,status,summary,transparency,start,end,attendees(self,responseStatus))",
+        });
+        if (pageToken) q.set("pageToken", pageToken);
+        let res: Response;
+        try {
+          res = await fetchImpl(`${BASE}?${q}`, { headers: { Authorization: `Bearer ${accessToken}` } });
+        } catch {
+          throw new GoogleApiError("network");
+        }
+        if (res.status === 401) throw new GoogleAuthError("401");
+        if (res.status === 403) {
+          let reason = "";
+          try {
+            const j = (await res.clone().json()) as { error?: { errors?: { reason?: string }[]; message?: string } };
+            reason = j.error?.errors?.[0]?.reason ?? j.error?.message ?? "";
+          } catch {
+            /* corpo ilegível */
+          }
+          if (/accessNotConfigured|rateLimit|quota|disabled|not been used/i.test(reason))
+            throw new GoogleApiError(`403 ${reason}`);
+          throw new GoogleAuthError(`403 ${reason}`);
+        }
+        if (!res.ok) throw new GoogleApiError(String(res.status));
+        const j = (await res.json()) as { items?: RawEvent[]; nextPageToken?: string };
+        for (const r of j.items ?? []) {
+          const e = toExternalEvent(r);
+          if (e) out.push(e);
+        }
+        pageToken = j.nextPageToken;
+        if (!pageToken) return out;
+      }
+      // mais páginas que o limite: melhor falhar do que apagar eventos que não vieram
+      throw new GoogleApiError("muitas páginas");
+    },
+  };
+}
 
 export function googleCalendar(accessToken: string, fetchImpl: typeof fetch = fetch): CalendarPort {
   async function call(method: string, url: string, payload?: unknown, okOn404 = false) {
