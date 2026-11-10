@@ -43,7 +43,7 @@ export function dayOffText(
   const bank = o.sunny ? DAY_OFF_SUN : DAY_OFF;
   const body = bank[variant % bank.length]!;
   return {
-    title: `${o.greeting}! ${o.sunny ? "☀️" : "💜"}`,
+    title: `${o.greeting}! ${o.sunny ? "☀️" : skyEmoji(o.greeting)}`,
     body: o.holiday ? `Hoje é ${o.holiday}. ${body}` : body,
   };
 }
@@ -52,22 +52,20 @@ export const dayOffBankSize = (sunny: boolean) => (sunny ? DAY_OFF_SUN : DAY_OFF
 /* ----------------------------------------------------- resumo da manhã */
 
 const MORNING_OPENERS = [
-  "Seu dia já está organizado.",
+  "Seu dia está organizado.",
   "Vamos com tudo hoje!",
-  "Que hoje seja um dia leve e produtivo.",
-  "Olha só como está o seu dia.",
-  "Mais um dia para fazer suas clientes se sentirem lindas.",
-  "Respira, toma um café e confere o seu dia.",
-  "Hoje vai ser bom, já começamos com a agenda em dia.",
+  "Que o dia seja leve.",
+  "Olha só o seu dia.",
+  "Mais um dia lindo pela frente.",
+  "Café na mão e vamos lá.",
 ];
 
 export const EMPTY_DAY = [
-  "Hoje não temos nada marcado. Aproveite para respirar, organizar o espaço ou divulgar uma vaga.",
-  "Agenda livre hoje! Ótimo dia para postar seus trabalhos e chamar quem está sumida.",
-  "Nenhum horário marcado por enquanto. Que tal compartilhar suas vagas no WhatsApp e no Instagram?",
-  "Dia tranquilo pela frente. Aproveite para cuidar de você e deixar tudo pronto para os próximos dias.",
-  "Hoje a agenda está livre. Boa notícia: dá tempo de planejar a semana com calma.",
-  "Sem clientes marcadas hoje. Use esse tempo a seu favor, você decide o ritmo.",
+  "Hoje não tem ninguém marcado. Que tal divulgar uma vaga?",
+  "Agenda livre hoje! Bom dia para postar seus trabalhos.",
+  "Nada marcado por enquanto. Aproveite para respirar.",
+  "Dia tranquilo: bom para organizar o espaço e se cuidar.",
+  "Agenda livre. Dá tempo de planejar a semana com calma.",
 ];
 
 export type DaySummary = {
@@ -79,40 +77,26 @@ export type DaySummary = {
   cancel: number;
 };
 
+/** Emoji do horário de Brasília, pela saudação: sol de manhã, sol entre nuvens à tarde, lua à noite. */
+export const skyEmoji = (greeting: string) =>
+  greeting.startsWith("Bom dia") ? "☀️" : greeting.startsWith("Boa tarde") ? "🌤️" : "🌙";
+
 export const morningBankSize = (empty: boolean) => (empty ? EMPTY_DAY.length : MORNING_OPENERS.length);
 
-/** "Ana, Bia e Carla" / "Ana, Bia, Carla e mais 3". */
-export function namesList(names: string[], max = 4): string {
-  const first = names.map((n) => n.trim().split(/\s+/)[0] ?? n);
-  if (first.length <= max)
-    return first.length > 1 ? `${first.slice(0, -1).join(", ")} e ${first.at(-1)}` : first.join("");
-  return `${first.slice(0, max).join(", ")} e mais ${first.length - max}`;
-}
-
 export function morningText(variant: number, greeting: string, s: DaySummary | null): NoticeText {
-  if (!s || s.names.length === 0) return { title: `${greeting}! 🌤️`, body: EMPTY_DAY[variant % EMPTY_DAY.length]! };
+  const title = `${greeting}! ${skyEmoji(greeting)}`;
+  if (!s || s.names.length === 0) return { title, body: EMPTY_DAY[variant % EMPTY_DAY.length]! };
   const total = s.names.length;
-  const parts = [
-    MORNING_OPENERS[variant % MORNING_OPENERS.length]!,
-    `Hoje ${total === 1 ? "é 1 cliente" : `são ${total} clientes`}: ${namesList(s.names)}. A primeira chega às ${s.firstTime}.`,
-  ];
   const status: string[] = [];
   if (s.confirmed) status.push(plural(s.confirmed, "confirmada", "confirmadas"));
   if (s.pending) status.push(plural(s.pending, "pendente", "pendentes"));
-  if (status.length) parts.push(`${status.join(" e ")}.`);
-  if (s.reschedule)
-    parts.push(
-      s.reschedule === 1
-        ? "1 pediu para remarcar e ainda falta remarcar."
-        : `${s.reschedule} pediram para remarcar e ainda falta remarcar.`,
-    );
-  if (s.cancel)
-    parts.push(
-      s.cancel === 1
-        ? "1 pediu para cancelar e ainda falta cancelar."
-        : `${s.cancel} pediram para cancelar e ainda falta cancelar.`,
-    );
-  return { title: `${greeting}! ☀️`, body: parts.join(" ") };
+  const parts = [
+    MORNING_OPENERS[variant % MORNING_OPENERS.length]!,
+    `${total === 1 ? "1 cliente" : `${total} clientes`}, a primeira às ${s.firstTime}${status.length ? `: ${status.join(" e ")}` : ""}.`,
+  ];
+  if (s.reschedule) parts.push(`${plural(s.reschedule, "pedido", "pedidos")} para remarcar em aberto.`);
+  if (s.cancel) parts.push(`${plural(s.cancel, "pedido", "pedidos")} para cancelar em aberto.`);
+  return { title, body: parts.join(" ") };
 }
 
 /* ------------------------------------------------- fim do expediente */
