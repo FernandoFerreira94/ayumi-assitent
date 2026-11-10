@@ -21,6 +21,14 @@ export const notify = {
   success: (title: string, description?: string) =>
     toast.success(title, { description, icon: <Mascot mood="happy" size={30} /> }),
   info: (title: string, description?: string) => toast.info(title, { description, icon: <Mascot size={30} /> }),
+  /** Convite com um botão de ação (ex.: instalar o app). */
+  invite: (title: string, description: string, onAction: () => void) =>
+    toast.info(title, {
+      description,
+      duration: 9000,
+      icon: <Mascot mood="happy" size={30} />,
+      action: { label: "Como instalar", onClick: onAction },
+    }),
   error: (code: ErrorCode | undefined, retry?: () => void) =>
     toast.error(messageFor(code), retry ? { action: { label: "Tentar de novo", onClick: retry } } : undefined),
   /** Recusa explicada na hora (ex.: soltar em cima de outro horário), sem código de erro do servidor. */
