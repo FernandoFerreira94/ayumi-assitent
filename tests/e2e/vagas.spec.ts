@@ -32,7 +32,9 @@ test("expediente salvo e vagas listadas com texto para copiar", async ({ page, c
   await expect(page.getByRole("button", { name: /às 14:00$/ }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: /às 12:00$/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Copiar texto para divulgar" }).click();
+  await page.getByRole("button", { name: "Copiar texto", exact: true }).click();
   await expect(page.getByText("Texto copiado")).toBeVisible();
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   expect(copied).toContain("Horários disponíveis para Gel");
+  expect(copied).toMatch(/\*\w{3}, \d{2}\/\d{2}\*/);
 });

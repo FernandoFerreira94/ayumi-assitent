@@ -8,7 +8,7 @@ import { listDay } from "@/features/appointments/core";
 import { listBlocks } from "@/features/blocks/core";
 import { importExternalEvents } from "@/features/google/server";
 import { getHours } from "@/features/hours/core";
-import { CopyButton } from "@/features/hours/CopyButton";
+import { ShareSheet } from "@/features/hours/ShareSheet";
 import { SlotButton } from "@/features/hours/SlotButton";
 import { freeSlots, weekdayOf } from "@/features/hours/slots";
 import { listBookable } from "@/features/services/core";
@@ -71,9 +71,6 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
     }),
   }));
   const withSlots = days.filter((d) => d.slots.length > 0);
-  const text = withSlots.length
-    ? `Horários disponíveis para ${service.name}:\n\n${withSlots.map((d) => `${short(d.date)}: ${d.slots.join(", ")}`).join("\n")}\n\nQual prefere?`
-    : "";
 
   return (
     <PageShell title="Vagas" subtitle="Toque num horário para agendar">
@@ -103,7 +100,10 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
       ) : (
         <div className="grid gap-3">
           {/* No topo: é a ação da tela, não precisa rolar a semana até achar */}
-          <CopyButton text={text} />
+          <ShareSheet
+            serviceName={service.name}
+            days={withSlots.map((d) => ({ date: d.date, label: short(d.date), slots: d.slots }))}
+          />
           {withSlots.map((d) => (
             <section key={d.date} aria-label={formatDayTitle(d.date)} className="glass rounded-2xl px-4 py-3">
               <h2 className="pb-2 text-sm font-bold capitalize">{formatDayTitle(d.date)}</h2>
