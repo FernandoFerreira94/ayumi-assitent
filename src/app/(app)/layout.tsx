@@ -4,6 +4,7 @@ import { NavHistory } from "@/components/nav/BackButton";
 import { TabBar } from "@/components/nav/TabBar";
 import { QuickBook } from "@/features/appointments/QuickBook";
 import { ConversationHost } from "@/features/messaging/ConversationHost";
+import { NoticeHost } from "@/features/owner-notices/NoticeHost";
 import { TourGate } from "@/features/tour/TourGate";
 import { LoadingRegion, Skeleton } from "@/components/ui/Skeleton";
 import { requireSession } from "@/lib/session";
@@ -39,6 +40,10 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
       {/* ?conversa=<cliente>: notificação e sino abrem a conversa por cima da tela atual */}
       <Suspense fallback={null}>
         <ConversationHost />
+      </Suspense>
+      {/* ?aviso=<id>: roteiro da semana e mensagem pronta das datas comemorativas */}
+      <Suspense fallback={null}>
+        <NoticeHost />
       </Suspense>
     </>
   );

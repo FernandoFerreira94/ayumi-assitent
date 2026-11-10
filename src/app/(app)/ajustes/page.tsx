@@ -11,6 +11,7 @@ import { getMessageSettings } from "@/features/reminders/core";
 import { MessagesForm } from "@/features/reminders/MessagesForm";
 import { AiRepliesForm } from "@/features/salon/AiRepliesForm";
 import { PushToggle } from "@/features/push/PushToggle";
+import { DailyNoticesCard } from "@/features/owner-notices/DailyNoticesCard";
 import { WhatsAppCard } from "@/features/whatsapp/WhatsAppCard";
 import { InstallGuide } from "@/features/install/InstallGuide";
 import { adminFromEnv } from "@/features/messaging/evolution-admin";
@@ -33,7 +34,13 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
     whatsappState(tenantId),
     isGoogleConnected(tenantId),
     getDb()
-      .select({ i: tenants.whatsappInstance, name: tenants.name, aiRules: tenants.aiRules })
+      .select({
+        i: tenants.whatsappInstance,
+        name: tenants.name,
+        aiRules: tenants.aiRules,
+        city: tenants.city,
+        state: tenants.state,
+      })
       .from(tenants)
       .where(eq(tenants.id, tenantId)),
   ]);
@@ -71,6 +78,9 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
       <Group title="Este aparelho">
         <section aria-label="Avisos">
           <PushToggle publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
+        </section>
+        <section id="avisos-do-dia" aria-label="Avisos do dia" className="scroll-mt-6">
+          <DailyNoticesCard city={salon?.city ?? null} state={salon?.state ?? null} />
         </section>
         <section aria-label="Atualização">
           <UpdateButton />
