@@ -80,7 +80,7 @@
   --color-fail: var(--fail);
   --color-fail-bg: var(--fail-bg);
   --font-sans: var(--font-quicksand), ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
-  --font-brand: var(--font-varela), var(--font-sans);
+  --font-brand: var(--font-brand-face), var(--font-sans);
 }
 
 html,
