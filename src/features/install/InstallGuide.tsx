@@ -182,6 +182,7 @@ export function InstallHeaderButton() {
     <InstallSheet install={install} open={open} onOpenChange={setOpen}>
       <Drawer.Trigger
         aria-label="Instalar o app"
+        data-tour="install"
         className="btn-glass grid size-11 shrink-0 place-content-center rounded-full"
       >
         <Icon name="download" size={24} />
