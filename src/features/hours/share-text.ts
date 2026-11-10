@@ -23,6 +23,9 @@ const PERIODS = [
 ];
 
 export type ShareFormat = "padrao" | "agenda";
+/** Horários marcados à mão ("AAAA-MM-DD|HH:mm") e o rótulo que vai ao lado, ex.: "10:00 (blindagem)". */
+export type ShareMarks = { tag: string; keys: ReadonlySet<string> };
+export const markKey = (date: string, time: string) => `${date}|${time}`;
 export type ShareDay = { label: string; slots: string[]; date?: string };
 
 const monthName = (date: string) => {
@@ -41,7 +44,7 @@ function mondayOf(date: string): string {
  * Formato "agenda aberta": título com mês, semanas (🌟 1ª Semana), uma linha por dia
  * "01/12 - 09:00 | 10:00" e rodapé. Dias sem `date` caem no formato padrão.
  */
-function buildAgendaText(days: ShareDay[]): string {
+function buildAgendaText(days: ShareDay[], marks?: ShareMarks): string {
   const withDate = days.filter((d) => d.date);
   const weeks = new Map<string, ShareDay[]>();
   for (const d of withDate) {
@@ -52,7 +55,8 @@ function buildAgendaText(days: ShareDay[]): string {
   const blocks = [...weeks.values()].map((list, i) => {
     const lines = list.map((d) => {
       const date = d.date as string;
-      return `${date.slice(8)}/${date.slice(5, 7)} - ${d.slots.join(" | ")}`;
+      const times = d.slots.map((t) => (marks?.keys.has(markKey(date, t)) ? `${t} (${marks.tag})` : t));
+      return `${date.slice(8)}/${date.slice(5, 7)} - ${times.join(" | ")}`;
     });
     return `🌟 ${i + 1}ª Semana\n\n${lines.join("\n\n")}`;
   });
@@ -63,10 +67,15 @@ function buildAgendaText(days: ShareDay[]): string {
  * Texto para divulgar as vagas. "padrao" (WhatsApp): dia em negrito (*ter, 10/11*), uma linha por período
  * com faixas contínuas e uma linha em branco entre os dias. "agenda": formato de agenda aberta por semana.
  */
-export function buildShareText(serviceName: string, days: ShareDay[], format: ShareFormat = "padrao"): string {
+export function buildShareText(
+  serviceName: string,
+  days: ShareDay[],
+  format: ShareFormat = "padrao",
+  marks?: ShareMarks,
+): string {
   const filled = days.filter((d) => d.slots.length > 0);
   if (filled.length === 0) return "";
-  if (format === "agenda" && filled.every((d) => d.date)) return buildAgendaText(filled);
+  if (format === "agenda" && filled.every((d) => d.date)) return buildAgendaText(filled, marks);
   const blocks = filled.map((d) => {
     const lines = PERIODS.map((p) => {
       const inPeriod = d.slots.filter((t) => toMin(t) >= p.from && toMin(t) < p.to);

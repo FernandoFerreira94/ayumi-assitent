@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildShareText, toRanges } from "@/features/hours/share-text";
+import { buildShareText, markKey, toRanges } from "@/features/hours/share-text";
 
 describe("texto das vagas", () => {
   it("junta horários seguidos em faixas e separa buracos", () => {
@@ -34,5 +34,14 @@ describe("texto das vagas", () => {
     expect(text).toBe(
       "✨ Agenda de Dezembro Aberta ✨\n\n🌟 1ª Semana\n\n04/12 - 09:00 | 16:00\n\n🌟 2ª Semana\n\n07/12 - 11:00 | 11:30\n\n✨ Garanta seu horário com antecedência!",
     );
+  });
+  it("agenda aberta marca horários exclusivos com o rótulo", () => {
+    const text = buildShareText(
+      "Unha",
+      [{ date: "2026-12-03", label: "qui, 03/12", slots: ["14:00", "14:30"] }],
+      "agenda",
+      { tag: "blindagem", keys: new Set([markKey("2026-12-03", "14:30")]) },
+    );
+    expect(text).toContain("03/12 - 14:00 | 14:30 (blindagem)");
   });
 });

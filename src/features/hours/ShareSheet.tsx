@@ -3,9 +3,11 @@
 import { useRef, useState } from "react";
 import { notify } from "@/components/feedback/toast";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
-import { buildShareText, type ShareFormat } from "./share-text";
+import { buildShareText, markKey, type ShareFormat } from "./share-text";
 
 type Day = { date: string; label: string; slots: string[] };
+
+const DEFAULT_TAG = "blindagem";
 
 /**
  * "Copiar texto para divulgar": abre um diálogo com os dias que têm vaga (todos marcados) para escolher
@@ -20,9 +22,15 @@ export function ShareSheet({ serviceName, days }: { serviceName: string; days: D
   /** Texto editado à mão; null = usa o gerado. Trocar dia ou formato refaz o texto. */
   const [custom, setCustom] = useState<string | null>(null);
   const keyboard = useKeyboardInset(opened);
+  /** Horários marcados como exclusivos (só no texto) e o rótulo que aparece ao lado. */
+  const [marked, setMarked] = useState<Set<string>>(new Set());
+  const [tag, setTag] = useState(DEFAULT_TAG);
 
   const chosen = days.filter((d) => !off.has(d.date));
-  const generated = buildShareText(serviceName, chosen, format);
+  const generated = buildShareText(serviceName, chosen, format, {
+    tag: tag.trim() || DEFAULT_TAG,
+    keys: marked,
+  });
   const text = custom ?? generated;
   const close = () => ref.current?.close();
   const toggle = (date: string) => {
@@ -31,6 +39,16 @@ export function ShareSheet({ serviceName, days }: { serviceName: string; days: D
       const n = new Set(s);
       if (n.has(date)) n.delete(date);
       else n.add(date);
+      return n;
+    });
+  };
+
+  const toggleMark = (key: string) => {
+    setCustom(null);
+    setMarked((s) => {
+      const n = new Set(s);
+      if (n.has(key)) n.delete(key);
+      else n.add(key);
       return n;
     });
   };
@@ -113,26 +131,71 @@ export function ShareSheet({ serviceName, days }: { serviceName: string; days: D
                 </svg>
               </button>
             </div>
-            <div role="group" aria-label="Formato do texto" className="grid grid-cols-2 gap-2">
-              {(
-                [
-                  ["padrao", "Padrão"],
-                  ["agenda", "Agenda aberta"],
-                ] as const
-              ).map(([value, name]) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={format === value}
-                  onClick={() => {
-                    setFormat(value);
-                    setCustom(null);
-                  }}
-                  className={`min-h-11 rounded-full px-3 text-sm font-bold ${format === value ? "btn-tint" : "btn-glass"}`}
-                >
-                  {name}
-                </button>
-              ))}
+            <div className="grid gap-3">
+              <div role="group" aria-label="Formato do texto" className="grid grid-cols-2 gap-2">
+                {(
+                  [
+                    ["padrao", "Padrão"],
+                    ["agenda", "Agenda aberta"],
+                  ] as const
+                ).map(([value, name]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={format === value}
+                    onClick={() => {
+                      setFormat(value);
+                      setCustom(null);
+                    }}
+                    className={`min-h-11 rounded-full px-3 text-sm font-bold ${format === value ? "btn-tint" : "btn-glass"}`}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+              {format === "agenda" ? (
+                <details className="rounded-2xl bg-white/60 px-4 py-2">
+                  <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold">
+                    Marcar horários exclusivos
+                    {marked.size ? ` (${marked.size})` : ""}
+                  </summary>
+                  <label className="flex items-center gap-2 pb-2 text-sm font-semibold">
+                    Rótulo
+                    <input
+                      value={tag}
+                      onChange={(e) => {
+                        setTag(e.target.value);
+                        setCustom(null);
+                      }}
+                      maxLength={30}
+                      className="min-h-11 min-w-0 flex-1 rounded-xl border px-3 text-base"
+                    />
+                  </label>
+                  <div className="grid max-h-48 gap-2 overflow-y-auto pb-2">
+                    {chosen.map((d) => (
+                      <div key={d.date}>
+                        <p className="pb-1 text-xs font-bold text-muted">{d.label}</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {d.slots.map((t) => {
+                            const key = markKey(d.date, t);
+                            return (
+                              <button
+                                key={t}
+                                type="button"
+                                aria-pressed={marked.has(key)}
+                                onClick={() => toggleMark(key)}
+                                className={`min-h-11 rounded-full px-3 text-sm font-bold ${marked.has(key) ? "btn-tint" : "btn-glass"}`}
+                              >
+                                {t}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              ) : null}
             </div>
             <ul className="flex flex-wrap gap-2" aria-label="Dias">
               {days.map((d) => {
