@@ -151,9 +151,9 @@ export function WeekStrip({
         </div>
       </nav>
       {calendar ? <h2 className="pt-3 text-center text-[15px] font-bold">{formatCalendarTitle(date)}</h2> : null}
-      {/* O resumo do dia leva ao Financeiro (semana, mês, semestre) */}
+      {/* O resumo do dia leva ao Financeiro; a pílula é pequena, mas o toque pega 44px de altura */}
       <p className="pt-1.5 text-center text-xs font-bold text-muted" aria-live="polite">
-        <Link href="/financeiro" aria-label={`${summary}. Ver financeiro`} className="glass inline-flex min-h-8 items-center rounded-full px-3 py-1 text-fg">
+        <Link href="/financeiro" aria-label={`${summary}. Ver financeiro`} className="glass relative inline-flex min-h-8 items-center rounded-full px-3 py-1 text-fg before:absolute before:-inset-y-1.5 before:inset-x-0 before:content-['']">
           {summary} ›
         </Link>
       </p>

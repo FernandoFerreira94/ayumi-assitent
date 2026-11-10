@@ -549,7 +549,7 @@ export function AgendaDay({
         onClosed={() => setTemp(null)}
       />
 
-      <Drawer.Root open={Boolean(detailAppt || detailBlock)} onOpenChange={(open) => !open && setDetailId(null)}>
+      <Drawer.Root repositionInputs={false} open={Boolean(detailAppt || detailBlock)} onOpenChange={(open) => !open && setDetailId(null)}>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
           <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">

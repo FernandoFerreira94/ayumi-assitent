@@ -28,9 +28,17 @@ export default async function ClientesPage({ searchParams }: PageProps<"/cliente
       </div>
       {list.length === 0 ? (
         q ? (
-          <EmptyState title="Ninguém encontrada" description="Confira o nome ou o telefone e tente de novo." />
+          <EmptyState
+            icon="search"
+            title="Ninguém encontrada"
+            description="Confira o nome ou o telefone e tente de novo."
+          />
         ) : (
-          <EmptyState title="Nenhuma cliente ainda" description="Cadastre a primeira cliente para começar a agendar." />
+          <EmptyState
+            icon="users"
+            title="Nenhuma cliente ainda"
+            description="Cadastre a primeira cliente para começar a agendar."
+          />
         )
       ) : (
         // Como os Contatos do iPhone: uma seção por letra, com o rótulo fixo no topo enquanto rola

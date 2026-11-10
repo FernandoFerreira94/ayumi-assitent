@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { notify } from "@/components/feedback/toast";
 import { authClient } from "@/lib/auth-client";
+import { TileTitle } from "@/components/ui/Icon";
 
 /**
  * Liga a conta Google à conta do app para os agendamentos irem para o Google Agenda.
@@ -54,7 +55,9 @@ export function GoogleCard({
   return (
     <div className="flex items-center justify-between gap-3 glass rounded-[1.75rem] px-5 py-4">
       <div>
-        <p className="font-bold">Google Agenda</p>
+        <TileTitle icon="calendar" tint="blue">
+          Google Agenda
+        </TileTitle>
         <p className={`text-sm font-semibold ${failed ? "text-fail" : "text-muted"}`}>{hint}</p>
       </div>
       <button

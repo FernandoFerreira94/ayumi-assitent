@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/Switch";
 import type { ActionResult } from "@/lib/errors";
 import { saveReminderSettings } from "./actions";
 import type { ReminderSettings } from "./core";
+import { TileTitle } from "@/components/ui/Icon";
 
 const hoursInput = "min-h-11 w-20 rounded-xl border border-line px-3 text-center text-base font-bold tabular-nums";
 
@@ -30,7 +31,9 @@ export function ReminderForm({ settings }: { settings: ReminderSettings }) {
   return (
     <form action={action} className="glass grid gap-4 rounded-[1.75rem] px-5 py-4">
       <div>
-        <h2 className="font-bold">Mensagens no WhatsApp</h2>
+        <TileTitle as="h2" icon="bell" tint="orange">
+          Mensagens no WhatsApp
+        </TileTitle>
         <p className="text-sm font-semibold text-muted">
           O Mimo só manda a confirmação do agendamento e os avisos para a cliente confirmar o horário. Cancelar ou
           remarcar fica com você.

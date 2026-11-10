@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Drawer } from "vaul";
 import { notify } from "@/components/feedback/toast";
+import { Icon } from "@/components/ui/Icon";
 import type { PickerOption } from "@/components/ui/LetterPicker";
 import { messageFor, type ErrorCode } from "@/lib/errors";
 import { timeOptions } from "@/lib/time-grid";
@@ -70,7 +71,10 @@ export function EditAppointmentSheet({
 
   return (
     <Root open={open} onOpenChange={onOpenChange}>
-      <Drawer.Trigger className={triggerClassName}>Remarcar</Drawer.Trigger>
+      <Drawer.Trigger className={triggerClassName}>
+        <Icon name="reschedule" size={18} />
+        Remarcar
+      </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
         <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">

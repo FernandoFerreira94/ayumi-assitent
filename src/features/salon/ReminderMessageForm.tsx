@@ -6,6 +6,7 @@ import { notify } from "@/components/feedback/toast";
 import type { ActionResult } from "@/lib/errors";
 import { DEFAULT_REMINDER, reminderText } from "@/features/reminders/text";
 import { saveReminderTemplate } from "./actions";
+import { TileTitle } from "@/components/ui/Icon";
 
 const CHIPS = [
   ["{nome}", "nome da cliente"],
@@ -48,7 +49,9 @@ export function ReminderMessageForm({ initial, salonName }: { initial: string | 
   return (
     <form action={action} className="grid gap-4">
       <section aria-label="Mensagem de confirmação" className="glass grid gap-3 rounded-[1.75rem] p-5">
-        <h2 className="font-bold">Mensagem de confirmação</h2>
+        <TileTitle as="h2" icon="message" tint="lavender">
+          Mensagem de confirmação
+        </TileTitle>
         <label className="grid gap-1 text-sm font-bold">
           Texto enviado à cliente
           <span className="text-xs font-semibold text-muted">Vai no WhatsApp da cliente na véspera do horário.</span>

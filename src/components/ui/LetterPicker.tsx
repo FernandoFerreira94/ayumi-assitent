@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Drawer } from "vaul";
 import { groupByLetter } from "@/lib/groupByLetter";
+import { useKeyboardInset } from "@/lib/useKeyboardInset";
 
 export type PickerOption = { id: string; label: string; hint?: string };
 
@@ -37,6 +38,8 @@ export function LetterPicker({
   const [query, setQuery] = useState("");
   const [value, setValue] = useState<PickerOption | null>(() => options.find((o) => o.id === defaultId) ?? null);
 
+  // A busca abre o teclado: a folha encolhe acima dele para a lista filtrada continuar à vista
+  const keyboard = useKeyboardInset(open);
   const groups = useMemo(() => {
     const q = query.trim().toLocaleLowerCase("pt-BR");
     return groupByLetter(q ? options.filter((o) => o.label.toLocaleLowerCase("pt-BR").includes(q)) : options);
@@ -63,7 +66,7 @@ export function LetterPicker({
         className="sr-only"
         aria-hidden="true"
       />
-      <Drawer.NestedRoot open={open} onOpenChange={setOpen}>
+      <Drawer.NestedRoot open={open} onOpenChange={setOpen} repositionInputs={false}>
         <Drawer.Trigger
           aria-labelledby={`${name}-label`}
           className="glass flex min-h-13 w-full items-center justify-between gap-3 rounded-2xl px-4 text-left text-base font-semibold"
@@ -86,7 +89,10 @@ export function LetterPicker({
         </Drawer.Trigger>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-50 bg-black/30" />
-          <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-60 mx-auto flex h-[88dvh] max-w-[520px] flex-col rounded-t-3xl outline-none">
+          <Drawer.Content
+            className="sheet fixed inset-x-0 bottom-0 z-60 mx-auto flex h-[88dvh] max-w-[520px] flex-col rounded-t-3xl outline-none"
+            style={{ bottom: keyboard.bottom, maxHeight: keyboard.maxHeight }}
+          >
             <div className="px-5 pt-4">
               <Drawer.Title className="pb-3 text-xl font-bold">{label}</Drawer.Title>
               <Drawer.Description className="sr-only">Busque pelo nome ou toque numa letra.</Drawer.Description>

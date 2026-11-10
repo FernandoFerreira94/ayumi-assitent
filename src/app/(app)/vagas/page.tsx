@@ -44,6 +44,7 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
     return (
       <PageShell title="Vagas">
         <EmptyState
+          icon="scissors"
           title="Nenhum serviço cadastrado"
           description="Para ver os horários livres, adicione um serviço."
           action={
@@ -94,6 +95,7 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
       </nav>
       {withSlots.length === 0 ? (
         <EmptyState
+          icon="clock"
           title="Sem vagas nos próximos dias"
           description="Confira o expediente em Ajustes ou libere horários na agenda."
         />
