@@ -39,20 +39,22 @@ const TABS = [
     href: "/calendario",
     label: "Calendário",
     icon: (on: boolean) =>
-      on
-        ? svg(
-            <>
-              <rect x="3" y="5" width="18" height="16" rx="3" fill="currentColor" />
-              <path d="M8 3v4M16 3v4" />
-              <path d="M3 10h18" stroke="#fff" />
-            </>,
-          )
-        : svg(
-            <>
-              <rect x="3" y="5" width="18" height="16" rx="3" />
-              <path d="M8 3v4M16 3v4M3 10h18" />
-            </>,
-          ),
+      on ? (
+        svg(
+          <>
+            <rect x="3" y="5" width="18" height="16" rx="3" fill="currentColor" />
+            <path d="M8 3v4M16 3v4" />
+            <path d="M3 10h18" stroke="#fff" />
+          </>,
+        )
+      ) : (
+        svg(
+          <>
+            <rect x="3" y="5" width="18" height="16" rx="3" />
+            <path d="M8 3v4M16 3v4M3 10h18" />
+          </>,
+        )
+      ),
   },
   {
     href: "/financeiro",
@@ -60,19 +62,21 @@ const TABS = [
     // Nome curto que aparece na aba atual (cabe na lente em telas estreitas)
     short: "Finanças",
     icon: (on: boolean) =>
-      on
-        ? svg(
-            <>
-              <circle cx="12" cy="12" r="9" fill="currentColor" />
-              <path d="M12 3v9h9" stroke="#fff" />
-            </>,
-          )
-        : svg(
-            <>
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 3v9h9" />
-            </>,
-          ),
+      on ? (
+        svg(
+          <>
+            <circle cx="12" cy="12" r="9" fill="currentColor" />
+            <path d="M12 3v9h9" stroke="#fff" />
+          </>,
+        )
+      ) : (
+        svg(
+          <>
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 3v9h9" />
+          </>,
+        )
+      ),
   },
   {
     href: "/clientes",
