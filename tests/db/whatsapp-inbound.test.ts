@@ -109,7 +109,7 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     });
     expect((await apptRow()).status).toBe("reschedule_requested");
     expect(sent).toHaveLength(1);
-    expect(sent[0]).toContain("verificar com a profissional o melhor horário");
+    expect(sent[0]).toContain("ver com a profissional o melhor horário");
   });
 
   it("'3' pede para remarcar sem mexer no horário e recebe a mesma resposta", async () => {
@@ -117,7 +117,7 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     sent.length = 0;
     expect(await handleInbound(msg("m4", "3"), deps)).toMatchObject({ intent: "reschedule" });
     expect((await apptRow()).status).toBe("reschedule_requested");
-    expect(sent[0]).toContain("verificar com a profissional");
+    expect(sent[0]).toContain("ver com a profissional");
   });
 
   it("texto livre não recebe resposta automática nenhuma", async () => {
@@ -193,7 +193,7 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
       await fresh();
       verdict = { intent: "confirm", confidence: 1 };
       await handleInbound(m("[áudio]", { media: true }), ai);
-      expect(sent[0]).toContain("Já passei para a profissional");
+      expect(sent[0]).toContain("já passei para a profissional");
       expect((await apptRow()).status).toBe("pending_confirmation");
     });
 
