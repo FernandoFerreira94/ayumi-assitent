@@ -18,6 +18,8 @@ type Due = {
   client: string;
   phone: string;
   service: string;
+  /** Valor do atendimento, para a chave {valor} */
+  priceCents: number;
 };
 
 /**
@@ -34,6 +36,7 @@ export async function claimDue(tx: Tx, now: Date, hours = DEFAULT_REMINDER_HOURS
     client: string;
     phone: string;
     service: string;
+    price_cents: number;
   }>(sql`
     with claimed as (
       update appointments set reminder_sent_at = ${now.toISOString()}
@@ -43,8 +46,8 @@ export async function claimDue(tx: Tx, now: Date, hours = DEFAULT_REMINDER_HOURS
           and status in ('pending_confirmation','confirmed')
           and starts_at > ${now.toISOString()} and starts_at <= ${until.toISOString()}
         for update skip locked)
-      returning id, tenant_id, starts_at, client_id, service_id)
-    select c.id, c.tenant_id, c.client_id, c.starts_at, cl.name as client, cl.phone_e164 as phone, s.name as service
+      returning id, tenant_id, starts_at, client_id, service_id, price_cents)
+    select c.id, c.tenant_id, c.client_id, c.starts_at, c.price_cents, cl.name as client, cl.phone_e164 as phone, s.name as service
     from claimed c join clients cl on cl.id = c.client_id join services s on s.id = c.service_id
     order by c.starts_at`);
   return rows.map((r) => ({
@@ -55,6 +58,7 @@ export async function claimDue(tx: Tx, now: Date, hours = DEFAULT_REMINDER_HOURS
     client: r.client,
     phone: r.phone,
     service: r.service,
+    priceCents: Number(r.price_cents),
   }));
 }
 
@@ -78,7 +82,9 @@ export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Pro
   const due = await claimDue(tx, now, await getReminderHours(tx));
   if (due.length === 0) return { sent: 0, failed: 0, offline: false };
   // RLS: na transação do estúdio só a linha dele aparece
-  const [salon] = await tx.select({ name: tenants.name, template: tenants.reminderTemplate }).from(tenants);
+  const [salon] = await tx
+    .select({ name: tenants.name, template: tenants.reminderTemplate, fullName: tenants.clientNameFull })
+    .from(tenants);
   const failedIds: string[] = [];
   let sent = 0;
   let offline = false;
@@ -118,22 +124,52 @@ export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Pro
 export const getReminderHours = async (tx: Tx) =>
   (await tx.select({ hours: tenants.reminderHours }).from(tenants))[0]?.hours ?? DEFAULT_REMINDER_HOURS;
 
-/** Avisos configuráveis em Ajustes: 1º aviso, 2º aviso opcional e valor na mensagem de agendamento. */
-export type ReminderSettings = { hours: number; secondHours: number | null; includePrice: boolean };
+/** 1º aviso (horas antes) e 2º aviso opcional (null = desligado). */
+export type ReminderSettings = { hours: number; secondHours: number | null };
 
 export async function getReminderSettings(tx: Tx): Promise<ReminderSettings> {
+  const [row] = await tx.select({ hours: tenants.reminderHours, second: tenants.secondReminderHours }).from(tenants);
+  return { hours: row?.hours ?? DEFAULT_REMINDER_HOURS, secondHours: row?.second ?? null };
+}
+
+/** Tudo do cartão "Mensagens no WhatsApp" de Ajustes: avisos, os três textos e como chamar a cliente. */
+export type MessageSettings = ReminderSettings & {
+  fullName: boolean;
+  bookingTemplate: string | null;
+  reminderTemplate: string | null;
+  secondTemplate: string | null;
+};
+
+export async function getMessageSettings(tx: Tx): Promise<MessageSettings> {
   const [row] = await tx
-    .select({ hours: tenants.reminderHours, second: tenants.secondReminderHours, price: tenants.messageIncludePrice })
+    .select({
+      hours: tenants.reminderHours,
+      second: tenants.secondReminderHours,
+      fullName: tenants.clientNameFull,
+      booking: tenants.bookingTemplate,
+      reminder: tenants.reminderTemplate,
+      secondTemplate: tenants.secondReminderTemplate,
+    })
     .from(tenants);
   return {
     hours: row?.hours ?? DEFAULT_REMINDER_HOURS,
     secondHours: row?.second ?? null,
-    includePrice: row?.price ?? false,
+    fullName: row?.fullName ?? false,
+    bookingTemplate: row?.booking ?? null,
+    reminderTemplate: row?.reminder ?? null,
+    secondTemplate: row?.secondTemplate ?? null,
   };
 }
 
-export const saveReminderConfig = (tx: Tx, tenantId: string, s: ReminderSettings) =>
+export const saveMessageSettings = (tx: Tx, tenantId: string, s: MessageSettings) =>
   tx
     .update(tenants)
-    .set({ reminderHours: s.hours, secondReminderHours: s.secondHours, messageIncludePrice: s.includePrice })
+    .set({
+      reminderHours: s.hours,
+      secondReminderHours: s.secondHours,
+      clientNameFull: s.fullName,
+      bookingTemplate: s.bookingTemplate,
+      reminderTemplate: s.reminderTemplate,
+      secondReminderTemplate: s.secondTemplate,
+    })
     .where(eq(tenants.id, tenantId));

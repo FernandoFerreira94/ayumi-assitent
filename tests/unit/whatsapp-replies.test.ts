@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ackText, nudgeText, parseIntent, parseUpsert, phoneCandidates } from "@/features/messaging/replies";
+import { ackText, parseIntent, parseUpsert, phoneCandidates } from "@/features/messaging/replies";
 
 describe("resposta ao lembrete", () => {
   it("entende as opções numeradas", () => {
@@ -140,11 +140,5 @@ describe("webhook da Evolution", () => {
         body({ remoteJid: "5511987654321@s.whatsapp.net", id: "A" }, { extendedTextMessage: { text: "Confirmo" } }),
       )?.text,
     ).toBe("Confirmo");
-  });
-});
-
-describe("2º aviso", () => {
-  it("pede a confirmação com o primeiro nome", () => {
-    expect(nudgeText("Maria Silva")).toBe("Oi, Maria! Passando para lembrar do seu horário 😊 Pode me confirmar? É só responder 1");
   });
 });
