@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildShareText, toRanges } from "@/features/hours/share-text";
+import {
+  buildShareText,
+  composeShareText,
+  markKey,
+  shareFooters,
+  shareTitles,
+  toRanges,
+} from "@/features/hours/share-text";
 
 describe("texto das vagas", () => {
   it("junta horários seguidos em faixas e separa buracos", () => {
@@ -21,5 +28,38 @@ describe("texto das vagas", () => {
   });
   it("sem nenhum dia, devolve vazio", () => {
     expect(buildShareText("Unha", [{ label: "ter, 10/11", slots: [] }])).toBe("");
+  });
+  it("formato agenda aberta agrupa por semana, dia em linha e rodapé", () => {
+    const text = buildShareText(
+      "Unha",
+      [
+        { date: "2026-12-04", label: "sex, 04/12", slots: ["09:00", "16:00"] },
+        { date: "2026-12-07", label: "seg, 07/12", slots: ["11:00", "11:30"] },
+      ],
+      "agenda",
+    );
+    expect(text).toBe(
+      "✨ Agenda de Dezembro Aberta ✨\n\n🌟 1ª Semana\n\n04/12 - 09:00 | 16:00\n\n🌟 2ª Semana\n\n07/12 - 11:00 | 11:30\n\n✨ Garanta seu horário com antecedência!",
+    );
+  });
+  it("agenda aberta marca horários exclusivos com o rótulo", () => {
+    const text = buildShareText(
+      "Unha",
+      [{ date: "2026-12-03", label: "qui, 03/12", slots: ["14:00", "14:30"] }],
+      "agenda",
+      { tag: "blindagem", keys: new Set([markKey("2026-12-03", "14:30")]) },
+    );
+    expect(text).toContain("03/12 - 14:00 | 14:30 (blindagem)");
+    expect(text).toContain("📌 Os horários com (blindagem) são exclusivos");
+  });
+  it("sugestões de título trazem o mês e, em dezembro, a versão de Natal", () => {
+    const titles = shareTitles("agenda", "Unha", [{ date: "2026-12-01", label: "ter, 01/12", slots: ["09:00"] }]);
+    expect(titles[0]).toBe("✨ Agenda de Dezembro Aberta ✨");
+    expect(titles).toContain("🎅🏻 Agenda de Dezembro Aberta 🎁");
+    expect(shareFooters("padrao")[0]).toBe("Qual prefere?");
+  });
+  it("junta título, horários e rodapé e pula partes vazias", () => {
+    expect(composeShareText("Topo", "09:00", "")).toBe("Topo\n\n09:00");
+    expect(composeShareText("Topo", "  ", "Fim")).toBe("");
   });
 });
