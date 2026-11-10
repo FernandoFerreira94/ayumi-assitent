@@ -195,7 +195,7 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
       { ...ai, media: !!msg.media, text: msg.text, clientName: clientCall(client.name, t.fullName), alreadyHandedOff: target.handedOff },
       () => classify(msg.text, t.aiRules),
     );
-  } else plan = { action: "silent", guess: null };
+  } else plan = { action: "silent", guess: null, quiet: false };
 
   let intent: Intent | null = null;
   let appointmentId: string | null = null;
@@ -258,7 +258,9 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
   if (deps.push) {
     const push = deps.push;
     const guess = plan.action === "apply" ? null : plan.guess;
-    const title = pushTitle(client.name, intent, guess, correction, handedOff);
+    // Resposta ao lembrete que ninguém tratou (IA desligada, limite de respostas, já passada): a dona ainda precisa saber
+    const unattended = !!target && plan.action === "silent" && !plan.quiet;
+    const title = pushTitle(client.name, intent, guess, correction, handedOff || unattended);
     // Tocar abre a conversa com a cliente dentro do app
     if (title)
       await withTenant(tenantId, (tx) =>

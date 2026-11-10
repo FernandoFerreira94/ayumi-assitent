@@ -50,7 +50,13 @@ describe("resposta ao lembrete", () => {
     ])
       expect(parseIntent(t), t).toBeNull();
     // Negou a ação de cancelar/remarcar: a dona lê, o sistema não mexe no horário
-    for (const t of ["não cancele", "não quero cancelar", "não vou cancelar", "não quero remarcar", "não precisa cancelar, vou sim"])
+    for (const t of [
+      "não cancele",
+      "não quero cancelar",
+      "não vou cancelar",
+      "não quero remarcar",
+      "não precisa cancelar, vou sim",
+    ])
       expect(parseIntent(t), t).toBeNull();
   });
   it('"não vou faltar" é confirmação, não cancelamento', () => {
@@ -63,7 +69,22 @@ describe("resposta ao lembrete", () => {
     expect(parseIntent("vou ter que cancelar")).toBe("cancel");
   });
   it("entende variações comuns de sim, número por extenso e emoji com tom de pele", () => {
-    for (const t of ["okk", "simm", "ta bom", "tá ótimo", "aham", "uhum", "show", "com certeza", "pode deixar", "yes", "um", "👍🏽", "💜", "1️⃣"])
+    for (const t of [
+      "okk",
+      "simm",
+      "ta bom",
+      "tá ótimo",
+      "aham",
+      "uhum",
+      "show",
+      "com certeza",
+      "pode deixar",
+      "yes",
+      "um",
+      "👍🏽",
+      "💜",
+      "1️⃣",
+    ])
       expect(parseIntent(t), t).toBe("confirm");
     expect(parseIntent("dois")).toBe("cancel");
     expect(parseIntent("três")).toBe("reschedule");
@@ -78,6 +99,16 @@ describe("resposta ao lembrete", () => {
       parseIntent("Bom dia, tudo bem com você? Queria saber se amanhã tem estacionamento aí perto do salão"),
     ).toBeNull();
   });
+});
+
+describe("motivo que impede de ir", () => {
+  it.each(["estou na faculdade", "Tô no trabalho hoje", "surgiu um imprevisto"])("%s vira pedido de remarcar", (t) =>
+    expect(parseIntent(t)).toBe("reschedule"),
+  );
+  it.each(["estou na faculdade, chego mais tarde", "estou na faculdade?", "tô na rua, já chego"])(
+    "%s fica para a dona",
+    (t) => expect(parseIntent(t)).toBeNull(),
+  );
 });
 
 describe("resposta automática ao lembrete", () => {

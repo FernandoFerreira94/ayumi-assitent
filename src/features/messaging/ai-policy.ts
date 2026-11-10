@@ -38,12 +38,13 @@ export type AiContext = {
 /**
  * - apply: a IA entendeu com certeza; aplica a intenção (`sendAck` = ainda cabe resposta automática)
  * - handoff: avisa a cliente que a profissional continua a conversa
- * - silent: não responde nada (só o aviso para a profissional); `guess` é o palpite, se houver
+ * - silent: não responde nada à cliente; `guess` é o palpite, se houver. `quiet` = a dona já está na conversa,
+ *   então nem avisa; sem `quiet`, a dona recebe o aviso "precisa de você" (nenhuma resposta fica sem alerta)
  */
 export type AiPlan =
   | { action: "apply"; intent: Intent; sendAck: boolean }
   | { action: "handoff"; text: string; guess: Intent | null }
-  | { action: "silent"; guess: Intent | null };
+  | { action: "silent"; guess: Intent | null; quiet: boolean };
 
 const asIntent = (v: AiVerdict | null): Intent | null =>
   v && (v.intent === "confirm" || v.intent === "cancel" || v.intent === "reschedule") ? v.intent : null;
@@ -54,10 +55,10 @@ const asIntent = (v: AiVerdict | null): Intent | null =>
  * Atraso, "outro assunto", baixa confiança, erro ou falta de chave → passa para a profissional.
  */
 export async function planAiReply(ctx: AiContext, classify: () => Promise<AiVerdict | null>): Promise<AiPlan> {
-  if (ctx.ownerWroteRecently) return { action: "silent", guess: null };
+  if (ctx.ownerWroteRecently) return { action: "silent", guess: null, quiet: true };
   const underLimit = ctx.autoRepliesLast24h < AI_MAX_REPLIES_24H;
   const handoff = (text: string, guess: Intent | null): AiPlan =>
-    underLimit && !ctx.alreadyHandedOff ? { action: "handoff", text, guess } : { action: "silent", guess };
+    underLimit && !ctx.alreadyHandedOff ? { action: "handoff", text, guess } : { action: "silent", guess, quiet: false };
 
   if (ctx.media) return handoff(mediaText(ctx.clientName), null);
   if (ctx.text.length > AI_MAX_CHARS) return handoff(handoffText(ctx.clientName), null);
