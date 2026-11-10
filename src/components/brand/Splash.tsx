@@ -55,8 +55,9 @@ export function Splash() {
         <circle cx="240" cy="210" r="118" fill="rgba(255,255,255,.12)" stroke="url(#splash-film)" strokeWidth="5" />
         <ellipse cx="187" cy="151" rx="21" ry="8" transform="rotate(-34 187 151)" fill="rgba(255,255,255,.8)" />
       </svg>
-      <div className="splash-mimo">
-        <Mascot mood={awake ? "neutral" : "happy"} size={220} />
+      {/* Abertura é sempre da Bolha, a marca */}
+      <div className="splash-mimo" data-mascot="bolha">
+        <Mascot kind="bolha" mood={awake ? "neutral" : "happy"} size={220} />
         <span className="splash-shadow" />
       </div>
       <div className="splash-word grid justify-items-center gap-1">

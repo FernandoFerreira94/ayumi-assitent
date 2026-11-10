@@ -1,5 +1,5 @@
 /**
- * Mascotes do Mimo: cada um troca as cores do app (mascot-themes.css) e o corpo da Bolha (MascotBodies.tsx).
+ * Mascotes do Mimo (a Bolha é o padrão e a marca: ícone, login e splash são sempre dela): cada um troca as cores do app (mascot-themes.css) e o corpo da Bolha (MascotBodies.tsx).
  * O rosto é o mesmo em todos, então humores, reações e acessórios de data valem para os oito.
  * Prancha: "Temas do Mimo". Cada pessoa escolhe o seu em Meu perfil (memberships.mascot).
  */
@@ -23,5 +23,5 @@ export const isMascotKind = (v: unknown): v is MascotKind => MASCOTS.some((m) =>
 /** Guardado no aparelho para o tema aparecer já na primeira pintura (antes de o servidor responder). */
 export const MASCOT_STORAGE = "mimo-mascot";
 
-/** Script do <head>: aplica o tema salvo no aparelho antes da primeira pintura. */
-export const mascotGate = `try{var m=localStorage.getItem("${MASCOT_STORAGE}");if(m&&/^[a-z]+$/.test(m)&&m!=="${DEFAULT_MASCOT}")document.documentElement.dataset.mascot=m}catch(e){}`;
+/** Script do <head>: aplica o tema salvo no aparelho antes da primeira pintura. O login é sempre da Bolha. */
+export const mascotGate = `try{var m=localStorage.getItem("${MASCOT_STORAGE}");if(location.pathname.indexOf("/login")!==0&&m&&/^[a-z]+$/.test(m)&&m!=="${DEFAULT_MASCOT}")document.documentElement.dataset.mascot=m}catch(e){}`;
