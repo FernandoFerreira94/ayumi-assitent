@@ -38,12 +38,12 @@ export const DAY_OFF_SUN = [
 
 export function dayOffText(
   variant: number,
-  o: { greeting: string; sunny: boolean; holiday?: string | null },
+  o: { greeting: string; sunny: boolean; holiday?: string | null; sky?: string },
 ): NoticeText {
   const bank = o.sunny ? DAY_OFF_SUN : DAY_OFF;
   const body = bank[variant % bank.length]!;
   return {
-    title: `${o.greeting}! ${o.sunny ? "☀️" : skyEmoji(o.greeting)}`,
+    title: `${o.greeting}! ${o.sky ?? skyEmoji(o.greeting)}`,
     body: o.holiday ? `Hoje é ${o.holiday}. ${body}` : body,
   };
 }
@@ -83,8 +83,13 @@ export const skyEmoji = (greeting: string) =>
 
 export const morningBankSize = (empty: boolean) => (empty ? EMPTY_DAY.length : MORNING_OPENERS.length);
 
-export function morningText(variant: number, greeting: string, s: DaySummary | null): NoticeText {
-  const title = `${greeting}! ${skyEmoji(greeting)}`;
+export function morningText(
+  variant: number,
+  greeting: string,
+  s: DaySummary | null,
+  sky: string = skyEmoji(greeting),
+): NoticeText {
+  const title = `${greeting}! ${sky}`;
   if (!s || s.names.length === 0) return { title, body: EMPTY_DAY[variant % EMPTY_DAY.length]! };
   const total = s.names.length;
   const status: string[] = [];

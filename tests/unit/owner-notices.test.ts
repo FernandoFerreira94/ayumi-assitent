@@ -14,7 +14,8 @@ import {
   skyEmoji,
   weekFallback,
 } from "@/features/owner-notices/texts";
-import { isSunny, skyLabel, weatherLine } from "@/features/owner-notices/weather";
+import { isSunny, skyLabel, weatherEmoji, weatherLine } from "@/features/owner-notices/weather";
+import { mascotTitle } from "@/features/owner-notices/core";
 import { ufFromCode } from "@/features/owner-notices/device-location";
 
 const h = (hh: number, mm = 0) => hh * 60 + mm;
@@ -160,5 +161,25 @@ describe("localização do aparelho", () => {
     expect(ufFromCode("BR-SP")).toBe("SP");
     expect(ufFromCode("US-CA")).toBeNull();
     expect(ufFromCode(undefined)).toBeNull();
+  });
+});
+
+describe("emoji do aviso", () => {
+  it("segue o céu da previsão; à noite o céu limpo vira lua", () => {
+    expect(weatherEmoji(0, false)).toBe("☀️");
+    expect(weatherEmoji(0, true)).toBe("🌙");
+    expect(weatherEmoji(2, false)).toBe("🌤️");
+    expect(weatherEmoji(3, false)).toBe("☁️");
+    expect(weatherEmoji(63, false)).toBe("🌧️");
+    expect(weatherEmoji(95, false)).toBe("⛈️");
+  });
+  it("título da manhã usa o emoji da previsão quando há previsão", () => {
+    expect(morningText(0, "Bom dia, Yumi", null, weatherEmoji(63, false)).title).toBe("Bom dia, Yumi! 🌧️");
+  });
+  it("mascote do perfil entra no fim do título; mascote desconhecido é ignorado", () => {
+    expect(mascotTitle("Bom dia, Yumi! ☀️", "lulu")).toBe("Bom dia, Yumi! ☀️ 🐰");
+    expect(mascotTitle("Bom dia, Yumi! ☀️", "bambu")).toBe("Bom dia, Yumi! ☀️ 🐼");
+    expect(mascotTitle("Bom dia", "xyz")).toBe("Bom dia");
+    expect(mascotTitle("Bom dia")).toBe("Bom dia");
   });
 });

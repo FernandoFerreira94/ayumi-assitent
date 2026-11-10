@@ -31,6 +31,19 @@ const CLEAR = new Set([0, 1, 2]);
 
 export const isSunny = (f: Forecast) => CLEAR.has(f.code) && f.rain < 30;
 
+/** Emoji do céu da previsão (código WMO); à noite o céu limpo vira lua. */
+export function weatherEmoji(code: number, night: boolean): string {
+  if (code === 0) return night ? "🌙" : "☀️";
+  if (code <= 2) return night ? "☁️" : "🌤️";
+  if (code === 3) return "☁️";
+  if (code === 45 || code === 48) return "🌫️";
+  if (code >= 51 && code <= 57) return "🌦️";
+  if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return "🌧️";
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return "❄️";
+  if (code >= 95) return "⛈️";
+  return night ? "🌙" : "🌤️";
+}
+
 /** Céu pelo código WMO, em palavras do dia a dia. */
 export function skyLabel(code: number): string {
   if (code === 0) return "céu limpo";

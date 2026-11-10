@@ -17,6 +17,18 @@ export const MASCOTS = [
 
 export type MascotKind = (typeof MASCOTS)[number]["id"];
 
+/** Emoji de cada mascote, usado no título dos avisos no celular (o iOS não deixa trocar a imagem do aviso). */
+export const MASCOT_EMOJI: Record<MascotKind, string> = {
+  bolha: "🫧",
+  abobora: "🎃",
+  mia: "🐱",
+  caramelo: "🐶",
+  lulu: "🐰",
+  pingo: "🐧",
+  mel: "🐻",
+  bambu: "🐼",
+};
+
 export const DEFAULT_MASCOT: MascotKind = "bolha";
 
 export const isMascotKind = (v: unknown): v is MascotKind => MASCOTS.some((m) => m.id === v);
