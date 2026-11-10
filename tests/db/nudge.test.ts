@@ -85,4 +85,24 @@ d("reforço único de confirmação (Postgres real)", () => {
     await runReminders(portFor, at("2026-11-10T15:30:00Z"));
     expect(sent).toHaveLength(0); // só um aviso
   });
+
+  it("avisa a dona uma vez só quando a cliente não respondeu, e o toque abre a conversa", async () => {
+    sent.length = 0;
+    await admin`truncate appointments cascade`;
+    await admin`insert into "user" (id,name,email) values ('nr1','Dona','nr1@t.test') on conflict do nothing`;
+    await admin`insert into push_subscriptions (tenant_id, user_id, endpoint, p256dh, auth) values (${T}, 'nr1', 'https://push.example/nr1', 'k', 'a')`;
+    const pushed: { title: string; url: string }[] = [];
+    const push = { send: async (_s: unknown, p: { title: string; url: string }) => void pushed.push(p) };
+    await admin`update tenants set second_reminder_hours = null where id = ${T}`;
+    // Sem 2º aviso: 2 h depois do 1º sem resposta. Atendimento 18h BRT (21:00Z), lembrete às 11h BRT (14:00Z)
+    const a = await add("2026-11-10T21:00:00Z", "2026-11-10T14:00:00Z");
+    await runReminders(portFor, at("2026-11-10T15:30:00Z"), undefined, push);
+    expect(pushed).toHaveLength(0); // só 1,5 h
+    await runReminders(portFor, at("2026-11-10T16:05:00Z"), undefined, push);
+    expect(pushed).toEqual([expect.objectContaining({ title: "Bia não respondeu", url: `/agenda?conversa=${C}` })]);
+    await runReminders(portFor, at("2026-11-10T16:30:00Z"), undefined, push);
+    expect(pushed).toHaveLength(1); // uma vez por agendamento
+    expect((await admin`select no_reply_at from appointments where id = ${a}`)[0].no_reply_at).not.toBeNull();
+    await admin`delete from push_subscriptions where tenant_id = ${T}`;
+  });
 });

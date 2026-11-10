@@ -34,13 +34,19 @@ const GUESS_LABEL: Record<Intent, string> = {
 
 const firstName = (name: string) => name.trim().split(/\s+/)[0];
 
-const pushTitle = (name: string, intent: Intent | null, guess: Intent | null, correction: boolean) => {
+/**
+ * Notificação no celular da dona. Só para o que ela pediu: confirmou, quer cancelar, quer remarcar (e quando a IA
+ * passou a conversa, porque a cliente ouviu que a profissional responde). Mensagem solta não vira notificação.
+ */
+const pushTitle = (name: string, intent: Intent | null, guess: Intent | null, correction: boolean, handedOff: boolean) => {
   const first = firstName(name);
   if (correction && intent) return `${first} corrigiu a resposta: ${GUESS_LABEL[intent]}`;
   if (intent === "confirm") return `${first} confirmou o horário`;
   if (intent === "cancel") return `${first} quer cancelar`;
   if (intent === "reschedule") return `${first} quer remarcar`;
-  return guess ? `${first} mandou mensagem (parece: ${GUESS_LABEL[guess]})` : `${first} mandou mensagem`;
+  if (guess === "cancel" || guess === "reschedule") return `${first} parece querer ${GUESS_LABEL[guess]}`;
+  if (handedOff) return `${first} precisa de você na conversa`;
+  return null;
 };
 
 export type InboundDeps = {
@@ -252,10 +258,12 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
   if (deps.push) {
     const push = deps.push;
     const guess = plan.action === "apply" ? null : plan.guess;
-    const title = pushTitle(client.name, intent, guess, correction);
-    await withTenant(tenantId, (tx) =>
-      sendToAll(tx, push, { title, body: msg.text.slice(0, 140), url: "/agenda" }),
-    ).catch((e) => console.error(JSON.stringify({ level: "warn", msg: "reply_push_failed", err: String(e) })));
+    const title = pushTitle(client.name, intent, guess, correction, handedOff);
+    // Tocar abre a conversa com a cliente dentro do app
+    if (title)
+      await withTenant(tenantId, (tx) =>
+        sendToAll(tx, push, { title, body: msg.text.slice(0, 140), url: `/agenda?conversa=${client.id}` }),
+      ).catch((e) => console.error(JSON.stringify({ level: "warn", msg: "reply_push_failed", err: String(e) })));
   }
   return { handled: true, intent, appointmentId };
 }
