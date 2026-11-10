@@ -7,6 +7,7 @@ export default function OfflinePage() {
   return (
     <main className="mx-auto min-h-dvh max-w-[520px] pt-24">
       <EmptyState
+        icon="wifiOff"
         title="Você está sem internet"
         description="Assim que a conexão voltar, o app atualiza sozinho. Tente de novo em instantes."
       />

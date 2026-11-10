@@ -45,6 +45,7 @@ export default async function PendenciasPage() {
     <PageShell back title="Pendências" subtitle={countPendencias(p) ? `${countPendencias(p)} para resolver` : undefined}>
       {countPendencias(p) === 0 ? (
         <EmptyState
+          icon="checkCircle"
           title="Tudo em dia"
           description="Nenhum atendimento esperando confirmação, fechamento ou envio ao Google."
         />

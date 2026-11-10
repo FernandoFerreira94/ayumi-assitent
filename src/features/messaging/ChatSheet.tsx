@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Drawer } from "vaul";
 import { messageFor, type ErrorCode } from "@/lib/errors";
 import { formatTime, todayStr } from "@/lib/dates";
+import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import { loadConversation, sendClientMessage } from "./actions";
 import { MAX_MESSAGE } from "./send";
 import type { ConversationMessage } from "./store";
@@ -95,6 +96,9 @@ export function ChatSheet({
   const end = useRef<HTMLDivElement>(null);
   const lastCount = useRef(0);
   const Root = nested ? Drawer.NestedRoot : Drawer.Root;
+  // No iPhone o teclado cobre o fim da tela: a folha sobe e encolhe para o campo ficar logo acima dele
+  const keyboard = useKeyboardInset(open);
+  const typing = Number(keyboard.bottom ?? 0) > 0;
 
   async function refresh() {
     const res = await loadConversation(clientId).catch(() => null);
@@ -124,6 +128,11 @@ export function ChatSheet({
     lastCount.current = total;
   }, [total]);
 
+  // Teclado abriu ou fechou: a última mensagem continua à vista logo acima do campo
+  useEffect(() => {
+    if (open) end.current?.scrollIntoView({ block: "end" });
+  }, [open, keyboard.bottom]);
+
   async function deliver(id: number, body: string) {
     setLocals((ls) => ls.map((l) => (l.id === id ? { ...l, state: "sending" } : l)));
     const res = await sendClientMessage(clientId, body).catch(() => null);
@@ -146,13 +155,16 @@ export function ChatSheet({
   }
 
   return (
-    <Root open={open} onOpenChange={setOpen}>
+    <Root open={open} onOpenChange={setOpen} repositionInputs={false}>
       <Drawer.Trigger className={triggerClassName} aria-label={triggerLabel}>
         {children}
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
-        <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 mx-auto flex h-[85dvh] max-w-[520px] flex-col overflow-hidden rounded-t-3xl bg-chat-bg outline-none">
+        <Drawer.Content
+          className="fixed inset-x-0 bottom-0 z-50 mx-auto flex h-[85dvh] max-w-[520px] flex-col overflow-hidden rounded-t-3xl bg-chat-bg outline-none"
+          style={{ bottom: keyboard.bottom, maxHeight: keyboard.maxHeight }}
+        >
           <header className="sheet flex items-center gap-3 px-4 pb-3 pt-2">
             <span
               className="absolute left-1/2 top-1.5 h-1 w-10 -translate-x-1/2 rounded-full bg-line"
@@ -225,14 +237,14 @@ export function ChatSheet({
                   <p role="alert" className="text-right text-xs font-semibold text-fail">
                     Não enviada. {messageFor(b.state.failed)}{" "}
                     {b.state.failed === "WHATSAPP_OFFLINE" ? (
-                      <Link href="/ajustes#whatsapp" className="font-bold underline">
+                      <Link href="/ajustes#whatsapp" className="inline-flex min-h-11 items-center font-bold underline">
                         Reconectar
                       </Link>
                     ) : (
                       <button
                         type="button"
                         onClick={() => deliver(b.id, b.text)}
-                        className="min-h-6 font-bold underline"
+                        className="inline-flex min-h-11 items-center font-bold underline"
                       >
                         Tentar de novo
                       </button>
@@ -244,7 +256,10 @@ export function ChatSheet({
             <div ref={end} />
           </div>
 
-          <form onSubmit={send} className="flex items-end gap-2 px-2 pb-[max(env(safe-area-inset-bottom),10px)] pt-2">
+          <form
+            onSubmit={send}
+            className={`flex items-end gap-2 px-2 pt-2 ${typing ? "pb-2" : "pb-[max(env(safe-area-inset-bottom),10px)]"}`}
+          >
             <textarea
               value={text}
               onChange={(e) => {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { EmptyState } from "@/components/feedback/EmptyState";
+import { Icon } from "@/components/ui/Icon";
 import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
 import { listDay } from "@/features/appointments/core";
@@ -75,24 +76,39 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
       <div className="grid gap-4">
         <section aria-label="Resumo" className={card}>
           <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-muted">Saldo do mês</p>
+            <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted">
+              <Icon name="wallet" size={16} className="text-primary-text" />
+              Saldo do mês
+            </p>
             <p className={`text-3xl font-bold tabular-nums ${balance < 0 ? "text-fail" : ""}`}>{formatBRL(balance)}</p>
           </div>
           <dl className="grid grid-cols-2 gap-2 text-sm">
             <div>
-              <dt className="text-xs font-bold text-muted">Ganhos</dt>
+              <dt className="flex items-center gap-1 text-xs font-bold text-muted">
+                <Icon name="arrowUp" size={14} className="text-ok" />
+                Ganhos
+              </dt>
               <dd className="font-bold tabular-nums">{formatBRL(s.received)}</dd>
             </div>
             <div>
-              <dt className="text-xs font-bold text-muted">Gastos</dt>
+              <dt className="flex items-center gap-1 text-xs font-bold text-muted">
+                <Icon name="arrowDown" size={14} className="text-fail" />
+                Gastos
+              </dt>
               <dd className="font-bold tabular-nums">{formatBRL(spentCents)}</dd>
             </div>
             <div>
-              <dt className="text-xs font-bold text-muted">Previsto</dt>
+              <dt className="flex items-center gap-1 text-xs font-bold text-muted">
+                <Icon name="forecast" size={14} className="text-primary-text" />
+                Previsto
+              </dt>
               <dd className="font-bold tabular-nums">{formatBRL(s.forecast)}</dd>
             </div>
             <div>
-              <dt className="text-xs font-bold text-muted">Ticket médio</dt>
+              <dt className="flex items-center gap-1 text-xs font-bold text-muted">
+                <Icon name="ticket" size={14} className="text-primary-text" />
+                Ticket médio
+              </dt>
               <dd className="font-bold tabular-nums">{formatBRL(s.averageCents)}</dd>
             </div>
           </dl>
@@ -113,6 +129,7 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
             </>
           ) : (
             <EmptyState
+              icon="coins"
               title="Nada recebido nesse mês"
               description="O ganho conta os atendimentos marcados como concluídos na agenda."
             />

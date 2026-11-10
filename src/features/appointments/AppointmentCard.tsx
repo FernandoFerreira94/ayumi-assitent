@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { notify } from "@/components/feedback/toast";
+import { Icon } from "@/components/ui/Icon";
 import type { SyncResult } from "@/features/google/sync";
 import { CHAT_BUTTON, ChatGlyph, ChatSheet } from "@/features/messaging/ChatSheet";
 import type { ActionResult } from "@/lib/errors";
@@ -80,7 +81,7 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
     });
   }
 
-  const btn = "min-h-11 rounded-full px-4 text-sm font-bold disabled:opacity-60";
+  const btn = "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-bold disabled:opacity-60";
   return (
     <li className="glass grid gap-2 rounded-2xl px-4 py-3" aria-busy={pending}>
       <div className="flex items-baseline justify-between gap-3">
@@ -118,6 +119,7 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
               onClick={() => change("confirmed")}
               className={`${btn} btn-tint w-full`}
             >
+              <Icon name="check" size={18} />
               {busy === "confirmed" ? "Confirmando…" : "Confirmar"}
             </button>
           ) : (
@@ -127,6 +129,7 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
               onClick={() => change("done", status)}
               className={`${btn} btn-tint w-full`}
             >
+              <Icon name="checkCircle" size={18} />
               {busy === "done" ? "Salvando…" : "Concluir"}
             </button>
           )}
@@ -143,6 +146,7 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
               onClick={() => setMore((v) => !v)}
               className={`${btn} btn-glass`}
             >
+              <Icon name="more" size={18} />
               {more ? "Menos" : "Mais"}
             </button>
           </div>
@@ -164,6 +168,7 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
                 onClick={() => change("no_show", status)}
                 className={`${btn} btn-glass`}
               >
+                <Icon name="userX" size={18} />
                 {busy === "no_show" ? "Salvando…" : "Faltou"}
               </button>
               <button
@@ -172,6 +177,7 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
                 onClick={() => change("cancelled", status)}
                 className={`${btn} btn-glass`}
               >
+                <Icon name="close" size={18} />
                 {busy === "cancelled" ? "Cancelando…" : "Cancelar"}
               </button>
             </div>

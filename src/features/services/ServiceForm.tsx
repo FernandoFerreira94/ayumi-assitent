@@ -260,7 +260,7 @@ export function ServiceForm({
           placeholder="Ex.: pedir para vir com o cabelo seco"
           value={d.notes ?? ""}
           onChange={(e) => set("notes", e.target.value)}
-          className={`${field} resize-none py-3 text-[15px]`}
+          className={`${field} resize-none py-3`}
         />
       </label>
 

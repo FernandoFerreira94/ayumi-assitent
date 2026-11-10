@@ -151,6 +151,7 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
     <>
       {list.length === 0 ? (
         <EmptyState
+          icon="scissors"
           title="Nenhum serviço cadastrado"
           description="Cadastre o que você atende, com duração e valor, para agendar e mostrar vagas."
           action={

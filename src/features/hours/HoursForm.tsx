@@ -6,13 +6,15 @@ import { notify } from "@/components/feedback/toast";
 import type { ActionResult } from "@/lib/errors";
 import { saveWorkingHours } from "./actions";
 import type { Day } from "./slots";
+import { TileTitle } from "@/components/ui/Icon";
 
 const NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const TIMES = Array.from({ length: 33 }, (_, i) => {
   const m = 6 * 60 + i * 30;
   return `${String(Math.floor(m / 60)).padStart(2, "0")}:${m % 60 ? "30" : "00"}`;
 });
-const sel = "min-h-11 rounded-full border px-3 text-sm font-semibold";
+// 16px: abaixo disso o iPhone dá zoom na tela ao tocar no campo
+const sel = "min-h-11 rounded-full border px-3 text-base font-semibold";
 
 export function HoursForm({ week }: { week: Day[] }) {
   const [state, action] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
@@ -28,7 +30,9 @@ export function HoursForm({ week }: { week: Day[] }) {
 
   return (
     <form action={action} className="glass grid gap-3 rounded-[1.75rem] p-5">
-      <h2 className="font-bold">Expediente</h2>
+      <TileTitle as="h2" icon="clock" tint="teal">
+        Expediente
+      </TileTitle>
       {NAMES.map((name, i) => {
         const d = week[i];
         return (

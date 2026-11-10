@@ -6,6 +6,7 @@ import { notify } from "@/components/feedback/toast";
 import { maskPhone } from "@/lib/phone";
 import { QrImage } from "./QrImage";
 import { disconnectWhatsapp, startWhatsappPairing, whatsappStatus } from "./actions";
+import { TileTitle } from "@/components/ui/Icon";
 
 type View = "connected" | "disconnected" | "pairing" | "unavailable";
 
@@ -84,7 +85,7 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
   if (view === "unavailable")
     return (
       <div className={box}>
-        <p className="font-bold">WhatsApp</p>
+        <TileTitle icon="chat" tint="green">WhatsApp</TileTitle>
         <p className="text-sm font-semibold text-muted">Indisponível no momento. Tente de novo em instantes.</p>
       </div>
     );
@@ -122,7 +123,7 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
     ) : (
       <div className={`${box} flex items-center justify-between gap-3`}>
         <div>
-          <p className="font-bold">WhatsApp</p>
+          <TileTitle icon="chat" tint="green">WhatsApp</TileTitle>
           <p className="text-sm font-semibold text-muted">Conectado. Os lembretes saem por aqui.</p>
         </div>
         <button type="button" className={btn} onClick={() => setConfirming(true)}>
@@ -169,7 +170,7 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
   return (
     <div className={`${box} grid gap-3`}>
       <div>
-        <p className="font-bold">WhatsApp</p>
+        <TileTitle icon="chat" tint="green">WhatsApp</TileTitle>
         <p className="text-sm font-semibold text-muted">
           Conecte o número do estúdio para enviar lembretes às clientes.
         </p>

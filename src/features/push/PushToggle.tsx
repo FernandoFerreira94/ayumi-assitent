@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { notify } from "@/components/feedback/toast";
 import { subscribePush, unsubscribePush } from "./actions";
+import { TileTitle } from "@/components/ui/Icon";
 
 type State = "checking" | "unsupported" | "denied" | "off" | "on";
 
@@ -93,7 +94,9 @@ export function PushToggle({ publicKey }: { publicKey: string | null }) {
   return (
     <div className="flex items-center justify-between gap-3 glass rounded-[1.75rem] px-5 py-4">
       <div>
-        <p className="font-bold">Avisos no celular</p>
+        <TileTitle icon="phone" tint="pink">
+          Avisos no celular
+        </TileTitle>
         <p className="text-sm font-semibold text-muted">{hint[state]}</p>
       </div>
       {(state === "off" || state === "on") && (

@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/Switch";
 import type { ActionResult } from "@/lib/errors";
 import { saveAiSettings } from "./actions";
 import { AI_RULES_MAX } from "./schema";
+import { TileTitle } from "@/components/ui/Icon";
 
 /**
  * Liga a IA nas respostas ao lembrete: ela confirma sozinha quando a cliente deixa claro que vai, e passa o
@@ -28,7 +29,9 @@ export function AiRepliesForm({ enabled, rules }: { enabled: boolean; rules: str
       <input type="hidden" name="aiEnabled" value={on ? "1" : ""} />
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="font-bold">Respostas com IA</h2>
+          <TileTitle as="h2" icon="sparkles" tint="pink">
+            Respostas com IA
+          </TileTitle>
           <p className="text-sm font-semibold text-muted">
             A IA confirma o horário quando a cliente deixa claro que vai. Cancelar, remarcar e qualquer dúvida passam
             para você, e a cliente recebe um aviso de que você continua a conversa.

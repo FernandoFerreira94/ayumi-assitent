@@ -5,6 +5,7 @@ export default function NotFound() {
   return (
     <main className="mx-auto min-h-dvh max-w-[520px] pt-24">
       <EmptyState
+        icon="compass"
         title="Não encontramos isto"
         description="O link pode estar quebrado ou o item foi apagado."
         action={
