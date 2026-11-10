@@ -277,6 +277,7 @@ export function LoginForm() {
           >
             <span key={reaction?.n ?? (success ? "ok" : worried ? worriedAt : "idle")} className={motion}>
               <Mascot
+                kind="bolha"
                 mood={mood}
                 look={look}
                 size={view === "start" ? 148 : 104}

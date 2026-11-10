@@ -1,4 +1,8 @@
 import { Suspense } from "react";
+import { sql } from "drizzle-orm";
+import { MascotSync } from "@/components/brand/MascotSync";
+import { DEFAULT_MASCOT, isMascotKind } from "@/components/brand/mascots";
+import { getDb } from "@/db/client";
 import { OfflineBanner } from "@/components/feedback/OfflineBanner";
 import { NavHistory } from "@/components/nav/BackButton";
 import { TabBar } from "@/components/nav/TabBar";
@@ -10,9 +14,19 @@ import { LoadingRegion, Skeleton } from "@/components/ui/Skeleton";
 import { requireSession } from "@/lib/session";
 
 // Valida a sessão no servidor sem bloquear o shell (dock e faixa offline ficam estáticos).
+// Aproveita para alinhar o mascote/cores do aparelho com o escolhido em Meu perfil.
 async function AuthGate({ children }: { children: React.ReactNode }) {
-  await requireSession();
-  return children;
+  const session = await requireSession();
+  const rows = await getDb().execute<{ mascot: string }>(
+    sql`select mascot from memberships where user_id = ${session.user.id} limit 1`,
+  );
+  const mascot = rows[0]?.mascot;
+  return (
+    <>
+      <MascotSync value={isMascotKind(mascot) ? mascot : DEFAULT_MASCOT} />
+      {children}
+    </>
+  );
 }
 
 export default function AppLayout({ children }: LayoutProps<"/">) {

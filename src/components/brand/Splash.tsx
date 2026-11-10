@@ -47,16 +47,17 @@ export function Splash() {
         <defs>
           <linearGradient id="splash-film" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stopColor="#FFFFFF" />
-            <stop offset="0.35" stopColor="#FF8FB1" />
-            <stop offset="0.7" stopColor="#B9A6FF" />
+            <stop offset="0.35" stopColor="var(--m-rim-2, #FF8FB1)" />
+            <stop offset="0.7" stopColor="var(--m-rim-1, #B9A6FF)" />
             <stop offset="1" stopColor="#FFFFFF" />
           </linearGradient>
         </defs>
         <circle cx="240" cy="210" r="118" fill="rgba(255,255,255,.12)" stroke="url(#splash-film)" strokeWidth="5" />
         <ellipse cx="187" cy="151" rx="21" ry="8" transform="rotate(-34 187 151)" fill="rgba(255,255,255,.8)" />
       </svg>
-      <div className="splash-mimo">
-        <Mascot mood={awake ? "neutral" : "happy"} size={220} />
+      {/* Abertura é sempre da Bolha, a marca */}
+      <div className="splash-mimo" data-mascot="bolha">
+        <Mascot kind="bolha" mood={awake ? "neutral" : "happy"} size={220} />
         <span className="splash-shadow" />
       </div>
       <div className="splash-word grid justify-items-center gap-1">

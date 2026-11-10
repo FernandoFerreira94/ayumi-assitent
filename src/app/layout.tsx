@@ -1,11 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { Quicksand, Varela_Round } from "next/font/google";
+import { mascotGate } from "@/components/brand/mascots";
 import { Splash, splashGate } from "@/components/brand/Splash";
 import { UpdateBanner } from "@/components/nav/UpdateBanner";
 import { AppToaster } from "@/components/feedback/toast";
 import { STARTUP_IMAGES } from "@/lib/startup-images";
 import { ServiceWorkerRegister } from "@/components/nav/ServiceWorkerRegister";
 import "./globals.css";
+import "@/components/brand/mascot-themes.css";
 
 const quicksand = Quicksand({ variable: "--font-quicksand", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 // Só para o nome "mimo"
@@ -46,6 +48,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: splashGate }} />
+        {/* Cores do mascote escolhido já na primeira pintura (o servidor confirma depois, em MascotSync) */}
+        <script dangerouslySetInnerHTML={{ __html: mascotGate }} />
       </head>
       <body className="min-h-full">
         <div className="status-fill" aria-hidden="true" />

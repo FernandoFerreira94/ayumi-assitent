@@ -1,0 +1,181 @@
+/*
+ * Cores de cada mascote (mascots.ts). Trocam só as cores da marca: status (ok, wait, fail), cores dos serviços
+ * e o tema claro ficam iguais. --m-* pintam o corpo do mascote (Mascot.tsx usa a Bolha como reserva).
+ * Contraste conferido na prancha "Temas do Mimo": botão e texto de destaque passam no AA.
+ */
+/* [data-mascot] também vale num elemento só: a prévia de cada mascote no seletor de Meu perfil */
+:root,
+[data-mascot="bolha"] {
+  --m-rim-0: #6d4aff;
+  --m-rim-1: #b9a6ff;
+  --m-rim-2: #ff8fb1;
+  --m-rim-3: #e5547f;
+  --m-rim-4: #8e73ff;
+  --m-body-0: #fdfcff;
+  --m-body-1: #e6deff;
+  --m-eye: #3b22b8;
+  --m-paw: #b9a6ff;
+  --m-cheek: #ff8fb1;
+  --m-x: #6d4aff;
+}
+
+[data-mascot="abobora"] {
+  --bg: #fff8f2;
+  --page: #fbede2;
+  --fg: #1e1a22;
+  --line: #f5e2d3;
+  --primary: #f26b1d;
+  --primary-text: #b04508;
+  --on-primary: #1e1a22;
+  --soft: #ffe8d7;
+  --accent: #2a2233;
+  --m-rim-0: #f26b1d;
+  --m-rim-1: #ffb46b;
+  --m-rim-2: #ff8a3d;
+  --m-rim-3: #c94e0f;
+  --m-rim-4: #ffd08a;
+  --m-body-0: #fffbf7;
+  --m-body-1: #ffd9bc;
+  --m-eye: #2a2233;
+  --m-paw: #ffb46b;
+  --m-cheek: #ff8a3d;
+  --m-x: #5e7a3a;
+}
+
+[data-mascot="mia"] {
+  --bg: #f4fbf9;
+  --page: #e6f4f0;
+  --fg: #10231f;
+  --line: #d5ece6;
+  --primary: #0a7a67;
+  --primary-text: #086353;
+  --on-primary: #ffffff;
+  --soft: #dcf4ee;
+  --accent: #ff8fb1;
+  --m-rim-0: #13a58c;
+  --m-rim-1: #8ee0cf;
+  --m-rim-2: #ff8fb1;
+  --m-rim-3: #0b7a67;
+  --m-rim-4: #5ccdb6;
+  --m-body-0: #fbfffe;
+  --m-body-1: #cff0e7;
+  --m-eye: #0e3b33;
+  --m-paw: #8ee0cf;
+  --m-cheek: #ff8fb1;
+  --m-x: #0b7a67;
+}
+
+[data-mascot="caramelo"] {
+  --bg: #fbf7f2;
+  --page: #f3eadf;
+  --fg: #22180f;
+  --line: #eedfcd;
+  --primary: #9c5714;
+  --primary-text: #7e450e;
+  --on-primary: #ffffff;
+  --soft: #f7e9d9;
+  --accent: #3e8fd1;
+  --m-rim-0: #c27424;
+  --m-rim-1: #e8b27a;
+  --m-rim-2: #3e8fd1;
+  --m-rim-3: #8a4e12;
+  --m-rim-4: #f1c99a;
+  --m-body-0: #fffbf6;
+  --m-body-1: #f1dabf;
+  --m-eye: #3a2412;
+  --m-paw: #e8b27a;
+  --m-cheek: #f2a07b;
+  --m-x: #8a4e12;
+}
+
+[data-mascot="lulu"] {
+  --bg: #fff7fa;
+  --page: #fbe9f0;
+  --fg: #2a1420;
+  --line: #f5dce6;
+  --primary: #c2346b;
+  --primary-text: #a3285a;
+  --on-primary: #ffffff;
+  --soft: #fce4ee;
+  --accent: #b9a6ff;
+  --m-rim-0: #e5547f;
+  --m-rim-1: #ffb3cb;
+  --m-rim-2: #b9a6ff;
+  --m-rim-3: #c2346b;
+  --m-rim-4: #ff8fb1;
+  --m-body-0: #fffbfd;
+  --m-body-1: #ffdce8;
+  --m-eye: #5a1634;
+  --m-paw: #ffb3cb;
+  --m-cheek: #ff8fb1;
+  --m-x: #c2346b;
+}
+
+[data-mascot="pingo"] {
+  --bg: #f5f8fd;
+  --page: #e8effa;
+  --fg: #0f1a2e;
+  --line: #dce6f5;
+  --primary: #2563c9;
+  --primary-text: #1d4fa3;
+  --on-primary: #ffffff;
+  --soft: #e2ecfb;
+  --accent: #ffb547;
+  --m-rim-0: #2563c9;
+  --m-rim-1: #9cc1f5;
+  --m-rim-2: #ffb547;
+  --m-rim-3: #16397a;
+  --m-rim-4: #6fa0ec;
+  --m-body-0: #fbfdff;
+  --m-body-1: #d6e5fa;
+  --m-eye: #0f1a2e;
+  --m-paw: #9cc1f5;
+  --m-cheek: #ff9fb8;
+  --m-x: #1e2f55;
+}
+
+[data-mascot="mel"] {
+  --bg: #fffbf2;
+  --page: #f8f0dc;
+  --fg: #241b08;
+  --line: #f3e6c4;
+  --primary: #e3a51a;
+  --primary-text: #7e5800;
+  --on-primary: #241b08;
+  --soft: #fdf1d2;
+  --accent: #8a5a2b;
+  --m-rim-0: #e3a51a;
+  --m-rim-1: #ffd877;
+  --m-rim-2: #c98a2e;
+  --m-rim-3: #8a6100;
+  --m-rim-4: #ffe6a3;
+  --m-body-0: #fffdf6;
+  --m-body-1: #fbe7b5;
+  --m-eye: #3a2a0a;
+  --m-paw: #ffd877;
+  --m-cheek: #f2a07b;
+  --m-x: #fff6e0;
+}
+
+[data-mascot="bambu"] {
+  --bg: #f7f7f9;
+  --page: #ececf1;
+  --fg: #17161c;
+  --line: #e2e2e8;
+  --primary: #2b2a33;
+  --primary-text: #2b2a33;
+  --on-primary: #ffffff;
+  --soft: #ececf1;
+  --accent: #ff8fb1;
+  --m-rim-0: #2b2a33;
+  --m-rim-1: #9a99a6;
+  --m-rim-2: #ff8fb1;
+  --m-rim-3: #55545f;
+  --m-rim-4: #c9c8d2;
+  --m-body-0: #ffffff;
+  --m-body-1: #e8e8ee;
+  --m-eye: #1b1a21;
+  --m-paw: #55545f;
+  --m-cheek: #ff8fb1;
+  --m-x: #c9c8d2;
+}
