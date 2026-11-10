@@ -1,24 +1,13 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { Drawer } from "vaul";
+import { notify } from "@/components/feedback/toast";
 import { Mascot } from "@/components/brand/Mascot";
-import { detectPlatform, type InstallPlatform } from "./platform";
+import { Icon } from "@/components/ui/Icon";
+import { useInstall, type InstallState } from "./useInstall";
 
-const STANDALONE = "(display-mode: standalone)";
-
-function subscribe(onChange: () => void) {
-  const mq = window.matchMedia(STANDALONE);
-  mq.addEventListener("change", onChange);
-  return () => mq.removeEventListener("change", onChange);
-}
-
-/** null = já instalado (aberto pelo ícone) ou ainda no servidor: não há o que ensinar. */
-function snapshot(): InstallPlatform | null {
-  const installed =
-    window.matchMedia(STANDALONE).matches || (navigator as { standalone?: boolean }).standalone === true;
-  return installed ? null : detectPlatform(navigator.userAgent, navigator.maxTouchPoints);
-}
+const NUDGE_KEY = "mimo:install-nudge";
 
 const ShareIcon = (
   <svg
@@ -64,24 +53,25 @@ const STEPS: Record<"ios" | "android", { title: string; steps: React.ReactNode[]
   },
 };
 
-/** Botão que abre o passo a passo para pôr o app na tela de início; some quando o app já está instalado. */
-export function InstallGuide({ compact = false }: { compact?: boolean }) {
-  const platform = useSyncExternalStore(subscribe, snapshot, () => null);
-  if (!platform) return null;
+/** Passo a passo em sheet; no Android com instalador nativo disponível, oferece "Instalar agora". */
+export function InstallSheet({
+  install,
+  open,
+  onOpenChange,
+  children,
+}: {
+  install: InstallState;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  children?: React.ReactNode;
+}) {
+  const { platform, canPrompt, prompt } = install;
   // Computador: não dá para saber qual celular ela usa, então mostra os dois caminhos
   const guides = platform === "other" ? (["ios", "android"] as const) : [platform];
 
   return (
-    <Drawer.Root>
-      <Drawer.Trigger
-        className={
-          compact
-            ? "mx-auto min-h-11 px-3 text-sm font-bold text-primary-text"
-            : "btn-glass min-h-12 w-full rounded-full px-5 text-sm font-bold"
-        }
-      >
-        Como instalar o app no celular
-      </Drawer.Trigger>
+    <Drawer.Root open={open} onOpenChange={onOpenChange}>
+      {children}
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
         <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[85dvh] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
@@ -93,6 +83,19 @@ export function InstallGuide({ compact = false }: { compact?: boolean }) {
               : "Fica como um app: abre direto na agenda, em tela cheia."}
           </Drawer.Description>
           <div className="grid gap-4">
+            {canPrompt ? (
+              <button
+                type="button"
+                onClick={() => {
+                  void prompt();
+                  onOpenChange?.(false);
+                }}
+                className="flex min-h-12 bg-primary text-on-primary items-center justify-center gap-2 rounded-full px-5 font-bold"
+              >
+                <Icon name="download" size={20} />
+                Instalar agora
+              </button>
+            ) : null}
             {guides.map((g) => (
               <section key={g} aria-label={STEPS[g].title} className="grid gap-2">
                 {guides.length > 1 ? (
@@ -125,5 +128,64 @@ export function InstallGuide({ compact = false }: { compact?: boolean }) {
         </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>
+  );
+}
+
+/** Botão que abre o passo a passo para pôr o app na tela de início; some quando o app já está instalado. */
+export function InstallGuide({ compact = false }: { compact?: boolean }) {
+  const install = useInstall();
+  if (!install) return null;
+  return (
+    <InstallSheet install={install}>
+      <Drawer.Trigger
+        className={
+          compact
+            ? "mx-auto min-h-11 px-3 text-sm font-bold text-primary-text"
+            : "btn-glass min-h-12 w-full rounded-full px-5 text-sm font-bold"
+        }
+      >
+        Como instalar o app no celular
+      </Drawer.Trigger>
+    </InstallSheet>
+  );
+}
+
+/**
+ * Ícone de download no header (ao lado do sino) enquanto o app não está instalado, e um aviso no topo
+ * uma vez por dia convidando a instalar. Tocar em qualquer um abre o passo a passo.
+ */
+export function InstallHeaderButton() {
+  const install = useInstall();
+  const [open, setOpen] = useState(false);
+  const show = install !== null;
+
+  useEffect(() => {
+    if (!show) return;
+    const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(new Date());
+    try {
+      if (localStorage.getItem(NUDGE_KEY) === today) return;
+      localStorage.setItem(NUDGE_KEY, today);
+    } catch {
+      return; // sem armazenamento não dá para limitar a uma vez por dia: melhor não insistir
+    }
+    // Espera a tela assentar antes de falar com ela
+    const t = setTimeout(
+      () =>
+        notify.invite("Instale o app", "Abre direto da tela de início e fica bem mais rápido.", () => setOpen(true)),
+      1200,
+    );
+    return () => clearTimeout(t);
+  }, [show]);
+
+  if (!install) return null;
+  return (
+    <InstallSheet install={install} open={open} onOpenChange={setOpen}>
+      <Drawer.Trigger
+        aria-label="Instalar o app"
+        className="btn-glass grid size-11 shrink-0 place-content-center rounded-full"
+      >
+        <Icon name="download" size={24} />
+      </Drawer.Trigger>
+    </InstallSheet>
   );
 }
