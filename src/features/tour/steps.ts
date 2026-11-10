@@ -11,6 +11,8 @@ export type TourStep = {
   title: string;
   text: string;
   advance: "next" | "tap";
+  /** Passo que só faz sentido se o destaque existir (ex.: instalar o app, que some depois de instalado). */
+  optional?: boolean;
 };
 
 export const TOUR_STEPS: TourStep[] = [
@@ -49,6 +51,14 @@ export const TOUR_STEPS: TourStep[] = [
     advance: "next",
   },
   {
+    path: "/agenda",
+    target: "[data-tour='install']",
+    optional: true,
+    title: "Instale o app no celular",
+    text: "Toque neste ícone e siga o passo a passo para pôr o app na tela de início. Só instalado ele avisa você das respostas das clientes, mesmo fechado.",
+    advance: "next",
+  },
+  {
     path: "/ajustes",
     target: "#whatsapp",
     title: "1. Conecte o WhatsApp",
@@ -72,8 +82,8 @@ export const TOUR_STEPS: TourStep[] = [
   {
     path: "/ajustes",
     target: "#ia",
-    title: "4. Regras para a IA",
-    text: "A IA responde aos avisos por você e já vem ligada. Conte aqui o que ela precisa saber, como dias de atendimento e atrasos.",
+    title: "4. Leitura das respostas",
+    text: "A IA já vem ligada: ela lê o que a cliente responde ao aviso, entende se confirmou, quer cancelar ou remarcar, e avisa você.",
     advance: "next",
   },
   {
@@ -84,8 +94,9 @@ export const TOUR_STEPS: TourStep[] = [
     advance: "next",
   },
   {
+    path: "/agenda",
     title: "Tudo pronto!",
-    text: "Lembre de tocar em Salvar em cada cartão que mudar. Se quiser rever o tour, ele fica no fim de Ajustes.",
+    text: "Seu app está configurado. Lembre de tocar em Salvar em cada cartão que mudar, e o tour fica no fim de Ajustes se quiser rever. Tenha uma ótima experiência!",
     advance: "next",
   },
 ];

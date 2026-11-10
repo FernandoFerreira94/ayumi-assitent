@@ -66,8 +66,8 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
         <section id="mensagens" aria-label="Mensagens no WhatsApp" className="scroll-mt-6">
           <MessagesForm settings={messages} salonName={salon?.name ?? ""} />
         </section>
-        <section id="ia" aria-label="Respostas com IA" className="scroll-mt-6">
-          <AiRepliesForm rules={salon?.aiRules ?? ""} />
+        <section id="ia" aria-label="Leitura das respostas" className="scroll-mt-6">
+          <AiRepliesForm />
         </section>
       </Group>
       <Group title="Agenda">

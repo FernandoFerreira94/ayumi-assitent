@@ -1727,6 +1727,14 @@ button {
   box-shadow: var(--shadow);
   animation: tour-in 0.35s var(--spring) both;
 }
+.tour-card[data-place="below"],
+.tour-card[data-place="above"] {
+  /* Centrado no espaço livre ao lado do destaque, sem colar no topo nem cobrir o que está sendo mostrado */
+  height: fit-content;
+  margin-block: auto;
+  max-height: calc(100dvh - 96px);
+  overflow-y: auto;
+}
 .tour-card[data-place="center"] {
   top: 50%;
   translate: 0 -50%;

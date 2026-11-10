@@ -36,7 +36,7 @@ const sampleNow = new Date();
 const sampleStart = new Date(sampleNow.getTime() + 24 * 3600_000);
 sampleStart.setUTCHours(17, 30, 0, 0);
 const SAMPLE: MessageData = {
-  client: "Maria Zona Norte",
+  client: "Maria Silva Cliente",
   service: "Alongamento",
   startsAt: sampleStart,
   priceCents: 12000,
@@ -101,7 +101,7 @@ export function MessagesForm({ settings, salonName }: { settings: MessageSetting
           ))}
         </div>
         <p className="text-sm font-semibold text-muted">
-          Contato salvo como “Maria Zona Norte”: a mensagem diz “Oi, {fullName ? "Maria Zona Norte" : "Maria"}!”.
+          Contato salvo como “Maria Silva Cliente”: a mensagem diz “Oi, {fullName ? "Maria Silva Cliente" : "Maria"}!”.
         </p>
       </fieldset>
 

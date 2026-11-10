@@ -50,7 +50,10 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
   const next = useCallback(() => {
     setStep((s) => {
       if (s === null) return null;
-      return s + 1 < TOUR_STEPS.length ? s + 1 : s;
+      let n = s + 1;
+      // Passo opcional sem o destaque na tela (app já instalado) é pulado
+      while (n < TOUR_STEPS.length - 1 && TOUR_STEPS[n].optional && !document.querySelector(TOUR_STEPS[n].target ?? "")) n++;
+      return n < TOUR_STEPS.length ? n : s;
     });
   }, []);
 
@@ -169,7 +172,13 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
         aria-labelledby={titleId}
         className="tour-card glass"
         data-place={box ? (cardBelow ? "below" : "above") : "center"}
-        style={box ? (cardBelow ? { top: box.top + box.height + 14 } : { bottom: vh - box.top + 14 }) : undefined}
+        style={
+          box
+            ? cardBelow
+              ? { top: box.top + box.height + 14, bottom: "calc(env(safe-area-inset-bottom) + 16px)" }
+              : { top: "calc(env(safe-area-inset-top) + 64px)", bottom: vh - box.top + 14 }
+            : undefined
+        }
       >
         <div className="flex items-start gap-3">
           <span key={step} className="mascot-hop shrink-0">
@@ -204,7 +213,7 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
               onClick={last ? close : next}
               className="btn-tint min-h-11 rounded-full px-5 text-sm font-bold"
             >
-              {step === 0 ? "Começar" : last ? "Começar a usar" : "Próximo"}
+              {step === 0 ? "Começar" : last ? "Ir para o Painel" : "Próximo"}
             </button>
           )}
         </div>
