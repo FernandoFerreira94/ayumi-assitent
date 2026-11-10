@@ -58,3 +58,13 @@ describe("recebido do dia", () => {
     ).toBe(12000);
   });
 });
+
+describe("balão nas datas comemorativas", () => {
+  const xmas = new Date("2026-12-24T12:00:00-03:00");
+  it("hoje, a Bolha cumprimenta antes do resumo", () => {
+    expect(dayBriefing([], xmas, true).lines[0]).toBe("Boas festas! Dia livre! Que tal divulgar uma vaga?");
+  });
+  it("olhando outro dia, sem cumprimento", () => {
+    expect(dayBriefing([], xmas, false).lines[0]).toBe("Nenhum atendimento nesse dia ainda.");
+  });
+});

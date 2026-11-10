@@ -1,4 +1,5 @@
-import { formatTime } from "@/lib/dates";
+import { SEASON_GREETING, seasonOn } from "@/components/brand/season";
+import { formatTime, todayStr } from "@/lib/dates";
 import type { Status } from "./schema";
 
 export type Briefing = { mood: "neutral" | "happy"; lines: string[] };
@@ -34,7 +35,9 @@ export function dayBriefing(rows: Row[], now: Date, isToday: boolean): Briefing 
   } else {
     summary = `Os horários de hoje já passaram. Falta fechar ${plural(active.length - done, "atendimento", "atendimentos")}.`;
   }
-  const lines = [summary];
+  // Nos dias de data comemorativa, a Bolha cumprimenta antes do resumo
+  const season = isToday ? seasonOn(todayStr(now)) : null;
+  const lines = [season ? `${SEASON_GREETING[season]} ${summary}` : summary];
   const unconfirmed = active.filter((r) => r.status === "pending_confirmation" && r.startsAt >= now).length;
   if (unconfirmed > 0) {
     lines.push(
