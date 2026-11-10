@@ -42,7 +42,7 @@ d("reforço único de confirmação (Postgres real)", () => {
     const a = await add("2026-11-10T18:00:00Z", "2026-11-09T18:00:00Z");
     const now = at("2026-11-10T15:30:00Z");
     await runReminders(portFor, now);
-    expect(sent).toEqual(["+5511987655555|Ainda não recebi sua confirmação, Bia 😊 Responda 1 para confirmar"]);
+    expect(sent).toEqual(["+5511987655555|Oi, Bia! Passando para lembrar do seu horário 😊 Pode me confirmar? É só responder 1"]);
     expect(
       (await admin`select status, nudge_sent_at from appointments where id = ${a}`)[0].nudge_sent_at,
     ).not.toBeNull();

@@ -23,11 +23,11 @@ export function bookingText(
   opts: { includePrice: boolean },
 ): string {
   const lines = [
-    `Oi, ${first(a.client)}! Seu agendamento de ${a.service} está confirmado ✅`,
+    `Oi, ${first(a.client)}! Seu agendamento de ${a.service} está confirmado 💜`,
     `📅 ${dayLabel(a.startsAt, now)}`,
     `🕒 ${formatTime(a.startsAt)}`,
   ];
   if (opts.includePrice) lines.push(`💰 ${formatBRL(a.priceCents)}`);
-  lines.push("", "Te esperamos! 💜");
+  lines.push("", "Te esperamos com carinho!");
   return lines.join("\n");
 }

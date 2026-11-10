@@ -82,13 +82,13 @@ describe("resposta ao lembrete", () => {
 
 describe("resposta automática ao lembrete", () => {
   it("confirmar agradece com o primeiro nome", () => {
-    expect(ackText("confirm", "Maria Silva")).toContain("Maria! Seu horário está confirmado");
+    expect(ackText("confirm", "Maria Silva")).toContain("Oba, Maria! Seu horário está confirmado");
   });
   it("cancelar e remarcar só dizem que a profissional vai verificar o melhor horário", () => {
     for (const intent of ["cancel", "reschedule"] as const) {
       const t = ackText(intent, "Bia Souza");
       expect(t).toContain("Bia!");
-      expect(t).toContain("verificar com a profissional o melhor horário");
+      expect(t).toContain("ver com a profissional o melhor horário");
       expect(t).not.toMatch(/cancelei|cancelado/i);
     }
   });
@@ -145,6 +145,6 @@ describe("webhook da Evolution", () => {
 
 describe("2º aviso", () => {
   it("pede a confirmação com o primeiro nome", () => {
-    expect(nudgeText("Maria Silva")).toBe("Ainda não recebi sua confirmação, Maria 😊 Responda 1 para confirmar");
+    expect(nudgeText("Maria Silva")).toBe("Oi, Maria! Passando para lembrar do seu horário 😊 Pode me confirmar? É só responder 1");
   });
 });

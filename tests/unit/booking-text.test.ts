@@ -7,7 +7,7 @@ const eve = new Date("2026-11-10T15:00:00Z");
 describe("mensagem de agendamento confirmado", () => {
   it("diz que deu certo, o dia e o horário, sem valor por padrão", () => {
     expect(bookingText(a, eve, { includePrice: false })).toBe(
-      "Oi, Maria! Seu agendamento de Gel está confirmado ✅\n📅 amanhã, dia 11/11\n🕒 14:30\n\nTe esperamos! 💜",
+      "Oi, Maria! Seu agendamento de Gel está confirmado 💜\n📅 amanhã, dia 11/11\n🕒 14:30\n\nTe esperamos com carinho!",
     );
   });
   it("inclui o valor só quando a profissional liga", () => {
