@@ -59,11 +59,7 @@ async function dayAppointments(tx: Tx, date: string): Promise<DayRow[]> {
     .from(appointments)
     .innerJoin(clients, eq(clients.id, appointments.clientId))
     .where(
-      and(
-        gte(appointments.startsAt, from),
-        lt(appointments.startsAt, to),
-        inArray(appointments.status, [...LIVE]),
-      ),
+      and(gte(appointments.startsAt, from), lt(appointments.startsAt, to), inArray(appointments.status, [...LIVE])),
     )
     .orderBy(asc(appointments.startsAt));
 }

@@ -56,6 +56,8 @@ export const tenants = pgTable("tenants", {
   state: text("state"),
   latitude: doublePrecision("latitude"),
   longitude: doublePrecision("longitude"),
+  /** "device" = localização do celular (sempre atualizada), "manual" = cidade digitada; null = sem localização */
+  locationSource: text("location_source").$type<"device" | "manual">(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
