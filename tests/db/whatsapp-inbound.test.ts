@@ -64,7 +64,7 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     const [a] = await admin`select status, reply_at from appointments where id = ${A}`;
     expect(a.status).toBe("confirmed");
     expect(a.reply_at).not.toBeNull();
-    expect(sent.at(-1)).toContain("+5511987655555|Obrigada, Bia! Seu horário está confirmado");
+    expect(sent.at(-1)).toContain("+5511987655555|Oba, Bia! Seu horário está confirmado");
     const conv = await admin`select direction, kind, intent from messages where client_id = ${C} order by created_at`;
     expect(conv.map((m) => `${m.direction}:${m.kind}:${m.intent ?? ""}`)).toEqual([
       "in:client:confirm",
@@ -130,7 +130,7 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
   });
 
   describe("com a IA ligada (modelo simulado)", () => {
-    const handoff = "Vou passar para a profissional e ela continua a conversa com você 💜";
+    const handoff = "Oi, Bia! Recebi sua mensagem e já passei para a profissional, ela te responde rapidinho 💜";
     let verdict: { intent: string; confidence: number } | null;
     const ai = {
       ...deps,
@@ -193,7 +193,7 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
       await fresh();
       verdict = { intent: "confirm", confidence: 1 };
       await handleInbound(m("[áudio]", { media: true }), ai);
-      expect(sent[0]).toContain("Recebi! Vou passar para a profissional");
+      expect(sent[0]).toContain("Já passei para a profissional");
       expect((await apptRow()).status).toBe("pending_confirmation");
     });
 

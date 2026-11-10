@@ -1,7 +1,7 @@
 import { addDays, formatTime, todayStr } from "@/lib/dates";
 
 /** Texto padrão do lembrete; a dona pode trocar em Ajustes. As {chaves} viram os dados do horário. */
-export const DEFAULT_REMINDER = "Oi, {nome}! Passando para lembrar do seu horário de {servico} {dia} às {hora}. Te espero! 💜";
+export const DEFAULT_REMINDER = "Oi, {nome}! Passando para lembrar do seu horário de {servico} {dia} às {hora}. Te espero com carinho! 💜";
 export const REMINDER_VARS = ["nome", "servico", "dia", "hora", "salao"] as const;
 
 /** "hoje", "amanhã" ou a data, no fuso do estúdio. */

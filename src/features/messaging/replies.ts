@@ -68,7 +68,7 @@ export function parseIntent(raw: string): Intent | null {
 
 /** 2º aviso (horas definidas pela dona) para quem não respondeu ao lembrete. Nunca cancela sozinho. */
 export const nudgeText = (clientName: string) =>
-  `Ainda não recebi sua confirmação, ${clientName.trim().split(/\s+/)[0]} 😊 Responda 1 para confirmar`;
+  `Oi, ${clientName.trim().split(/\s+/)[0]}! Passando para lembrar do seu horário 😊 Pode me confirmar? É só responder 1`;
 
 /**
  * Única resposta automática à resposta do lembrete. Confirmar agradece; cancelar ou remarcar não muda
@@ -76,8 +76,8 @@ export const nudgeText = (clientName: string) =>
  */
 export function ackText(intent: Intent, clientName: string): string {
   const first = clientName.trim().split(/\s+/)[0];
-  if (intent === "confirm") return `Obrigada, ${first}! Seu horário está confirmado. Até lá! 💜`;
-  return `Certo, ${first}! Vou verificar com a profissional o melhor horário para você e já te retorno. 💜`;
+  if (intent === "confirm") return `Oba, ${first}! Seu horário está confirmado 💜 Te espero com carinho!`;
+  return `Tudo bem, ${first}! Vou ver com a profissional o melhor horário para você e já te retorno 💜`;
 }
 
 /**

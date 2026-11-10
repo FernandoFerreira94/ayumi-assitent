@@ -4,6 +4,7 @@ import { parseVerdict } from "@/features/messaging/classify";
 
 const ctx = (over: Partial<AiContext> = {}): AiContext => ({
   media: false,
+  clientName: "Bia Souza",
   text: "Oi, tudo bem? Posso ir um pouquinho depois?",
   ownerWroteRecently: false,
   autoRepliesLast24h: 0,
@@ -31,7 +32,7 @@ describe("planAiReply", () => {
   it("baixa confiança passa para a profissional e guarda o palpite", async () => {
     expect(await planAiReply(ctx(), says({ intent: "confirm", confidence: 0.89 }))).toEqual({
       action: "handoff",
-      text: handoffText,
+      text: handoffText("Bia Souza"),
       guess: "confirm",
     });
   });
@@ -41,14 +42,14 @@ describe("planAiReply", () => {
     ["outro assunto", { intent: "other", confidence: 0.99 }],
     ["erro ou sem chave", null],
   ])("%s passa para a profissional", async (_n, v) => {
-    expect(await planAiReply(ctx(), says(v))).toMatchObject({ action: "handoff", text: handoffText, guess: null });
+    expect(await planAiReply(ctx(), says(v))).toMatchObject({ action: "handoff", text: handoffText("Bia Souza"), guess: null });
   });
 
   it("áudio/foto não chama o modelo e avisa que a profissional continua", async () => {
     const classify = says({ intent: "confirm", confidence: 1 });
     expect(await planAiReply(ctx({ media: true, text: "[áudio]" }), classify)).toEqual({
       action: "handoff",
-      text: mediaText,
+      text: mediaText("Bia Souza"),
       guess: null,
     });
     expect(classify).not.toHaveBeenCalled();

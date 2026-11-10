@@ -6,7 +6,7 @@ const eve = new Date("2026-11-10T15:00:00Z");
 describe("texto do lembrete", () => {
   it("diz amanhã, usa o primeiro nome e dá as opções 1, 2 e 3", () => {
     const t = reminderText({ client: "Maria Silva", service: "Gel", startsAt: start }, eve);
-    expect(t.split("\n")[0]).toBe("Oi, Maria! Passando para lembrar do seu horário de Gel amanhã às 14:30. Te espero! 💜");
+    expect(t.split("\n")[0]).toBe("Oi, Maria! Passando para lembrar do seu horário de Gel amanhã às 14:30. Te espero com carinho! 💜");
     expect(t).toContain("1 - Confirmo\n2 - Cancelar\n3 - Reagendar");
   });
   it("diz hoje quando é no mesmo dia", () => {

@@ -14,13 +14,21 @@ export const OWNER_QUIET_HOURS = 12;
 /** A cliente pode corrigir a resposta até 2h depois de ter respondido ao lembrete. */
 export const CORRECTION_HOURS = 2;
 
-export const handoffText = "Vou passar para a profissional e ela continua a conversa com você 💜";
-export const mediaText = "Recebi! Vou passar para a profissional e ela continua a conversa com você 💜";
+const firstName = (name: string) => name.trim().split(/[ ]+/)[0];
+
+/** Passagem para a profissional: sempre com o primeiro nome e tom acolhedor. */
+export const handoffText = (clientName: string) =>
+  `Oi, ${firstName(clientName)}! Recebi sua mensagem e já passei para a profissional, ela te responde rapidinho 💜`;
+/** Áudio, foto ou figurinha: mesmo acolhimento, sem fingir que entendeu o conteúdo. */
+export const mediaText = (clientName: string) =>
+  `Oi, ${firstName(clientName)}! Recebi seu envio e já passei para a profissional, ela te responde rapidinho 💜`;
 
 export type AiContext = {
   /** Áudio, foto ou figurinha: a IA não lê */
   media: boolean;
   text: string;
+  /** Nome da cliente, para o texto sair com o primeiro nome */
+  clientName: string;
   /** A dona escreveu para esta cliente nas últimas 12h */
   ownerWroteRecently: boolean;
   /** Respostas automáticas já enviadas a esta cliente nas últimas 24h */
@@ -53,11 +61,11 @@ export async function planAiReply(ctx: AiContext, classify: () => Promise<AiVerd
   const handoff = (text: string, guess: Intent | null): AiPlan =>
     underLimit && !ctx.alreadyHandedOff ? { action: "handoff", text, guess } : { action: "silent", guess };
 
-  if (ctx.media) return handoff(mediaText, null);
-  if (ctx.text.length > AI_MAX_CHARS) return handoff(handoffText, null);
+  if (ctx.media) return handoff(mediaText(ctx.clientName), null);
+  if (ctx.text.length > AI_MAX_CHARS) return handoff(handoffText(ctx.clientName), null);
 
   const verdict = await classify();
   const intent = asIntent(verdict);
   if (intent && verdict && verdict.confidence >= AI_MIN_CONFIDENCE) return { action: "apply", intent, sendAck: underLimit };
-  return handoff(handoffText, intent);
+  return handoff(handoffText(ctx.clientName), intent);
 }

@@ -185,7 +185,7 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
   else if (ai && target && deps.classify) {
     const classify = deps.classify;
     plan = await planAiReply(
-      { ...ai, media: !!msg.media, text: msg.text, alreadyHandedOff: target.handedOff },
+      { ...ai, media: !!msg.media, text: msg.text, clientName: client.name, alreadyHandedOff: target.handedOff },
       () => classify(msg.text, t.aiRules),
     );
   } else plan = { action: "silent", guess: null };
