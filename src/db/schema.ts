@@ -138,6 +138,8 @@ export const appointments = pgTable(
     cancelAskedAt: timestamp("cancel_asked_at", { withTimezone: true }),
     /** Reforço único de confirmação já enviado */
     nudgeSentAt: timestamp("nudge_sent_at", { withTimezone: true }),
+    /** Quando a dona foi avisada de que a cliente não respondeu aos avisos (uma vez por agendamento) */
+    noReplyAt: timestamp("no_reply_at", { withTimezone: true }),
     /** Desconto do agendamento: "pct" (value = %) ou "brl" (value = centavos). price_cents já vem descontado. */
     discountKind: text("discount_kind").$type<"pct" | "brl">(),
     discountValue: integer("discount_value"),

@@ -76,18 +76,28 @@ export function ChatSheet({
   triggerClassName,
   triggerLabel,
   children,
+  open: controlledOpen,
+  onOpenChange,
 }: {
   clientId: string;
   clientName: string;
   /** Já formatado para exibir, ex.: (11) 98765-4321. */
   phone: string;
   nested?: boolean;
-  triggerClassName: string;
+  triggerClassName?: string;
   /** Nome acessível quando o gatilho é só um ícone. */
   triggerLabel?: string;
-  children: React.ReactNode;
+  /** Sem gatilho (children), a folha é controlada de fora: abre pela notificação (ver ConversationHost). */
+  children?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [ownOpen, setOwnOpen] = useState(false);
+  const open = controlledOpen ?? ownOpen;
+  const setOpen = (next: boolean) => {
+    if (controlledOpen === undefined) setOwnOpen(next);
+    onOpenChange?.(next);
+  };
   const [history, setHistory] = useState<ConversationMessage[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [locals, setLocals] = useState<Local[]>([]);
@@ -156,9 +166,11 @@ export function ChatSheet({
 
   return (
     <Root open={open} onOpenChange={setOpen} repositionInputs={false}>
-      <Drawer.Trigger className={triggerClassName} aria-label={triggerLabel}>
-        {children}
-      </Drawer.Trigger>
+      {children ? (
+        <Drawer.Trigger className={triggerClassName} aria-label={triggerLabel}>
+          {children}
+        </Drawer.Trigger>
+      ) : null}
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
         <Drawer.Content

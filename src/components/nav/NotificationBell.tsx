@@ -1,28 +1,25 @@
 import { Suspense } from "react";
 import { withTenant } from "@/db/client";
 import { listUnread } from "@/features/messaging/store";
-import { buildAvisos, messageAvisos, pendenciaAvisos } from "@/features/notifications/core";
+import { buildAvisos, messageAvisos, noReplyAvisos } from "@/features/notifications/core";
 import { NotificationsSheet } from "@/features/notifications/NotificationsSheet";
-import { shellStatus } from "@/features/shell/status";
+import { listNoReplies } from "@/features/reminders/no-reply";
+import { whatsappState } from "@/features/shell/status";
 import { requireTenant } from "@/lib/tenant";
 
+/**
+ * O sino só fala da resposta da cliente: confirmou, quer cancelar, quer remarcar ou não respondeu (pedido da
+ * dona). A única exceção é o WhatsApp desconectado, porque sem ele nenhum aviso sai. O resto fica em Pendências.
+ */
 async function BellWithAvisos() {
   const { tenantId } = await requireTenant();
-  const [{ google, whatsapp, pendencias: p }, unread] = await Promise.all([
-    shellStatus(tenantId),
+  const now = new Date();
+  const [whatsapp, unread, noReply] = await Promise.all([
+    whatsappState(tenantId),
     withTenant(tenantId, (tx) => listUnread(tx)),
+    withTenant(tenantId, (tx) => listNoReplies(tx, now)),
   ]);
-  const avisos = [
-    // Resposta de cliente primeiro: é o que pede ação agora
-    ...messageAvisos(unread),
-    ...pendenciaAvisos({
-      toClose: p.toClose.length,
-      toConfirm: p.toConfirm.length,
-      unsynced: p.unsynced.length,
-      toReschedule: p.toReschedule.length,
-    }),
-    ...buildAvisos({ whatsapp, google }),
-  ];
+  const avisos = [...messageAvisos(unread), ...noReplyAvisos(noReply), ...buildAvisos({ whatsapp, google: true })];
   return <NotificationsSheet avisos={avisos} />;
 }
 

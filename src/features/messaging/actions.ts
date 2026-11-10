@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getDb, withTenant } from "@/db/client";
 import { clients, tenants } from "@/db/schema";
 import { fail, ok, type ActionResult } from "@/lib/errors";
+import { maskPhone } from "@/lib/phone";
 import { requireTenant } from "@/lib/tenant";
 import { messagingForInstance } from "./evolution";
 import { MAX_MESSAGE, sendDirect } from "./send";
@@ -56,6 +57,22 @@ export async function loadConversation(clientId: string): Promise<ActionResult<C
         return listConversation(tx, id.data);
       }),
     );
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+/** Nome e telefone da cliente para abrir a conversa a partir de uma notificação (só clientes deste salão). */
+export async function loadChatClient(clientId: string): Promise<ActionResult<{ name: string; phone: string }>> {
+  const { tenantId } = await requireTenant();
+  const id = clientIdOnly.safeParse(clientId);
+  if (!id.success) return fail("VALIDATION");
+  try {
+    const [cli] = await withTenant(tenantId, (tx) =>
+      tx.select({ name: clients.name, phone: clients.phoneE164 }).from(clients).where(eq(clients.id, id.data)),
+    );
+    if (!cli) return fail("NOT_ALLOWED");
+    return ok({ name: cli.name, phone: maskPhone(cli.phone) });
   } catch {
     return fail("UNKNOWN");
   }

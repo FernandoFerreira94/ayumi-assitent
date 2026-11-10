@@ -3,7 +3,6 @@ import { PgBoss } from "pg-boss";
 import { messagingForInstance } from "@/features/messaging/evolution";
 import { runReminders } from "@/features/reminders/run";
 import { pushFromEnv } from "@/features/push/webpush";
-import { runPushPendencias } from "@/features/push/run";
 import { log as jlog } from "@/lib/log";
 
 const QUEUE = "send-reminders";
@@ -29,17 +28,17 @@ async function main() {
   await boss.work(QUEUE, async () => {
     if (!process.env.EVOLUTION_URL || !process.env.EVOLUTION_API_KEY)
       return log({ level: "warn", msg: "reminders_skipped", reason: "Evolution não configurada" });
-    const r = await runReminders((i) => messagingForInstance(i), new Date(), process.env.EVOLUTION_INSTANCE);
+    // O aviso de "não respondeu" vai junto: depende do horário de cada lembrete, não de uma hora fixa
+    const r = await runReminders(
+      (i) => messagingForInstance(i),
+      new Date(),
+      process.env.EVOLUTION_INSTANCE,
+      pushFromEnv(),
+    );
     log({ level: r.failed ? "warn" : "info", msg: "reminders_run", ...r });
   });
-  await boss.createQueue(PUSH_QUEUE);
-  await boss.schedule(PUSH_QUEUE, "0 12 * * *"); // 09h no horário de Brasília
-  await boss.work(PUSH_QUEUE, async () => {
-    const port = pushFromEnv();
-    if (!port) return log({ level: "warn", msg: "push_skipped", reason: "VAPID não configurado" });
-    const r = await runPushPendencias(port);
-    log({ level: r.failed ? "warn" : "info", msg: "push_run", ...r });
-  });
+  // O resumo diário de pendências saiu: a dona só quer saber de confirmou, cancelar, remarcar e não respondeu
+  await boss.unschedule(PUSH_QUEUE).catch(() => undefined);
   log({ level: "info", msg: "worker_started" });
 
   const stop = async () => {
