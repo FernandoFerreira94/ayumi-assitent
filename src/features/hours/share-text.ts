@@ -40,48 +40,96 @@ function mondayOf(date: string): string {
   return d.toISOString().slice(0, 10);
 }
 
-/**
- * Formato "agenda aberta": título com mês, semanas (🌟 1ª Semana), uma linha por dia
- * "01/12 - 09:00 | 10:00" e rodapé. Dias sem `date` caem no formato padrão.
- */
-function buildAgendaText(days: ShareDay[], marks?: ShareMarks): string {
-  const withDate = days.filter((d) => d.date);
+/** Corpo "agenda aberta": semanas (🌟 1ª Semana) e uma linha por dia "01/12 - 09:00 | 10:00 (blindagem)". */
+function agendaBody(days: ShareDay[], marks?: ShareMarks): string {
   const weeks = new Map<string, ShareDay[]>();
-  for (const d of withDate) {
+  for (const d of days) {
     const key = mondayOf(d.date as string);
     weeks.set(key, [...(weeks.get(key) ?? []), d]);
   }
-  const month = monthName(withDate[0].date as string);
-  const blocks = [...weeks.values()].map((list, i) => {
-    const lines = list.map((d) => {
-      const date = d.date as string;
-      const times = d.slots.map((t) => (marks?.keys.has(markKey(date, t)) ? `${t} (${marks.tag})` : t));
-      return `${date.slice(8)}/${date.slice(5, 7)} - ${times.join(" | ")}`;
-    });
-    return `🌟 ${i + 1}ª Semana\n\n${lines.join("\n\n")}`;
-  });
-  return `✨ Agenda de ${month} Aberta ✨\n\n${blocks.join("\n\n")}\n\n✨ Garanta seu horário com antecedência!`;
+  return [...weeks.values()]
+    .map((list, i) => {
+      const lines = list.map((d) => {
+        const date = d.date as string;
+        const times = d.slots.map((t) => (marks?.keys.has(markKey(date, t)) ? `${t} (${marks.tag})` : t));
+        return `${date.slice(8)}/${date.slice(5, 7)} - ${times.join(" | ")}`;
+      });
+      return `🌟 ${i + 1}ª Semana\n\n${lines.join("\n\n")}`;
+    })
+    .join("\n\n");
 }
 
-/**
- * Texto para divulgar as vagas. "padrao" (WhatsApp): dia em negrito (*ter, 10/11*), uma linha por período
- * com faixas contínuas e uma linha em branco entre os dias. "agenda": formato de agenda aberta por semana.
- */
+/** Corpo "padrão" (WhatsApp): dia em negrito (*ter, 10/11*) e uma linha por período com faixas contínuas. */
+function standardBody(days: ShareDay[]): string {
+  return days
+    .map((d) => {
+      const lines = PERIODS.map((p) => {
+        const inPeriod = d.slots.filter((t) => toMin(t) >= p.from && toMin(t) < p.to);
+        return inPeriod.length ? `${p.name}: ${joinPt(toRanges(inPeriod))}` : null;
+      }).filter(Boolean);
+      return `*${d.label}*\n${lines.join("\n")}`;
+    })
+    .join("\n\n");
+}
+
+const filledDays = (days: ShareDay[]) => days.filter((d) => d.slots.length > 0);
+/** "agenda" precisa da data de cada dia; sem ela, cai no padrão. */
+const isAgenda = (format: ShareFormat, days: ShareDay[]) => format === "agenda" && days.every((d) => d.date);
+
+/** Só os horários (meio do texto). Vazio quando nenhum dia tem vaga. */
+export function buildShareBody(days: ShareDay[], format: ShareFormat = "padrao", marks?: ShareMarks): string {
+  const filled = filledDays(days);
+  if (filled.length === 0) return "";
+  return isAgenda(format, filled) ? agendaBody(filled, marks) : standardBody(filled);
+}
+
+/** Sugestões de título (topo do texto); a primeira é a usada por padrão. */
+export function shareTitles(format: ShareFormat, serviceName: string, days: ShareDay[]): string[] {
+  const first = filledDays(days).find((d) => d.date)?.date;
+  const month = first ? monthName(first) : null;
+  if (format === "agenda" && month) {
+    return [
+      `✨ Agenda de ${month} Aberta ✨`,
+      ...(month === "Dezembro" ? [`🎅🏻 Agenda de ${month} Aberta 🎁`] : []),
+      `💅 Agenda de ${month} aberta para ${serviceName}`,
+      "🌟 Novos horários disponíveis!",
+    ];
+  }
+  return [
+    `Horários disponíveis para ${serviceName}:`,
+    `💅 Vagas abertas para ${serviceName}`,
+    "🌸 Ainda tenho horários esta semana!",
+  ];
+}
+
+/** Sugestões de rodapé (fim do texto); a primeira é a usada por padrão. Com horários marcados, entra a legenda. */
+export function shareFooters(format: ShareFormat, marks?: ShareMarks): string[] {
+  const cta = "✨ Garanta seu horário com antecedência!";
+  const legend =
+    format === "agenda" && marks?.keys.size
+      ? `📌 Os horários com (${marks.tag}) são exclusivos para esse procedimento. Os demais horários atendem todos os procedimentos.`
+      : null;
+  const list = format === "agenda" ? [cta, "Qual prefere? 💜"] : ["Qual prefere?", cta];
+  return [...(legend ? [`${list[0]}\n\n${legend}`] : []), ...list, "💬 Me chama aqui para reservar o seu!"];
+}
+
+/** Junta topo, horários e rodapé com uma linha em branco entre eles; partes vazias somem. */
+export const composeShareText = (title: string, body: string, footer: string) =>
+  body.trim()
+    ? [title, body, footer]
+        .map((x) => x.trim())
+        .filter(Boolean)
+        .join("\n\n")
+    : "";
+
+/** Texto completo com o título e o rodapé padrão do formato. */
 export function buildShareText(
   serviceName: string,
   days: ShareDay[],
   format: ShareFormat = "padrao",
   marks?: ShareMarks,
 ): string {
-  const filled = days.filter((d) => d.slots.length > 0);
-  if (filled.length === 0) return "";
-  if (format === "agenda" && filled.every((d) => d.date)) return buildAgendaText(filled, marks);
-  const blocks = filled.map((d) => {
-    const lines = PERIODS.map((p) => {
-      const inPeriod = d.slots.filter((t) => toMin(t) >= p.from && toMin(t) < p.to);
-      return inPeriod.length ? `${p.name}: ${joinPt(toRanges(inPeriod))}` : null;
-    }).filter(Boolean);
-    return `*${d.label}*\n${lines.join("\n")}`;
-  });
-  return `Horários disponíveis para ${serviceName}:\n\n${blocks.join("\n\n")}\n\nQual prefere?`;
+  const f = isAgenda(format, filledDays(days)) ? format : "padrao";
+  const body = buildShareBody(days, f, marks);
+  return composeShareText(shareTitles(f, serviceName, days)[0], body, shareFooters(f, marks)[0]);
 }
