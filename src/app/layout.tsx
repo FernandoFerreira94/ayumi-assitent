@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Quicksand, Varela_Round } from "next/font/google";
+import { Quicksand, Nunito } from "next/font/google";
 import { mascotGate } from "@/components/brand/mascots";
 import { Splash, splashGate } from "@/components/brand/Splash";
 import { UpdateBanner } from "@/components/nav/UpdateBanner";
@@ -10,8 +10,8 @@ import "./globals.css";
 import "@/components/brand/mascot-themes.css";
 
 const quicksand = Quicksand({ variable: "--font-quicksand", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
-// Só para o nome "bubbly"
-const varela = Varela_Round({ variable: "--font-varela", subsets: ["latin"], weight: "400" });
+// Só para o nome "bubbly" (logo: Nunito bem grossa)
+const brand = Nunito({ variable: "--font-brand-face", subsets: ["latin"], weight: "900" });
 
 export const metadata: Metadata = {
   title: { default: "bubbly", template: "%s · bubbly" },
@@ -43,7 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     // suppressHydrationWarning: o script do splash marca data-splash no <html> antes de o React hidratar
     <html
       lang="pt-BR"
-      className={`${quicksand.variable} ${varela.variable} h-full antialiased`}
+      className={`${quicksand.variable} ${brand.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>

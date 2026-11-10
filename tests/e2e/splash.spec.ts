@@ -18,12 +18,13 @@ test("abrir o app mostra o splash uma vez; recarregar na mesma abertura não rep
   await expect(page.locator(".splash")).toBeHidden();
 });
 
-test("o nome tem o par bb em outra cor", async ({ page }) => {
+test("o nome é a marca: bubbly em Nunito grossa, com as bolhinhas subindo", async ({ page }) => {
   await page.goto("/login");
-  const h1 = page.getByRole("heading", { level: 1, name: "bubbly" });
-  const colors = await h1.evaluate((el) => {
-    const word = el.firstElementChild as HTMLElement;
-    return [getComputedStyle(word).color, getComputedStyle(word.querySelector("span")!).color];
-  });
-  expect(colors[0]).not.toBe(colors[1]);
+  const word = page.getByRole("heading", { level: 1, name: "bubbly" }).locator(":scope > span");
+  const [weight, bubbles] = await word.evaluate((el) => [
+    getComputedStyle(el).fontWeight,
+    el.querySelectorAll("span[aria-hidden='true']").length,
+  ]);
+  expect(weight).toBe("900");
+  expect(bubbles).toBe(2);
 });
