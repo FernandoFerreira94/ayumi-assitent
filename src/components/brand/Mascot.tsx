@@ -3,7 +3,10 @@
 import { useId, useSyncExternalStore } from "react";
 import { todayStr } from "@/lib/dates";
 import { seasonOn, type Season } from "./season";
+import { mascotBody } from "./MascotBodies";
+import type { MascotKind } from "./mascots";
 import { seasonLayers } from "./SeasonAccessory";
+import { useMascotKind } from "./useMascotKind";
 
 /*
  * Bolha, o mascote, redesenhada em SVG a partir da prancha (lá é canvas).
@@ -15,8 +18,9 @@ const BODY = [
   [240, 206.4, 102],
   [240, 308.4, 81.6],
 ] as const;
-const RIM = ["#6D4AFF", "#B9A6FF", "#FF8FB1", "#E5547F", "#8E73FF"];
-const EYE = "#3B22B8";
+// Cores pelas variáveis do mascote escolhido (mascot-themes.css); a Bolha é a reserva (ex.: ícones gerados)
+const RIM = ["#6D4AFF", "#B9A6FF", "#FF8FB1", "#E5547F", "#8E73FF"].map((c, i) => `var(--m-rim-${i}, ${c})`);
+const EYE = "var(--m-eye, #3B22B8)";
 const HAPPY_L = "M185.96 255.83A18 18 0 0 1 218.04 255.83";
 const HAPPY_R = "M261.96 255.83A18 18 0 0 1 294.04 255.83";
 const SMILE = "M249.7 293.05A12 12 0 0 1 230.3 293.05";
@@ -95,6 +99,7 @@ export function Mascot({
   look,
   weather: weatherProp,
   season: seasonProp,
+  kind: kindProp,
   children,
 }: {
   mood?: MascotMood;
@@ -105,6 +110,8 @@ export function Mascot({
    * menor que isso o enfeite vira ruído, como no ícone do toast); null desliga.
    */
   season?: Season | null;
+  /** Qual mascote desenhar; sem a prop, o que a pessoa escolheu em Meu perfil. */
+  kind?: MascotKind;
   size?: number;
   className?: string;
   /** Parada na tela: pisca e olha em volta sozinha (animações em globals.css). */
@@ -121,6 +128,9 @@ export function Mascot({
   // A data ganha da roupa do clima
   const weather = season ? undefined : weatherProp;
   const extra = season ? seasonLayers(season, id) : null;
+  const chosen = useMascotKind();
+  const kind = kindProp ?? chosen;
+  const body = kind === "bolha" ? null : mascotBody(kind, id);
   const circles = (grow: number) => BODY.map(([cx, cy, r]) => <circle key={cx + cy} cx={cx} cy={cy} r={r + grow} />);
   const openEyes = (
     <g className="mascot-blink" fill={EYE}>
@@ -153,7 +163,7 @@ export function Mascot({
             {...stroke}
             strokeWidth="8"
           />
-          <g fill="#B9A6FF">
+          <g fill="var(--m-paw, #B9A6FF)">
             <ellipse cx="196" cy="262" rx="26" ry="20" transform="rotate(-17 196 262)" />
             <ellipse cx="284" cy="262" rx="26" ry="20" transform="rotate(17 284 262)" />
           </g>
@@ -215,8 +225,11 @@ export function Mascot({
 
   // Gorro, pompom e guarda-chuva passam do topo da cabeça: com roupa, o quadro ganha altura.
   // Os acessórios de data vão mais longe (chapéu, balão, confete): quadro maior dos lados também.
-  const [left, top, w] = season ? [40, 10, 400] : [70, weather ? 60 : 95, 340];
-  const h = 410 - top - (season ? 0 : 10);
+  // Nos outros mascotes a cabeça fica mais baixa: o enfeite desce junto (dy) e o quadro cresce embaixo.
+  const dy = body?.dy ?? 0;
+  const [left, top, w] = season ? [40, 10, 400] : [70, body ? body.top : weather ? 60 : 95, 340];
+  const h = season ? 400 + dy : 400 - top;
+  const shift = dy ? `translate(0 ${dy})` : undefined;
 
   return (
     <svg
@@ -228,8 +241,8 @@ export function Mascot({
     >
       <defs>
         <radialGradient id={`${id}b`} cx="0.45" cy="0.4" r="0.75">
-          <stop offset="0" stopColor="#FDFCFF" />
-          <stop offset="1" stopColor="#E6DEFF" />
+          <stop offset="0" stopColor="var(--m-body-0, #FDFCFF)" />
+          <stop offset="1" stopColor="var(--m-body-1, #E6DEFF)" />
         </radialGradient>
         <linearGradient id={`${id}r`} x1="0" y1="0" x2="1" y2="1">
           {RIM.map((c, i) => (
@@ -241,8 +254,8 @@ export function Mascot({
           <g fill="#000">{circles(-9)}</g>
         </mask>
         <radialGradient id={`${id}c`}>
-          <stop offset="0" stopColor="#FF8FB1" stopOpacity="0.75" />
-          <stop offset="1" stopColor="#FF8FB1" stopOpacity="0" />
+          <stop offset="0" stopColor="var(--m-cheek, #FF8FB1)" stopOpacity="0.75" />
+          <stop offset="1" stopColor="var(--m-cheek, #FF8FB1)" stopOpacity="0" />
         </radialGradient>
         <linearGradient id={`${id}o`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#17142B" />
@@ -251,14 +264,30 @@ export function Mascot({
         </linearGradient>
       </defs>
       {weather === "sun" ? SUN : null}
-      {extra?.back}
-      <g fill={`url(#${id}r)`}>{circles(0)}</g>
-      <g fill={`url(#${id}b)`}>{circles(-9)}</g>
-      <rect x="70" y="95" width="340" height="305" fill={`url(#${id}r)`} mask={`url(#${id}m)`} opacity="0.35" />
-      <ellipse cx="185" cy="150" rx="34" ry="13" transform="rotate(-34 185 150)" fill="#fff" opacity="0.9" />
-      <circle cx="228" cy="138" r="6" fill="#fff" opacity="0.9" />
+      {extra?.back ? <g transform={shift}>{extra.back}</g> : null}
+      {body ? (
+        <>
+          {body.back}
+          {/* Silhueta duas vezes: borda furta-cor (traço grosso) e o miolo de vidro por cima */}
+          <g fill={`url(#${id}r)`} stroke={`url(#${id}r)`} strokeWidth="18" strokeLinejoin="round">
+            {body.shapes}
+          </g>
+          <g fill={`url(#${id}b)`}>{body.shapes}</g>
+          {body.detail}
+          {body.gloss}
+        </>
+      ) : (
+        <>
+          <g fill={`url(#${id}r)`}>{circles(0)}</g>
+          <g fill={`url(#${id}b)`}>{circles(-9)}</g>
+          <rect x="70" y="95" width="340" height="305" fill={`url(#${id}r)`} mask={`url(#${id}m)`} opacity="0.35" />
+          <ellipse cx="185" cy="150" rx="34" ry="13" transform="rotate(-34 185 150)" fill="#fff" opacity="0.9" />
+          <circle cx="228" cy="138" r="6" fill="#fff" opacity="0.9" />
+        </>
+      )}
       <circle cx="172" cy="296" r="24" fill={`url(#${id}c)`} />
       <circle cx="308" cy="296" r="24" fill={`url(#${id}c)`} />
+      {body?.front}
       {/* Rosto em grupos: .mascot-look move o rosto todo, .mascot-blink fecha só os olhos */}
       <g
         className="mascot-look"
@@ -279,7 +308,7 @@ export function Mascot({
         {extra?.face}
       </g>
       {weather ? OUTFIT[weather] : null}
-      {extra?.front}
+      {extra?.front ? <g transform={shift}>{extra.front}</g> : null}
       {children}
     </svg>
   );

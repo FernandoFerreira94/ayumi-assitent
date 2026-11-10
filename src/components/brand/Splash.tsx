@@ -47,8 +47,8 @@ export function Splash() {
         <defs>
           <linearGradient id="splash-film" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stopColor="#FFFFFF" />
-            <stop offset="0.35" stopColor="#FF8FB1" />
-            <stop offset="0.7" stopColor="#B9A6FF" />
+            <stop offset="0.35" stopColor="var(--m-rim-2, #FF8FB1)" />
+            <stop offset="0.7" stopColor="var(--m-rim-1, #B9A6FF)" />
             <stop offset="1" stopColor="#FFFFFF" />
           </linearGradient>
         </defs>

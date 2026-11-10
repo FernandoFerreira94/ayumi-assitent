@@ -22,7 +22,8 @@ export type Booking = {
 };
 
 const STEPS = ["Conferindo se o horário está livre", "Salvando na agenda", "Programando o lembrete no WhatsApp"];
-const RIM = ["#6D4AFF", "#B9A6FF", "#FF8FB1", "#E5547F", "#8E73FF"];
+// Cores do mascote escolhido (mascot-themes.css), com a Bolha de reserva
+const RIM = ["#6D4AFF", "#B9A6FF", "#FF8FB1", "#E5547F", "#8E73FF"].map((c, i) => `var(--m-rim-${i}, ${c})`);
 
 /** A Bolha por cima de tudo: concentrada anotando enquanto agenda, depois o resultado. */
 export function BookingOverlay({
@@ -189,8 +190,8 @@ function StepIcon() {
 function NoteCard({ done }: { done: number }) {
   return (
     <g transform="translate(240 352) rotate(-3.4)">
-      <rect x="-84" y="-54" width="168" height="108" rx="16" fill="#fff" stroke="#E6E2F3" strokeWidth="3" />
-      <path d="M-84 -28V-38A16 16 0 0 1 -68 -54H68A16 16 0 0 1 84 -38V-28Z" fill="#6D4AFF" />
+      <rect x="-84" y="-54" width="168" height="108" rx="16" fill="#fff" stroke="var(--line)" strokeWidth="3" />
+      <path d="M-84 -28V-38A16 16 0 0 1 -68 -54H68A16 16 0 0 1 84 -38V-28Z" fill="var(--primary)" />
       <circle cx="-50" cy="-54" r="5" fill="#fff" />
       <circle cx="50" cy="-54" r="5" fill="#fff" />
       {Array.from({ length: 8 }, (_, n) => {
@@ -199,13 +200,13 @@ function NoteCard({ done }: { done: number }) {
         const on = n < done * 2;
         return (
           <g key={n}>
-            <rect x={x} y={y} width="28" height="22" rx="6" fill={on ? "#EEE9FF" : "#F6F4FC"} />
+            <rect x={x} y={y} width="28" height="22" rx="6" fill={on ? "var(--soft)" : "var(--bg)"} />
             {on ? (
               <path
                 d={`M${x + 8} ${y + 11}L${x + 12} ${y + 15}L${x + 20} ${y + 7}`}
                 className="note-tick"
                 fill="none"
-                stroke="#6D4AFF"
+                stroke="var(--primary-text)"
                 strokeWidth="3.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -220,7 +221,7 @@ function NoteCard({ done }: { done: number }) {
           <path d="M-6 -6H6L0 6Z" fill="#FFD9A8" />
         </g>
       </g>
-      <g fill="#C9BBFF">
+      <g fill="var(--m-paw, #C9BBFF)">
         <ellipse cx="-86" cy="4" rx="22" ry="18" transform="rotate(17 -86 4)" />
         <ellipse cx="86" cy="4" rx="22" ry="18" transform="rotate(-17 86 4)" />
       </g>

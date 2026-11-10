@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { PageShell } from "@/components/ui/PageShell";
 import { getDb } from "@/db/client";
 import { tenants } from "@/db/schema";
+import { MascotPicker } from "@/features/salon/MascotPicker";
 import { SalonForm } from "@/features/salon/SalonForm";
 import type { Segment } from "@/features/salon/schema";
 import { requireTenant } from "@/lib/tenant";
@@ -23,15 +24,18 @@ export default async function PerfilPage() {
     .where(eq(tenants.id, tenantId));
   return (
     <PageShell back title="Meu perfil">
-      <SalonForm
-        initial={{
-          name: t?.name ?? "",
-          ownerName: t?.ownerName ?? "",
-          birthDate: t?.birthDate ?? "",
-          profession: t?.profession ?? "",
-          segments: (t?.segments ?? []) as Segment[],
-        }}
-      />
+      <div className="grid gap-6">
+        <MascotPicker />
+        <SalonForm
+          initial={{
+            name: t?.name ?? "",
+            ownerName: t?.ownerName ?? "",
+            birthDate: t?.birthDate ?? "",
+            profession: t?.profession ?? "",
+            segments: (t?.segments ?? []) as Segment[],
+          }}
+        />
+      </div>
     </PageShell>
   );
 }
