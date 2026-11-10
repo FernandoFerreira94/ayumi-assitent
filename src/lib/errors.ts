@@ -12,6 +12,11 @@ export const ERROR_MESSAGES = {
   IMAGE_TOO_LARGE: "A imagem é grande demais. Tente uma foto menor.",
   NOT_ALLOWED: "Esta conta não tem acesso.",
   VALIDATION: "Confira os campos destacados.",
+  NOT_FOUND: "Não encontramos esse item. Ele pode ter sido apagado.",
+  CITY_NOT_FOUND: "Não encontramos essa cidade. Confira o nome e a UF.",
+  PUSH_NOT_CONFIGURED: "Os avisos no celular ainda não estão configurados no servidor.",
+  PUSH_NO_DEVICE: "Nenhum aparelho com aviso ligado. Toque em Ativar em Avisos no celular primeiro.",
+  PUSH_FAILED: "O aviso não chegou ao aparelho. Desative e ative os avisos de novo e tente outra vez.",
   NETWORK: "Sem conexão. Verifique a internet e tente de novo.",
   UNKNOWN: "Algo deu errado do nosso lado. Tente de novo em instantes.",
 } as const;

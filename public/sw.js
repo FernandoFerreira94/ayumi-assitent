@@ -23,12 +23,18 @@ self.addEventListener("fetch", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let data = { title: "mimo", body: "", url: "/pendencias" };
+  let data = { title: "mimo", body: "", url: "/pendencias", tag: undefined };
   try {
     data = { ...data, ...event.data.json() };
   } catch {}
   event.waitUntil(
-    self.registration.showNotification(data.title, { body: data.body, icon: "/icon.png", data: { url: data.url } }),
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: "/icon.png",
+      badge: "/icon.png",
+      tag: data.tag,
+      data: { url: data.url },
+    }),
   );
 });
 

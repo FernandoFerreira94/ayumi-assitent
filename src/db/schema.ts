@@ -12,6 +12,7 @@ import {
   uuid,
   boolean,
   date,
+  doublePrecision,
 } from "drizzle-orm/pg-core";
 
 export const tenants = pgTable("tenants", {
@@ -50,6 +51,11 @@ export const tenants = pgTable("tenants", {
   aiEnabled: boolean("ai_enabled").notNull().default(true),
   /** Regras da profissional para a IA (até 1000 caracteres) */
   aiRules: text("ai_rules"),
+  /** Cidade e UF do salão: feriados locais e clima dos avisos do dia */
+  city: text("city"),
+  state: text("state"),
+  latitude: doublePrecision("latitude"),
+  longitude: doublePrecision("longitude"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -255,4 +261,23 @@ export const expenses = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("expenses_tenant_spent").on(t.tenantId, t.spentOn)],
+);
+
+/** Avisos do dia no celular da profissional: um por tipo e dia (o worker não repete). */
+export const ownerNotices = pgTable(
+  "owner_notices",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull().$type<"day_off" | "morning" | "day_end" | "week" | "holiday">(),
+    day: date("day", { mode: "string" }).notNull(),
+    variant: smallint("variant").notNull().default(0),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    detail: text("detail"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique().on(t.tenantId, t.kind, t.day)],
 );

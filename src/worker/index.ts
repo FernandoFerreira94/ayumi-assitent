@@ -3,10 +3,12 @@ import { PgBoss } from "pg-boss";
 import { messagingForInstance } from "@/features/messaging/evolution";
 import { runReminders } from "@/features/reminders/run";
 import { pushFromEnv } from "@/features/push/webpush";
+import { runOwnerNotices } from "@/features/owner-notices/run";
 import { log as jlog } from "@/lib/log";
 
 const QUEUE = "send-reminders";
 const PUSH_QUEUE = "push-pendencias";
+const NOTICES_QUEUE = "owner-notices";
 const log = ({
   level,
   msg,
@@ -36,6 +38,15 @@ async function main() {
       pushFromEnv(),
     );
     log({ level: r.failed ? "warn" : "info", msg: "reminders_run", ...r });
+  });
+  // Avisos do dia no celular da dona: folga, resumo da manhã, fim do expediente, semana e datas comemorativas
+  await boss.createQueue(NOTICES_QUEUE);
+  await boss.schedule(NOTICES_QUEUE, "*/5 * * * *");
+  await boss.work(NOTICES_QUEUE, async () => {
+    const push = pushFromEnv();
+    if (!push) return log({ level: "warn", msg: "owner_notices_skipped", reason: "VAPID não configurado" });
+    const r = await runOwnerNotices(push);
+    if (r.kinds.length || r.failed) log({ level: r.failed ? "warn" : "info", msg: "owner_notices_run", ...r });
   });
   // O resumo diário de pendências saiu: a dona só quer saber de confirmou, cancelar, remarcar e não respondeu
   await boss.unschedule(PUSH_QUEUE).catch(() => undefined);

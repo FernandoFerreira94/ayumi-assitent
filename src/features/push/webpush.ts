@@ -14,7 +14,8 @@ export function pushFromEnv(env: NodeJS.ProcessEnv = process.env): PushPort | nu
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
           JSON.stringify(payload),
-          { TTL: 3600 },
+          // urgency high: o iPhone entrega na hora mesmo com a tela bloqueada ou em economia de bateria
+          { TTL: 6 * 3600, urgency: "high" },
         );
       } catch (e) {
         const code = (e as { statusCode?: number }).statusCode;
