@@ -64,7 +64,7 @@ describe("planAiReply", () => {
 
   it("fica quieta se a dona escreveu nas últimas 12h, sem nem chamar o modelo", async () => {
     const classify = says({ intent: "confirm", confidence: 1 });
-    expect(await planAiReply(ctx({ ownerWroteRecently: true }), classify)).toEqual({ action: "silent", guess: null });
+    expect(await planAiReply(ctx({ ownerWroteRecently: true }), classify)).toEqual({ action: "silent", guess: null, quiet: true });
     expect(classify).not.toHaveBeenCalled();
   });
 
@@ -77,6 +77,7 @@ describe("planAiReply", () => {
     expect(await planAiReply(ctx({ autoRepliesLast24h: 3 }), says({ intent: "other", confidence: 1 }))).toEqual({
       action: "silent",
       guess: null,
+      quiet: false,
     });
   });
 
@@ -84,6 +85,7 @@ describe("planAiReply", () => {
     expect(await planAiReply(ctx({ alreadyHandedOff: true }), says({ intent: "other", confidence: 1 }))).toEqual({
       action: "silent",
       guess: null,
+      quiet: false,
     });
   });
 });

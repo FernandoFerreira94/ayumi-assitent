@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { MultiSelect } from "@/components/ui/MultiSelect";
 import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import type { ActionResult } from "@/lib/errors";
@@ -31,14 +32,6 @@ export function SalonForm({
   }, null);
   const field = state && !state.ok ? state.field : undefined;
   const age = birth ? ageFrom(birth) : null;
-
-  const toggle = (id: Segment) =>
-    setPicked((s) => {
-      const n = new Set(s);
-      if (n.has(id)) n.delete(id);
-      else n.add(id);
-      return n;
-    });
 
   return (
     <form action={action} className="grid gap-6">
@@ -113,31 +106,23 @@ export function SalonForm({
             </span>
           ) : null}
         </label>
-        <fieldset className="grid gap-2">
-          <legend className="pb-1 text-sm font-bold">Segmentos (marque quantos fizerem sentido)</legend>
-          <div className="flex flex-wrap gap-2">
-            {SEGMENTS.map(([id, label]) => (
-              <label key={id} className="relative">
-                <input
-                  type="checkbox"
-                  name="segments"
-                  value={id}
-                  checked={picked.has(id)}
-                  onChange={() => toggle(id)}
-                  className="peer sr-only"
-                />
-                <span className="flex min-h-11 items-center rounded-full border border-line bg-surface px-3.5 text-sm font-bold peer-checked:border-primary peer-checked:bg-primary peer-checked:text-on-primary peer-focus-visible:outline-2 peer-focus-visible:outline-primary">
-                  {label}
-                </span>
-              </label>
-            ))}
-          </div>
+        <div className="grid gap-1 text-sm font-bold">
+          <span id="seg-label">Segmentos (marque quantos fizerem sentido)</span>
+          <MultiSelect
+            name="segments"
+            label="Segmentos"
+            options={SEGMENTS}
+            value={picked}
+            onChange={setPicked}
+            placeholder="Escolha seus segmentos"
+            invalid={field === "segments"}
+          />
           {field === "segments" ? (
             <span role="alert" className="text-xs font-semibold text-primary-text">
               Marque pelo menos um segmento
             </span>
           ) : null}
-        </fieldset>
+        </div>
       </section>
       <SubmitButton pendingLabel="Salvando…">Salvar</SubmitButton>
     </form>

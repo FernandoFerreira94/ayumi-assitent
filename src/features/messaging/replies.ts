@@ -14,6 +14,10 @@ const plain = (s: string) =>
 // Texto já normalizado (sem acento, minúsculo). Ordem importa: "nao vou" antes de "vou"
 const RESCHEDULE = /\b(reagend\w*|remarc\w*|outro (horario|dia)|mudar (o )?horario|trocar (o )?horario)\b/;
 const CANCEL = /\b(cancel\w*|desmarc\w*|nao (vou|posso|consigo|da)|nao vai dar|nao irei)\b/;
+// Não disse "cancela", mas contou por que não vai conseguir ir ("estou na faculdade", "surgiu um imprevisto"):
+// vale como pedido de remarcar. Ressalva ("chego depois", "?") continua indo para a dona ler.
+const UNABLE =
+  /\b((estou|to|ta|estarei|fiquei|vou ficar|vou estar) ((na|no) (faculdade|escola|aula|curso|trabalho|plantao|reuniao|hospital|medico|dentista)|em (aula|reuniao|viagem|plantao))|(surgiu|tive|tenho|apareceu) (um |uma )?(imprevisto|compromisso|emergencia|urgencia))\b/;
 const CANCEL_ALL = new RegExp(CANCEL.source, "g");
 // "não precisa cancelar", "não cancele", "não quero remarcar": negou a ação, então não é pedido nenhum
 const NEGATED_ACTION =
@@ -56,6 +60,7 @@ export function parseIntent(raw: string): Intent | null {
   const doubtful = trimmed.includes("?") || HEDGE.test(t);
   if (WILL_ATTEND.test(t)) return doubtful ? null : "confirm";
   if (RESCHEDULE.test(t)) return "reschedule";
+  if (UNABLE.test(t) && !doubtful) return "reschedule";
   if (CANCEL.test(t)) {
     // "vou sim, mas cancela o outro": sem como saber a qual horário se refere
     // ("vou ter que cancelar" é só o jeito de dizer; o "vou" ali não confirma nada)
