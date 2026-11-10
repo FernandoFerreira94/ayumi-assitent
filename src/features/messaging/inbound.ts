@@ -12,6 +12,7 @@ import {
   type AiVerdict,
 } from "./ai-policy";
 import type { MessagingPort } from "./port";
+import { clientCall } from "@/features/reminders/text";
 import { ackText, parseIntent, phoneCandidates, type InboundText, type Intent } from "./replies";
 import { recordMessage } from "./store";
 
@@ -66,7 +67,7 @@ type Target = { id: string; handedOff: boolean; correction: boolean; status: str
 export async function handleInbound(msg: InboundText, deps: InboundDeps): Promise<InboundResult> {
   const now = deps.now ?? new Date();
   const [t] = await getDb()
-    .select({ id: tenants.id, aiEnabled: tenants.aiEnabled, aiRules: tenants.aiRules })
+    .select({ id: tenants.id, aiEnabled: tenants.aiEnabled, aiRules: tenants.aiRules, fullName: tenants.clientNameFull })
     .from(tenants)
     .where(eq(tenants.whatsappInstance, msg.instance));
   if (!t) return { handled: false, reason: "tenant" };
@@ -185,7 +186,7 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
   else if (ai && target && deps.classify) {
     const classify = deps.classify;
     plan = await planAiReply(
-      { ...ai, media: !!msg.media, text: msg.text, clientName: client.name, alreadyHandedOff: target.handedOff },
+      { ...ai, media: !!msg.media, text: msg.text, clientName: clientCall(client.name, t.fullName), alreadyHandedOff: target.handedOff },
       () => classify(msg.text, t.aiRules),
     );
   } else plan = { action: "silent", guess: null };
@@ -202,7 +203,7 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
       intent = plan.intent;
       appointmentId = target.id;
       correction = target.correction;
-      if (plan.sendAck) ack = ackText(plan.intent, client.name);
+      if (plan.sendAck) ack = ackText(plan.intent, client.name, t.fullName);
     }
   } else if (target && plan.action === "handoff") {
     handedOff = true;

@@ -1,3 +1,4 @@
+import { clientCall } from "@/features/reminders/text";
 /** O que a cliente quis dizer ao responder o lembrete. */
 export type Intent = "confirm" | "cancel" | "reschedule";
 
@@ -66,16 +67,12 @@ export function parseIntent(raw: string): Intent | null {
   return CONFIRM.test(t) ? "confirm" : null;
 }
 
-/** 2º aviso (horas definidas pela dona) para quem não respondeu ao lembrete. Nunca cancela sozinho. */
-export const nudgeText = (clientName: string) =>
-  `Oi, ${clientName.trim().split(/\s+/)[0]}! Passando para lembrar do seu horário 😊 Pode me confirmar? É só responder 1`;
-
 /**
  * Única resposta automática à resposta do lembrete. Confirmar agradece; cancelar ou remarcar não muda
  * nada sozinho: só diz que a profissional vai ver o melhor horário e retornar.
  */
-export function ackText(intent: Intent, clientName: string): string {
-  const first = clientName.trim().split(/\s+/)[0];
+export function ackText(intent: Intent, clientName: string, fullName = false): string {
+  const first = clientCall(clientName, fullName);
   if (intent === "confirm") return `Oba, ${first}! Seu horário está confirmado 💜 Te espero com carinho!`;
   return `Tudo bem, ${first}! Vou ver com a profissional o melhor horário para você e já te retorno 💜`;
 }

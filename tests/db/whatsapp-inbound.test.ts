@@ -149,6 +149,8 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     const m = (text: string, over: object = {}) => msg(`ai${++n}`, text, over);
 
     it("desligada, a mensagem que as regras não entendem não recebe resposta", async () => {
+      // Ligada por padrão desde a 0022; o interruptor saiu de Ajustes, mas a coluna ainda é respeitada
+      await admin`update tenants set ai_enabled = false where id = ${T}`;
       await fresh();
       verdict = { intent: "confirm", confidence: 1 };
       await handleInbound(m("pode contar comigo, até amanhã"), ai);

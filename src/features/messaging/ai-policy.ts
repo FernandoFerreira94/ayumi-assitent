@@ -14,20 +14,18 @@ export const OWNER_QUIET_HOURS = 12;
 /** A cliente pode corrigir a resposta até 2h depois de ter respondido ao lembrete. */
 export const CORRECTION_HOURS = 2;
 
-const firstName = (name: string) => name.trim().split(/[ ]+/)[0];
-
-/** Passagem para a profissional: sempre com o primeiro nome e tom acolhedor. */
+/** Passagem para a profissional, com tom acolhedor. O nome vem pronto (primeiro nome ou inteiro, como em Ajustes). */
 export const handoffText = (clientName: string) =>
-  `Oi, ${firstName(clientName)}! Recebi sua mensagem e já passei para a profissional, ela te responde rapidinho 💜`;
+  `Oi, ${clientName}! Recebi sua mensagem e já passei para a profissional, ela te responde rapidinho 💜`;
 /** Áudio, foto ou figurinha: mesmo acolhimento, sem fingir que entendeu o conteúdo. */
 export const mediaText = (clientName: string) =>
-  `Oi, ${firstName(clientName)}! Recebi seu envio e já passei para a profissional, ela te responde rapidinho 💜`;
+  `Oi, ${clientName}! Recebi seu envio e já passei para a profissional, ela te responde rapidinho 💜`;
 
 export type AiContext = {
   /** Áudio, foto ou figurinha: a IA não lê */
   media: boolean;
   text: string;
-  /** Nome da cliente, para o texto sair com o primeiro nome */
+  /** Nome da cliente como vai na mensagem (primeiro nome ou inteiro, como a dona escolheu em Ajustes) */
   clientName: string;
   /** A dona escreveu para esta cliente nas últimas 12h */
   ownerWroteRecently: boolean;

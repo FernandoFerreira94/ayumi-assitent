@@ -48,14 +48,8 @@ export const salonInput = z.object({
 });
 export type SalonInput = z.infer<typeof salonInput>;
 
-/** Texto do lembrete que vai para a cliente (vazio = volta ao padrão). */
-export const reminderTemplateInput = z.object({
-  reminderTemplate: z.string().trim().max(600, "Até 600 caracteres"),
-});
-
-/** Resposta automática por IA: liga/desliga e regras da profissional (texto livre). */
+/** Resposta automática por IA (sempre ligada): regras da profissional em texto livre. */
 export const AI_RULES_MAX = 1000;
 export const aiSettingsInput = z.object({
-  aiEnabled: z.boolean(),
   aiRules: z.string().trim().max(AI_RULES_MAX, `Até ${AI_RULES_MAX} caracteres`),
 });

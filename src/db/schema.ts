@@ -32,16 +32,22 @@ export const tenants = pgTable("tenants", {
     .array()
     .notNull()
     .default(sql`'{}'`),
-  /** Texto do lembrete; null = o padrão do app */
+  /** Texto do 1º aviso; null = o padrão do app */
   reminderTemplate: text("reminder_template"),
+  /** Texto do 2º aviso; null = o padrão do app */
+  secondReminderTemplate: text("second_reminder_template"),
+  /** Texto da mensagem de agendamento confirmado; null = o padrão do app */
+  bookingTemplate: text("booking_template"),
+  /** {nome} nas mensagens: false = só o primeiro nome, true = o nome inteiro do contato */
+  clientNameFull: boolean("client_name_full").notNull().default(false),
   /** Horas antes do horário em que sai o lembrete (1 a 72) */
   reminderHours: integer("reminder_hours").notNull().default(24),
   /** Horas antes do horário do segundo aviso (para quem não respondeu); null = só um aviso */
   secondReminderHours: integer("second_reminder_hours").default(3),
-  /** Se a mensagem de agendamento confirmado inclui o valor do serviço */
+  /** Antigo interruptor de valor. Sem uso: o valor agora é a chave {valor} no texto de agendamento */
   messageIncludePrice: boolean("message_include_price").notNull().default(false),
-  /** Respostas automáticas por IA às mensagens da cliente (desligado por padrão) */
-  aiEnabled: boolean("ai_enabled").notNull().default(false),
+  /** Respostas automáticas por IA às mensagens da cliente (sempre ligadas desde a 0022) */
+  aiEnabled: boolean("ai_enabled").notNull().default(true),
   /** Regras da profissional para a IA (até 1000 caracteres) */
   aiRules: text("ai_rules"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

@@ -22,7 +22,12 @@ export async function sendBookingMessage(
 ): Promise<BookingMessageResult> {
   try {
     const [t] = await getDb()
-      .select({ instance: tenants.whatsappInstance, includePrice: tenants.messageIncludePrice })
+      .select({
+        instance: tenants.whatsappInstance,
+        name: tenants.name,
+        template: tenants.bookingTemplate,
+        fullName: tenants.clientNameFull,
+      })
       .from(tenants)
       .where(eq(tenants.id, tenantId));
     // Mesma regra dos lembretes: sem instância própria, usa a do ambiente
@@ -45,7 +50,7 @@ export async function sendBookingMessage(
         .where(eq(appointments.id, appointmentId)),
     );
     if (!a) return "skipped";
-    const text = bookingText(a, now, { includePrice: t?.includePrice ?? false });
+    const text = bookingText(a, now, { template: t?.template, name: t?.name, fullName: t?.fullName });
     const res = await sendDirect(port, a.phone, text);
     if (!res.ok) {
       console.error(JSON.stringify({ level: "warn", msg: "booking_message_failed", code: res.code }));
