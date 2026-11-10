@@ -40,6 +40,7 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
         aiRules: tenants.aiRules,
         city: tenants.city,
         state: tenants.state,
+        locationSource: tenants.locationSource,
       })
       .from(tenants)
       .where(eq(tenants.id, tenantId)),
@@ -76,11 +77,15 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
         </section>
       </Group>
       <Group title="Este aparelho">
-        <section aria-label="Avisos">
+        <section id="avisos-celular" aria-label="Avisos" className="scroll-mt-6">
           <PushToggle publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
         </section>
         <section id="avisos-do-dia" aria-label="Avisos do dia" className="scroll-mt-6">
-          <DailyNoticesCard city={salon?.city ?? null} state={salon?.state ?? null} />
+          <DailyNoticesCard
+            city={salon?.city ?? null}
+            state={salon?.state ?? null}
+            source={salon?.locationSource ?? null}
+          />
         </section>
         <section aria-label="Atualização">
           <UpdateButton />

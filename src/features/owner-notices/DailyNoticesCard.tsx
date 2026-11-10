@@ -1,24 +1,32 @@
 "use client";
 
-import { useActionState, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import { TileTitle } from "@/components/ui/Icon";
+import { Switch } from "@/components/ui/Switch";
 import type { ActionResult } from "@/lib/errors";
-import { saveLocation, sendTestNotice } from "./actions";
+import { clearLocation, saveDeviceLocation, saveLocation, sendTestNotice } from "./actions";
+import { currentPosition, locationGranted, placeOf } from "./device-location";
 import { UF_NAMES } from "./weather";
 
+type Source = "device" | "manual" | null;
+
 /**
- * Ajustes > Avisos do dia: a cidade do salão (previsão do tempo e feriados locais) e o botão que manda agora um
- * aviso de teste para ver como ele chega na tela bloqueada.
+ * Ajustes > Avisos do dia: a localização do celular (previsão do tempo e feriados da cidade), com a cidade
+ * digitada como alternativa, e o botão que manda agora um aviso de teste para ver na tela bloqueada.
  */
-export function DailyNoticesCard({ city, state }: { city: string | null; state: string | null }) {
+export function DailyNoticesCard(props: { city: string | null; state: string | null; source: Source }) {
+  const [where, setWhere] = useState({ city: props.city, state: props.state, source: props.source });
+  const { city, state } = where;
+  const [locating, startLocating] = useTransition();
   const ref = useRef<HTMLDialogElement>(null);
   const [opened, setOpened] = useState(false);
   const [testing, start] = useTransition();
   const [form, action] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
     const res = await saveLocation(prev, fd);
     if (res.ok) {
+      setWhere({ city: String(fd.get("city") ?? ""), state: String(fd.get("state") ?? ""), source: "manual" });
       notify.success("Cidade salva", "A previsão do tempo e os feriados da cidade entram nos avisos.");
       ref.current?.close();
     } else if (res.code !== "VALIDATION" && res.code !== "CITY_NOT_FOUND") notify.error(res.code);
@@ -26,6 +34,56 @@ export function DailyNoticesCard({ city, state }: { city: string | null; state: 
   }, null);
   const cityError = form && !form.ok && (form.code === "CITY_NOT_FOUND" || form.field === "city");
   const ufError = form && !form.ok && form.field === "state";
+
+  // Com a localização ligada, abrir Ajustes atualiza a posição sem perguntar de novo (o salão pode ter mudado)
+  useEffect(() => {
+    if (props.source !== "device") return;
+    let alive = true;
+    void (async () => {
+      if (!(await locationGranted())) return;
+      const pos = await currentPosition().catch(() => null);
+      if (!pos || !alive) return;
+      const place = await placeOf(pos.coords.latitude, pos.coords.longitude);
+      const res = await saveDeviceLocation(place).catch(() => null);
+      if (alive && res?.ok) setWhere({ ...res.data, source: "device" });
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [props.source]);
+
+  function toggleLocation(on: boolean) {
+    startLocating(async () => {
+      if (!on) {
+        const res = await clearLocation().catch(() => null);
+        if (res?.ok) setWhere({ city: null, state: null, source: null });
+        else notify.error(res ? res.code : "NETWORK");
+        return;
+      }
+      const pos = await currentPosition().catch((e: GeolocationPositionError | Error) => e);
+      if (!("coords" in pos)) {
+        if ("code" in pos && pos.code === 1)
+          notify.problem(
+            "Localização bloqueada",
+            "Libere a localização nos Ajustes do iPhone (Privacidade > Serviços de Localização) ou digite a cidade.",
+          );
+        else
+          notify.problem("Não deu para achar a localização", "Tente de novo perto de uma janela ou digite a cidade.");
+        return;
+      }
+      const place = await placeOf(pos.coords.latitude, pos.coords.longitude);
+      const res = await saveDeviceLocation(place).catch(() => null);
+      if (!res?.ok) {
+        notify.error(res ? res.code : "NETWORK");
+        return;
+      }
+      setWhere({ ...res.data, source: "device" });
+      notify.success(
+        "Localização ligada",
+        res.data.city ? `${res.data.city} – ${res.data.state ?? ""}` : "A previsão do tempo já entra nos avisos.",
+      );
+    });
+  }
 
   function test() {
     start(async () => {
@@ -50,22 +108,40 @@ export function DailyNoticesCard({ city, state }: { city: string | null; state: 
           noite e datas comemorativas. Chegam com o app fechado, na tela bloqueada.
         </p>
       </div>
-      <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/60 px-4 py-3">
-        <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted">Cidade do salão</p>
-          <p className="truncate font-bold">{city && state ? `${city} – ${state}` : "Não informada"}</p>
+      <div className="grid gap-2 rounded-2xl bg-white/60 px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-bold">Usar a localização do celular</p>
+            <p className="truncate text-sm font-semibold text-muted">
+              {where.source === "device"
+                ? city
+                  ? `${city}${state ? ` – ${state}` : ""} · atualiza sozinha`
+                  : "Ligada · atualiza sozinha"
+                : where.source === "manual" && city
+                  ? `Cidade digitada: ${city} – ${state}`
+                  : "Para a previsão do tempo e os feriados da cidade"}
+            </p>
+          </div>
+          <Switch
+            checked={where.source === "device"}
+            onChange={toggleLocation}
+            busy={locating}
+            label="Usar a localização do celular"
+          />
         </div>
-        <button
-          type="button"
-          aria-haspopup="dialog"
-          onClick={() => {
-            setOpened(true);
-            ref.current?.showModal();
-          }}
-          className="btn-glass min-h-11 shrink-0 rounded-full px-4 text-sm font-bold"
-        >
-          {city ? "Alterar" : "Informar"}
-        </button>
+        {where.source !== "device" ? (
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            onClick={() => {
+              setOpened(true);
+              ref.current?.showModal();
+            }}
+            className="justify-self-start text-sm font-bold text-[var(--color-accent,#7A5CFF)] underline-offset-2 hover:underline"
+          >
+            {where.source === "manual" ? "Alterar a cidade" : "Prefiro digitar a cidade"}
+          </button>
+        ) : null}
       </div>
       <button
         type="button"

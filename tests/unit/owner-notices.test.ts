@@ -15,6 +15,7 @@ import {
   weekFallback,
 } from "@/features/owner-notices/texts";
 import { isSunny, skyLabel, weatherLine } from "@/features/owner-notices/weather";
+import { ufFromCode } from "@/features/owner-notices/device-location";
 
 const h = (hh: number, mm = 0) => hh * 60 + mm;
 const work: DayInput = {
@@ -149,5 +150,13 @@ describe("previsão do tempo", () => {
     expect(isSunny({ code: 1, min: 20, max: 30, rain: 10 })).toBe(true);
     expect(isSunny({ code: 1, min: 20, max: 30, rain: 60 })).toBe(false);
     expect(skyLabel(3)).toBe("nublado");
+  });
+});
+
+describe("localização do aparelho", () => {
+  it("UF a partir do código da BigDataCloud", () => {
+    expect(ufFromCode("BR-SP")).toBe("SP");
+    expect(ufFromCode("US-CA")).toBeNull();
+    expect(ufFromCode(undefined)).toBeNull();
   });
 });

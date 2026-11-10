@@ -73,7 +73,64 @@ export async function saveLocation(_prev: ActionResult | null, form: FormData): 
   try {
     await getDb()
       .update(tenants)
-      .set({ city: p.data.city, state: p.data.state, latitude: coords.latitude, longitude: coords.longitude })
+      .set({
+        city: p.data.city,
+        state: p.data.state,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        locationSource: "manual",
+      })
+      .where(eq(tenants.id, tenantId));
+    revalidatePath("/ajustes");
+    return ok();
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+const deviceInput = z.object({
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  city: z.string().trim().max(60).nullable(),
+  state: z.string().trim().toUpperCase().nullable(),
+});
+
+/**
+ * Localização do aparelho (interruptor em Ajustes): coordenadas para a previsão do tempo e cidade/UF (achadas no
+ * próprio aparelho) para os feriados locais. Chamado também ao abrir Ajustes, para ficar sempre atualizada.
+ */
+export async function saveDeviceLocation(
+  raw: unknown,
+): Promise<ActionResult<{ city: string | null; state: string | null }>> {
+  const { tenantId } = await requireTenant();
+  const p = deviceInput.safeParse(raw);
+  if (!p.success) return fail("VALIDATION");
+  const state = p.data.state && p.data.state in UF_NAMES ? p.data.state : null;
+  const city = p.data.city || null;
+  try {
+    await getDb()
+      .update(tenants)
+      .set({
+        latitude: Math.round(p.data.latitude * 1000) / 1000,
+        longitude: Math.round(p.data.longitude * 1000) / 1000,
+        city,
+        state,
+        locationSource: "device",
+      })
+      .where(eq(tenants.id, tenantId));
+    return ok({ city, state });
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+/** Desliga a localização do aparelho (os avisos seguem, só sem previsão do tempo e feriados da cidade). */
+export async function clearLocation(): Promise<ActionResult> {
+  const { tenantId } = await requireTenant();
+  try {
+    await getDb()
+      .update(tenants)
+      .set({ latitude: null, longitude: null, city: null, state: null, locationSource: null })
       .where(eq(tenants.id, tenantId));
     revalidatePath("/ajustes");
     return ok();

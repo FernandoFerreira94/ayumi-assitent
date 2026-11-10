@@ -94,6 +94,13 @@ export const TOUR_STEPS: TourStep[] = [
     advance: "next",
   },
   {
+    path: "/ajustes",
+    target: "#avisos-celular, #avisos-do-dia",
+    title: "6. Avisos e previsão do tempo",
+    text: "Toque em Ativar e deixe a localização ligada: eu mando bom dia com as clientes do dia e a previsão do tempo, aviso das folgas e dos feriados da sua cidade. Teste no botão de aviso.",
+    advance: "next",
+  },
+  {
     path: "/agenda",
     title: "Tudo pronto!",
     text: "Seu app está configurado. Lembre de tocar em Salvar em cada cartão que mudar, e o tour fica no fim de Ajustes se quiser rever. Tenha uma ótima experiência!",
