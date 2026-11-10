@@ -1,4 +1,9 @@
-import { useId } from "react";
+"use client";
+
+import { useId, useSyncExternalStore } from "react";
+import { todayStr } from "@/lib/dates";
+import { seasonOn, type Season } from "./season";
+import { seasonLayers } from "./SeasonAccessory";
 
 /*
  * Bolha, o mascote, redesenhada em SVG a partir da prancha (lá é canvas).
@@ -25,6 +30,8 @@ export type MascotMood = "neutral" | "happy" | "shy" | "peek" | "thinking" | "wo
 
 /** Roupa do clima da prancha "Humores do Mimo", por cima de qualquer humor. */
 export type MascotWeather = "rain" | "cold" | "hot" | "sun";
+
+const noop = () => () => {};
 
 const drop = (x: number, y: number, s = 1) =>
   `M${x} ${y - 14 * s}Q${x + 11 * s} ${y + 2 * s} ${x} ${y + 8 * s}Q${x - 11 * s} ${y + 2 * s} ${x} ${y - 14 * s}Z`;
@@ -86,12 +93,18 @@ export function Mascot({
   className = "",
   idle = false,
   look,
-  weather,
+  weather: weatherProp,
+  season: seasonProp,
   children,
 }: {
   mood?: MascotMood;
   /** Roupa do clima de hoje; sem ela o desenho fica como sempre. */
   weather?: MascotWeather;
+  /**
+   * Acessório de data comemorativa. Sem a prop, vem sozinho pela data de hoje (só a partir de 48 px,
+   * menor que isso o enfeite vira ruído, como no ícone do toast); null desliga.
+   */
+  season?: Season | null;
   size?: number;
   className?: string;
   /** Parada na tela: pisca e olha em volta sozinha (animações em globals.css). */
@@ -102,6 +115,12 @@ export function Mascot({
   children?: React.ReactNode;
 }) {
   const id = useId();
+  // A data de hoje só é lida no aparelho: páginas geradas no build não ficam presas na data do build
+  const today = useSyncExternalStore(noop, todayStr, () => null);
+  const season = seasonProp !== undefined ? seasonProp : size >= 48 && today ? seasonOn(today) : null;
+  // A data ganha da roupa do clima
+  const weather = season ? undefined : weatherProp;
+  const extra = season ? seasonLayers(season, id) : null;
   const circles = (grow: number) => BODY.map(([cx, cy, r]) => <circle key={cx + cy} cx={cx} cy={cy} r={r + grow} />);
   const openEyes = (
     <g className="mascot-blink" fill={EYE}>
@@ -194,15 +213,16 @@ export function Mascot({
             ? null
             : SMILE;
 
-  // Gorro, pompom e guarda-chuva passam do topo da cabeça: com roupa, o quadro ganha altura
-  const top = weather ? 60 : 95;
-  const h = 400 - top;
+  // Gorro, pompom e guarda-chuva passam do topo da cabeça: com roupa, o quadro ganha altura.
+  // Os acessórios de data vão mais longe (chapéu, balão, confete): quadro maior dos lados também.
+  const [left, top, w] = season ? [40, 10, 400] : [70, weather ? 60 : 95, 340];
+  const h = 410 - top - (season ? 0 : 10);
 
   return (
     <svg
-      viewBox={`70 ${top} 340 ${h}`}
+      viewBox={`${left} ${top} ${w} ${h}`}
       width={size}
-      height={(size * h) / 340}
+      height={(size * h) / w}
       className={`${idle ? "mascot-idle" : ""} ${className}`}
       aria-hidden="true"
     >
@@ -231,6 +251,7 @@ export function Mascot({
         </linearGradient>
       </defs>
       {weather === "sun" ? SUN : null}
+      {extra?.back}
       <g fill={`url(#${id}r)`}>{circles(0)}</g>
       <g fill={`url(#${id}b)`}>{circles(-9)}</g>
       <rect x="70" y="95" width="340" height="305" fill={`url(#${id}r)`} mask={`url(#${id}m)`} opacity="0.35" />
@@ -255,8 +276,10 @@ export function Mascot({
             <rect x="248" y="232" width="66" height="46" rx="16" />
           </g>
         ) : null}
+        {extra?.face}
       </g>
       {weather ? OUTFIT[weather] : null}
+      {extra?.front}
       {children}
     </svg>
   );

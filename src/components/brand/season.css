@@ -1,0 +1,83 @@
+/* Movimento dos acessórios da Bolha nas datas comemorativas (SeasonAccessory.tsx) */
+.szn-fall,
+.szn-rise,
+.szn-snow,
+.szn-float {
+  transform-box: fill-box;
+}
+.szn-spin,
+.szn-flap,
+.szn-pulse,
+.szn-sway {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.szn-sway {
+  transform-origin: 50% 100%;
+  animation: szn-sway 2.4s ease-in-out infinite alternate;
+}
+.szn-fall {
+  animation: szn-fall 3.2s linear infinite;
+}
+.szn-rise {
+  animation: szn-rise 3.6s ease-in infinite;
+}
+.szn-snow {
+  animation: szn-snow 5s linear infinite;
+}
+.szn-float {
+  animation: szn-float 3s ease-in-out infinite alternate;
+}
+.szn-spin {
+  animation: szn-spin 1.1s linear infinite;
+}
+.szn-flap {
+  animation: szn-flap 0.5s ease-in-out infinite alternate;
+}
+.szn-pulse {
+  animation: szn-pulse 1.2s ease-in-out infinite;
+}
+@keyframes szn-fall {
+  0% { transform: translateY(-30px); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translateY(120px); opacity: 0; }
+}
+@keyframes szn-rise {
+  0% { transform: translateY(20px) scale(0.6); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateY(-120px) scale(1); opacity: 0; }
+}
+@keyframes szn-snow {
+  0% { transform: translateY(-40px); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translateY(260px); opacity: 0; }
+}
+@keyframes szn-float {
+  to { transform: translateY(-12px); }
+}
+@keyframes szn-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes szn-flap {
+  to { transform: scaleY(0.45); }
+}
+@keyframes szn-pulse {
+  50% { transform: scale(1.14); }
+}
+@keyframes szn-sway {
+  from { transform: rotate(-5deg); }
+  to { transform: rotate(5deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .szn-fall,
+  .szn-rise,
+  .szn-snow,
+  .szn-float,
+  .szn-spin,
+  .szn-flap,
+  .szn-pulse,
+  .szn-sway {
+    animation: none;
+  }
+}
