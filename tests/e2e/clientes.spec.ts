@@ -52,13 +52,12 @@ test("tocar no nome abre o cartão da cliente com histórico e ações", async (
   await expect(page.getByRole("dialog", { name: "Editar cliente" })).toBeVisible();
 });
 
-test("o sino abre um diálogo no meio da tela e marca tudo como lido", async ({ page }) => {
+test("o sino abre um diálogo no meio da tela e, sem respostas de clientes, fica em dia", async ({ page }) => {
   await page.goto("/agenda");
   await page.getByRole("button", { name: /^Notificações/ }).click();
   const dialog = page.getByRole("dialog", { name: "Notificações" });
   await expect(dialog).toBeVisible();
-  // Conta nova sem WhatsApp nem Google: há avisos de integração para limpar
-  await dialog.getByRole("button", { name: "Marcar todas como lidas" }).click();
-  await expect(page.getByText("Tudo marcado como lido")).toBeVisible();
+  // O sino só avisa confirmou, cancelar, remarcar, não respondeu e WhatsApp caído: conta nova não tem nada
   await expect(dialog.getByText("Tudo em dia por aqui.")).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Marcar todas como lidas" })).toHaveCount(0);
 });
