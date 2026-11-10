@@ -42,13 +42,17 @@ export async function notifyPendencias(tx: Tx, port: PushPort, now: Date, google
   return sendToAll(tx, port, { title: "bubbly", body: pendenciasText(n), url: "/pendencias" });
 }
 
-/** Manda o mesmo aviso para todos os aparelhos inscritos do estúdio (o da transação). */
-export async function sendToAll(tx: Tx, port: PushPort, payload: PushPayload): Promise<PushRun> {
+/** Manda o aviso para todos os aparelhos inscritos do estúdio (o da transação); com função, o texto varia por pessoa. */
+export async function sendToAll(
+  tx: Tx,
+  port: PushPort,
+  payload: PushPayload | ((sub: { userId: string }) => PushPayload),
+): Promise<PushRun> {
   const run: PushRun = { sent: 0, removed: 0, failed: 0 };
   const subs = await tx.select().from(pushSubscriptions);
   for (const s of subs) {
     try {
-      await port.send(s, payload);
+      await port.send(s, typeof payload === "function" ? payload(s) : payload);
       run.sent++;
     } catch (e) {
       if (e instanceof PushGoneError) {

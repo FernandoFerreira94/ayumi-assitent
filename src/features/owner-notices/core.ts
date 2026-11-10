@@ -22,7 +22,8 @@ import {
   type NoticeText,
   type WeekDay,
 } from "./texts";
-import { forecastToday, isSunny, weatherLine, type Forecast } from "./weather";
+import { forecastToday, isSunny, weatherEmoji, weatherLine, type Forecast } from "./weather";
+import { isMascotKind, MASCOT_EMOJI } from "@/components/brand/mascots";
 
 export type Salon = {
   name: string;
@@ -38,7 +39,18 @@ export type NoticeAi = {
   holidayGreeting(input: { holiday: string; salon: string; last: string | null }): Promise<string | null>;
 };
 
-export type NoticeDeps = { ai: NoticeAi | null; forecast?: (salon: Salon) => Promise<Forecast | null> };
+export type NoticeDeps = {
+  ai: NoticeAi | null;
+  forecast?: (salon: Salon) => Promise<Forecast | null>;
+  /** Mascote de cada pessoa (Meu perfil), para o emoji do título do aviso no celular dela */
+  mascots?: Record<string, string>;
+};
+
+/** Título do aviso com o emoji do mascote que a pessoa escolheu em Meu perfil (sem reinstalar o app). */
+export const mascotTitle = (title: string, mascot?: string) =>
+  mascot && isMascotKind(mascot) ? `${title} ${MASCOT_EMOJI[mascot]}` : title;
+
+const isNight = (hello: string) => hello.startsWith("Boa noite");
 
 const localMin = (d: Date) => toMin(formatTime(d));
 const weekdayOf = (date: string) => new Date(`${date}T12:00:00-03:00`).getUTCDay();
@@ -177,14 +189,20 @@ async function build(
       const sunny = !!f && isSunny(f);
       const variant = pickVariant(dayOffBankSize(sunny), recent);
       const h = holidayOn(today, salon.state, salon.city);
-      const t = dayOffText(variant, { greeting: hello, sunny, holiday: h?.name });
+      const t = dayOffText(variant, {
+        greeting: hello,
+        sunny,
+        holiday: h?.name,
+        sky: f ? weatherEmoji(f.code, isNight(hello)) : undefined,
+      });
       return { ...withWeather(t, f), variant, detail: null, tag: kind };
     }
     case "morning": {
       const summary = await daySummary(tx, rows);
       const variant = pickVariant(morningBankSize(!summary), recent);
       const f = await (deps.forecast ?? defaultForecast)(salon);
-      return { ...withWeather(morningText(variant, hello, summary), f), variant, detail: null, tag: kind };
+      const sky = f ? weatherEmoji(f.code, isNight(hello)) : undefined;
+      return { ...withWeather(morningText(variant, hello, summary, sky), f), variant, detail: null, tag: kind };
     }
     case "day_end": {
       const week = await getHours(tx);
@@ -303,12 +321,12 @@ export async function runTenantNotices(
       .onConflictDoNothing()
       .returning({ id: ownerNotices.id });
     if (!row) continue;
-    const r = await sendToAll(tx, push, {
-      title: text.title,
+    const r = await sendToAll(tx, push, (sub) => ({
+      title: mascotTitle(text.title, deps.mascots?.[sub.userId]),
       body: text.body,
       url: noticeUrl(row.id, !!text.detail),
       tag: text.tag,
-    });
+    }));
     // Nenhum aparelho recebeu: apaga para tentar de novo na próxima rodada
     if (r.sent === 0 && r.failed > 0) await tx.delete(ownerNotices).where(eq(ownerNotices.id, row.id));
     run.sent += r.sent;
@@ -338,10 +356,12 @@ export async function testNotice(tx: Tx, now: Date, salon: Salon, deps: Pick<Not
   const rand = (n: number) => Math.floor(Math.random() * n);
   if (off) {
     const sunny = !!f && isSunny(f);
-    return withWeather(dayOffText(rand(dayOffBankSize(sunny)), { greeting: hello, sunny }), f);
+    const sky = f ? weatherEmoji(f.code, isNight(hello)) : undefined;
+    return withWeather(dayOffText(rand(dayOffBankSize(sunny)), { greeting: hello, sunny, sky }), f);
   }
   const summary = await daySummary(tx, rows);
-  return withWeather(morningText(rand(morningBankSize(!summary)), hello, summary), f);
+  const sky = f ? weatherEmoji(f.code, isNight(hello)) : undefined;
+  return withWeather(morningText(rand(morningBankSize(!summary)), hello, summary, sky), f);
 }
 
 export async function loadNotice(tx: Tx, id: string) {

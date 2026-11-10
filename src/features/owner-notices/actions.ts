@@ -10,7 +10,8 @@ import { hasSubscription, sendToAll } from "@/features/push/core";
 import { pushFromEnv } from "@/features/push/webpush";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
-import { loadNotice as load, testNotice } from "./core";
+import { loadNotice as load, mascotTitle, testNotice } from "./core";
+import { mascotsOf } from "./mascots";
 import { UF_NAMES } from "./weather";
 
 async function salonOf(tenantId: string) {
@@ -36,9 +37,15 @@ export async function sendTestNotice(): Promise<ActionResult<{ sent: number }>> 
   try {
     const salon = await salonOf(tenantId);
     if (!salon) return fail("UNKNOWN");
+    const mascots = await mascotsOf(tenantId).catch(() => ({}) as Record<string, string>);
     const r = await withTenant(tenantId, async (tx) => {
       const t = await testNotice(tx, new Date(), salon);
-      return sendToAll(tx, push, { ...t, url: "/agenda", tag: "test" });
+      return sendToAll(tx, push, (sub) => ({
+        ...t,
+        title: mascotTitle(t.title, mascots[sub.userId]),
+        url: "/agenda",
+        tag: "test",
+      }));
     });
     if (r.sent === 0) return fail(r.failed ? "PUSH_FAILED" : "PUSH_NO_DEVICE");
     return ok({ sent: r.sent });
@@ -65,9 +72,15 @@ export async function scheduleTestNotice(): Promise<ActionResult<{ at: number }>
     after(async () => {
       await new Promise((r) => setTimeout(r, TEST_DELAY_SECONDS * 1000));
       try {
+        const mascots = await mascotsOf(tenantId).catch(() => ({}) as Record<string, string>);
         await withTenant(tenantId, async (tx) => {
           const t = await testNotice(tx, new Date(), salon);
-          return sendToAll(tx, push, { ...t, url: "/agenda", tag: "test" });
+          return sendToAll(tx, push, (sub) => ({
+            ...t,
+            title: mascotTitle(t.title, mascots[sub.userId]),
+            url: "/agenda",
+            tag: "test",
+          }));
         });
       } catch (e) {
         console.error(JSON.stringify({ level: "error", msg: "test_notice_failed", tenant: tenantId, err: String(e) }));
