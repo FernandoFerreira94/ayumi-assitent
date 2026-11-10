@@ -22,4 +22,17 @@ describe("texto das vagas", () => {
   it("sem nenhum dia, devolve vazio", () => {
     expect(buildShareText("Unha", [{ label: "ter, 10/11", slots: [] }])).toBe("");
   });
+  it("formato agenda aberta agrupa por semana, dia em linha e rodapé", () => {
+    const text = buildShareText(
+      "Unha",
+      [
+        { date: "2026-12-04", label: "sex, 04/12", slots: ["09:00", "16:00"] },
+        { date: "2026-12-07", label: "seg, 07/12", slots: ["11:00", "11:30"] },
+      ],
+      "agenda",
+    );
+    expect(text).toBe(
+      "✨ Agenda de Dezembro Aberta ✨\n\n🌟 1ª Semana\n\n04/12 - 09:00 | 16:00\n\n🌟 2ª Semana\n\n07/12 - 11:00 | 11:30\n\n✨ Garanta seu horário com antecedência!",
+    );
+  });
 });

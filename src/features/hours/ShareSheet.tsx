@@ -2,33 +2,41 @@
 
 import { useRef, useState } from "react";
 import { notify } from "@/components/feedback/toast";
-import { buildShareText } from "./share-text";
+import { useKeyboardInset } from "@/lib/useKeyboardInset";
+import { buildShareText, type ShareFormat } from "./share-text";
 
 type Day = { date: string; label: string; slots: string[] };
 
 /**
  * "Copiar texto para divulgar": abre um diálogo com os dias que têm vaga (todos marcados) para escolher
- * quais entram no texto, mostra a prévia e copia no formato do WhatsApp.
+ * quais entram no texto, escolher o formato, editar o texto à mão e copiar.
  */
 export function ShareSheet({ serviceName, days }: { serviceName: string; days: Day[] }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [opened, setOpened] = useState(false);
   const [off, setOff] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
+  const [format, setFormat] = useState<ShareFormat>("padrao");
+  /** Texto editado à mão; null = usa o gerado. Trocar dia ou formato refaz o texto. */
+  const [custom, setCustom] = useState<string | null>(null);
+  const keyboard = useKeyboardInset(opened);
 
   const chosen = days.filter((d) => !off.has(d.date));
-  const text = buildShareText(serviceName, chosen);
+  const generated = buildShareText(serviceName, chosen, format);
+  const text = custom ?? generated;
   const close = () => ref.current?.close();
-  const toggle = (date: string) =>
+  const toggle = (date: string) => {
+    setCustom(null);
     setOff((s) => {
       const n = new Set(s);
       if (n.has(date)) n.delete(date);
       else n.add(date);
       return n;
     });
+  };
 
   async function copy() {
-    if (!text || busy) return;
+    if (!text.trim() || busy) return;
     setBusy(true);
     try {
       await navigator.clipboard.writeText(text);
@@ -77,11 +85,14 @@ export function ShareSheet({ serviceName, days }: { serviceName: string; days: D
       >
         <div className="status-fill" aria-hidden="true" />
         {opened ? (
-          <div className="notif-panel grid max-h-[min(86dvh,720px)] w-[min(92vw,400px)] grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-3 rounded-[28px] p-5">
+          <div
+            style={keyboard}
+            className="notif-panel grid max-h-[min(86dvh,720px)] w-[min(92vw,400px)] grid-rows-[auto_auto_auto_minmax(0,1fr)_auto] gap-3 rounded-[28px] p-5"
+          >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-xl font-bold">Texto para divulgar</h2>
-                <p className="text-sm font-semibold text-muted">Escolha os dias que entram no texto.</p>
+                <p className="text-sm font-semibold text-muted">Escolha os dias, o formato e ajuste o texto.</p>
               </div>
               <button
                 type="button"
@@ -102,6 +113,27 @@ export function ShareSheet({ serviceName, days }: { serviceName: string; days: D
                 </svg>
               </button>
             </div>
+            <div role="group" aria-label="Formato do texto" className="grid grid-cols-2 gap-2">
+              {(
+                [
+                  ["padrao", "Padrão"],
+                  ["agenda", "Agenda aberta"],
+                ] as const
+              ).map(([value, name]) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={format === value}
+                  onClick={() => {
+                    setFormat(value);
+                    setCustom(null);
+                  }}
+                  className={`min-h-11 rounded-full px-3 text-sm font-bold ${format === value ? "btn-tint" : "btn-glass"}`}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
             <ul className="flex flex-wrap gap-2" aria-label="Dias">
               {days.map((d) => {
                 const on = !off.has(d.date);
@@ -119,11 +151,25 @@ export function ShareSheet({ serviceName, days }: { serviceName: string; days: D
                 );
               })}
             </ul>
-            <div className="overflow-y-auto">
-              {text ? (
-                <pre className="whitespace-pre-wrap rounded-2xl bg-white/60 px-4 py-3 font-sans text-sm font-semibold">
-                  {text}
-                </pre>
+            <div className="flex min-h-0 flex-col gap-2">
+              {generated ? (
+                <>
+                  <textarea
+                    value={text}
+                    onChange={(e) => setCustom(e.target.value)}
+                    aria-label="Texto para divulgar (editável)"
+                    className="min-h-40 w-full flex-1 resize-none rounded-2xl border px-4 py-3 font-sans text-base font-semibold"
+                  />
+                  {custom !== null ? (
+                    <button
+                      type="button"
+                      onClick={() => setCustom(null)}
+                      className="btn-glass min-h-11 rounded-full px-4 text-sm font-bold"
+                    >
+                      Refazer texto
+                    </button>
+                  ) : null}
+                </>
               ) : (
                 <p className="rounded-2xl bg-white/60 px-4 py-3 text-sm font-semibold text-muted">
                   Marque pelo menos um dia para gerar o texto.
@@ -133,7 +179,7 @@ export function ShareSheet({ serviceName, days }: { serviceName: string; days: D
             <button
               type="button"
               onClick={copy}
-              disabled={!text || busy}
+              disabled={!text.trim() || busy}
               aria-busy={busy}
               className="btn-tint flex min-h-12 items-center justify-center gap-2 rounded-full px-4 font-bold disabled:opacity-60"
             >
