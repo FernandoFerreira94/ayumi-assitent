@@ -33,14 +33,18 @@ test("primeiro acesso: tour obrigatório passa pelo Painel e pela configuração
     "3. Monte suas mensagens",
     "4. Leitura das respostas",
     "5. Seus horários",
+    "6. Avisos e previsão do tempo",
   ]) {
     await expect(card.getByRole("heading", { name })).toBeVisible();
     // O cartão fica inteiro na tela, longe da borda de cima (não cola no header)
     await expect
-      .poll(async () => {
-        const b = await card.boundingBox();
-        return b ? b.y >= 56 && b.y + b.height <= page.viewportSize()!.height : false;
-      })
+      .poll(
+        async () => {
+          const b = await card.boundingBox();
+          return b ? b.y >= 56 && b.y + b.height <= page.viewportSize()!.height : false;
+        },
+        { message: `cartão do passo "${name}" inteiro na tela` },
+      )
       .toBe(true);
     await card.getByRole("button", { name: "Próximo" }).click();
   }
@@ -61,7 +65,7 @@ test("rever o tour por Ajustes começa no Painel e pode ser pulado", async ({ pa
   // Termina o obrigatório rápido: os passos de toque viram "Próximo" quando o destaque não está na tela
   await card.getByRole("button", { name: "Começar" }).click();
   await page.locator("[data-tour='bubble']").click();
-  for (let i = 0; i < 9; i++) await card.getByRole("button", { name: "Próximo" }).click();
+  for (let i = 0; i < 10; i++) await card.getByRole("button", { name: "Próximo" }).click();
   await card.getByRole("button", { name: "Ir para o Painel" }).click();
   await expect(card).toBeHidden();
   await expect(page).toHaveURL(/\/agenda$/);
