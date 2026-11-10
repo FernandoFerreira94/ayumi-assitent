@@ -12,6 +12,7 @@ import { MessagesForm } from "@/features/reminders/MessagesForm";
 import { AiRepliesForm } from "@/features/salon/AiRepliesForm";
 import { PushToggle } from "@/features/push/PushToggle";
 import { DailyNoticesCard } from "@/features/owner-notices/DailyNoticesCard";
+import { LocationToggle } from "@/features/owner-notices/LocationToggle";
 import { WhatsAppCard } from "@/features/whatsapp/WhatsAppCard";
 import { InstallGuide } from "@/features/install/InstallGuide";
 import { adminFromEnv } from "@/features/messaging/evolution-admin";
@@ -65,14 +66,17 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
         <section id="avisos-celular" aria-label="Avisos" className="scroll-mt-6">
           <PushToggle publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
         </section>
-      </Group>
-      <Group title="Avisos do dia">
-        <section id="avisos-do-dia" aria-label="Avisos do dia" className="scroll-mt-6">
-          <DailyNoticesCard
+        <section id="localizacao" aria-label="Localização" className="scroll-mt-6">
+          <LocationToggle
             source={salon?.locationSource ?? null}
             city={salon?.city ?? null}
             state={salon?.state ?? null}
           />
+        </section>
+      </Group>
+      <Group title="Avisos do dia">
+        <section id="avisos-do-dia" aria-label="Avisos do dia" className="scroll-mt-6">
+          <DailyNoticesCard />
         </section>
       </Group>
       <Group title="Mensagens para a cliente">
