@@ -1,39 +1,27 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, useTransition } from "react";
-import { SubmitButton } from "@/components/feedback/SubmitButton";
+import { useEffect, useState, useTransition } from "react";
 import { notify } from "@/components/feedback/toast";
-import { TileTitle } from "@/components/ui/Icon";
+import { Icon, TileTitle } from "@/components/ui/Icon";
 import { Switch } from "@/components/ui/Switch";
-import type { ActionResult } from "@/lib/errors";
-import { clearLocation, saveDeviceLocation, saveLocation, sendTestNotice } from "./actions";
+import { clearLocation, saveDeviceLocation, scheduleTestNotice, sendTestNotice } from "./actions";
 import { currentPosition, locationGranted, placeOf } from "./device-location";
-import { UF_NAMES } from "./weather";
 
 type Source = "device" | "manual" | null;
 
 /**
- * Ajustes > Avisos do dia: a localização do celular (previsão do tempo e feriados da cidade), com a cidade
- * digitada como alternativa, e o botão que manda agora um aviso de teste para ver na tela bloqueada.
+ * Ajustes > Avisos do dia: a localização do celular (previsão do tempo e feriados da cidade) e os botões de
+ * teste: um que manda agora e outro que agenda para daqui 2 minutos, dando tempo de bloquear a tela do iPhone.
  */
 export function DailyNoticesCard(props: { city: string | null; state: string | null; source: Source }) {
   const [where, setWhere] = useState({ city: props.city, state: props.state, source: props.source });
   const { city, state } = where;
   const [locating, startLocating] = useTransition();
-  const ref = useRef<HTMLDialogElement>(null);
-  const [opened, setOpened] = useState(false);
   const [testing, start] = useTransition();
-  const [form, action] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
-    const res = await saveLocation(prev, fd);
-    if (res.ok) {
-      setWhere({ city: String(fd.get("city") ?? ""), state: String(fd.get("state") ?? ""), source: "manual" });
-      notify.success("Cidade salva", "A previsão do tempo e os feriados da cidade entram nos avisos.");
-      ref.current?.close();
-    } else if (res.code !== "VALIDATION" && res.code !== "CITY_NOT_FOUND") notify.error(res.code);
-    return res;
-  }, null);
-  const cityError = form && !form.ok && (form.code === "CITY_NOT_FOUND" || form.field === "city");
-  const ufError = form && !form.ok && form.field === "state";
+  const [scheduling, startScheduling] = useTransition();
+  // Hora (ms) em que o aviso agendado sai; null = nada agendado
+  const [dueAt, setDueAt] = useState<number | null>(null);
+  const [left, setLeft] = useState(0);
 
   // Com a localização ligada, abrir Ajustes atualiza a posição sem perguntar de novo (o salão pode ter mudado)
   useEffect(() => {
@@ -52,6 +40,22 @@ export function DailyNoticesCard(props: { city: string | null; state: string | n
     };
   }, [props.source]);
 
+  // Contagem regressiva do aviso agendado
+  useEffect(() => {
+    if (dueAt === null) return;
+    const tick = () => {
+      const s = Math.max(0, Math.ceil((dueAt - Date.now()) / 1000));
+      setLeft(s);
+      if (s === 0) {
+        setDueAt(null);
+        notify.success("Aviso de teste enviado", "Deve estar na tela do iPhone agora.");
+      }
+    };
+    tick();
+    const id = setInterval(tick, 500);
+    return () => clearInterval(id);
+  }, [dueAt]);
+
   function toggleLocation(on: boolean) {
     startLocating(async () => {
       if (!on) {
@@ -65,10 +69,9 @@ export function DailyNoticesCard(props: { city: string | null; state: string | n
         if ("code" in pos && pos.code === 1)
           notify.problem(
             "Localização bloqueada",
-            "Libere a localização nos Ajustes do iPhone (Privacidade > Serviços de Localização) ou digite a cidade.",
+            "Libere a localização nos Ajustes do iPhone (Privacidade > Serviços de Localização).",
           );
-        else
-          notify.problem("Não deu para achar a localização", "Tente de novo perto de uma janela ou digite a cidade.");
+        else notify.problem("Não deu para achar a localização", "Tente de novo perto de uma janela.");
         return;
       }
       const place = await placeOf(pos.coords.latitude, pos.coords.longitude);
@@ -80,7 +83,7 @@ export function DailyNoticesCard(props: { city: string | null; state: string | n
       setWhere({ ...res.data, source: "device" });
       notify.success(
         "Localização ligada",
-        res.data.city ? `${res.data.city} – ${res.data.state ?? ""}` : "A previsão do tempo já entra nos avisos.",
+        res.data.city ? `${res.data.city} — ${res.data.state ?? ""}` : "A previsão do tempo já entra nos avisos.",
       );
     });
   }
@@ -97,6 +100,20 @@ export function DailyNoticesCard(props: { city: string | null; state: string | n
     });
   }
 
+  function schedule() {
+    startScheduling(async () => {
+      const res = await scheduleTestNotice().catch(() => null);
+      if (res?.ok) {
+        setDueAt(res.data.at);
+        notify.success("Aviso agendado", "Bloqueie a tela do iPhone: o aviso chega em 2 minutos.");
+      } else notify.error(res ? res.code : "NETWORK", schedule);
+    });
+  }
+
+  const mm = String(Math.floor(left / 60));
+  const ss = String(left % 60).padStart(2, "0");
+  const waiting = dueAt !== null;
+
   return (
     <div className="glass grid gap-4 rounded-[1.75rem] px-5 py-4">
       <div>
@@ -108,129 +125,52 @@ export function DailyNoticesCard(props: { city: string | null; state: string | n
           noite e datas comemorativas. Chegam com o app fechado, na tela bloqueada.
         </p>
       </div>
-      <div className="grid gap-2 rounded-2xl bg-white/60 px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="font-bold">Usar a localização do celular</p>
-            <p className="text-sm font-semibold text-muted">
-              {where.source === "device"
-                ? city
-                  ? `${city}${state ? ` – ${state}` : ""} · atualiza sozinha`
-                  : "Ligada · atualiza sozinha"
-                : where.source === "manual" && city
-                  ? `Cidade digitada: ${city} – ${state}`
-                  : "Para a previsão do tempo e os feriados da cidade"}
-            </p>
-          </div>
-          <Switch
-            checked={where.source === "device"}
-            onChange={toggleLocation}
-            busy={locating}
-            label="Usar a localização do celular"
-          />
+      <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/60 px-4 py-3">
+        <div className="min-w-0">
+          <p className="font-bold">Usar a localização do celular</p>
+          <p className="text-sm font-semibold text-muted">
+            {where.source === "device"
+              ? city
+                ? `${city}${state ? ` — ${state}` : ""} · atualiza sozinha`
+                : "Ligada · atualiza sozinha"
+              : where.source === "manual" && city
+                ? `Cidade antiga: ${city} — ${state}. Ligue para usar a do celular`
+                : "Para a previsão do tempo e os feriados da cidade"}
+          </p>
         </div>
-        {where.source !== "device" ? (
-          <button
-            type="button"
-            aria-haspopup="dialog"
-            onClick={() => {
-              setOpened(true);
-              ref.current?.showModal();
-            }}
-            className="justify-self-start text-sm font-bold text-[var(--color-accent,#7A5CFF)] underline-offset-2 hover:underline"
-          >
-            {where.source === "manual" ? "Alterar a cidade" : "Prefiro digitar a cidade"}
-          </button>
-        ) : null}
+        <Switch
+          checked={where.source === "device"}
+          onChange={toggleLocation}
+          busy={locating}
+          label="Usar a localização do celular"
+        />
       </div>
-      <button
-        type="button"
-        onClick={test}
-        disabled={testing}
-        aria-busy={testing}
-        className="btn-tint flex min-h-12 items-center justify-center gap-2 rounded-full px-4 font-bold disabled:opacity-60"
-      >
-        {testing ? <span className="spin" aria-hidden="true" /> : null}
-        {testing ? "Enviando…" : "Enviar aviso de teste"}
-      </button>
-
-      <dialog
-        ref={ref}
-        aria-label="Cidade do salão"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) ref.current?.close();
-        }}
-        className="notif-dialog"
-      >
-        <div className="status-fill" aria-hidden="true" />
-        {opened ? (
-          <form action={action} className="notif-panel grid w-[min(92vw,400px)] gap-4 rounded-[28px] p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-xl font-bold">Cidade do salão</h2>
-                <p className="text-sm font-semibold text-muted">Para a previsão do tempo e os feriados da cidade.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => ref.current?.close()}
-                aria-label="Fechar"
-                className="btn-glass grid size-11 shrink-0 place-content-center rounded-full"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  className="size-5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.4"
-                  strokeLinecap="round"
-                  aria-hidden="true"
-                >
-                  <path d="M6 6l12 12M18 6L6 18" />
-                </svg>
-              </button>
-            </div>
-            <div className="grid grid-cols-[1fr_6.5rem] gap-3">
-              <label className="grid gap-1 text-sm font-bold">
-                Cidade
-                <input
-                  name="city"
-                  defaultValue={city ?? ""}
-                  autoComplete="address-level2"
-                  maxLength={60}
-                  aria-invalid={cityError || undefined}
-                  className="min-h-12 w-full rounded-full border px-5 text-base font-semibold"
-                />
-              </label>
-              <label className="grid gap-1 text-sm font-bold">
-                UF
-                <select
-                  name="state"
-                  defaultValue={state ?? ""}
-                  aria-invalid={ufError || undefined}
-                  className="min-h-12 w-full rounded-full border px-4 text-base font-semibold"
-                >
-                  <option value="" disabled>
-                    UF
-                  </option>
-                  {Object.keys(UF_NAMES).map((uf) => (
-                    <option key={uf} value={uf}>
-                      {uf}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            {cityError || ufError ? (
-              <p role="alert" className="text-sm font-semibold text-fail">
-                {form?.ok === false && form.code === "CITY_NOT_FOUND"
-                  ? "Não encontramos essa cidade. Confira o nome e a UF."
-                  : "Informe a cidade e escolha a UF."}
-              </p>
-            ) : null}
-            <SubmitButton pendingLabel="Salvando…">Salvar</SubmitButton>
-          </form>
+      <div className="grid gap-2">
+        <button
+          type="button"
+          onClick={schedule}
+          disabled={scheduling || waiting}
+          aria-busy={scheduling}
+          className="btn-tint flex min-h-12 items-center justify-center gap-2 rounded-full px-4 font-bold disabled:opacity-60"
+        >
+          {scheduling ? <span className="spin" aria-hidden="true" /> : <Icon name="bell" />}
+          {scheduling ? "Agendando…" : waiting ? `Chega em ${mm}:${ss}` : "Enviar aviso de teste em 2 minutos"}
+        </button>
+        {waiting ? (
+          <p role="status" className="text-center text-sm font-semibold text-muted">
+            Pode bloquear a tela do iPhone. O aviso sai do servidor, mesmo com o app fechado.
+          </p>
         ) : null}
-      </dialog>
+        <button
+          type="button"
+          onClick={test}
+          disabled={testing}
+          aria-busy={testing}
+          className="justify-self-center text-sm font-bold text-[var(--color-accent,#7A5CFF)] underline-offset-2 hover:underline disabled:opacity-60"
+        >
+          {testing ? "Enviando…" : "Enviar agora"}
+        </button>
+      </div>
     </div>
   );
 }
