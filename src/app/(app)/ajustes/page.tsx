@@ -59,12 +59,12 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
         <section id="mensagens" aria-label="Mensagens no WhatsApp" className="scroll-mt-6">
           <MessagesForm settings={messages} salonName={salon?.name ?? ""} />
         </section>
-        <section aria-label="Respostas com IA">
+        <section id="ia" aria-label="Respostas com IA" className="scroll-mt-6">
           <AiRepliesForm rules={salon?.aiRules ?? ""} />
         </section>
       </Group>
       <Group title="Agenda">
-        <section aria-label="Expediente">
+        <section id="expediente" aria-label="Expediente" className="scroll-mt-6">
           <HoursForm week={week} />
         </section>
       </Group>

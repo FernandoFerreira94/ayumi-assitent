@@ -13,19 +13,26 @@ export function startTour() {
   window.dispatchEvent(new Event(START_TOUR));
 }
 
+/** Destaque mais alto que isso (fração da tela) mostra só o começo do cartão, para o texto caber embaixo. */
+const MAX_HOLE = 0.42;
+
 function measure(selector: string | undefined): Box | null {
   if (!selector) return null;
   const rects = [...document.querySelectorAll(selector)].map((el) => el.getBoundingClientRect());
-  return unionBox(rects.map((r) => ({ top: r.top, left: r.left, width: r.width, height: r.height })));
+  const box = unionBox(rects.map((r) => ({ top: r.top, left: r.left, width: r.width, height: r.height })));
+  const max = window.innerHeight * MAX_HOLE;
+  return box && box.height > max ? { ...box, height: max } : box;
 }
 
 /**
- * Tour de primeiro acesso: escurece a tela, recorta o destaque e a Bolha explica num cartão.
- * Nos passos "tap" só o destaque recebe toque (o resto fica bloqueado) e o toque real avança.
+ * Tour de primeiro acesso: escurece a tela, recorta o destaque e a Bolha explica num cartão. Passa pelo Painel
+ * e depois por Ajustes (WhatsApp, Google, mensagens, IA e horários). No primeiro acesso é obrigatório, sem
+ * "Pular"; quem reabre por Ajustes pode pular. Nos passos "tap" só o destaque recebe toque e o toque real avança.
  */
 export function Tour({ autoStart }: { autoStart: boolean }) {
   // O layout persiste entre telas: abre sozinho só na primeira montagem
   const [step, setStep] = useState<number | null>(autoStart ? 0 : null);
+  const [mandatory, setMandatory] = useState(autoStart);
   const [box, setBox] = useState<Box | null>(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -48,9 +55,14 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
   }, []);
 
   const begin = useCallback(() => {
-    if (pathname !== "/agenda") router.push("/agenda");
+    setMandatory(false);
     setStep(0);
-  }, [pathname, router]);
+  }, []);
+
+  // Cada passo acontece na sua tela: Painel no começo, Ajustes na configuração
+  useEffect(() => {
+    if (current?.path && pathname !== current.path) router.push(current.path);
+  }, [current, pathname, router]);
 
   useEffect(() => {
     window.addEventListener(START_TOUR, begin);
@@ -61,7 +73,12 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
   useLayoutEffect(() => {
     if (!current) return;
     // querySelector("") lança SyntaxError: passo sem destaque (o primeiro e o último) não rola nada
-    if (current.target) document.querySelector(current.target)?.scrollIntoView({ block: "center", behavior: "smooth" });
+    // Cartão alto (as mensagens) rola até o começo; o resto fica no meio da tela
+    if (current.target) {
+      const el = document.querySelector(current.target);
+      const tall = el ? el.getBoundingClientRect().height > window.innerHeight * MAX_HOLE : false;
+      el?.scrollIntoView({ block: tall ? "start" : "center", behavior: "smooth" });
+    }
     let raf = 0;
     const tick = () => {
       setBox((prev) => {
@@ -80,7 +97,8 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
     };
     tick();
     return () => cancelAnimationFrame(raf);
-  }, [current]);
+    // pathname: ao trocar de tela, o destaque só existe depois que a nova página monta
+  }, [current, pathname]);
 
   // Passo "tap": o toque de verdade no destaque avança (a ação dele acontece normalmente)
   useEffect(() => {
@@ -96,10 +114,10 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
   useEffect(() => {
     if (!current) return;
     // Escape sintético (o que fecha o leque) não conta: só o da pessoa pula o tour
-    const onKey = (e: KeyboardEvent) => e.isTrusted && e.key === "Escape" && close();
+    const onKey = (e: KeyboardEvent) => !mandatory && e.isTrusted && e.key === "Escape" && close();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [current, close]);
+  }, [current, close, mandatory]);
 
   useEffect(() => {
     primaryRef.current?.focus({ preventScroll: true });
@@ -170,7 +188,7 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
           </div>
         </div>
         <div className="mt-3 flex items-center justify-between gap-2">
-          {last ? (
+          {last || mandatory ? (
             <span />
           ) : (
             <button type="button" onClick={close} className="min-h-11 rounded-full px-4 text-sm font-bold text-muted">
