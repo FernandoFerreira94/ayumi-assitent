@@ -2,9 +2,18 @@ import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Checagem otimista (só olha o cookie). A validação real é feita no servidor por requireSession().
+// Se o cookie existe mas a sessão não vale mais, requireSession() manda para /login?sessao=invalida:
+// aqui apagamos os cookies do Better Auth, senão /login voltaria para /agenda em loop infinito.
 export function proxy(request: NextRequest) {
   const logged = !!getSessionCookie(request);
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
+  if (pathname.startsWith("/login") && searchParams.get("sessao") === "invalida") {
+    const res = NextResponse.next();
+    for (const { name } of request.cookies.getAll()) {
+      if (name.includes("better-auth")) res.cookies.set(name, "", { path: "/", maxAge: 0 });
+    }
+    return res;
+  }
   if (!logged && !pathname.startsWith("/login")) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
