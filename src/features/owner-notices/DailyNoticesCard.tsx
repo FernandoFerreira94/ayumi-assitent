@@ -112,7 +112,7 @@ export function DailyNoticesCard(props: { city: string | null; state: string | n
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="font-bold">Usar a localização do celular</p>
-            <p className="truncate text-sm font-semibold text-muted">
+            <p className="text-sm font-semibold text-muted">
               {where.source === "device"
                 ? city
                   ? `${city}${state ? ` – ${state}` : ""} · atualiza sozinha`

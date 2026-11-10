@@ -52,8 +52,7 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
       if (s === null) return null;
       let n = s + 1;
       // Passo opcional sem o destaque na tela (app já instalado) é pulado
-      while (n < TOUR_STEPS.length - 1 && TOUR_STEPS[n].optional && !document.querySelector(TOUR_STEPS[n].target ?? ""))
-        n++;
+      while (n < TOUR_STEPS.length - 1 && TOUR_STEPS[n].optional && !document.querySelector(TOUR_STEPS[n].target ?? "")) n++;
       return n < TOUR_STEPS.length ? n : s;
     });
   }, []);
@@ -77,12 +76,11 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
   useLayoutEffect(() => {
     if (!current) return;
     // querySelector("") lança SyntaxError: passo sem destaque (o primeiro e o último) não rola nada
-    // Cartões de Ajustes e cartões altos rolam até o topo (sobra a tela embaixo para o cartão do tour caber
-    // inteiro); no Painel o destaque fica no meio
+    // Cartão alto (as mensagens) rola até o começo; o resto fica no meio da tela
     if (current.target) {
       const el = document.querySelector(current.target);
       const tall = el ? el.getBoundingClientRect().height > window.innerHeight * MAX_HOLE : false;
-      el?.scrollIntoView({ block: tall || current.path === "/ajustes" ? "start" : "center", behavior: "smooth" });
+      el?.scrollIntoView({ block: tall ? "start" : "center", behavior: "smooth" });
     }
     let raf = 0;
     const tick = () => {
@@ -134,8 +132,7 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
   const tapping = current.advance === "tap" && box !== null;
   const last = step === TOUR_STEPS.length - 1;
   const vh = typeof window === "undefined" ? 800 : window.innerHeight;
-  // O cartão vai para o lado do destaque com mais espaço livre (destaque fixo embaixo, como o menu, fica acima)
-  const cardBelow = box ? vh - (box.top + box.height) > box.top : false;
+  const cardBelow = box ? box.top + box.height / 2 < vh / 2 : false;
 
   return (
     <div className="tour" data-step={step}>
