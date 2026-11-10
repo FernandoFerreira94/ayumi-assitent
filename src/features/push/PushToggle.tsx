@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { notify } from "@/components/feedback/toast";
 import { subscribePush, unsubscribePush } from "./actions";
 import { TileTitle } from "@/components/ui/Icon";
+import { Switch } from "@/components/ui/Switch";
 
 type State = "checking" | "unsupported" | "denied" | "off" | "on";
 
@@ -99,16 +100,14 @@ export function PushToggle({ publicKey }: { publicKey: string | null }) {
         </TileTitle>
         <p className="text-sm font-semibold text-muted">{hint[state]}</p>
       </div>
-      {(state === "off" || state === "on") && (
-        <button
-          type="button"
-          onClick={state === "on" ? disable : enable}
-          disabled={pending}
-          aria-busy={pending}
-          className="btn-glass min-h-11 shrink-0 rounded-full px-4 text-sm font-bold disabled:opacity-60"
-        >
-          {pending ? "Aguarde…" : state === "on" ? "Desativar" : "Ativar"}
-        </button>
+      {state !== "checking" && (
+        <Switch
+          checked={state === "on"}
+          onChange={(on) => (on ? enable() : disable())}
+          busy={pending}
+          disabled={state === "unsupported" || state === "denied"}
+          label="Avisos no celular"
+        />
       )}
     </div>
   );

@@ -7,6 +7,7 @@ import { maskPhone } from "@/lib/phone";
 import { QrImage } from "./QrImage";
 import { disconnectWhatsapp, startWhatsappPairing, whatsappStatus } from "./actions";
 import { TileTitle } from "@/components/ui/Icon";
+import { Switch } from "@/components/ui/Switch";
 
 type View = "connected" | "disconnected" | "pairing" | "unavailable";
 
@@ -26,6 +27,8 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
   const [confirming, setConfirming] = useState(false);
   /** O código passou do prazo sem conectar: a tela diz isso, em vez de um erro genérico. */
   const [expired, setExpired] = useState(false);
+  /** Interruptor ligado antes de conectar: mostra o campo do número e o botão que gera o código. */
+  const [wantsOn, setWantsOn] = useState(false);
 
   // Enquanto mostra o código, acompanha o estado até conectar (ou expirar).
   useEffect(() => {
@@ -74,6 +77,7 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
         return;
       }
       setConfirming(false);
+      setWantsOn(false);
       setView("disconnected");
       notify.success("WhatsApp desconectado");
     });
@@ -85,7 +89,9 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
   if (view === "unavailable")
     return (
       <div className={box}>
-        <TileTitle icon="chat" tint="green">WhatsApp</TileTitle>
+        <TileTitle icon="chat" tint="green">
+          WhatsApp
+        </TileTitle>
         <p className="text-sm font-semibold text-muted">Indisponível no momento. Tente de novo em instantes.</p>
       </div>
     );
@@ -100,13 +106,7 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
           </p>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            className={btn}
-            onClick={() => setConfirming(false)}
-            disabled={pending}
-            autoFocus
-          >
+          <button type="button" className={btn} onClick={() => setConfirming(false)} disabled={pending} autoFocus>
             Cancelar
           </button>
           <button
@@ -123,12 +123,12 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
     ) : (
       <div className={`${box} flex items-center justify-between gap-3`}>
         <div>
-          <TileTitle icon="chat" tint="green">WhatsApp</TileTitle>
+          <TileTitle icon="chat" tint="green">
+            WhatsApp
+          </TileTitle>
           <p className="text-sm font-semibold text-muted">Conectado. Os lembretes saem por aqui.</p>
         </div>
-        <button type="button" className={btn} onClick={() => setConfirming(true)}>
-          Desconectar
-        </button>
+        <Switch checked onChange={() => setConfirming(true)} label="WhatsApp" />
       </div>
     );
 
@@ -167,37 +167,54 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
       </div>
     );
 
+  const open = wantsOn || expired;
   return (
     <div className={`${box} grid gap-3`}>
-      <div>
-        <TileTitle icon="chat" tint="green">WhatsApp</TileTitle>
-        <p className="text-sm font-semibold text-muted">
-          Conecte o número do estúdio para enviar lembretes às clientes.
-        </p>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <TileTitle icon="chat" tint="green">
+            WhatsApp
+          </TileTitle>
+          <p className="text-sm font-semibold text-muted">
+            {open ? "Digite o número do estúdio para gerar o código." : "Ligue para enviar lembretes às clientes."}
+          </p>
+        </div>
+        <Switch
+          checked={open}
+          onChange={(on) => {
+            setWantsOn(on);
+            if (!on) setExpired(false);
+          }}
+          label="WhatsApp"
+        />
       </div>
       {expired ? (
         <p role="alert" className="rounded-2xl bg-soft px-4 py-3 text-sm font-semibold">
           O código expirou antes de conectar. Gere outro e digite no WhatsApp logo em seguida.
         </p>
       ) : null}
-      <input
-        inputMode="tel"
-        autoComplete="off"
-        placeholder="(11) 98765-4321"
-        aria-label="Número do WhatsApp do estúdio"
-        value={phone}
-        onChange={(e) => setPhone(maskPhone(e.target.value))}
-        className="min-h-13 w-full rounded-full border px-5 text-base font-semibold"
-      />
-      <button
-        type="button"
-        onClick={generate}
-        disabled={pending || phone.replace(/\D/g, "").length < 10}
-        aria-busy={pending}
-        className="btn-tint min-h-12 rounded-full px-4 font-bold disabled:opacity-60"
-      >
-        {pending ? "Gerando código…" : "Gerar código de conexão"}
-      </button>
+      {open ? (
+        <>
+          <input
+            inputMode="tel"
+            autoComplete="off"
+            placeholder="(11) 98765-4321"
+            aria-label="Número do WhatsApp do estúdio"
+            value={phone}
+            onChange={(e) => setPhone(maskPhone(e.target.value))}
+            className="min-h-13 w-full rounded-full border px-5 text-base font-semibold"
+          />
+          <button
+            type="button"
+            onClick={generate}
+            disabled={pending || phone.replace(/\D/g, "").length < 10}
+            aria-busy={pending}
+            className="btn-tint min-h-12 rounded-full px-4 font-bold disabled:opacity-60"
+          >
+            {pending ? "Gerando código…" : "Gerar código de conexão"}
+          </button>
+        </>
+      ) : null}
     </div>
   );
 }
