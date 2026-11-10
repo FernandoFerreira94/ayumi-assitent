@@ -30,10 +30,10 @@ test("primeiro acesso: tour obrigatório passa pelo Painel e pela configuração
   for (const name of [
     "1. Conecte o WhatsApp",
     "2. Conecte o Google Agenda",
-    "3. Monte suas mensagens",
-    "4. Leitura das respostas",
-    "5. Seus horários",
-    "6. Avisos e previsão do tempo",
+    "3. Avisos e previsão do tempo",
+    "4. Monte suas mensagens",
+    "5. Leitura das respostas",
+    "6. Seus horários",
   ]) {
     await expect(card.getByRole("heading", { name })).toBeVisible();
     // O cartão fica inteiro na tela, longe da borda de cima (não cola no header)

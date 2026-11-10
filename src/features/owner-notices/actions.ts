@@ -2,11 +2,10 @@
 
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { after } from "next/server";
 import { z } from "zod";
 import { getDb, withTenant } from "@/db/client";
 import { tenants } from "@/db/schema";
-import { hasSubscription, sendToAll } from "@/features/push/core";
+import { sendToAll } from "@/features/push/core";
 import { pushFromEnv } from "@/features/push/webpush";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
@@ -54,43 +53,6 @@ export async function sendTestNotice(): Promise<ActionResult<{ sent: number }>> 
   }
 }
 
-/** Segundos entre o toque e o aviso de teste agendado (dá tempo de bloquear a tela do iPhone). */
-const TEST_DELAY_SECONDS = 120;
-
-/**
- * Botão "Enviar aviso de teste em 2 minutos": confere o aparelho agora e agenda o envio no servidor (não
- * depende do app ficar aberto nem do iPhone com a tela ligada).
- */
-export async function scheduleTestNotice(): Promise<ActionResult<{ at: number }>> {
-  const { tenantId, userId } = await requireTenant();
-  const push = pushFromEnv();
-  if (!push) return fail("PUSH_NOT_CONFIGURED");
-  try {
-    const salon = await salonOf(tenantId);
-    if (!salon) return fail("UNKNOWN");
-    if (!(await withTenant(tenantId, (tx) => hasSubscription(tx, userId)))) return fail("PUSH_NO_DEVICE");
-    after(async () => {
-      await new Promise((r) => setTimeout(r, TEST_DELAY_SECONDS * 1000));
-      try {
-        const mascots = await mascotsOf(tenantId).catch(() => ({}) as Record<string, string>);
-        await withTenant(tenantId, async (tx) => {
-          const t = await testNotice(tx, new Date(), salon);
-          return sendToAll(tx, push, (sub) => ({
-            ...t,
-            title: mascotTitle(t.title, mascots[sub.userId]),
-            url: "/agenda",
-            tag: "test",
-          }));
-        });
-      } catch (e) {
-        console.error(JSON.stringify({ level: "error", msg: "test_notice_failed", tenant: tenantId, err: String(e) }));
-      }
-    });
-    return ok({ at: Date.now() + TEST_DELAY_SECONDS * 1000 });
-  } catch {
-    return fail("UNKNOWN");
-  }
-}
 /** Texto completo de um aviso (roteiro da semana, mensagem pronta para as clientes). */
 export async function loadNotice(id: string) {
   const { tenantId } = await requireTenant();
