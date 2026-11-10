@@ -10,8 +10,8 @@ import {
   dayEndText,
   EMPTY_DAY,
   morningText,
-  namesList,
   pickVariant,
+  skyEmoji,
   weekFallback,
 } from "@/features/owner-notices/texts";
 import { isSunny, skyLabel, weatherLine } from "@/features/owner-notices/weather";
@@ -89,21 +89,25 @@ describe("textos", () => {
     for (let i = 0; i < 20; i++) expect([0, 1, 2]).not.toContain(pickVariant(6, [0, 1, 2]));
     expect(pickVariant(2, [0, 1], () => 0)).toBe(1);
   });
-  it("resumo da manhã com clientes, confirmadas, pendentes e pedidos em aberto", () => {
+  it("resumo da manhã enxuto: quantidade, primeira cliente, status e pedidos em aberto", () => {
     const t = morningText(0, "Bom dia, Yumi", {
       names: ["Ana Souza", "Bia", "Carla", "Duda", "Eva", "Fê"],
       firstTime: "09:00",
       confirmed: 3,
       pending: 1,
       reschedule: 1,
-      cancel: 1,
+      cancel: 2,
     });
     expect(t.title).toBe("Bom dia, Yumi! ☀️");
-    expect(t.body).toContain("são 6 clientes: Ana, Bia, Carla, Duda e mais 2");
-    expect(t.body).toContain("A primeira chega às 09:00");
-    expect(t.body).toContain("3 confirmadas e 1 pendente");
-    expect(t.body).toContain("1 pediu para remarcar");
-    expect(t.body).toContain("1 pediu para cancelar e ainda falta cancelar");
+    expect(t.body).toBe(
+      "Seu dia está organizado. 6 clientes, a primeira às 09:00: 3 confirmadas e 1 pendente. 1 pedido para remarcar em aberto. 2 pedidos para cancelar em aberto.",
+    );
+    expect(t.body).not.toContain("Ana");
+  });
+  it("o emoji acompanha o horário: sol, sol entre nuvens, lua", () => {
+    expect(morningText(0, "Boa tarde, Yumi", null).title).toBe("Boa tarde, Yumi! 🌤️");
+    expect(morningText(0, "Boa noite, Yumi", null).title).toBe("Boa noite, Yumi! 🌙");
+    expect(skyEmoji("Bom dia")).toBe("☀️");
   });
   it("dia sem nada marcado", () => {
     expect(EMPTY_DAY).toContain(morningText(0, "Bom dia", null).body);
@@ -123,9 +127,7 @@ describe("textos", () => {
     ];
     for (const t of all) expect(t).not.toMatch(/R\$|reais|faturamento|ganho/i);
   });
-  it("nomes e roteiro sem IA", () => {
-    expect(namesList(["Ana"])).toBe("Ana");
-    expect(namesList(["Ana", "Bia"])).toBe("Ana e Bia");
+  it("roteiro sem IA", () => {
     const w = weekFallback([
       { date: "2026-11-16", label: "Seg 16/11", off: false, count: 2, holiday: null },
       { date: "2026-11-20", label: "Sex 20/11", off: true, count: 0, holiday: "Dia da Consciência Negra" },
