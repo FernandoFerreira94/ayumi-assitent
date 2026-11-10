@@ -28,7 +28,7 @@ const HEAD: Record<View, [string, string]> = {
   signup: ["Criar sua conta", "Leva menos de 1 minuto."],
 };
 
-/** Cada toque no Mimo é a próxima reação desta lista, em ordem; só movimento, sem legenda. */
+/** Cada toque no Bubbly é a próxima reação desta lista, em ordem; só movimento, sem legenda. */
 const REACTIONS = ["pulo", "gelatina", "piscadinha", "coracoes", "bolhinhas", "rodopio"] as const;
 const REACT_MS = 1300;
 /** Quanto tempo a Bolha fica preocupada depois de um erro. */
@@ -272,7 +272,7 @@ export function LoginForm() {
           <button
             type="button"
             onClick={tapMascot}
-            aria-label="Mimo, toque para brincar"
+            aria-label="Bubbly, toque para brincar"
             className="login-mascot relative grid justify-items-center rounded-3xl"
           >
             <span key={reaction?.n ?? (success ? "ok" : worried ? worriedAt : "idle")} className={motion}>
@@ -298,7 +298,7 @@ export function LoginForm() {
             </span>
           ) : null}
         </div>
-        <h1 className="mt-1 text-[2.25rem]" aria-label="mimo">
+        <h1 className="mt-1 text-[2.25rem]" aria-label="bubbly">
           <Wordmark />
         </h1>
         <h2 className="mt-1.5 text-xl font-bold">{HEAD[view][0]}</h2>

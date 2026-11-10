@@ -43,7 +43,7 @@ const SAMPLE: MessageData = {
 };
 
 /**
- * Tudo o que o Mimo manda pelo WhatsApp num cartão só, porque uma mensagem puxa a outra: a de agendamento
+ * Tudo o que o Bubbly manda pelo WhatsApp num cartão só, porque uma mensagem puxa a outra: a de agendamento
  * confirmado, o 1º aviso (pede a confirmação) e o 2º aviso (só para quem não respondeu). O valor entra pela
  * chave {valor}: estando no texto, aparece; fora dele, não.
  */
@@ -68,7 +68,7 @@ export function MessagesForm({ settings, salonName }: { settings: MessageSetting
           Mensagens no WhatsApp
         </TileTitle>
         <p className="text-sm font-semibold text-muted">
-          O Mimo manda a confirmação do agendamento e os avisos para a cliente confirmar o horário. Cancelar ou remarcar
+          O Bubbly manda a confirmação do agendamento e os avisos para a cliente confirmar o horário. Cancelar ou remarcar
           fica com você.
         </p>
       </div>

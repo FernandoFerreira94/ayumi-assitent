@@ -35,7 +35,7 @@ const STEPS: Record<"ios" | "android", { title: string; steps: React.ReactNode[]
         Role a lista e toque em <b>Adicionar à Tela de Início</b>.
       </>,
       <>
-        Toque em <b>Adicionar</b>. O app passa a abrir pelo ícone do Mimo.
+        Toque em <b>Adicionar</b>. O app passa a abrir pelo ícone do Bubbly.
       </>,
     ],
   },
@@ -47,7 +47,7 @@ const STEPS: Record<"ios" | "android", { title: string; steps: React.ReactNode[]
         Toque em <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.
       </>,
       <>
-        Confirme em <b>Instalar</b>. O ícone do Mimo aparece com os outros apps.
+        Confirme em <b>Instalar</b>. O ícone do Bubbly aparece com os outros apps.
       </>,
     ],
   },

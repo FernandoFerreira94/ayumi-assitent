@@ -1732,7 +1732,6 @@ button {
   /* Centrado no espaço livre ao lado do destaque, sem colar no topo nem cobrir o que está sendo mostrado */
   height: fit-content;
   margin-block: auto;
-  max-height: calc(100dvh - 96px);
   overflow-y: auto;
 }
 .tour-card[data-place="center"] {

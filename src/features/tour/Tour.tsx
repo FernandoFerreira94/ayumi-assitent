@@ -175,8 +175,17 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
         style={
           box
             ? cardBelow
-              ? { top: box.top + box.height + 14, bottom: "calc(env(safe-area-inset-bottom) + 16px)" }
-              : { top: "calc(env(safe-area-inset-top) + 64px)", bottom: vh - box.top + 14 }
+              ? {
+                  top: box.top + box.height + 14,
+                  bottom: "calc(env(safe-area-inset-bottom) + 16px)",
+                  // Se o texto for maior que o espaço livre, o cartão rola por dentro em vez de sair da tela
+                  maxHeight: Math.max(160, vh - (box.top + box.height + 14) - 16),
+                }
+              : {
+                  top: "calc(env(safe-area-inset-top) + 64px)",
+                  bottom: vh - box.top + 14,
+                  maxHeight: Math.max(160, box.top - 14 - 64),
+                }
             : undefined
         }
       >

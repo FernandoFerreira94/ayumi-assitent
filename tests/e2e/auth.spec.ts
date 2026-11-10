@@ -65,8 +65,8 @@ test.describe("login por e-mail e senha", () => {
     await page.getByLabel("Senha", { exact: true }).fill("senha-errada-999");
     await page.getByRole("button", { name: "Entrar", exact: true }).click();
     await expect(page.getByText("E-mail ou senha incorretos.")).toBeVisible();
-    // o Mimo reage ao toque e não atrapalha o formulário
-    await page.getByRole("button", { name: "Mimo, toque para brincar" }).click();
+    // o Bubbly reage ao toque e não atrapalha o formulário
+    await page.getByRole("button", { name: "Bubbly, toque para brincar" }).click();
     // Só a animação: nenhuma legenda dizendo o que ele está fazendo
     await expect(page.getByText("Pulinho")).toHaveCount(0);
 

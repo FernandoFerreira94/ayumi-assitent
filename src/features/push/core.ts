@@ -39,7 +39,7 @@ export type PushRun = { sent: number; removed: number; failed: number };
 export async function notifyPendencias(tx: Tx, port: PushPort, now: Date, googleConnected: boolean): Promise<PushRun> {
   const n = countPendencias(await listPendencias(tx, now, googleConnected));
   if (n === 0) return { sent: 0, removed: 0, failed: 0 };
-  return sendToAll(tx, port, { title: "mimo", body: pendenciasText(n), url: "/pendencias" });
+  return sendToAll(tx, port, { title: "bubbly", body: pendenciasText(n), url: "/pendencias" });
 }
 
 /** Manda o mesmo aviso para todos os aparelhos inscritos do estúdio (o da transação). */

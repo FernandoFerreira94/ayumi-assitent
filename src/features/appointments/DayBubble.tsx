@@ -19,7 +19,7 @@ export function DayBubble({ briefing }: { briefing: Briefing; isToday?: boolean 
         <button
           type="button"
           data-tour="bubble"
-          aria-label={lines.length > 1 ? "Ver mais sobre o dia" : "Mimo"}
+          aria-label={lines.length > 1 ? "Ver mais sobre o dia" : "Bubbly"}
           onClick={() => {
             setI((n) => n + 1);
             setHop((n) => n + 1);

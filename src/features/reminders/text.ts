@@ -1,7 +1,7 @@
 import { addDays, formatBRL, formatTime, todayStr } from "@/lib/dates";
 
 /**
- * Textos que o Mimo manda pelo WhatsApp: ao agendar, no 1º aviso e no 2º aviso. A dona edita os três em
+ * Textos que o Bubbly manda pelo WhatsApp: ao agendar, no 1º aviso e no 2º aviso. A dona edita os três em
  * Ajustes; as {chaves} viram os dados do horário. Arquivo sem banco para a prévia em Ajustes rodar no navegador.
  */
 

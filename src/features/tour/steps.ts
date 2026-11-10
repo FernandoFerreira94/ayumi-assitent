@@ -1,6 +1,6 @@
 /**
  * Passos do tour de primeiro acesso: o básico no Painel e depois a configuração em Ajustes, que é o que faz
- * o Mimo funcionar (WhatsApp, Google, mensagens, IA e horários). `target` é um seletor (pode casar vários
+ * o Bubbly funcionar (WhatsApp, Google, mensagens, IA e horários). `target` é um seletor (pode casar vários
  * elementos: o destaque cobre todos); `path` leva à tela do passo. "tap" só avança quando a pessoa toca no
  * destaque; "next" tem botão.
  */
@@ -18,7 +18,7 @@ export type TourStep = {
 export const TOUR_STEPS: TourStep[] = [
   {
     path: "/agenda",
-    title: "Oi, eu sou o Mimo!",
+    title: "Oi, eu sou o Bubbly!",
     text: "Vou te mostrar o principal do app e te ajudar a deixar tudo configurado. Leva uns minutinhos.",
     advance: "next",
   },
@@ -69,7 +69,7 @@ export const TOUR_STEPS: TourStep[] = [
     path: "/ajustes",
     target: "#google",
     title: "2. Conecte o Google Agenda",
-    text: "Seus agendamentos aparecem no Google e os compromissos de lá bloqueiam a agenda do Mimo.",
+    text: "Seus agendamentos aparecem no Google e os compromissos de lá bloqueiam a agenda do Bubbly.",
     advance: "next",
   },
   {

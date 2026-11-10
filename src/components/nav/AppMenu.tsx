@@ -174,7 +174,7 @@ export function AppMenu({
           </ul>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <SignOutButton />
-            <span className="px-2.5 font-mono text-xs text-muted">Mimo {version}</span>
+            <span className="px-2.5 font-mono text-xs text-muted">Bubbly {version}</span>
           </div>
           <button type="button" onClick={close} className="sr-only focus:not-sr-only">
             Fechar menu
