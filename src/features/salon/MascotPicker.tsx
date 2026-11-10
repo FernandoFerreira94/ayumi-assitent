@@ -9,6 +9,9 @@ import { useMascotKind } from "@/components/brand/useMascotKind";
 import { notify } from "@/components/feedback/toast";
 import { saveMascot } from "./mascot-actions";
 
+const installed = () =>
+  matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+
 /** Meu perfil: escolher o mascote, que troca as cores do app inteiro na hora. */
 export function MascotPicker() {
   const current = useMascotKind();
@@ -23,7 +26,12 @@ export function MascotPicker() {
     setOpen(false);
     start(async () => {
       const res = await saveMascot(kind);
-      if (res.ok) notify.success(`Agora com ${MASCOTS.find((m) => m.id === kind)?.name}`);
+      if (res.ok)
+        notify.success(
+          `Agora com ${MASCOTS.find((m) => m.id === kind)?.name}`,
+          // O iPhone guarda o ícone e a abertura na hora de instalar: só mudam adicionando de novo
+          installed() ? "Para trocar o ícone da tela de início, remova o app e adicione de novo." : undefined,
+        );
       else {
         applyMascot(before);
         notify.error(res.code);
@@ -52,7 +60,7 @@ export function MascotPicker() {
         <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
           <Drawer.Title className="pb-1 text-xl font-bold">Mascote e cores</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
-            O app inteiro troca de cor junto. Só você vê a sua escolha.
+            O app inteiro troca de cor junto, e também a abertura e o ícone. Só você vê a sua escolha.
           </Drawer.Description>
           <ul className="grid grid-cols-4 gap-2">
             {MASCOTS.map((m) => (

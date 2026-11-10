@@ -1,5 +1,7 @@
 /**
- * Mascotes do Mimo (a Bolha é o padrão e a marca: ícone, login e splash são sempre dela): cada um troca as cores do app (mascot-themes.css) e o corpo da Bolha (MascotBodies.tsx).
+ * Mascotes do Mimo (a Bolha é o padrão de todo mundo e o login é sempre dela): cada um troca as cores do app
+ * (mascot-themes.css), o corpo da Bolha (MascotBodies.tsx), a abertura e o ícone da tela de início
+ * (public/icons/<id>/, gerados a partir da prancha; a Bolha usa os ícones de `pnpm icons`).
  * O rosto é o mesmo em todos, então humores, reações e acessórios de data valem para os oito.
  * Prancha: "Temas do Mimo". Cada pessoa escolhe o seu em Meu perfil (memberships.mascot).
  */
@@ -19,6 +21,9 @@ export type MascotKind = (typeof MASCOTS)[number]["id"];
 export const DEFAULT_MASCOT: MascotKind = "bolha";
 
 export const isMascotKind = (v: unknown): v is MascotKind => MASCOTS.some((m) => m.id === v);
+
+/** Cookie lido pelo manifest (ícone do Android ao instalar). */
+export const MASCOT_COOKIE = "mimo-mascot";
 
 /** Guardado no aparelho para o tema aparecer já na primeira pintura (antes de o servidor responder). */
 export const MASCOT_STORAGE = "mimo-mascot";

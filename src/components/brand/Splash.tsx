@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Mascot } from "./Mascot";
+import { MASCOTS } from "./mascots";
 import { Wordmark } from "./Wordmark";
 
 /** Some de vez depois disso: ~3,9 s de animação + o fade (tempos em globals.css, .splash). */
@@ -55,9 +56,16 @@ export function Splash() {
         <circle cx="240" cy="210" r="118" fill="rgba(255,255,255,.12)" stroke="url(#splash-film)" strokeWidth="5" />
         <ellipse cx="187" cy="151" rx="21" ry="8" transform="rotate(-34 187 151)" fill="rgba(255,255,255,.8)" />
       </svg>
-      {/* Abertura é sempre da Bolha, a marca */}
-      <div className="splash-mimo" data-mascot="bolha">
-        <Mascot kind="bolha" mood={awake ? "neutral" : "happy"} size={220} />
+      <div className="splash-mimo">
+        {/*
+          Os oito ficam no HTML e o CSS mostra só o escolhido (data-mascot no <html>, aplicado antes de pintar):
+          a abertura já nasce com o mascote certo, sem esperar o React.
+        */}
+        {MASCOTS.map((m) => (
+          <span key={m.id} className="splash-kind" data-k={m.id}>
+            <Mascot kind={m.id} mood={awake ? "neutral" : "happy"} size={220} />
+          </span>
+        ))}
         <span className="splash-shadow" />
       </div>
       <div className="splash-word grid justify-items-center gap-1">

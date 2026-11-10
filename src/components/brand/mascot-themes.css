@@ -179,3 +179,18 @@
   --m-cheek: #ff8fb1;
   --m-x: #c9c8d2;
 }
+
+/* Abertura (Splash.tsx): só o mascote escolhido aparece */
+.splash-kind {
+  display: none;
+}
+:root:not([data-mascot]) .splash-kind[data-k="bolha"],
+[data-mascot="abobora"] .splash-kind[data-k="abobora"],
+[data-mascot="mia"] .splash-kind[data-k="mia"],
+[data-mascot="caramelo"] .splash-kind[data-k="caramelo"],
+[data-mascot="lulu"] .splash-kind[data-k="lulu"],
+[data-mascot="pingo"] .splash-kind[data-k="pingo"],
+[data-mascot="mel"] .splash-kind[data-k="mel"],
+[data-mascot="bambu"] .splash-kind[data-k="bambu"] {
+  display: block;
+}

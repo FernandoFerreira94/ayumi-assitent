@@ -1777,7 +1777,7 @@ button {
 .splash-flood {
   position: absolute;
   inset: 0;
-  background: radial-gradient(120% 80% at 50% 40%, #ffffff 0%, #f1ecff 55%, #e6deff 100%);
+  background: radial-gradient(120% 80% at 50% 40%, #ffffff 0%, var(--soft) 55%, var(--m-body-1) 100%);
   clip-path: circle(0% at 50% 42%);
   animation: splash-flood 0.9s cubic-bezier(0.22, 0.8, 0.3, 1) 1.65s forwards;
 }
