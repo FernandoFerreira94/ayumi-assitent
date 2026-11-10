@@ -10,15 +10,15 @@ import "./globals.css";
 import "@/components/brand/mascot-themes.css";
 
 const quicksand = Quicksand({ variable: "--font-quicksand", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
-// Só para o nome "mimo"
+// Só para o nome "bubbly"
 const varela = Varela_Round({ variable: "--font-varela", subsets: ["latin"], weight: "400" });
 
 export const metadata: Metadata = {
-  title: { default: "mimo", template: "%s · mimo" },
+  title: { default: "bubbly", template: "%s · bubbly" },
   description: "Agenda, clientes e lembretes do seu estúdio.",
   appleWebApp: {
     capable: true,
-    title: "mimo",
+    title: "bubbly",
     // "default", não "black-translucent": no iOS 26 o translucent faz o sistema pintar um desfoque (scroll pocket)
     // por cima do topo, o que deixava a faixa clara e embaçada. Com "default" o sistema pinta a barra de status
     // com a cor do elemento fixo opaco do topo (.status-fill), roxo primário sólido.

@@ -18,9 +18,9 @@ test("abrir o app mostra o splash uma vez; recarregar na mesma abertura não rep
   await expect(page.locator(".splash")).toBeHidden();
 });
 
-test("o nome tem o segundo m em outra cor", async ({ page }) => {
+test("o nome tem o par bb em outra cor", async ({ page }) => {
   await page.goto("/login");
-  const h1 = page.getByRole("heading", { level: 1, name: "mimo" });
+  const h1 = page.getByRole("heading", { level: 1, name: "bubbly" });
   const colors = await h1.evaluate((el) => {
     const word = el.firstElementChild as HTMLElement;
     return [getComputedStyle(word).color, getComputedStyle(word.querySelector("span")!).color];

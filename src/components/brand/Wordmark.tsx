@@ -1,8 +1,8 @@
-/** Nome "mimo" como na marca: Varela Round, com o segundo "m" em lavanda. */
+/** Nome "bubbly" como na marca: Varela Round, com o par "bb" (as duas bolhas) em lavanda. */
 export function Wordmark({ className = "" }: { className?: string }) {
   return (
     <span className={`font-brand leading-none text-fg ${className}`}>
-      mi<span className="text-primary">m</span>o
+      bu<span className="text-primary">bb</span>ly
     </span>
   );
 }

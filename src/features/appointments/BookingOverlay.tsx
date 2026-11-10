@@ -68,7 +68,7 @@ export function BookingOverlay({
               ? booking.who
               : booking.slow
                 ? "A conexão está lenta, mas sigo tentando."
-                : "O Mimo está cuidando de tudo."}
+                : "O Bubbly está cuidando de tudo."}
         </p>
       </div>
 

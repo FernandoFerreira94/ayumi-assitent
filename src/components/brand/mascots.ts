@@ -1,11 +1,11 @@
 /**
- * Mascotes do Mimo (a Bolha é o padrão de todo mundo; login e ícone da tela de início são sempre dela):
+ * Mascotes do Bubbly (a Bolha é o padrão de todo mundo; login e ícone da tela de início são sempre dela):
  * cada um troca as cores do app (mascot-themes.css), o corpo da Bolha (MascotBodies.tsx) e a abertura.
  * O rosto é o mesmo em todos, então humores, reações e acessórios de data valem para os oito.
  * Prancha: "Temas do Mimo". Cada pessoa escolhe o seu em Meu perfil (memberships.mascot).
  */
 export const MASCOTS = [
-  { id: "bolha", name: "Bolha", tag: "Lavanda, o padrão do Mimo", primary: "#6D4AFF" },
+  { id: "bolha", name: "Bolha", tag: "Lavanda, o padrão do Bubbly", primary: "#6D4AFF" },
   { id: "abobora", name: "Abóbora", tag: "Laranja e preto", primary: "#F26B1D" },
   { id: "mia", name: "Mia", tag: "Gatinha em menta", primary: "#0A7A67" },
   { id: "caramelo", name: "Caramelo", tag: "Vira-lata caramelo", primary: "#9C5714" },

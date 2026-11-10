@@ -6,7 +6,7 @@ test("primeiro acesso: tour obrigatório passa pelo Painel e pela configuração
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/agenda");
   const card = page.getByRole("dialog");
-  await expect(card.getByRole("heading", { name: "Oi, eu sou o Mimo!" })).toBeVisible();
+  await expect(card.getByRole("heading", { name: "Oi, eu sou o Bubbly!" })).toBeVisible();
   // Obrigatório: sem "Pular" e o Escape não fecha
   await expect(card.getByRole("button", { name: "Pular tour" })).toHaveCount(0);
   await page.keyboard.press("Escape");
@@ -73,7 +73,7 @@ test("rever o tour por Ajustes começa no Painel e pode ser pulado", async ({ pa
   await page.goto("/ajustes");
   await page.getByRole("button", { name: "Rever o tour do app" }).click();
   await expect(page).toHaveURL(/\/agenda$/);
-  await expect(page.getByRole("heading", { name: "Oi, eu sou o Mimo!" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Oi, eu sou o Bubbly!" })).toBeVisible();
   await page.getByRole("button", { name: "Pular tour" }).click();
   await expect(page.getByRole("dialog")).toBeHidden();
 });

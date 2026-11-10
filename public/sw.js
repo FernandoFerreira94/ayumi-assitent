@@ -23,7 +23,7 @@ self.addEventListener("fetch", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let data = { title: "mimo", body: "", url: "/pendencias", tag: undefined };
+  let data = { title: "bubbly", body: "", url: "/pendencias", tag: undefined };
   try {
     data = { ...data, ...event.data.json() };
   } catch {}
