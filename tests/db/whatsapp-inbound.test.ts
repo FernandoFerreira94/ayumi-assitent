@@ -78,7 +78,8 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
   });
 
   it("depois de 2h do fechamento, outra mensagem só entra na conversa (e fica não lida)", async () => {
-    await admin`update appointments set reply_at = now() - interval '3 hours' where id = ${A}`;
+    // Relativo ao `now` injetado (não ao relógio do banco), senão o teste quebra quando o dia real passa de 15h UTC
+    await admin`update appointments set reply_at = ${new Date(now.getTime() - 3 * 3600_000).toISOString()} where id = ${A}`;
     expect(await handleInbound(msg("m2", "2"), deps)).toEqual({ handled: true, intent: null, appointmentId: null });
     expect((await admin`select status from appointments where id = ${A}`)[0].status).toBe("confirmed");
     const unread = await admin`select count(*)::int as n from messages where direction = 'in' and read_at is null`;
