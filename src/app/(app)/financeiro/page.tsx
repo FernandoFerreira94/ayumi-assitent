@@ -143,7 +143,7 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
           {spentCents === 0 ? (
             <p className="py-4 text-center text-sm font-semibold text-muted">Nenhum gasto lançado nesse mês.</p>
           ) : (
-            <ServicePie slices={expenseSlices(spent)} total={spentCents} label="gasto" />
+            <ServicePie slices={expenseSlices(spent)} total={spentCents} label="gasto" palette="expense" />
           )}
         </section>
 
