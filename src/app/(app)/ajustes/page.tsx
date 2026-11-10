@@ -62,6 +62,18 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
             errorCode={typeof googleError === "string" ? googleError.slice(0, 60) : undefined}
           />
         </section>
+        <section id="avisos-celular" aria-label="Avisos" className="scroll-mt-6">
+          <PushToggle publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
+        </section>
+      </Group>
+      <Group title="Avisos do dia">
+        <section id="avisos-do-dia" aria-label="Avisos do dia" className="scroll-mt-6">
+          <DailyNoticesCard
+            source={salon?.locationSource ?? null}
+            city={salon?.city ?? null}
+            state={salon?.state ?? null}
+          />
+        </section>
       </Group>
       <Group title="Mensagens para a cliente">
         <section id="mensagens" aria-label="Mensagens no WhatsApp" className="scroll-mt-6">
@@ -77,16 +89,6 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
         </section>
       </Group>
       <Group title="Este aparelho">
-        <section id="avisos-celular" aria-label="Avisos" className="scroll-mt-6">
-          <PushToggle publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
-        </section>
-        <section id="avisos-do-dia" aria-label="Avisos do dia" className="scroll-mt-6">
-          <DailyNoticesCard
-            city={salon?.city ?? null}
-            state={salon?.state ?? null}
-            source={salon?.locationSource ?? null}
-          />
-        </section>
         <section aria-label="Atualização">
           <UpdateButton />
         </section>
