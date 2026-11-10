@@ -4,11 +4,14 @@ import { useState } from "react";
 import { formatBRL } from "@/lib/dates";
 import type { Slice } from "./summary";
 
-// Paleta categórica validada (scripts/validate_palette.js do dataviz): passa CVD e separação no tema claro.
-// Rosa e verde-água ficam abaixo de 3:1 no fundo, por isso todo valor também aparece escrito na lista.
-const SLOTS = ["#6250d6", "#e87ba4", "#2a78d6", "#1baf7a", "#eb6834"];
+// Paletas categóricas (ver scripts/validate_palette.js do dataviz). Tema sempre claro.
+// Algumas cores ficam abaixo de 3:1 no fundo, por isso todo valor também aparece escrito na lista.
+// Ganhos e gastos usam famílias de cor distintas para não se confundirem na página.
+const PALETTES = {
+  income: ["#6250d6", "#e87ba4", "#2a78d6", "#1baf7a", "#eb6834"],
+  expense: ["#b3402f", "#c99a06", "#6b7d2e", "#0f766e", "#8a5a3c"],
+} as const;
 const OTHER = "#898781";
-const colorOf = (s: Slice, i: number) => (s.name === "Outros" ? OTHER : (SLOTS[i] ?? OTHER));
 
 const R = 80;
 const r = 54;
@@ -27,9 +30,21 @@ const RING = `M100 ${100 - R}A${R} ${R} 0 1 1 100 ${100 + R}A${R} ${R} 0 1 1 100
  * Divisão do total por fatia (serviço ou categoria de gasto), sempre com o gráfico, mesmo com uma ou duas fatias.
  * Tocar numa fatia ou linha mostra o valor dela no centro.
  */
-export function ServicePie({ slices, total, label }: { slices: Slice[]; total: number; label: string }) {
+export function ServicePie({
+  slices,
+  total,
+  label,
+  palette = "income",
+}: {
+  slices: Slice[];
+  total: number;
+  label: string;
+  palette?: keyof typeof PALETTES;
+}) {
   const [sel, setSel] = useState<number | null>(null);
   const pick = (i: number) => setSel((s) => (s === i ? null : i));
+  const slots = PALETTES[palette];
+  const colorOf = (s: Slice, i: number) => (s.name === "Outros" ? OTHER : (slots[i] ?? OTHER));
   // Ângulo final de cada fatia = soma acumulada das fatias até ela
   const ends = slices.map((_, i) => (slices.slice(0, i + 1).reduce((t, x) => t + x.cents, 0) / total) * Math.PI * 2);
   const arcs = ends.map((a1, i) => ({ a0: i ? ends[i - 1] : 0, a1 }));
