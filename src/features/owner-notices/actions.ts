@@ -2,15 +2,16 @@
 
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { getDb, withTenant } from "@/db/client";
 import { tenants } from "@/db/schema";
-import { sendToAll } from "@/features/push/core";
+import { hasSubscription, sendToAll } from "@/features/push/core";
 import { pushFromEnv } from "@/features/push/webpush";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
 import { loadNotice as load, testNotice } from "./core";
-import { geocodeCity, UF_NAMES } from "./weather";
+import { UF_NAMES } from "./weather";
 
 async function salonOf(tenantId: string) {
   const [s] = await getDb()
@@ -46,6 +47,37 @@ export async function sendTestNotice(): Promise<ActionResult<{ sent: number }>> 
   }
 }
 
+/** Segundos entre o toque e o aviso de teste agendado (dá tempo de bloquear a tela do iPhone). */
+const TEST_DELAY_SECONDS = 120;
+
+/**
+ * Botão "Enviar aviso de teste em 2 minutos": confere o aparelho agora e agenda o envio no servidor (não
+ * depende do app ficar aberto nem do iPhone com a tela ligada).
+ */
+export async function scheduleTestNotice(): Promise<ActionResult<{ at: number }>> {
+  const { tenantId, userId } = await requireTenant();
+  const push = pushFromEnv();
+  if (!push) return fail("PUSH_NOT_CONFIGURED");
+  try {
+    const salon = await salonOf(tenantId);
+    if (!salon) return fail("UNKNOWN");
+    if (!(await withTenant(tenantId, (tx) => hasSubscription(tx, userId)))) return fail("PUSH_NO_DEVICE");
+    after(async () => {
+      await new Promise((r) => setTimeout(r, TEST_DELAY_SECONDS * 1000));
+      try {
+        await withTenant(tenantId, async (tx) => {
+          const t = await testNotice(tx, new Date(), salon);
+          return sendToAll(tx, push, { ...t, url: "/agenda", tag: "test" });
+        });
+      } catch (e) {
+        console.error(JSON.stringify({ level: "error", msg: "test_notice_failed", tenant: tenantId, err: String(e) }));
+      }
+    });
+    return ok({ at: Date.now() + TEST_DELAY_SECONDS * 1000 });
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
 /** Texto completo de um aviso (roteiro da semana, mensagem pronta para as clientes). */
 export async function loadNotice(id: string) {
   const { tenantId } = await requireTenant();
@@ -53,36 +85,6 @@ export async function loadNotice(id: string) {
   try {
     const n = await withTenant(tenantId, (tx) => load(tx, id));
     return n ? ok({ ...n, salon: (await salonOf(tenantId))?.name ?? "" }) : fail("NOT_FOUND");
-  } catch {
-    return fail("UNKNOWN");
-  }
-}
-
-const locationInput = z.object({
-  city: z.string().trim().min(2, "Informe a cidade").max(60),
-  state: z.enum(Object.keys(UF_NAMES) as [string, ...string[]], "Escolha a UF"),
-});
-
-/** Cidade e UF do salão: feriados locais e previsão do tempo dos avisos. */
-export async function saveLocation(_prev: ActionResult | null, form: FormData): Promise<ActionResult> {
-  const { tenantId } = await requireTenant();
-  const p = locationInput.safeParse({ city: form.get("city") ?? "", state: form.get("state") ?? "" });
-  if (!p.success) return fail("VALIDATION", String(p.error.issues[0]?.path[0] ?? ""));
-  const coords = await geocodeCity(p.data.city, p.data.state);
-  if (!coords) return fail("CITY_NOT_FOUND", "city");
-  try {
-    await getDb()
-      .update(tenants)
-      .set({
-        city: p.data.city,
-        state: p.data.state,
-        latitude: coords.latitude,
-        longitude: coords.longitude,
-        locationSource: "manual",
-      })
-      .where(eq(tenants.id, tenantId));
-    revalidatePath("/ajustes");
-    return ok();
   } catch {
     return fail("UNKNOWN");
   }
