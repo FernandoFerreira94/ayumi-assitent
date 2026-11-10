@@ -1,5 +1,6 @@
 /**
- * Mascotes do Mimo (a Bolha é o padrão e a marca: ícone, login e splash são sempre dela): cada um troca as cores do app (mascot-themes.css) e o corpo da Bolha (MascotBodies.tsx).
+ * Mascotes do Mimo (a Bolha é o padrão de todo mundo; login e ícone da tela de início são sempre dela):
+ * cada um troca as cores do app (mascot-themes.css), o corpo da Bolha (MascotBodies.tsx) e a abertura.
  * O rosto é o mesmo em todos, então humores, reações e acessórios de data valem para os oito.
  * Prancha: "Temas do Mimo". Cada pessoa escolhe o seu em Meu perfil (memberships.mascot).
  */
