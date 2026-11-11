@@ -1,6 +1,6 @@
 /**
  * Passos do tour de primeiro acesso: o básico no Painel e depois a configuração em Ajustes, que é o que faz
- * o Bubbly funcionar (WhatsApp, Google, mensagens, IA e horários). `target` é um seletor (pode casar vários
+ * o Bubbly funcionar (WhatsApp, Google, avisos, mensagens, IA e horários). `target` é um seletor (pode casar vários
  * elementos: o destaque cobre todos); `path` leva à tela do passo. "tap" só avança quando a pessoa toca no
  * destaque; "next" tem botão.
  */
@@ -40,7 +40,7 @@ export const TOUR_STEPS: TourStep[] = [
     path: "/agenda",
     target: ".tabbar",
     title: "O menu fica embaixo",
-    text: "Painel, Calendário, o + para agendar de qualquer tela, Financeiro e Clientes. O resto fica no menu da sua foto, no canto de cima.",
+    text: "Painel, Calendário, o + para agendar de qualquer tela, Financeiro e Clientes. O resto (Serviços, Vagas, Pendências, Ajustes e Meu perfil) fica no menu do canto de cima.",
     advance: "next",
   },
   {
@@ -74,30 +74,30 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     path: "/ajustes",
+    target: "#avisos-celular, #localizacao, #avisos-do-dia",
+    title: "3. Avisos e previsão do tempo",
+    text: "Toque em Ativar e deixe a localização ligada: eu mando bom dia com as clientes do dia, a previsão do tempo e os feriados da sua cidade. O botão de teste manda um aviso na hora.",
+    advance: "next",
+  },
+  {
+    path: "/ajustes",
     target: "#mensagens",
-    title: "3. Monte suas mensagens",
+    title: "4. Monte suas mensagens",
     text: "Escolha como chamar a cliente e escreva a mensagem do agendamento, o 1º aviso e o 2º aviso. Use {valor} para mostrar o preço.",
     advance: "next",
   },
   {
     path: "/ajustes",
     target: "#ia",
-    title: "4. Leitura das respostas",
+    title: "5. Leitura das respostas",
     text: "A IA já vem ligada: ela lê o que a cliente responde ao aviso, entende se confirmou, quer cancelar ou remarcar, e avisa você.",
     advance: "next",
   },
   {
     path: "/ajustes",
     target: "#expediente",
-    title: "5. Seus horários",
+    title: "6. Seus horários",
     text: "Marque os dias e horários em que você atende e a pausa do almoço. As vagas e a agenda seguem esses horários.",
-    advance: "next",
-  },
-  {
-    path: "/ajustes",
-    target: "#avisos-celular, #localizacao, #avisos-do-dia",
-    title: "6. Avisos e previsão do tempo",
-    text: "Toque em Ativar e deixe a localização ligada: eu mando bom dia com as clientes do dia e a previsão do tempo, aviso das folgas e dos feriados da sua cidade. Teste no botão de aviso.",
     advance: "next",
   },
   {
