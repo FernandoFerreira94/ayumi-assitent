@@ -8,7 +8,10 @@ import { listDay } from "@/features/appointments/core";
 import { listBlocks } from "@/features/blocks/core";
 import { importExternalEvents } from "@/features/google/server";
 import { getHours } from "@/features/hours/core";
+import { CustomSheet } from "@/features/hours/CustomSheet";
+import { shortDayLabel } from "@/features/hours/custom-slots";
 import { ShareSheet } from "@/features/hours/ShareSheet";
+import { listSlotLists } from "@/features/hours/slot-lists";
 import { SlotButton } from "@/features/hours/SlotButton";
 import { freeSlots, weekdayOf } from "@/features/hours/slots";
 import { listBookable } from "@/features/services/core";
@@ -16,9 +19,6 @@ import { addDays, dayRange, formatDayTitle, todayStr } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Vagas" };
-
-const short = (date: string) =>
-  `${formatDayTitle(date).split(",")[0].slice(0, 3)}, ${date.slice(8)}/${date.slice(5, 7)}`;
 
 export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
   await connection(); // depende do relógio
@@ -28,13 +28,14 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
   const now = new Date();
 
   await importExternalEvents(tenantId);
-  const { services, week, busy } = await withTenant(tenantId, async (tx) => {
+  const { services, week, busy, lists } = await withTenant(tenantId, async (tx) => {
     const range: [Date, Date] = [dayRange(today)[0], dayRange(addDays(today, 6))[1]];
     const [appts, blks] = await Promise.all([listDay(tx, range), listBlocks(tx, range)]);
     return {
       // "Mostrar nas vagas" desligado tira o serviço da mensagem de horários livres
       services: (await listBookable(tx)).filter((x) => x.showInSlots),
       week: await getHours(tx),
+      lists: await listSlotLists(tx),
       // o intervalo depois de cada atendimento também ocupa a agenda
       busy: [...appts.map((a) => ({ startsAt: a.startsAt, endsAt: a.blockedUntil })), ...blks],
     };
@@ -93,6 +94,9 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
           + Serviço
         </Link>
       </nav>
+      <div className="mb-3">
+        <CustomSheet services={services.map((x) => ({ id: x.id, name: x.name }))} saved={lists} today={today} />
+      </div>
       {withSlots.length === 0 ? (
         <EmptyState
           icon="clock"
@@ -104,7 +108,7 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
           {/* No topo: é a ação da tela, não precisa rolar a semana até achar */}
           <ShareSheet
             serviceName={service.name}
-            days={withSlots.map((d) => ({ date: d.date, label: short(d.date), slots: d.slots }))}
+            days={withSlots.map((d) => ({ date: d.date, label: shortDayLabel(d.date), slots: d.slots }))}
           />
           {withSlots.map((d) => (
             <section key={d.date} aria-label={formatDayTitle(d.date)} className="glass rounded-2xl px-4 py-3">
