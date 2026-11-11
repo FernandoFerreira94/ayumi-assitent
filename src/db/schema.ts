@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   index,
+  jsonb,
   smallint,
   primaryKey,
   integer,
@@ -263,6 +264,22 @@ export const expenses = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("expenses_tenant_spent").on(t.tenantId, t.spentOn)],
+);
+
+/** Listas de vagas salvas (Vagas > Personalizada): nome + filtros, para reutilizar. */
+export const slotLists = pgTable(
+  "slot_lists",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    /** CustomConfig de features/hours/custom-slots (validada com zod ao ler e ao gravar) */
+    config: jsonb("config").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique().on(t.tenantId, t.name)],
 );
 
 /** Avisos do dia no celular da profissional: um por tipo e dia (o worker não repete). */

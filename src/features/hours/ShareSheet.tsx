@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { notify } from "@/components/feedback/toast";
 import { Icon, TileTitle, type IconName, type Tint } from "@/components/ui/Icon";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
@@ -22,7 +22,7 @@ const toggleIn = (set: Set<string>, key: string) => {
 };
 
 /** Cartão de uma parte do texto: quadradinho com desenho, título e ação à direita (ex.: "Refazer"). */
-function Part({
+export function Part({
   icon,
   tint,
   title,
@@ -86,9 +86,20 @@ function ResetButton({ onClick }: { onClick: () => void }) {
  * "Copiar texto para divulgar": diálogo com formato, dias e o texto em três partes editáveis
  * (título, horários e rodapé), cada uma com sugestões prontas, e a prévia do que vai ser copiado.
  */
-export function ShareSheet({ serviceName, days }: { serviceName: string; days: Day[] }) {
+export function ShareSheet({
+  serviceName,
+  days,
+  defaultOpen = false,
+  onClose,
+}: {
+  serviceName: string;
+  days: Day[];
+  /** Já abre o diálogo e esconde o botão (usado pela lista personalizada). */
+  defaultOpen?: boolean;
+  onClose?: () => void;
+}) {
   const ref = useRef<HTMLDialogElement>(null);
-  const [opened, setOpened] = useState(false);
+  const [opened, setOpened] = useState(defaultOpen);
   const [busy, setBusy] = useState(false);
   const [format, setFormat] = useState<ShareFormat>("padrao");
   const [off, setOff] = useState<Set<string>>(new Set());
@@ -111,6 +122,10 @@ export function ShareSheet({ serviceName, days }: { serviceName: string; days: D
   const footerText = footer ?? footers[0];
   const text = composeShareText(titleText, bodyText, footerText);
   const close = () => ref.current?.close();
+
+  useEffect(() => {
+    if (defaultOpen && ref.current && !ref.current.open) ref.current.showModal();
+  }, [defaultOpen]);
 
   function pickFormat(f: ShareFormat) {
     setFormat(f);
@@ -135,33 +150,36 @@ export function ShareSheet({ serviceName, days }: { serviceName: string; days: D
 
   return (
     <>
-      <button
-        type="button"
-        aria-haspopup="dialog"
-        onClick={() => {
-          setOpened(true);
-          ref.current?.showModal();
-        }}
-        className="btn-tint flex min-h-13 w-full items-center justify-center gap-2 rounded-full px-5 font-bold"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          className="size-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.1"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
+      {defaultOpen ? null : (
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          onClick={() => {
+            setOpened(true);
+            ref.current?.showModal();
+          }}
+          className="btn-tint flex min-h-13 w-full items-center justify-center gap-2 rounded-full px-5 font-bold"
         >
-          <rect x="8.5" y="8.5" width="11.5" height="11.5" rx="3" />
-          <path d="M15.5 8.5V6.5a2.5 2.5 0 0 0-2.5-2.5H6.5A2.5 2.5 0 0 0 4 6.5V13a2.5 2.5 0 0 0 2.5 2.5h2" />
-        </svg>
-        Copiar texto para divulgar
-      </button>
+          <svg
+            viewBox="0 0 24 24"
+            className="size-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.1"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="8.5" y="8.5" width="11.5" height="11.5" rx="3" />
+            <path d="M15.5 8.5V6.5a2.5 2.5 0 0 0-2.5-2.5H6.5A2.5 2.5 0 0 0 4 6.5V13a2.5 2.5 0 0 0 2.5 2.5h2" />
+          </svg>
+          Copiar texto para divulgar
+        </button>
+      )}
       <dialog
         ref={ref}
         aria-label="Texto para divulgar"
+        onClose={onClose}
         onClick={(e) => {
           if (e.target === e.currentTarget) close();
         }}
