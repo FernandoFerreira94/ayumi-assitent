@@ -14,4 +14,5 @@
 - Tema sempre claro; Lavanda Digital + Quicksand; vidro da biblioteca `webcode-design`.
 - Ação nunca vira página: sheet/diálogo. Toast no topo, banner de atualização embaixo.
 - Mascote novo ou expressão nova: registrar em `mascots.ts`/`moods.ts` e conferir push (`push/webpush`) e splash.
+- Teclado: sheet ou diálogo novo não precisa de nada (o `KeyboardWatcher` + `globals.css` cuidam); novo diálogo central deve usar `.notif-dialog`/`.notif-panel`. A barra de abas some com o teclado aberto.
 - Testes: `tests/e2e/splash.spec.ts`, `shell.spec.ts`, axe nos e2e; unit `mascots`, `season`, `feedback`.

@@ -40,7 +40,7 @@ Este arquivo **roteia**. O detalhe de cada módulo fica em `docs/modulos/`.
 - **Só mobile/iPhone**, o mais perto de app iOS nativo. Tema sempre claro, marca Lavanda Digital + Quicksand, vidro (glass).
 - **Nunca página/navegação para ação**: tudo em sheet/diálogo por cima da tela (vaul). Seletores de cliente/serviço = `components/ui/LetterPicker.tsx`. Navegação sem reload; tela abre no topo.
 - Ícones só de `components/ui/Icon.tsx`. Toasts via `components/feedback/toast.tsx` (`notify`, Sonner no topo; mascote por tipo em `components/brand/moods.ts`). Animação Órbita só no agendar (`BookingOverlay`).
-- Teclado no iPhone: `useKeyboardInset` + `repositionInputs={false}` nos sheets.
+- Teclado no iPhone: centralizado no `components/system/KeyboardWatcher.tsx` + bloco "Teclado do iPhone" do `globals.css` (sheets vaul e `.notif-dialog` sobem juntos com o teclado, com transição; campo focado rola para a vista; campos nunca < 16px). Nos sheets só `repositionInputs={false}`; não colocar estilo de teclado no componente. Tela cheia que não deve subir: classe `booking-ov`.
 - Menu lateral / avatar no header: não mexer sem pedido.
 - Erros para a usuária só pelo catálogo `src/lib/errors.ts` (pt-BR). Server action devolve `ok()/fail()`.
 - Dados sempre por estúdio: `requireTenant()` + `withTenant(tenantId, tx => ...)` (RLS com `app.tenant_id`). Nunca `getDb()` direto em dado de estúdio, exceto rotinas que iteram estúdios (worker) ou leitura de `tenants`/`memberships` pelo dono.

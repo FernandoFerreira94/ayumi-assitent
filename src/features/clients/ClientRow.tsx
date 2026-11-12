@@ -6,7 +6,6 @@ import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import { openNewAppointment } from "@/features/appointments/QuickBook";
 import { ChatGlyph, ChatSheet } from "@/features/messaging/ChatSheet";
-import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import { messageFor, type ActionResult } from "@/lib/errors";
 import { maskPhone } from "@/lib/phone";
 import { deleteClient, loadClientCard, updateClient, type ClientCard } from "./actions";
@@ -234,7 +233,6 @@ function EditSheet({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  const keyboard = useKeyboardInset(open);
   const [phone, setPhone] = useState(client.phone);
   const [state, action] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
     const res = await updateClient(client.id, prev, fd);
@@ -254,7 +252,6 @@ function EditSheet({
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
         <Drawer.Content
           className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none"
-          style={keyboard}
         >
           <Drawer.Title className="pb-1 text-xl font-bold">Editar cliente</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">

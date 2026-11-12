@@ -7,7 +7,7 @@
 - Estúdio: `lib/tenant.ts` (`requireTenant` via `memberships`), `db/client.ts` (`withTenant`: `set_config('app.tenant_id')` + `set local role app_user`).
 - Banco: `db/schema.ts` (Drizzle), `db/migrations/*.sql` (aplicadas por `scripts/migrate.mjs` em ordem, tabela `_migrations`).
 - Worker: `src/worker/index.ts` (pg-boss; filas de lembretes e de avisos a cada 5 min).
-- Base: `lib/errors.ts` (catálogo pt-BR), `lib/dates.ts` (UTC-3 fixo), `lib/money.ts`, `lib/phone.ts`, `lib/time-grid.ts`, `lib/log.ts` (JSON, sem dado pessoal), `lib/useKeyboardInset.ts`, `lib/groupByLetter.ts`, `lib/backup.ts` + `scripts/backup.ts`, `lib/startup-images.ts`, `lib/update-check.ts`.
+- Base: `lib/errors.ts` (catálogo pt-BR), `lib/dates.ts` (UTC-3 fixo), `lib/money.ts`, `lib/phone.ts`, `lib/time-grid.ts`, `lib/log.ts` (JSON, sem dado pessoal), `components/system/KeyboardWatcher.tsx` (teclado do iPhone para o app todo: vars `--kb`/`--vvh`/`--vv-top` + `data-kb`, usadas no `globals.css`), `lib/groupByLetter.ts`, `lib/backup.ts` + `scripts/backup.ts`, `lib/startup-images.ts`, `lib/update-check.ts`.
 - Páginas públicas (sem login, exigidas pelo Google OAuth): `/privacidade` e `/termos` (`features/legal/LegalPage.tsx`), liberadas em `PUBLIC_PATHS` do `proxy.ts`, sem splash; links no rodapé do login. Texto descreve escopos Google, Evolution, Anthropic, Open-Meteo, Sentry, Railway: mexeu em integração/dado, atualize o texto.
 - API: `api/health` (healthcheck Railway), `api/version`, `api/whatsapp/webhook`.
 

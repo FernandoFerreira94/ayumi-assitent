@@ -2,7 +2,6 @@
 
 import { useRef, useState, useTransition } from "react";
 import { Drawer } from "vaul";
-import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import { notify } from "@/components/feedback/toast";
 import type { ActionResult } from "@/lib/errors";
 import { maskPhone } from "@/lib/phone";
@@ -16,7 +15,6 @@ const btn =
 
 export function ImportSheet() {
   const [open, setOpen] = useState(false);
-  const keyboard = useKeyboardInset(open);
   const [list, setList] = useState<Preview | null>(null);
   const [ignored, setIgnored] = useState(0);
   const [source, setSource] = useState<"google" | "file">("file");
@@ -97,7 +95,6 @@ export function ImportSheet() {
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
         <Drawer.Content
           className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[85dvh] max-w-[520px] flex-col rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none"
-          style={keyboard}
         >
           <Drawer.Title className="pb-1 text-xl font-bold">Importar clientes</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">

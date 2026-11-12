@@ -6,7 +6,6 @@ import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import { messageFor, type ActionResult } from "@/lib/errors";
 import { maskMoney } from "@/lib/money";
-import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import { createExpense } from "./actions";
 import { EXPENSE_CATEGORIES } from "./expenses";
 
@@ -16,7 +15,6 @@ const input = "min-h-13 w-full rounded-2xl border px-4 text-base font-semibold";
 export function NewExpenseSheet({ date }: { date: string }) {
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
-  const keyboard = useKeyboardInset(open);
   const [state, action] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
     const res = await createExpense(prev, fd);
     if (res.ok) {
@@ -37,7 +35,6 @@ export function NewExpenseSheet({ date }: { date: string }) {
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
         <Drawer.Content
           className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none"
-          style={keyboard}
         >
           <Drawer.Title className="pb-1 text-xl font-bold">Lançar gasto</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">

@@ -6,6 +6,7 @@ import { UpdateBanner } from "@/components/nav/UpdateBanner";
 import { AppToaster } from "@/components/feedback/toast";
 import { STARTUP_IMAGES } from "@/lib/startup-images";
 import { ServiceWorkerRegister } from "@/components/nav/ServiceWorkerRegister";
+import { KeyboardWatcher } from "@/components/system/KeyboardWatcher";
 import { SHARE_DESCRIPTION, shareMeta, siteUrl } from "@/lib/share-meta";
 import "./globals.css";
 import "@/components/brand/mascot-themes.css";
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <UpdateBanner />
         <AppToaster />
         <ServiceWorkerRegister />
+        <KeyboardWatcher />
       </body>
     </html>
   );

@@ -70,7 +70,7 @@ export function EditAppointmentSheet({
   }
 
   return (
-    <Root open={open} onOpenChange={onOpenChange}>
+    <Root open={open} onOpenChange={onOpenChange} repositionInputs={false}>
       <Drawer.Trigger className={triggerClassName}>
         <Icon name="reschedule" size={18} />
         Remarcar

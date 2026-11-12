@@ -2,7 +2,6 @@
 
 import { useActionState, useState } from "react";
 import { Drawer } from "vaul";
-import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import { messageFor, type ActionResult } from "@/lib/errors";
@@ -15,7 +14,6 @@ const TIMES = timeOptions();
 
 export function NewBlockSheet({ date }: { date: string }) {
   const [open, setOpen] = useState(false);
-  const keyboard = useKeyboardInset(open);
   const [state, action] = useActionState(async (prev: ActionResult<{ id: string }> | null, fd: FormData) => {
     const res = await createBlock(prev, fd);
     if (res.ok) {
@@ -47,7 +45,6 @@ export function NewBlockSheet({ date }: { date: string }) {
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
         <Drawer.Content
           className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none"
-          style={keyboard}
         >
           <Drawer.Title className="pb-1 text-xl font-bold">Bloquear horário</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">

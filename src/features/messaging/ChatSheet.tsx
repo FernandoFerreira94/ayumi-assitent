@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import { Drawer } from "vaul";
 import { messageFor, type ErrorCode } from "@/lib/errors";
 import { formatTime, todayStr } from "@/lib/dates";
-import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import { loadConversation, sendClientMessage } from "./actions";
 import { MAX_MESSAGE } from "./send";
 import type { ConversationMessage } from "./store";
@@ -106,9 +105,6 @@ export function ChatSheet({
   const end = useRef<HTMLDivElement>(null);
   const lastCount = useRef(0);
   const Root = nested ? Drawer.NestedRoot : Drawer.Root;
-  // No iPhone o teclado cobre o fim da tela: a folha sobe e encolhe para o campo ficar logo acima dele
-  const keyboard = useKeyboardInset(open);
-  const typing = Number(keyboard.bottom ?? 0) > 0;
 
   async function refresh() {
     const res = await loadConversation(clientId).catch(() => null);
@@ -139,9 +135,23 @@ export function ChatSheet({
   }, [total]);
 
   // Teclado abriu ou fechou: a última mensagem continua à vista logo acima do campo
+  // (a folha sobe com o teclado pelo KeyboardWatcher + globals.css; aqui só espera a transição terminar)
   useEffect(() => {
-    if (open) end.current?.scrollIntoView({ block: "end" });
-  }, [open, keyboard.bottom]);
+    if (!open) return;
+    end.current?.scrollIntoView({ block: "end" });
+    const vv = window.visualViewport;
+    if (!vv) return;
+    let t = 0;
+    const onResize = () => {
+      window.clearTimeout(t);
+      t = window.setTimeout(() => end.current?.scrollIntoView({ block: "end", behavior: "smooth" }), 340);
+    };
+    vv.addEventListener("resize", onResize);
+    return () => {
+      window.clearTimeout(t);
+      vv.removeEventListener("resize", onResize);
+    };
+  }, [open]);
 
   async function deliver(id: number, body: string) {
     setLocals((ls) => ls.map((l) => (l.id === id ? { ...l, state: "sending" } : l)));
@@ -175,7 +185,6 @@ export function ChatSheet({
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
         <Drawer.Content
           className="fixed inset-x-0 bottom-0 z-50 mx-auto flex h-[85dvh] max-w-[520px] flex-col overflow-hidden rounded-t-3xl bg-chat-bg outline-none"
-          style={{ bottom: keyboard.bottom, maxHeight: keyboard.maxHeight }}
         >
           <header className="sheet flex items-center gap-3 px-4 pb-3 pt-2">
             <span
@@ -270,7 +279,7 @@ export function ChatSheet({
 
           <form
             onSubmit={send}
-            className={`flex items-end gap-2 px-2 pt-2 ${typing ? "pb-2" : "pb-[max(env(safe-area-inset-bottom),10px)]"}`}
+            className="flex items-end gap-2 px-2 pt-2 pb-[max(env(safe-area-inset-bottom),10px)] [html[data-kb]_&]:pb-2"
           >
             <textarea
               value={text}

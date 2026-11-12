@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Drawer } from "vaul";
-import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import { LetterPicker, type PickerOption } from "@/components/ui/LetterPicker";
 import { LoadingRegion, Skeleton } from "@/components/ui/Skeleton";
 import { formatDayTitle } from "@/lib/dates";
@@ -80,7 +79,6 @@ export function NewAppointmentSheet({
     setOpen(true);
     setBooking(null);
   }
-  const keyboard = useKeyboardInset(open);
   const loading = clients === null || services === null;
   const missing = !loading && (clients.length === 0 || services.length === 0);
   const working = booking !== null && booking.result === null;
@@ -210,7 +208,6 @@ export function NewAppointmentSheet({
               ? "booking-ov fixed inset-0 z-50 overflow-y-auto outline-none"
               : "sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none"
           }
-          style={booking ? undefined : keyboard}
         >
           <div hidden={booking !== null}>
             <Drawer.Title className="pb-1 text-xl font-bold">Novo agendamento</Drawer.Title>
