@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { shareMeta } from "@/lib/share-meta";
 import Link from "next/link";
 import { LegalPage, LegalSection, SUPPORT_EMAIL } from "@/features/legal/LegalPage";
 
 export const metadata: Metadata = {
   title: "Termos de uso",
   description: "Regras de uso do bubbly, app de agenda para salões e profissionais de beleza.",
+  ...shareMeta("Termos de uso · bubbly", "Regras de uso do bubbly, app de agenda para salões e profissionais de beleza.", "/termos"),
 };
 
 export default function TermosPage() {

@@ -1,9 +1,11 @@
+import type { Metadata } from "next";
+import { SHARE_DESCRIPTION, shareMeta } from "@/lib/share-meta";
 import Link from "next/link";
 import { Suspense } from "react";
 import { MascotSync } from "@/components/brand/MascotSync";
 import { LoginForm } from "./LoginForm";
 
-export const metadata = { title: "Entrar" };
+export const metadata: Metadata = { title: "Entrar", ...shareMeta("bubbly · agenda do seu estúdio", SHARE_DESCRIPTION, "/login") };
 
 export default function LoginPage() {
   return (

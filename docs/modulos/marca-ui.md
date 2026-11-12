@@ -8,6 +8,7 @@
 - Nav: `components/nav/TabBar.tsx` (aba atual mostra nome; Financeiro = "Finanças"), `AppMenu`/`HeaderMenu` (avatar: não mexer sem pedido), `NotificationBell`, `BackButton`, `UpdateBanner`, `nav-icons.tsx`, `ServiceWorkerRegister`.
 - UI: `components/ui/Icon.tsx` (único conjunto de ícones), `LetterPicker.tsx`, `MultiSelect.tsx`, `Switch.tsx` (estilo iPhone), `PageShell.tsx`, `Skeleton.tsx`.
 - Estilos: `src/app/globals.css` (tokens, `--svc-*`, splash, glass).
+- Prévia de link (WhatsApp/Instagram): `lib/share-meta.ts` (`shareMeta`, `siteUrl` → `metadataBase` = `BETTER_AUTH_URL`) + `public/og.png` (1200x630). Usado no `app/layout.tsx`, `/login`, `/privacidade`, `/termos`; `og.png` é público no `proxy.ts`. Trocou a imagem: subir o `?v=` (WhatsApp guarda cache).
 
 ## Cuidados
 - Tema sempre claro; Lavanda Digital + Quicksand; vidro da biblioteca `webcode-design`.
