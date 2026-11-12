@@ -74,9 +74,9 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     path: "/ajustes",
-    target: "#avisos-celular, #localizacao, #avisos-do-dia",
-    title: "3. Avisos e previsão do tempo",
-    text: "Toque em Ativar e deixe a localização ligada: eu mando bom dia com as clientes do dia, a previsão do tempo e os feriados da sua cidade. O botão de teste manda um aviso na hora.",
+    target: "#avisos-celular, #localizacao",
+    title: "3. Notificação e previsão do tempo",
+    text: "Ligue a Notificação e deixe a localização ligada: eu mando bom dia com as clientes do dia, a previsão do tempo e os feriados da sua cidade. O botão de teste manda um aviso na hora.",
     advance: "next",
   },
   {

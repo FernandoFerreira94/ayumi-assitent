@@ -10,6 +10,7 @@ import { QuickBook } from "@/features/appointments/QuickBook";
 import { ConversationHost } from "@/features/messaging/ConversationHost";
 import { NoticeHost } from "@/features/owner-notices/NoticeHost";
 import { TourGate } from "@/features/tour/TourGate";
+import { WhatsNewGate } from "@/features/update/WhatsNewGate";
 import { LoadingRegion, Skeleton } from "@/components/ui/Skeleton";
 import { requireSession } from "@/lib/session";
 
@@ -58,6 +59,10 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
       {/* ?aviso=<id>: roteiro da semana e mensagem pronta das datas comemorativas */}
       <Suspense fallback={null}>
         <NoticeHost />
+      </Suspense>
+      {/* Depois de atualizar: diálogo com o que mudou, uma vez por versão */}
+      <Suspense fallback={null}>
+        <WhatsNewGate />
       </Suspense>
     </>
   );

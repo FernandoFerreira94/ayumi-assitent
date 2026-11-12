@@ -17,13 +17,14 @@ const template = z.string().trim().max(TEMPLATE_MAX);
  */
 export async function saveMessages(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   const { tenantId } = await requireTenant();
+  const firstOn = fd.get("firstOn") === "1";
   const first = hours.safeParse(fd.get("hours"));
   if (!first.success) return fail("VALIDATION", "hours");
   let secondHours: number | null = null;
   if (fd.get("second") === "1") {
     const second = hours.safeParse(fd.get("secondHours"));
-    // O 2º aviso é o reforço: tem de sair depois do 1º, ou seja, com menos horas de antecedência
-    if (!second.success || second.data >= first.data) return fail("VALIDATION", "secondHours");
+    // Com o 1º ligado, o 2º é o reforço: tem de sair depois dele, ou seja, com menos horas de antecedência
+    if (!second.success || (firstOn && second.data >= first.data)) return fail("VALIDATION", "secondHours");
     secondHours = second.data;
   }
   const texts: Record<"bookingTemplate" | "reminderTemplate" | "secondTemplate", string | null> = {
@@ -39,6 +40,7 @@ export async function saveMessages(_prev: ActionResult | null, fd: FormData): Pr
   try {
     await withTenant(tenantId, (tx) =>
       saveMessageSettings(tx, tenantId, {
+        first: firstOn,
         hours: first.data,
         secondHours,
         fullName: fd.get("fullName") === "1",

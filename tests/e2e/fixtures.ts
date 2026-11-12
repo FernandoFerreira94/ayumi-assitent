@@ -2,6 +2,7 @@
 import { createHmac, randomUUID } from "node:crypto";
 import { test as base, expect } from "@playwright/test";
 import postgres from "postgres";
+import { CURRENT_VERSION, SEEN_VERSION_KEY } from "../../src/features/update/changelog";
 
 // Cria usuário + sessão direto no banco e injeta o cookie assinado do Better Auth.
 export const test = base.extend<{ tourDone: boolean }>({
@@ -25,6 +26,15 @@ export const test = base.extend<{ tourDone: boolean }>({
         path: "/",
       },
     ]);
+    // O diálogo "App atualizado" abriria por cima de todos os testes: o aparelho de teste já viu a versão
+    await context.addInitScript(
+      ([k, v]) => {
+        try {
+          localStorage.setItem(k, v);
+        } catch {}
+      },
+      [SEEN_VERSION_KEY, CURRENT_VERSION] as const,
+    );
     await use(context);
   },
 });

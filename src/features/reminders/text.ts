@@ -11,9 +11,12 @@ export const DEFAULT_BOOKING =
 /** 1º aviso: pede a confirmação do horário. */
 export const DEFAULT_REMINDER =
   "Oi, {nome}! Passando para lembrar do seu horário de {servico} {dia} às {hora}. Te espero com carinho! 💜";
-/** 2º aviso: só para quem não respondeu ao 1º. */
+/** 2º aviso para quem ainda não confirmou (vai com as opções 1/2/3). */
 export const DEFAULT_SECOND =
   "Oi, {nome}! Passando para lembrar do seu horário de {servico} {dia} às {hora} 😊 Pode me confirmar?";
+/** 2º aviso para quem já confirmou: só lembra, sem pedir resposta. */
+export const DEFAULT_SECOND_CONFIRMED =
+  "Oi, {nome}! Passando para lembrar do seu horário de {servico} {dia} às {hora} 😊 Te espero com carinho! 💜";
 
 export const TEMPLATE_MAX = 600;
 export const REMINDER_VARS = ["nome", "servico", "dia", "hora", "valor", "salao"] as const;
@@ -80,8 +83,19 @@ export function reminderText(a: MessageData, now: Date, salon: SalonMessageOpts 
   return [body, ...OPTIONS].join("\n");
 }
 
-/** 2º aviso, para quem não respondeu ao 1º. Também termina com as opções 1/2/3. Nunca cancela sozinho. */
-export function secondReminderText(a: MessageData, now: Date, salon: SalonMessageOpts = {}): string {
-  const body = fill(salon.template?.trim() || DEFAULT_SECOND, a, salon, dayWord(a.startsAt, now));
-  return [body, ...OPTIONS].join("\n");
+/**
+ * 2º aviso: lembrete perto do horário. Quem ainda não confirmou recebe as opções 1/2/3 no fim; quem já
+ * confirmou recebe só o lembrete (com o padrão do app, sem o "Pode me confirmar?"). Nunca cancela sozinho.
+ */
+export function secondReminderText(
+  a: MessageData,
+  now: Date,
+  salon: SalonMessageOpts = {},
+  confirmed = false,
+): string {
+  const custom = salon.template?.trim();
+  const usesDefault = !custom || custom === DEFAULT_SECOND;
+  const template = confirmed && usesDefault ? DEFAULT_SECOND_CONFIRMED : custom || DEFAULT_SECOND;
+  const body = fill(template, a, salon, dayWord(a.startsAt, now));
+  return confirmed ? body : [body, ...OPTIONS].join("\n");
 }
