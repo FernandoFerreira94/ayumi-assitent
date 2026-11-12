@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { notify } from "@/components/feedback/toast";
 import { Icon, TileTitle, type IconName, type Tint } from "@/components/ui/Icon";
-import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import { buildShareBody, composeShareText, markKey, shareFooters, shareTitles, type ShareFormat } from "./share-text";
 
 type Day = { date: string; label: string; slots: string[] };
@@ -110,7 +109,6 @@ export function ShareSheet({
   const [title, setTitle] = useState<string | null>(null);
   const [body, setBody] = useState<string | null>(null);
   const [footer, setFooter] = useState<string | null>(null);
-  const keyboard = useKeyboardInset(opened);
 
   const chosen = days.filter((d) => !off.has(d.date));
   const marks = { tag: tag.trim() || DEFAULT_TAG, keys: marked };
@@ -188,7 +186,6 @@ export function ShareSheet({
         <div className="status-fill" aria-hidden="true" />
         {opened ? (
           <div
-            style={keyboard}
             className="notif-panel grid max-h-[min(88dvh,760px)] w-[min(94vw,420px)] grid-rows-[auto_minmax(0,1fr)_auto] gap-3 rounded-[28px] p-5"
           >
             <div className="flex items-start justify-between gap-3">

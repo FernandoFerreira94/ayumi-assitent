@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { notify } from "@/components/feedback/toast";
 import { Icon } from "@/components/ui/Icon";
 import { messageFor, type ErrorCode } from "@/lib/errors";
-import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import { computeCustomSlots, deleteCustomList, saveCustomList, type CustomResult } from "./custom-actions";
 import {
   DEFAULT_CONFIG,
@@ -80,7 +79,6 @@ export function CustomSheet({
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [opened, setOpened] = useState(false);
-  const keyboard = useKeyboardInset(opened);
   const [config, setConfig] = useState<CustomConfig>({ ...DEFAULT_CONFIG, serviceId: services[0]?.id ?? null });
   const [viewOffset, setViewOffset] = useState(0); // mês exibido no seletor de dias
   const [savedId, setSavedId] = useState<string | null>(null);
@@ -228,7 +226,6 @@ export function CustomSheet({
         <div className="status-fill" aria-hidden="true" />
         {opened ? (
           <div
-            style={keyboard}
             className="notif-panel grid max-h-[min(90dvh,820px)] w-[min(94vw,420px)] grid-rows-[auto_minmax(0,1fr)_auto] gap-3 rounded-[28px] p-5"
           >
             <div className="flex items-start justify-between gap-3">

@@ -2218,3 +2218,81 @@ html.cal-zooming body {
     background: var(--soft);
   }
 }
+
+/* ───────────── Teclado do iPhone (app todo) ─────────────
+   O KeyboardWatcher publica --kb (parte coberta), --vvh (altura visível) e --vv-top no <html>,
+   com data-kb (aberto) e data-kb-anim (aberto ou fechando). Sheets e diálogos sobem e descem
+   junto com o teclado, na curva das sheets do iOS. Nenhum componente precisa de código próprio. */
+:root {
+  --kb: 0px;
+  --vvh: 100dvh;
+  --vv-top: 0px;
+  --kb-dur: 0.32s;
+  --kb-ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --kb-dur: 0s;
+  }
+}
+
+/* Sheets (vaul): sobem pelo translate (o vaul usa transform, os dois somam) e encolhem até a área visível.
+   O vaul põe transition inline; aqui vale a nossa, mantendo a dele para abrir/fechar a folha.
+   .booking-ov é a tela cheia da Órbita: fica fora. */
+html[data-kb-anim] [data-vaul-drawer]:not(.booking-ov) {
+  translate: 0 calc(-1 * var(--kb));
+  max-height: calc(var(--vvh) - env(safe-area-inset-top, 0px) - 28px) !important;
+  transition:
+    transform 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+    translate var(--kb-dur) var(--kb-ease),
+    max-height var(--kb-dur) var(--kb-ease) !important;
+}
+html[data-kb-anim] [data-vaul-drawer].sheet:not(.booking-ov) {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+html[data-kb-anim] [data-vaul-drawer]::after {
+  display: none;
+}
+
+/* Diálogos centrais (.notif-dialog: divulgar vagas, lista personalizada, avisos): a área do diálogo vira a
+   parte visível da tela, então o painel fica centrado acima do teclado e nunca cortado. */
+html[data-kb-anim] .notif-dialog[open] {
+  padding: var(--vv-top) 0 var(--kb);
+  transition:
+    opacity 0.28s ease,
+    overlay 0.28s allow-discrete,
+    display 0.28s allow-discrete,
+    padding var(--kb-dur) var(--kb-ease);
+}
+html[data-kb-anim] .notif-dialog[open] .notif-panel {
+  max-height: calc(var(--vvh) - env(safe-area-inset-top, 0px) - 20px) !important;
+  transition:
+    transform 0.42s var(--spring),
+    max-height var(--kb-dur) var(--kb-ease);
+}
+
+/* Barra de abas: com teclado aberto ela flutuaria no meio da tela ao rolar; sai de cena suave */
+.tabbar {
+  transition:
+    opacity var(--kb-dur) var(--kb-ease),
+    translate var(--kb-dur) var(--kb-ease);
+}
+html[data-kb] .tabbar {
+  opacity: 0;
+  translate: 0 24px;
+  pointer-events: none;
+}
+
+/* Campos de texto: sem rolagem do vidro por trás nem zoom do iOS (nunca menos de 16px).
+   Em base: um text-lg/xl explícito ainda vence; o que herda tamanho pequeno do pai sobe para 16px. */
+@layer base {
+  input:not([type="checkbox"], [type="radio"], [type="file"], [type="hidden"], [type="range"]),
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+}
+textarea {
+  scroll-margin-block: 16px;
+}

@@ -6,7 +6,6 @@ import { Drawer } from "vaul";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { notify } from "@/components/feedback/toast";
 import { formatBRL } from "@/lib/dates";
-import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import { duplicateService, reorderServices, setServiceActive } from "./actions";
 import { averagePrice, filterServices, formatDuration, moveService, type CatalogService } from "./catalog";
 import { ServiceForm } from "./ServiceForm";
@@ -30,7 +29,6 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
   const [sheet, setSheet] = useState<Sheet | null>(startWithNew ? { kind: "service" } : null);
   const [open, setOpen] = useState(startWithNew);
   const [sheetKey, setSheetKey] = useState(0);
-  const keyboard = useKeyboardInset(open);
 
   const openSheet = (s: Sheet) => {
     setSheet(s);
@@ -324,7 +322,6 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
           <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
           <Drawer.Content
             className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none"
-            style={keyboard}
           >
             <Drawer.Handle className="mb-3" />
             <Drawer.Title className="pb-1 text-xl font-bold">{sheetTitle}</Drawer.Title>
