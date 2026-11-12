@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { shareMeta } from "@/lib/share-meta";
 import { LegalPage, LegalSection, SUPPORT_EMAIL } from "@/features/legal/LegalPage";
 
 export const metadata: Metadata = {
   title: "Política de privacidade",
   description: "Como o bubbly coleta, usa, guarda e protege os seus dados e os das suas clientes.",
+  ...shareMeta("Política de privacidade · bubbly", "Como o bubbly coleta, usa, guarda e protege os seus dados e os das suas clientes.", "/privacidade"),
 };
 
 export default function PrivacidadePage() {

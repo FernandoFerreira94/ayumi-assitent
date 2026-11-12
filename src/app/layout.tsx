@@ -6,6 +6,7 @@ import { UpdateBanner } from "@/components/nav/UpdateBanner";
 import { AppToaster } from "@/components/feedback/toast";
 import { STARTUP_IMAGES } from "@/lib/startup-images";
 import { ServiceWorkerRegister } from "@/components/nav/ServiceWorkerRegister";
+import { SHARE_DESCRIPTION, shareMeta, siteUrl } from "@/lib/share-meta";
 import "./globals.css";
 import "@/components/brand/mascot-themes.css";
 
@@ -14,6 +15,7 @@ const quicksand = Quicksand({ variable: "--font-quicksand", subsets: ["latin"], 
 const brand = Nunito({ variable: "--font-brand-face", subsets: ["latin"], weight: "900" });
 
 export const metadata: Metadata = {
+  metadataBase: siteUrl(),
   title: { default: "bubbly", template: "%s · bubbly" },
   description: "Agenda, clientes e lembretes do seu estúdio.",
   appleWebApp: {
@@ -26,6 +28,8 @@ export const metadata: Metadata = {
     startupImage: STARTUP_IMAGES.map(({ url, media }) => ({ url, media })),
   },
   formatDetection: { telephone: false },
+  // Prévia ao mandar o link no WhatsApp/Instagram
+  ...shareMeta("bubbly · agenda do seu estúdio", SHARE_DESCRIPTION),
   // O Next só emite mobile-web-app-capable; o iOS só aplica o estilo da barra de status com a versão da Apple
   other: { "apple-mobile-web-app-capable": "yes" },
 };
