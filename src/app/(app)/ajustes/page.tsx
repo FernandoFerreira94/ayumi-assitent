@@ -11,7 +11,6 @@ import { getMessageSettings } from "@/features/reminders/core";
 import { MessagesForm } from "@/features/reminders/MessagesForm";
 import { AiRepliesForm } from "@/features/salon/AiRepliesForm";
 import { PushToggle } from "@/features/push/PushToggle";
-import { DailyNoticesCard } from "@/features/owner-notices/DailyNoticesCard";
 import { LocationToggle } from "@/features/owner-notices/LocationToggle";
 import { WhatsAppCard } from "@/features/whatsapp/WhatsAppCard";
 import { InstallGuide } from "@/features/install/InstallGuide";
@@ -64,8 +63,11 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
             errorCode={typeof googleError === "string" ? googleError.slice(0, 60) : undefined}
           />
         </section>
-        <section id="avisos-celular" aria-label="Avisos" className="scroll-mt-6">
-          <PushToggle publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
+        <section id="avisos-celular" aria-label="Notificação" className="scroll-mt-6">
+          <PushToggle
+            publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null}
+            goodMorning={salon?.goodMorning ?? true}
+          />
         </section>
         <section id="localizacao" aria-label="Localização" className="scroll-mt-6">
           <LocationToggle
@@ -73,11 +75,6 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
             city={salon?.city ?? null}
             state={salon?.state ?? null}
           />
-        </section>
-      </Group>
-      <Group title="Avisos do dia">
-        <section id="avisos-do-dia" aria-label="Avisos do dia" className="scroll-mt-6">
-          <DailyNoticesCard goodMorning={salon?.goodMorning ?? true} />
         </section>
       </Group>
       <Group title="Mensagens para a cliente">

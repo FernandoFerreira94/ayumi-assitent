@@ -3,8 +3,9 @@
 import { useEffect, useState, useTransition } from "react";
 import { notify } from "@/components/feedback/toast";
 import { subscribePush, unsubscribePush } from "./actions";
-import { TileTitle } from "@/components/ui/Icon";
+import { Icon, TileTitle } from "@/components/ui/Icon";
 import { Switch } from "@/components/ui/Switch";
+import { sendTestNotice, setGoodMorning } from "@/features/owner-notices/actions";
 
 type State = "checking" | "unsupported" | "denied" | "off" | "on";
 
@@ -16,7 +17,8 @@ function keyToBytes(b64: string): Uint8Array<ArrayBuffer> {
   return out;
 }
 
-export function PushToggle({ publicKey }: { publicKey: string | null }) {
+/** Ajustes > Notificação: liga os avisos neste aparelho, o bom dia das 7h e o botão de teste. */
+export function PushToggle({ publicKey, goodMorning }: { publicKey: string | null; goodMorning: boolean }) {
   const [state, setState] = useState<State>("checking");
   const [pending, start] = useTransition();
 
@@ -92,23 +94,74 @@ export function PushToggle({ publicKey }: { publicKey: string | null }) {
     on: "Ativo neste aparelho.",
   };
 
+  const [morning, setMorning] = useState(goodMorning);
+  const [savingMorning, startMorning] = useTransition();
+  const [testing, startTest] = useTransition();
+
+  function toggleMorning(next: boolean) {
+    startMorning(async () => {
+      const res = await setGoodMorning(next).catch(() => null);
+      if (res?.ok) {
+        setMorning(next);
+        notify.success(next ? "Bom dia das 7h ligado" : "Bom dia das 7h desligado");
+      } else notify.error(res ? res.code : "NETWORK", () => toggleMorning(next));
+    });
+  }
+
+  function test() {
+    startTest(async () => {
+      const res = await sendTestNotice().catch(() => null);
+      if (res?.ok)
+        notify.success(
+          "Aviso de teste enviado",
+          "Bloqueie a tela do iPhone: ele chega em alguns segundos, como os avisos de verdade.",
+        );
+      else notify.error(res ? res.code : "NETWORK", test);
+    });
+  }
+
   return (
-    <div className="flex items-center justify-between gap-3 glass rounded-[1.75rem] px-5 py-4">
-      <div>
-        <TileTitle icon="phone" tint="pink">
-          Avisos no celular
-        </TileTitle>
-        <p className="text-sm font-semibold text-muted">{hint[state]}</p>
+    <div className="glass grid gap-4 rounded-[1.75rem] px-5 py-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <TileTitle as="h2" icon="phone" tint="pink">
+            Notificação
+          </TileTitle>
+          <p className="text-sm font-semibold text-muted">{hint[state]}</p>
+        </div>
+        {state !== "checking" && (
+          <Switch
+            checked={state === "on"}
+            onChange={(on) => (on ? enable() : disable())}
+            busy={pending}
+            disabled={state === "unsupported" || state === "denied"}
+            label="Notificação neste aparelho"
+          />
+        )}
       </div>
-      {state !== "checking" && (
-        <Switch
-          checked={state === "on"}
-          onChange={(on) => (on ? enable() : disable())}
-          busy={pending}
-          disabled={state === "unsupported" || state === "denied"}
-          label="Avisos no celular"
-        />
-      )}
+      <p className="text-sm font-semibold text-muted">
+        Resumo das clientes do dia com a previsão do tempo, folga, fim do expediente, roteiro da semana no domingo à
+        noite e datas comemorativas. Chegam com o app fechado, na tela bloqueada.
+      </p>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-bold">Bom dia às 7h</p>
+          <p className="text-sm font-semibold text-muted">Uma mensagem motivacional todo dia, sem repetir.</p>
+        </div>
+        <Switch checked={morning} onChange={toggleMorning} busy={savingMorning} label="Bom dia às 7h" />
+      </div>
+      {state === "on" ? (
+        <button
+          type="button"
+          onClick={test}
+          disabled={testing}
+          aria-busy={testing}
+          className="btn-tint flex min-h-12 items-center justify-center gap-2 rounded-full px-4 font-bold disabled:opacity-60"
+        >
+          {testing ? <span className="spin" aria-hidden="true" /> : <Icon name="bell" />}
+          {testing ? "Enviando…" : "Enviar aviso de teste"}
+        </button>
+      ) : null}
     </div>
   );
 }

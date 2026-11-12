@@ -44,11 +44,13 @@ const SAMPLE: MessageData = {
 
 /**
  * Tudo o que o Bubbly manda pelo WhatsApp num cartão só, porque uma mensagem puxa a outra: a de agendamento
- * confirmado, o 1º aviso (pede a confirmação) e o 2º aviso (só para quem não respondeu). O valor entra pela
+ * confirmado, o 1º aviso (pede a confirmação, pode ser desligado) e o 2º aviso (lembrete; opções 1/2/3 só para quem
+ * não confirmou). O valor entra pela
  * chave {valor}: estando no texto, aparece; fora dele, não.
  */
 export function MessagesForm({ settings, salonName }: { settings: MessageSettings; salonName: string }) {
   const [fullName, setFullName] = useState(settings.fullName);
+  const [firstOn, setFirstOn] = useState(settings.first);
   const [hours, setHours] = useState(String(settings.hours));
   const [second, setSecond] = useState(settings.secondHours !== null);
   const [secondHours, setSecondHours] = useState(String(settings.secondHours ?? 3));
@@ -74,6 +76,7 @@ export function MessagesForm({ settings, salonName }: { settings: MessageSetting
       </div>
       <input type="hidden" name="fullName" value={fullName ? "1" : ""} />
       <input type="hidden" name="second" value={second ? "1" : ""} />
+      <input type="hidden" name="firstOn" value={firstOn ? "1" : ""} />
 
       <fieldset className="grid gap-2">
         <legend className="pb-2 font-bold">Como chamar a cliente</legend>
@@ -116,29 +119,43 @@ export function MessagesForm({ settings, salonName }: { settings: MessageSetting
         />
       </Step>
 
-      <Step title="1º aviso" hint="Pede para a cliente confirmar o horário.">
-        <HoursRow
-          id="msg-hours"
-          label="Horas antes do horário"
-          value={hours}
-          onChange={setHours}
-          invalid={err === "hours"}
-          name="hours"
-        />
-        <TemplateField
-          name="reminderTemplate"
-          label="Texto do 1º aviso"
-          initial={settings.reminderTemplate}
-          fallback={DEFAULT_REMINDER}
-          invalid={err === "reminderTemplate"}
-          preview={(template) => reminderText(SAMPLE, sampleNow, { ...salon, template })}
-          note="As opções 1, 2 e 3 vão sempre no fim: é por elas que o app entende a resposta."
-        />
+      <Step
+        title="1º aviso"
+        hint="Pede para a cliente confirmar o horário."
+        aside={<Switch checked={firstOn} onChange={setFirstOn} label="Enviar o 1º aviso" />}
+      >
+        {/* Desligado, horas e texto continuam guardados (e enviados no form) para quando ela ligar de novo */}
+        <div hidden={!firstOn}>
+          <div className="grid gap-3">
+            <HoursRow
+              id="msg-hours"
+              label="Horas antes do horário"
+              value={hours}
+              onChange={setHours}
+              invalid={err === "hours"}
+              name="hours"
+            />
+            <TemplateField
+              name="reminderTemplate"
+              label="Texto do 1º aviso"
+              initial={settings.reminderTemplate}
+              fallback={DEFAULT_REMINDER}
+              invalid={err === "reminderTemplate"}
+              preview={(template) => reminderText(SAMPLE, sampleNow, { ...salon, template })}
+              note="As opções 1, 2 e 3 vão sempre no fim: é por elas que o app entende a resposta."
+            />
+          </div>
+        </div>
+        {!firstOn && !second ? (
+          <p className="text-sm font-semibold text-muted">
+            Com os dois avisos desligados, a cliente recebe só a mensagem do agendamento.
+          </p>
+        ) : null}
       </Step>
 
       <Step
         title="2º aviso"
-        hint="Só para quem não respondeu ao primeiro."
+        hint="Lembrete perto do horário. Quem já confirmou recebe sem as opções 1, 2 e 3."
         aside={<Switch checked={second} onChange={setSecond} label="Enviar um segundo aviso" />}
       >
         {second ? (
@@ -160,6 +177,11 @@ export function MessagesForm({ settings, salonName }: { settings: MessageSetting
             fallback={DEFAULT_SECOND}
             invalid={err === "secondTemplate"}
             preview={(template) => secondReminderText(SAMPLE, sampleNow, { ...salon, template })}
+            previewLabel="Quem ainda não confirmou recebe"
+            extraPreview={{
+              label: "Quem já confirmou recebe",
+              render: (template) => secondReminderText(SAMPLE, sampleNow, { ...salon, template }, true),
+            }}
           />
         </div>
       </Step>
@@ -240,6 +262,8 @@ function TemplateField({
   fallback,
   invalid,
   preview,
+  previewLabel = "Como a cliente recebe",
+  extraPreview,
   note,
 }: {
   name: string;
@@ -248,6 +272,9 @@ function TemplateField({
   fallback: string;
   invalid: boolean;
   preview: (template: string) => string;
+  previewLabel?: string;
+  /** Segunda prévia do mesmo texto (ex.: 2º aviso para quem já confirmou). */
+  extraPreview?: { label: string; render: (template: string) => string };
   note?: string;
 }) {
   const [template, setTemplate] = useState(initial ?? fallback);
@@ -301,13 +328,21 @@ function TemplateField({
         </button>
       </div>
       <div className="grid gap-1">
-        <p className="text-xs font-bold uppercase tracking-wide text-muted">Como a cliente recebe</p>
+        <p className="text-xs font-bold uppercase tracking-wide text-muted">{previewLabel}</p>
         <p
           className="whitespace-pre-wrap rounded-2xl rounded-tr-sm bg-chat-out px-4 py-3 text-sm font-semibold leading-5"
           aria-live="polite"
         >
           {preview(template)}
         </p>
+        {extraPreview ? (
+          <>
+            <p className="pt-1 text-xs font-bold uppercase tracking-wide text-muted">{extraPreview.label}</p>
+            <p className="whitespace-pre-wrap rounded-2xl rounded-tr-sm bg-chat-out px-4 py-3 text-sm font-semibold leading-5">
+              {extraPreview.render(template)}
+            </p>
+          </>
+        ) : null}
         {note ? <p className="text-xs font-semibold text-muted">{note}</p> : null}
       </div>
     </div>

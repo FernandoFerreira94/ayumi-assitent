@@ -53,10 +53,37 @@ d("reforço único de confirmação (Postgres real)", () => {
     expect((await admin`select status from appointments where id = ${a}`)[0].status).toBe("pending_confirmation");
   });
 
-  it("não manda para quem já confirmou, está longe, ou com lembrete recente; nem de madrugada", async () => {
+  it("quem já confirmou recebe só o lembrete, sem as opções 1/2/3", async () => {
     sent.length = 0;
     await admin`truncate appointments cascade`;
     await add("2026-11-10T16:30:00Z", "2026-11-09T18:00:00Z", "confirmed");
+    await runReminders(portFor, at("2026-11-10T15:30:00Z"));
+    expect(sent).toEqual([
+      "+5511987655555|Oi, Bia! Passando para lembrar do seu horário de Gel hoje às 13:30 😊 Te espero com carinho! 💜",
+    ]);
+  });
+
+  it("com o 1º aviso desligado: não manda o 1º e o 2º sai mesmo sem ele", async () => {
+    sent.length = 0;
+    await admin`truncate appointments cascade`;
+    await admin`update tenants set first_reminder = false where id = ${T}`;
+    // Agendado bem antes; sem 1º aviso enviado
+    const [{ id: a }] =
+      await admin`insert into appointments (tenant_id,client_id,service_id,starts_at,ends_at,price_cents,status,created_at)
+      values (${T},${C},${S},'2026-11-10T18:00:00Z','2026-11-10T19:00:00Z',10000,'pending_confirmation','2026-11-08T12:00:00Z') returning id`;
+    // Véspera, 24 h antes: o 1º aviso sairia aqui, mas está desligado
+    await runReminders(portFor, at("2026-11-09T18:00:00Z"));
+    expect(sent).toHaveLength(0);
+    await runReminders(portFor, at("2026-11-10T15:30:00Z"));
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toContain("Responda com o número:");
+    expect((await admin`select reminder_sent_at from appointments where id = ${a}`)[0].reminder_sent_at).toBeNull();
+    await admin`update tenants set first_reminder = true where id = ${T}`;
+  });
+
+  it("não manda para quem está longe ou com lembrete recente; nem de madrugada", async () => {
+    sent.length = 0;
+    await admin`truncate appointments cascade`;
     await add("2026-11-10T22:00:00Z", "2026-11-09T18:00:00Z"); // começa em 6,5 h
     await add("2026-11-10T18:00:00Z", "2026-11-10T14:00:00Z"); // lembrete há 1,5 h
     await runReminders(portFor, at("2026-11-10T15:30:00Z"));

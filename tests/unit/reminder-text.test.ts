@@ -32,6 +32,17 @@ describe("2º aviso e escolhas da dona", () => {
     expect(t.split("\n")[0]).toBe("Oi, Bia! Passando para lembrar do seu horário de Gel amanhã às 14:30 😊 Pode me confirmar?");
     expect(t.endsWith("3 - Reagendar")).toBe(true);
   });
+  it("2º aviso para quem já confirmou: só lembra, sem as opções 1/2/3", async () => {
+    const { secondReminderText, DEFAULT_SECOND } = await import("@/features/reminders/text");
+    const a = { client: "Bia Souza", service: "Gel", startsAt: start };
+    const t = secondReminderText(a, eve, {}, true);
+    expect(t).toBe("Oi, Bia! Passando para lembrar do seu horário de Gel amanhã às 14:30 😊 Te espero com carinho! 💜");
+    expect(t).not.toContain("Responda com o número");
+    // Texto padrão antigo salvo no banco também vira o lembrete sem pergunta
+    expect(secondReminderText(a, eve, { template: DEFAULT_SECOND }, true)).not.toContain("Pode me confirmar");
+    // Texto da dona é respeitado, só sem as opções
+    expect(secondReminderText(a, eve, { template: "Até {hora}, {nome}!" }, true)).toBe("Até 14:30, Bia!");
+  });
   it("2º aviso aceita o texto da dona", async () => {
     const { secondReminderText } = await import("@/features/reminders/text");
     const t = secondReminderText({ client: "Bia", service: "Gel", startsAt: start }, eve, { template: "{nome}, confirma {hora}?" });

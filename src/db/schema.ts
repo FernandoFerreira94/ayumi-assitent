@@ -44,6 +44,8 @@ export const tenants = pgTable("tenants", {
   clientNameFull: boolean("client_name_full").notNull().default(false),
   /** Horas antes do horário em que sai o lembrete (1 a 72) */
   reminderHours: integer("reminder_hours").notNull().default(24),
+  /** 1º aviso do WhatsApp ligado (padrão); desligado, só vale o 2º aviso */
+  firstReminder: boolean("first_reminder").notNull().default(true),
   /** Horas antes do horário do segundo aviso (para quem não respondeu); null = só um aviso */
   secondReminderHours: integer("second_reminder_hours").default(3),
   /** Antigo interruptor de valor. Sem uso: o valor agora é a chave {valor} no texto de agendamento */

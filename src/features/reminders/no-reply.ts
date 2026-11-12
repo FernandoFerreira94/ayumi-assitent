@@ -14,7 +14,7 @@ export type NoReply = { id: string; clientId: string; client: string; startsAt: 
 
 /**
  * Marca (uma vez por agendamento) quem não respondeu aos avisos: passou o tempo depois do último aviso que
- * ia sair, ou falta menos de 1 h para o horário. Só quem ainda espera confirmação e tem o 1º aviso enviado.
+ * ia sair, ou falta menos de 1 h para o horário. Só quem ainda espera confirmação e recebeu algum aviso.
  */
 export async function claimNoReplies(tx: Tx, now: Date, secondHours: number | null): Promise<NoReply[]> {
   const iso = now.toISOString();
@@ -26,12 +26,13 @@ export async function claimNoReplies(tx: Tx, now: Date, secondHours: number | nu
         select id from appointments
         where no_reply_at is null and reply_at is null and cancel_asked_at is null
           and status = 'pending_confirmation'
-          and reminder_sent_at is not null
+          and (reminder_sent_at is not null or nudge_sent_at is not null)
           and starts_at > ${iso}
           and (
             (nudge_sent_at is not null and nudge_sent_at <= ${iso}::timestamptz - make_interval(mins => ${AFTER_SECOND_MIN}))
             or (${secondOff} and reminder_sent_at <= ${iso}::timestamptz - make_interval(mins => ${AFTER_FIRST_MIN}))
-            or (starts_at <= ${iso}::timestamptz + interval '1 hour' and reminder_sent_at <= ${iso}::timestamptz - interval '30 minutes')
+            or (starts_at <= ${iso}::timestamptz + interval '1 hour'
+              and coalesce(reminder_sent_at, nudge_sent_at) <= ${iso}::timestamptz - interval '30 minutes')
           )
         for update skip locked)
       returning id, client_id, starts_at)

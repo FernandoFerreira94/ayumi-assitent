@@ -399,7 +399,7 @@ d("lembretes (núcleo)", () => {
   it("respeita a antecedência configurada pelo estúdio", async () => {
     const { withTenant } = await import("@/db/client");
     const { sendReminders, getReminderHours, saveMessageSettings } = await import("@/features/reminders/core");
-    const texts = { fullName: false, bookingTemplate: null, reminderTemplate: null, secondTemplate: null };
+    const texts = { first: true, fullName: false, bookingTemplate: null, reminderTemplate: null, secondTemplate: null };
     const admin = postgres(url!, { max: 1 });
     await admin`truncate tenants cascade`;
     const [{ id: T }] = await admin`insert into tenants (name) values ('Estúdio H') returning id`;

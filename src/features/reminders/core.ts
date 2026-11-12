@@ -79,6 +79,7 @@ export type ReminderRun = { sent: number; failed: number; offline: boolean };
  * e será tentado na próxima rodada; se o WhatsApp estiver offline, para na hora.
  */
 export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Promise<ReminderRun> {
+  if (!(await getReminderSettings(tx)).first) return { sent: 0, failed: 0, offline: false };
   const due = await claimDue(tx, now, await getReminderHours(tx));
   if (due.length === 0) return { sent: 0, failed: 0, offline: false };
   // RLS: na transação do estúdio só a linha dele aparece
@@ -124,12 +125,14 @@ export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Pro
 export const getReminderHours = async (tx: Tx) =>
   (await tx.select({ hours: tenants.reminderHours }).from(tenants))[0]?.hours ?? DEFAULT_REMINDER_HOURS;
 
-/** 1º aviso (horas antes) e 2º aviso opcional (null = desligado). */
-export type ReminderSettings = { hours: number; secondHours: number | null };
+/** 1º aviso (ligado ou não, horas antes) e 2º aviso opcional (null = desligado). */
+export type ReminderSettings = { first: boolean; hours: number; secondHours: number | null };
 
 export async function getReminderSettings(tx: Tx): Promise<ReminderSettings> {
-  const [row] = await tx.select({ hours: tenants.reminderHours, second: tenants.secondReminderHours }).from(tenants);
-  return { hours: row?.hours ?? DEFAULT_REMINDER_HOURS, secondHours: row?.second ?? null };
+  const [row] = await tx
+    .select({ first: tenants.firstReminder, hours: tenants.reminderHours, second: tenants.secondReminderHours })
+    .from(tenants);
+  return { first: row?.first ?? true, hours: row?.hours ?? DEFAULT_REMINDER_HOURS, secondHours: row?.second ?? null };
 }
 
 /** Tudo do cartão "Mensagens no WhatsApp" de Ajustes: avisos, os três textos e como chamar a cliente. */
@@ -143,6 +146,7 @@ export type MessageSettings = ReminderSettings & {
 export async function getMessageSettings(tx: Tx): Promise<MessageSettings> {
   const [row] = await tx
     .select({
+      first: tenants.firstReminder,
       hours: tenants.reminderHours,
       second: tenants.secondReminderHours,
       fullName: tenants.clientNameFull,
@@ -152,6 +156,7 @@ export async function getMessageSettings(tx: Tx): Promise<MessageSettings> {
     })
     .from(tenants);
   return {
+    first: row?.first ?? true,
     hours: row?.hours ?? DEFAULT_REMINDER_HOURS,
     secondHours: row?.second ?? null,
     fullName: row?.fullName ?? false,
@@ -165,6 +170,7 @@ export const saveMessageSettings = (tx: Tx, tenantId: string, s: MessageSettings
   tx
     .update(tenants)
     .set({
+      firstReminder: s.first,
       reminderHours: s.hours,
       secondReminderHours: s.secondHours,
       clientNameFull: s.fullName,
