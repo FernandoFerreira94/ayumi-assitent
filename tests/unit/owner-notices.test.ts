@@ -182,6 +182,8 @@ describe("emoji do aviso", () => {
     expect(mascotTitle("Bom dia, Yumi! ☀️", "bambu")).toBe("Bom dia, Yumi! ☀️ 🐼");
     expect(mascotTitle("Bom dia", "xyz")).toBe("Bom dia");
     expect(mascotTitle("Bom dia")).toBe("Bom dia");
+    // O envio também aplica o emoji: não pode repetir
+    expect(mascotTitle("Bom dia 🐰", "lulu")).toBe("Bom dia 🐰");
   });
 });
 

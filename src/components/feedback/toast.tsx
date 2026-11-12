@@ -1,25 +1,14 @@
 "use client";
 
 import { toast, Toaster, type ExternalToast } from "sonner";
-import { Mascot, type MascotMood } from "@/components/brand/Mascot";
+import { Mascot } from "@/components/brand/Mascot";
+import { FEEDBACK_MOOD, type FeedbackKind } from "@/components/brand/moods";
 import { messageFor, type ErrorCode } from "@/lib/errors";
 
-/** Os cinco tipos de toast do app. */
-export type ToastKind = "success" | "error" | "warning" | "info" | "loading";
+/** Os cinco tipos de toast do app; a expressão de cada um vem de FEEDBACK_MOOD (brand/moods.ts). */
+export type ToastKind = FeedbackKind;
 
-/**
- * Registro único: tipo do toast → expressão da Bolha. Para mudar o rosto de um tipo, é só aqui.
- * A Bolha segue o mascote e as cores escolhidos em Meu perfil (o rosto é o mesmo em todos).
- */
-export const TOAST_MOOD: Record<ToastKind, MascotMood> = {
-  success: "happy",
-  error: "sad",
-  warning: "alert",
-  info: "neutral",
-  loading: "thinking",
-};
-
-const icon = (kind: ToastKind) => <Mascot mood={TOAST_MOOD[kind]} size={34} />;
+const icon = (kind: ToastKind) => <Mascot mood={FEEDBACK_MOOD[kind]} size={34} />;
 
 /** Toast no topo, abaixo da Dynamic Island, em vidro. */
 export function AppToaster() {
