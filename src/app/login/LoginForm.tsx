@@ -10,10 +10,14 @@ import { InstallGuide } from "@/features/install/InstallGuide";
 import { authClient } from "@/lib/auth-client";
 import { ERROR_MESSAGES } from "@/lib/errors";
 
+/** E-mail fora da lista de acesso (piloto): explica o que fazer, em vez de só "sem acesso". */
+export const LOGIN_NOT_ALLOWED =
+  "Este e-mail ainda não está liberado no app. Fale com o suporte para liberar o acesso.";
+
 export function authErrorText(code: string | null | undefined): string | null {
   if (!code) return null;
   const c = code.toUpperCase();
-  if (c.includes("NOT_ALLOWED") || c === "UNABLE_TO_CREATE_USER") return ERROR_MESSAGES.NOT_ALLOWED;
+  if (c.includes("NOT_ALLOWED") || c === "UNABLE_TO_CREATE_USER") return LOGIN_NOT_ALLOWED;
   if (c.includes("INVALID_EMAIL_OR_PASSWORD") || c.includes("INVALID_PASSWORD")) return "E-mail ou senha incorretos.";
   if (c.includes("USER_ALREADY_EXISTS")) return "Este e-mail já tem conta. Entre com a senha.";
   if (c.includes("PASSWORD_TOO_SHORT")) return "A senha precisa ter pelo menos 8 caracteres.";
@@ -80,7 +84,8 @@ export function LoginForm() {
   const [pendingGoogle, setPendingGoogle] = useState(false);
   const [pendingEmail, setPendingEmail] = useState(false);
   const [error, setError] = useState<string | null>(authErrorText(params.get("error")));
-  const [worriedAt, setWorriedAt] = useState(0);
+  // Chegou com erro do Google: a Bolha já abre preocupada.
+  const [worriedAt, setWorriedAt] = useState(() => (params.get("error") ? Date.now() : 0));
   const [success, setSuccess] = useState(false);
   // O que a Bolha acompanha: o campo em foco, o tamanho do texto digitado e se a senha está à mostra
   const [focus, setFocus] = useState<"text" | "password" | null>(null);
@@ -89,6 +94,15 @@ export function LoginForm() {
   const [strength, setStrength] = useState(passwordStrength(""));
   const [reaction, setReaction] = useState<{ n: number; k: (typeof REACTIONS)[number] } | null>(null);
   const taps = useRef(0);
+
+  // Voltou do Google com erro (?error=...): toast com a Bolha preocupada e limpa o endereço.
+  useEffect(() => {
+    const text = authErrorText(params.get("error"));
+    if (!text) return;
+    notify.problem(text);
+    router.replace("/login");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- só na chegada à tela
+  }, []);
 
   useEffect(() => {
     if (!reaction) return;
