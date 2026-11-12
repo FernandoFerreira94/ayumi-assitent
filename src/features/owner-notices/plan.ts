@@ -17,15 +17,15 @@ export type DayInput = {
   fullDayBlock: boolean;
   /** Amanhã é data boa para mandar carinho às clientes */
   greetTomorrow: boolean;
-  /** Bom dia motivacional às 7h ligado (padrão) */
+  /** Bom dia motivacional às 8h ligado (padrão) */
   goodMorning?: boolean;
 };
 
 export const LATE_MIN = 19 * 60;
 const DAY_OFF_FROM = 9 * 60;
 const DAY_OFF_UNTIL = 13 * 60;
-const GOOD_MORNING_FROM = 7 * 60;
-const GOOD_MORNING_UNTIL = 10 * 60;
+const GOOD_MORNING_FROM = 8 * 60;
+const GOOD_MORNING_UNTIL = 11 * 60;
 const END_WINDOW = 3 * 60;
 
 export const isDayOff = (d: { hours: unknown; appts: readonly unknown[]; fullDayBlock: boolean }) =>
@@ -40,7 +40,7 @@ export function dayEndMin(d: Pick<DayInput, "hours" | "appts">): number | null {
 export function dueNotices(d: DayInput): { kind: NoticeKind; tomorrow: boolean }[] {
   const out: { kind: NoticeKind; tomorrow: boolean }[] = [];
   const m = d.nowMin;
-  // Todo dia às 7h (tolerância até 10h se o servidor atrasar); a tabela garante uma vez só
+  // Todo dia às 8h (tolerância até 11h se o servidor atrasar); a tabela garante uma vez só
   if (d.goodMorning !== false && m >= GOOD_MORNING_FROM && m < GOOD_MORNING_UNTIL)
     out.push({ kind: "good_morning", tomorrow: false });
   if (isDayOff(d)) {

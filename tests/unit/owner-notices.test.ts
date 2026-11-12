@@ -185,13 +185,13 @@ describe("emoji do aviso", () => {
   });
 });
 
-describe("bom dia das 7h", () => {
-  it("sai todo dia entre 7h e 10h, só se estiver ligado", () => {
-    expect(has({ ...work, nowMin: h(6, 59) })).toBe(false);
-    expect(has({ ...work, nowMin: h(7) })).toBe(true);
-    expect(has({ ...work, nowMin: h(9, 55) })).toBe(true);
-    expect(has({ ...work, nowMin: h(10) })).toBe(false);
-    expect(has({ ...work, nowMin: h(7), hours: null })).toBe(true);
-    expect(has({ ...work, nowMin: h(7), goodMorning: false })).toBe(false);
+describe("bom dia das 8h", () => {
+  it("sai todo dia entre 8h e 11h, só se estiver ligado", () => {
+    expect(has({ ...work, nowMin: h(7, 59) })).toBe(false);
+    expect(has({ ...work, nowMin: h(8) })).toBe(true);
+    expect(has({ ...work, nowMin: h(10, 55) })).toBe(true);
+    expect(has({ ...work, nowMin: h(11) })).toBe(false);
+    expect(has({ ...work, nowMin: h(8), hours: null })).toBe(true);
+    expect(has({ ...work, nowMin: h(8), goodMorning: false })).toBe(false);
   });
 });

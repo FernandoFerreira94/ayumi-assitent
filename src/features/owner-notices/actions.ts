@@ -116,7 +116,7 @@ export async function clearLocation(): Promise<ActionResult> {
   }
 }
 
-/** Interruptor "Bom dia das 7h" em Ajustes > Avisos do dia. */
+/** Interruptor "Bom dia das 8h" em Ajustes > Avisos do dia. */
 export async function setGoodMorning(on: unknown): Promise<ActionResult> {
   const { tenantId } = await requireTenant();
   const p = z.boolean().safeParse(on);
