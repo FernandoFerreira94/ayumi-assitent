@@ -44,3 +44,26 @@ describe("mensagens novas no sino", () => {
     expect(a.hint).toContain("14:30");
   });
 });
+
+describe("ícone e cor dos avisos", () => {
+  it("WhatsApp desconectado é vermelho e o Google é laranja", () => {
+    const [w, g] = buildAvisos({ whatsapp: "other", google: false });
+    expect(w).toMatchObject({ icon: "wifiOff", tone: "danger" });
+    expect(g).toMatchObject({ icon: "google", tone: "warning" });
+  });
+
+  it("resposta da cliente pinta pelo pedido", () => {
+    const tones = messageAvisos([
+      { clientId: "a", clientName: "Ana", count: 1, lastBody: "ok", lastIntent: "confirm" },
+      { clientId: "b", clientName: "Bia", count: 1, lastBody: "não vou", lastIntent: "cancel" },
+      { clientId: "c", clientName: "Cris", count: 1, lastBody: "outro dia", lastIntent: "reschedule" },
+    ]).map((a) => a.tone);
+    expect(tones).toEqual(["success", "danger", "warning"]);
+  });
+
+  it("todo aviso de pendência tem ícone e tom", () => {
+    const avisos = pendenciaAvisos({ toClose: 1, toConfirm: 1, unsynced: 1, toReschedule: 1 });
+    for (const a of avisos) expect(a.icon && a.tone).toBeTruthy();
+    expect(avisos.find((a) => a.id === "to-close")?.tone).toBe("info");
+  });
+});

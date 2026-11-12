@@ -1661,6 +1661,27 @@ button {
   transform: scale(0.9) translateY(24px);
   transition: transform 0.42s var(--spring);
 }
+/* Aviso do sino: fundo levemente tingido pelo tipo (o ícone e o texto continuam dizendo o que é) */
+.aviso-row {
+  --t: var(--svc-azul);
+  --t-bg: var(--svc-azul-soft);
+  background: color-mix(in srgb, var(--t-bg) 70%, white);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--t) 16%, transparent) inset,
+    0 1px 0 rgba(255, 255, 255, 0.8) inset;
+}
+.aviso-row[data-tone="danger"] {
+  --t: var(--fail);
+  --t-bg: var(--fail-bg);
+}
+.aviso-row[data-tone="warning"] {
+  --t: var(--wait);
+  --t-bg: var(--wait-bg);
+}
+.aviso-row[data-tone="success"] {
+  --t: var(--ok);
+  --t-bg: var(--ok-bg);
+}
 .notif-dialog[open] .notif-panel {
   transform: none;
 }

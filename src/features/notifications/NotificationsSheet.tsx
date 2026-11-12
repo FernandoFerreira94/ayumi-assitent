@@ -4,12 +4,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { notify } from "@/components/feedback/toast";
+import { IconTile, type Tint } from "@/components/ui/Icon";
 import { markAllAvisosRead, markClientAvisoRead } from "./actions";
-import type { Aviso } from "./core";
+import type { Aviso, AvisoTone } from "./core";
 
 const READ_KEY = "mimo:avisos-lidos";
 /** Quanto arrastar para o lado (px) para o aviso contar como visto. */
 const SWIPE_DONE = 90;
+
+/** Quadradinho do aviso, como nos Ajustes: vermelho parou, laranja pede ação, verde deu certo, azul é rotina. */
+const TONE_TINT: Record<AvisoTone, Tint> = { danger: "red", warning: "orange", success: "green", info: "blue" };
 
 /** Chave de um aviso. O título entra porque traz a contagem: se mudar, o aviso volta como novo. */
 const keyOf = (a: Aviso) => `${a.id}|${a.title}`;
@@ -256,7 +260,8 @@ function AvisoRow({ aviso, onOpen, onRead }: { aviso: Aviso; onOpen: () => void;
       onPointerMove={onMove}
       onPointerUp={end}
       onPointerCancel={end}
-      className="flex items-center gap-1 rounded-2xl bg-white/70 pr-1 shadow-[0_1px_0_rgba(255,255,255,0.8)_inset]"
+      data-tone={aviso.tone}
+      className="aviso-row flex items-center gap-1 rounded-2xl pr-1"
     >
       <Link
         href={aviso.href}
@@ -266,10 +271,13 @@ function AvisoRow({ aviso, onOpen, onRead }: { aviso: Aviso; onOpen: () => void;
           if (moved.current) return e.preventDefault();
           onOpen();
         }}
-        className="block min-w-0 flex-1 px-4 py-3"
+        className="flex min-w-0 flex-1 items-start gap-3 py-3 pl-3 pr-2"
       >
-        <span className="block font-bold">{aviso.title}</span>
-        <span className="block text-sm font-semibold text-muted">{aviso.hint}</span>
+        <IconTile name={aviso.icon} tint={TONE_TINT[aviso.tone]} />
+        <span className="min-w-0">
+          <span className="block font-bold">{aviso.title}</span>
+          <span className="block text-sm font-semibold text-muted">{aviso.hint}</span>
+        </span>
       </Link>
       <button
         type="button"

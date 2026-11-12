@@ -15,4 +15,5 @@
 - Ação nunca vira página: sheet/diálogo. Toast no topo, banner de atualização embaixo.
 - Mascote novo ou expressão nova: registrar em `mascots.ts`/`moods.ts` e conferir push (`push/webpush`) e splash.
 - **Regra de UX do teclado** (detalhe no AGENTS.md): campo focado sempre visível, sheet/diálogo nunca cortado, subida/descida suave junto com o teclado, fonte de campo ≥ 16px, barra de abas some. Sheet ou diálogo novo não precisa de nada (o `KeyboardWatcher` + `globals.css` cuidam); novo diálogo central deve usar `.notif-dialog`/`.notif-panel`. A barra de abas some com o teclado aberto.
+- Sino (`features/notifications`): cada `Aviso` traz `icon` (de `Icon.tsx`) e `tone` (`danger` vermelho, `warning` laranja, `success` verde, `info` azul), definidos em `core.ts`; a linha usa `IconTile` + `.aviso-row[data-tone]` no `globals.css`. Aviso novo: escolher ícone e tom lá; a cor nunca é a única pista.
 - Testes: `tests/e2e/splash.spec.ts`, `shell.spec.ts`, axe nos e2e; unit `mascots`, `season`, `feedback`.

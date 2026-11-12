@@ -198,6 +198,7 @@ const TILE = {
   lavender: "#7A5CFF",
   pink: "#E5547F",
   orange: "#F2923D",
+  red: "#E5484D",
   teal: "#1FA9B8",
   gray: "#8A84A3",
 } as const;
