@@ -16,7 +16,7 @@ export function DailyNoticesCard(props: { goodMorning: boolean }) {
       const res = await setGoodMorning(next).catch(() => null);
       if (res?.ok) {
         setMorning(next);
-        notify.success(next ? "Bom dia das 7h ligado" : "Bom dia das 7h desligado");
+        notify.success(next ? "Bom dia das 8h ligado" : "Bom dia das 8h desligado");
       } else notify.error(res ? res.code : "NETWORK", () => toggleMorning(next));
     });
   }
@@ -39,16 +39,16 @@ export function DailyNoticesCard(props: { goodMorning: boolean }) {
           Avisos do dia
         </TileTitle>
         <p className="text-sm font-semibold text-muted">
-          Bom dia motivacional às 7h, resumo das clientes do dia com a previsão do tempo, folga, fim do expediente, roteiro da semana no domingo à
+          Bom dia motivacional às 8h, resumo das clientes do dia com a previsão do tempo, folga, fim do expediente, roteiro da semana no domingo à
           noite e datas comemorativas. Chegam com o app fechado, na tela bloqueada.
         </p>
       </div>
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-bold">Bom dia às 7h</p>
+          <p className="font-bold">Bom dia às 8h</p>
           <p className="text-sm font-semibold text-muted">Uma mensagem motivacional todo dia, sem repetir.</p>
         </div>
-        <Switch checked={morning} onChange={toggleMorning} busy={saving} label="Bom dia às 7h" />
+        <Switch checked={morning} onChange={toggleMorning} busy={saving} label="Bom dia às 8h" />
       </div>
       <div className="grid gap-2">
         <button

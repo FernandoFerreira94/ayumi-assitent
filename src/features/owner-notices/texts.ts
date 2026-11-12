@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Textos dos avisos do dia no celular da profissional. Cada tipo tem um banco de frases e o worker sorteia uma
  * que não saiu nas últimas vezes (`pickVariant`). Nada de valores em dinheiro: só gente atendida e carinho.
  */
@@ -14,7 +14,7 @@ export function pickVariant(size: number, recent: number[], rand: () => number =
 const plural = (n: number, one: string, many: string) => (n === 1 ? `1 ${one}` : `${n} ${many}`);
 const fill = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k: string) => vars[k] ?? "");
 
-/* ------------------------------------------------- bom dia das 7h */
+/* ------------------------------------------------- bom dia das 8h */
 
 export const GOOD_MORNING = [
   "Que hoje seja um dia leve, cheio de clientes felizes e de coisas boas para você.",
