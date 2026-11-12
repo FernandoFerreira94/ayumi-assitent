@@ -17,6 +17,7 @@ export const ERROR_MESSAGES = {
   PUSH_NOT_CONFIGURED: "Os avisos no celular ainda não estão configurados no servidor.",
   PUSH_NO_DEVICE: "Nenhum aparelho com aviso ligado. Toque em Ativar em Avisos no celular primeiro.",
   PUSH_FAILED: "O aviso não chegou ao aparelho. Desative e ative os avisos de novo e tente outra vez.",
+  CLIPBOARD: "Não deu para copiar. Segure o texto e escolha Copiar.",
   NETWORK: "Sem conexão. Verifique a internet e tente de novo.",
   UNKNOWN: "Algo deu errado do nosso lado. Tente de novo em instantes.",
 } as const;

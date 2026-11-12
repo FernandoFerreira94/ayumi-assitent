@@ -29,6 +29,16 @@ export const MASCOT_EMOJI: Record<MascotKind, string> = {
   bambu: "🐼",
 };
 
+/**
+ * Título do aviso no celular com o emoji do mascote da pessoa (o iOS não deixa trocar a imagem do aviso).
+ * Não repete o emoji se ele já estiver lá.
+ */
+export const mascotTitle = (title: string, mascot?: string | null) => {
+  if (!mascot || !isMascotKind(mascot)) return title;
+  const emoji = MASCOT_EMOJI[mascot];
+  return title.endsWith(emoji) ? title : `${title} ${emoji}`;
+};
+
 export const DEFAULT_MASCOT: MascotKind = "bolha";
 
 export const isMascotKind = (v: unknown): v is MascotKind => MASCOTS.some((m) => m.id === v);

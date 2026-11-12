@@ -22,7 +22,7 @@ export function UpdateButton() {
       setBusy(false);
       return notify.success("Você já está na versão mais recente");
     }
-    notify.info("Nova versão encontrada", "Atualizando…");
+    notify.loading("Nova versão encontrada", "Atualizando…");
     await applyUpdate();
   }
 

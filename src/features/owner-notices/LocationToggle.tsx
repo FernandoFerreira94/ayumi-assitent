@@ -45,7 +45,7 @@ export function LocationToggle(props: { city: string | null; state: string | nul
       const pos = await currentPosition().catch((e: GeolocationPositionError | Error) => e);
       if (!("coords" in pos)) {
         if ("code" in pos && pos.code === 1)
-          notify.problem(
+          notify.warning(
             "Localização bloqueada",
             "Libere a localização nos Ajustes do iPhone (Privacidade > Serviços de Localização).",
           );

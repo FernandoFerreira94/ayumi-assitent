@@ -55,7 +55,7 @@ export function GoogleCard({
     setPending(false);
     if (!res?.ok) {
       if (res?.code === "VALIDATION")
-        notify.problem(
+        notify.warning(
           "O Google é seu único acesso ao app",
           "Crie uma senha antes de desconectar, senão você perderia a entrada.",
         );

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Mascot } from "@/components/brand/Mascot";
+import { FEEDBACK_MOOD } from "@/components/brand/moods";
 import { messageFor, type ErrorCode } from "@/lib/errors";
 
 /** Cada etapa só muda quando o servidor responde; nada fica verde antes. */
@@ -265,7 +266,7 @@ function ResultBubble({ kind }: { kind: "ok" | "warn" | "error" }) {
           ))
         : null}
       <span className={kind === "ok" ? "bolha-pula" : kind === "error" ? "bolha-treme" : ""}>
-        <Mascot mood={kind === "error" ? "worried" : kind === "ok" ? "happy" : "neutral"} size={126} />
+        <Mascot mood={FEEDBACK_MOOD[kind === "error" ? "error" : kind === "ok" ? "success" : "info"]} size={126} />
       </span>
       {kind !== "error" ? (
         <svg

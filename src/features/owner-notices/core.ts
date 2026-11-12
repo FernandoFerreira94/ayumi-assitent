@@ -25,7 +25,7 @@ import {
   type WeekDay,
 } from "./texts";
 import { forecastToday, isSunny, weatherEmoji, weatherLine, type Forecast } from "./weather";
-import { isMascotKind, MASCOT_EMOJI } from "@/components/brand/mascots";
+import { mascotTitle } from "@/components/brand/mascots";
 
 export type Salon = {
   name: string;
@@ -50,8 +50,7 @@ export type NoticeDeps = {
 };
 
 /** Título do aviso com o emoji do mascote que a pessoa escolheu em Meu perfil (sem reinstalar o app). */
-export const mascotTitle = (title: string, mascot?: string) =>
-  mascot && isMascotKind(mascot) ? `${title} ${MASCOT_EMOJI[mascot]}` : title;
+export { mascotTitle };
 
 const isNight = (hello: string) => hello.startsWith("Boa noite");
 

@@ -52,7 +52,7 @@ export function NoticeHost() {
       await navigator.clipboard.writeText(text);
       notify.success("Mensagem copiada", "Cole no WhatsApp, numa lista de transmissão ou no status.");
     } catch {
-      notify.error("UNKNOWN", copy);
+      notify.error("CLIPBOARD", copy);
     }
   }
 
