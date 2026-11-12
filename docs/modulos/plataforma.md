@@ -8,6 +8,7 @@
 - Banco: `db/schema.ts` (Drizzle), `db/migrations/*.sql` (aplicadas por `scripts/migrate.mjs` em ordem, tabela `_migrations`).
 - Worker: `src/worker/index.ts` (pg-boss; filas de lembretes e de avisos a cada 5 min).
 - Base: `lib/errors.ts` (catálogo pt-BR), `lib/dates.ts` (UTC-3 fixo), `lib/money.ts`, `lib/phone.ts`, `lib/time-grid.ts`, `lib/log.ts` (JSON, sem dado pessoal), `lib/useKeyboardInset.ts`, `lib/groupByLetter.ts`, `lib/backup.ts` + `scripts/backup.ts`, `lib/startup-images.ts`, `lib/update-check.ts`.
+- Páginas públicas (sem login, exigidas pelo Google OAuth): `/privacidade` e `/termos` (`features/legal/LegalPage.tsx`), liberadas em `PUBLIC_PATHS` do `proxy.ts`, sem splash; links no rodapé do login. Texto descreve escopos Google, Evolution, Anthropic, Open-Meteo, Sentry, Railway: mexeu em integração/dado, atualize o texto.
 - API: `api/health` (healthcheck Railway), `api/version`, `api/whatsapp/webhook`.
 
 ## Tabelas (todas com `tenant_id` e RLS para `app_user`)

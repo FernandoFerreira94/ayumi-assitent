@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
+import { SHARE_DESCRIPTION, shareMeta } from "@/lib/share-meta";
+import Link from "next/link";
 import { Suspense } from "react";
 import { MascotSync } from "@/components/brand/MascotSync";
 import { LoginForm } from "./LoginForm";
 
-export const metadata = { title: "Entrar" };
+export const metadata: Metadata = { title: "Entrar", ...shareMeta("bubbly · agenda do seu estúdio", SHARE_DESCRIPTION, "/login") };
 
 export default function LoginPage() {
   return (
@@ -12,6 +15,10 @@ export default function LoginPage() {
       <Suspense fallback={<div className="skel h-13 rounded-2xl" aria-hidden="true" />}>
         <LoginForm />
       </Suspense>
+      <nav className="flex justify-center gap-5 pt-6 text-xs font-semibold text-muted">
+        <Link href="/privacidade" className="min-h-11 content-center">Privacidade</Link>
+        <Link href="/termos" className="min-h-11 content-center">Termos de uso</Link>
+      </nav>
     </main>
   );
 }
