@@ -41,7 +41,6 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
         city: tenants.city,
         state: tenants.state,
         locationSource: tenants.locationSource,
-        goodMorning: tenants.goodMorning,
       })
       .from(tenants)
       .where(eq(tenants.id, tenantId)),
@@ -64,10 +63,7 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
           />
         </section>
         <section id="avisos-celular" aria-label="Notificação" className="scroll-mt-6">
-          <PushToggle
-            publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null}
-            goodMorning={salon?.goodMorning ?? true}
-          />
+          <PushToggle publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
         </section>
         <section id="localizacao" aria-label="Localização" className="scroll-mt-6">
           <LocationToggle

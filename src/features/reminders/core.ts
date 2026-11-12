@@ -4,6 +4,7 @@ import { tenants } from "@/db/schema";
 import type { MessagingPort } from "@/features/messaging/port";
 import { MessagingOfflineError } from "@/features/messaging/port";
 import { recordMessage } from "@/features/messaging/store";
+import { isQuietHour } from "./quiet";
 import { reminderText } from "./text";
 
 export { reminderText } from "./text";
@@ -79,6 +80,8 @@ export type ReminderRun = { sent: number; failed: number; offline: boolean };
  * e será tentado na próxima rodada; se o WhatsApp estiver offline, para na hora.
  */
 export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Promise<ReminderRun> {
+  // De 21h às 6h nada sai; o que venceu nesse intervalo sai na primeira rodada das 6h
+  if (isQuietHour(now)) return { sent: 0, failed: 0, offline: false };
   if (!(await getReminderSettings(tx)).first) return { sent: 0, failed: 0, offline: false };
   const due = await claimDue(tx, now, await getReminderHours(tx));
   if (due.length === 0) return { sent: 0, failed: 0, offline: false };

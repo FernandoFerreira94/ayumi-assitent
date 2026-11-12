@@ -74,7 +74,7 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
       // Cancelar, Faltou e Concluir valem na hora e trazem Desfazer (6 s), sem pedir segundo toque
       if (undoTo && UNDO_TEXT[next]) {
         onSettled?.();
-        notify.undoable(UNDO_TEXT[next], () => change(undoTo));
+        notify.undoable(UNDO_TEXT[next], () => change(undoTo), undefined, next === "done" ? "success" : "warning");
       } else {
         notify.success(LABEL[next]);
       }

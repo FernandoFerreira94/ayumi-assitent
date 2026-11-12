@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { Mascot } from "@/components/brand/Mascot";
+import { FEEDBACK_MOOD } from "@/components/brand/moods";
 
 type Props = {
   title?: string;
@@ -17,20 +19,7 @@ export function ErrorState({
 }: Props) {
   return (
     <div role="alert" className="mx-auto grid max-w-xs justify-items-center gap-2 px-4 py-14 text-center">
-      <div className="grid h-16 w-16 place-items-center rounded-3xl bg-fail-bg text-fail" aria-hidden="true">
-        <svg
-          viewBox="0 0 24 24"
-          width="30"
-          height="30"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-        >
-          <circle cx="12" cy="12" r="9" />
-          <path d="M12 8v5M12 16.5v.01" />
-        </svg>
-      </div>
+      <Mascot mood={FEEDBACK_MOOD.error} size={84} />
       <h2 className="text-lg font-bold">{title}</h2>
       <p className="text-sm text-muted">{message}</p>
       <div className="mt-3 grid w-full gap-2">

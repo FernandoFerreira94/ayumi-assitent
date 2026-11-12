@@ -42,8 +42,15 @@ export const RELEASES: readonly Release[] = [
       },
       {
         kind: "layout",
-        text: "“Avisos no celular” agora se chama Notificação e reúne o bom dia das 7h e o aviso de teste.",
+        text: "“Avisos no celular” agora se chama Notificação e mostra o que chega no celular e o aviso de teste.",
       },
+      {
+        kind: "improved",
+        text: "O bom dia chega 2 horas antes da primeira cliente, e no fim do expediente vem o resumo de hoje e de amanhã.",
+      },
+      { kind: "removed", text: "Saiu o bom dia motivacional de horário fixo." },
+      { kind: "improved", text: "O WhatsApp não manda mensagem automática das 21h às 6h." },
+      { kind: "new", text: "Meu perfil: campo para o telefone comercial." },
       { kind: "removed", text: "Saiu o cartão “Avisos do dia”: tudo o que ele fazia continua funcionando em Notificação." },
       { kind: "new", text: "Em Atualização do app você vê o que mudou, e o app avisa quando a versão é atualizada." },
     ],

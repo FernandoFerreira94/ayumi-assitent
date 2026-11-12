@@ -5,8 +5,6 @@ import {
   clientGreetingFallback,
   DAY_END,
   DAY_END_LATE,
-  DAY_OFF,
-  DAY_OFF_SUN,
   dayEndText,
   EMPTY_DAY,
   morningText,
@@ -30,8 +28,7 @@ const work: DayInput = {
   fullDayBlock: false,
   greetTomorrow: false,
 };
-const kinds = (d: DayInput) => dueNotices(d).map((x) => x.kind).filter((k) => k !== "good_morning");
-const has = (d: DayInput) => dueNotices(d).map((x) => x.kind).includes("good_morning");
+const kinds = (d: DayInput) => dueNotices(d).map((x) => x.kind);
 
 describe("quando cada aviso sai", () => {
   it("resumo da manhã 2 horas antes da primeira cliente", () => {
@@ -50,9 +47,11 @@ describe("quando cada aviso sai", () => {
     expect(kinds({ ...late, nowMin: h(20, 30) })).toEqual(["day_end"]);
     expect(kinds({ ...late, nowMin: h(23, 35) })).toEqual([]);
   });
-  it("folga às 9h (sem expediente ou bloqueio do dia inteiro)", () => {
-    expect(kinds({ ...work, hours: null, appts: [], nowMin: h(9) })).toEqual(["day_off"]);
-    expect(kinds({ ...work, appts: [], fullDayBlock: true, nowMin: h(9, 30) })).toEqual(["day_off"]);
+  it("folga não manda aviso do dia (sem expediente ou bloqueio do dia inteiro)", () => {
+    for (let m = 0; m < 24 * 60; m += 30) {
+      expect(kinds({ ...work, hours: null, appts: [], nowMin: m })).toEqual([]);
+      expect(kinds({ ...work, appts: [], fullDayBlock: true, nowMin: m })).toEqual([]);
+    }
   });
   it("domingo à noite manda o roteiro da semana", () => {
     expect(dueNotices({ ...work, weekday: 0, hours: null, appts: [], nowMin: h(19) })).toContainEqual({
@@ -114,19 +113,20 @@ describe("textos", () => {
   it("dia sem nada marcado", () => {
     expect(EMPTY_DAY).toContain(morningText(0, "Bom dia", null).body);
   });
-  it("fim do expediente: depois das 19h é 'trabalhamos muito'", () => {
-    expect(dayEndText(0, 5, true).title).toContain("trabalhamos muito");
-    expect(dayEndText(0, 1, false).body).toContain("1 cliente atendida");
+  it("fim do expediente: resumo de hoje e de amanhã; depois das 19h é 'trabalhamos muito'", () => {
+    const today = { served: 5, noShow: 1, cancelled: 0, reschedule: 2 };
+    expect(dayEndText(0, today, { off: true }, true).title).toContain("trabalhamos muito");
+    const t = dayEndText(0, today, { off: false, count: 3, firstTime: "09:00" }, false);
+    expect(t.body).toContain("Hoje: 5 clientes atendidas, 1 falta e 2 pedidos para remarcar.");
+    expect(t.body).toContain("Amanhã: 3 clientes, a primeira às 09:00.");
+    const one = { served: 1, noShow: 0, cancelled: 0, reschedule: 0 };
+    expect(dayEndText(0, one, { off: false, count: 0, firstTime: null }, false).body).toContain(
+      "Hoje: 1 cliente atendida.\nAmanhã: agenda livre por enquanto.",
+    );
+    expect(dayEndText(0, one, { off: true }, false).body).toContain("Amanhã: folga.");
   });
   it("nenhum texto fala de dinheiro", () => {
-    const all = [
-      ...DAY_OFF,
-      ...DAY_OFF_SUN,
-      ...EMPTY_DAY,
-      ...DAY_END,
-      ...DAY_END_LATE,
-      clientGreetingFallback("Natal", "X"),
-    ];
+    const all = [...EMPTY_DAY, ...DAY_END, ...DAY_END_LATE, clientGreetingFallback("Natal", "X")];
     for (const t of all) expect(t).not.toMatch(/R\$|reais|faturamento|ganho/i);
   });
   it("roteiro sem IA", () => {
@@ -182,16 +182,17 @@ describe("emoji do aviso", () => {
     expect(mascotTitle("Bom dia, Yumi! ☀️", "bambu")).toBe("Bom dia, Yumi! ☀️ 🐼");
     expect(mascotTitle("Bom dia", "xyz")).toBe("Bom dia");
     expect(mascotTitle("Bom dia")).toBe("Bom dia");
+    // O envio também aplica o emoji: não pode repetir
+    expect(mascotTitle("Bom dia 🐰", "lulu")).toBe("Bom dia 🐰");
   });
 });
 
-describe("bom dia das 7h", () => {
-  it("sai todo dia entre 7h e 10h, só se estiver ligado", () => {
-    expect(has({ ...work, nowMin: h(6, 59) })).toBe(false);
-    expect(has({ ...work, nowMin: h(7) })).toBe(true);
-    expect(has({ ...work, nowMin: h(9, 55) })).toBe(true);
-    expect(has({ ...work, nowMin: h(10) })).toBe(false);
-    expect(has({ ...work, nowMin: h(7), hours: null })).toBe(true);
-    expect(has({ ...work, nowMin: h(7), goodMorning: false })).toBe(false);
+describe("bom dia", () => {
+  it("só sai 2 horas antes da primeira cliente, sem bom dia fixo às 8h", () => {
+    // primeira cliente às 10h
+    expect(kinds({ ...work, nowMin: h(7, 59) })).not.toContain("morning");
+    expect(kinds({ ...work, nowMin: h(8) })).toContain("morning");
+    expect(kinds({ ...work, appts: [{ start: h(13), end: h(14) }], nowMin: h(8) })).toEqual([]);
+    expect(kinds({ ...work, appts: [{ start: h(13), end: h(14) }], nowMin: h(11) })).toContain("morning");
   });
 });

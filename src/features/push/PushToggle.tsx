@@ -5,7 +5,7 @@ import { notify } from "@/components/feedback/toast";
 import { subscribePush, unsubscribePush } from "./actions";
 import { Icon, TileTitle } from "@/components/ui/Icon";
 import { Switch } from "@/components/ui/Switch";
-import { sendTestNotice, setGoodMorning } from "@/features/owner-notices/actions";
+import { sendTestNotice } from "@/features/owner-notices/actions";
 
 type State = "checking" | "unsupported" | "denied" | "off" | "on";
 
@@ -17,8 +17,8 @@ function keyToBytes(b64: string): Uint8Array<ArrayBuffer> {
   return out;
 }
 
-/** Ajustes > Notificação: liga os avisos neste aparelho, o bom dia das 7h e o botão de teste. */
-export function PushToggle({ publicKey, goodMorning }: { publicKey: string | null; goodMorning: boolean }) {
+/** Ajustes > Notificação: liga os avisos neste aparelho, explica o que chega e tem o botão de teste. */
+export function PushToggle({ publicKey }: { publicKey: string | null }) {
   const [state, setState] = useState<State>("checking");
   const [pending, start] = useTransition();
 
@@ -43,7 +43,10 @@ export function PushToggle({ publicKey, goodMorning }: { publicKey: string | nul
         const perm = await Notification.requestPermission();
         if (perm !== "granted") {
           setState(perm === "denied" ? "denied" : "off");
-          notify.error("NOT_ALLOWED");
+          notify.warning(
+            "Avisos bloqueados neste iPhone",
+            "Libere em Ajustes do iPhone > Notificações e tente de novo.",
+          );
           return;
         }
         const reg = await navigator.serviceWorker.ready;
@@ -94,19 +97,7 @@ export function PushToggle({ publicKey, goodMorning }: { publicKey: string | nul
     on: "Ativo neste aparelho.",
   };
 
-  const [morning, setMorning] = useState(goodMorning);
-  const [savingMorning, startMorning] = useTransition();
   const [testing, startTest] = useTransition();
-
-  function toggleMorning(next: boolean) {
-    startMorning(async () => {
-      const res = await setGoodMorning(next).catch(() => null);
-      if (res?.ok) {
-        setMorning(next);
-        notify.success(next ? "Bom dia das 7h ligado" : "Bom dia das 7h desligado");
-      } else notify.error(res ? res.code : "NETWORK", () => toggleMorning(next));
-    });
-  }
 
   function test() {
     startTest(async () => {
@@ -140,16 +131,10 @@ export function PushToggle({ publicKey, goodMorning }: { publicKey: string | nul
         )}
       </div>
       <p className="text-sm font-semibold text-muted">
-        Resumo das clientes do dia com a previsão do tempo, folga, fim do expediente, roteiro da semana no domingo à
-        noite e datas comemorativas. Chegam com o app fechado, na tela bloqueada.
+        Bom dia 2 horas antes da primeira cliente, com quantas clientes você tem, o primeiro horário e a previsão do
+        tempo. No fim do expediente, o resumo de hoje e de amanhã. Também o roteiro da semana no domingo à noite e as
+        datas comemorativas. Chegam com o app fechado, na tela bloqueada.
       </p>
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="font-bold">Bom dia às 7h</p>
-          <p className="text-sm font-semibold text-muted">Uma mensagem motivacional todo dia, sem repetir.</p>
-        </div>
-        <Switch checked={morning} onChange={toggleMorning} busy={savingMorning} label="Bom dia às 7h" />
-      </div>
       {state === "on" ? (
         <button
           type="button"

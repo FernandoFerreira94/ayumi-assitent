@@ -74,12 +74,15 @@ export function parseIntent(raw: string): Intent | null {
 
 /**
  * Única resposta automática à resposta do lembrete. Confirmar agradece; cancelar ou remarcar não muda
- * nada sozinho: só diz que a profissional vai ver o melhor horário e retornar.
+ * nada sozinho: diz que recebeu o pedido e que a profissional continua a conversa.
  */
-export function ackText(intent: Intent, clientName: string, fullName = false): string {
+export function ackText(intent: Intent, clientName: string, fullName = false, when?: string | null): string {
   const first = clientCall(clientName, fullName);
-  if (intent === "confirm") return `Oba, ${first}! Seu horário está confirmado 💜 Te espero com carinho!`;
-  return `Tudo bem, ${first}! Vou ver com a profissional o melhor horário para você e já te retorno 💜`;
+  const slot = when ? ` de ${when}` : "";
+  if (intent === "confirm") return `Oba, ${first}! Seu horário${slot} está confirmado 💜 Te espero com carinho!`;
+  if (intent === "cancel")
+    return `Tudo bem, ${first}! Recebi seu pedido para cancelar o horário${slot}. A profissional vai falar com você por aqui para finalizar 💜`;
+  return `Tudo bem, ${first}! Recebi seu pedido para remarcar o horário${slot}. A profissional vai te chamar por aqui com as opções de horário 💜`;
 }
 
 /**

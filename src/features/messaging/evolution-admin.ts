@@ -8,6 +8,8 @@ export interface WhatsAppAdmin {
   pair(instance: string, phoneE164: string): Promise<{ pairingCode: string; qr: string | null }>;
   state(instance: string): Promise<WaState>;
   logout(instance: string): Promise<void>;
+  /** Número conectado na instância em E.164 (+55...); null se não houver ou não der para saber. */
+  number(instance: string): Promise<string | null>;
   /** Aponta as mensagens novas da instância para o webhook do app (idempotente). */
   setWebhook(instance: string, url: string): Promise<void>;
 }
@@ -62,6 +64,17 @@ export function evolutionAdmin(cfg: Config, fetchImpl: typeof fetch = fetch): Wh
     async logout(instance) {
       const res = await call("DELETE", `/instance/logout/${enc(instance)}`);
       if (!res.ok && res.status !== 404 && res.status !== 400) throw new WhatsAppAdminError(String(res.status));
+    },
+    async number(instance) {
+      const res = await call("GET", `/instance/fetchInstances?instanceName=${enc(instance)}`);
+      if (!res.ok) return null;
+      // v2 traz `ownerJid` na raiz; versões antigas, `instance.owner`. Ex.: "5511987654321@s.whatsapp.net"
+      const body = (await res.json()) as unknown;
+      const row = (Array.isArray(body) ? body[0] : body) as
+        { ownerJid?: string | null; instance?: { owner?: string | null } } | undefined;
+      const jid = row?.ownerJid ?? row?.instance?.owner ?? "";
+      const digits = jid.split("@")[0]?.split(":")[0]?.replace(/\D/g, "") ?? "";
+      return digits ? `+${digits}` : null;
     },
     async setWebhook(instance, url) {
       // Formato da Evolution v2 (2.3.x): config dentro de "webhook"; só o evento de mensagem nova

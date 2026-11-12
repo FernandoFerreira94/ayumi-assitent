@@ -66,6 +66,13 @@ describe("Evolution admin", () => {
     expect(await st(json(200, { instance: { state: "weird" } }))).toBe("close");
     expect(await st(json(404))).toBe("none");
   });
+  it("número conectado: ownerJid (v2) ou instance.owner, e null quando não há", async () => {
+    const num = (r: Response) => mk(vi.fn().mockResolvedValue(r)).number("i");
+    expect(await num(json(200, [{ ownerJid: "5511987654321@s.whatsapp.net" }]))).toBe("+5511987654321");
+    expect(await num(json(200, [{ instance: { owner: "551187654321:12@s.whatsapp.net" } }]))).toBe("+551187654321");
+    expect(await num(json(200, []))).toBeNull();
+    expect(await num(json(404))).toBeNull();
+  });
   it("registra o webhook só para mensagem nova, no formato da v2", async () => {
     const f = vi.fn().mockResolvedValue(json(201));
     await mk(f).setWebhook("studio-x", "https://app.test/api/whatsapp/webhook?token=t");
@@ -84,6 +91,7 @@ describe("Evolution admin", () => {
       pair: vi.fn().mockResolvedValue({ pairingCode: "XXXX1111" }),
       state: vi.fn(),
       logout: vi.fn(),
+      number: vi.fn(),
       setWebhook: vi.fn(),
     };
     expect(await startPairing(admin, id, "123")).toEqual({ ok: false, reason: "phone" });

@@ -353,7 +353,7 @@ export function AgendaDay({
     if (!canDrag(a.status)) return;
     const span = dragSpan("move", a, e.key === "ArrowUp" ? -SNAP_MIN : SNAP_MIN, win);
     const bad = conflictReason({ id: a.id, ...span }, hours, occupants);
-    if (bad) return notify.problem("Não dá para mover", bad);
+    if (bad) return notify.warning("Não dá para mover", bad);
     const k = keyMove.current;
     if (k) clearTimeout(k.timer);
     const from = k?.id === a.id ? k.from : { start: a.start, end: a.end };
@@ -379,11 +379,11 @@ export function AgendaDay({
   function tapEmpty(e: MouseEvent<HTMLDivElement>) {
     if ((e.target as HTMLElement).closest(".ag-ev")) return;
     setSelId(null);
-    if (!hours) return notify.problem("Salão fechado nesse dia", "Para agendar mesmo assim, use o botão Agendar.");
+    if (!hours) return notify.warning("Salão fechado nesse dia", "Para agendar mesmo assim, use o botão Agendar.");
     const tapped = win.start + (e.clientY - e.currentTarget.getBoundingClientRect().top) / PPM;
     const start = Math.max(win.start, Math.min(win.end - NEW_LEN, Math.floor(tapped / 30) * 30));
     const bad = conflictReason({ id: "temp", start, end: start + NEW_LEN }, hours, occupants);
-    if (bad) return notify.problem("Esse horário está ocupado", bad);
+    if (bad) return notify.warning("Esse horário está ocupado", bad);
     openNew(start);
   }
 

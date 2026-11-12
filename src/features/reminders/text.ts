@@ -51,6 +51,9 @@ function dayLabel(startsAt: Date, now: Date): string {
   return `${weekday}, dia ${dm}`;
 }
 
+/** "amanhã às 14:00" ou "dia 20/11 às 09:30": o horário nas respostas automáticas, sem deixar dúvida. */
+export const slotLabel = (startsAt: Date, now: Date) => `${dayWord(startsAt, now)} às ${formatTime(startsAt)}`;
+
 export type MessageData = { client: string; service: string; startsAt: Date; priceCents?: number | null };
 export type SalonMessageOpts = { template?: string | null; name?: string | null; fullName?: boolean };
 
