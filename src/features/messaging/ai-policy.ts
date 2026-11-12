@@ -65,13 +65,16 @@ export async function planAiReply(ctx: AiContext, classify: () => Promise<AiVerd
   if (ctx.ownerWroteRecently) return { action: "silent", guess: null, quiet: true };
   const underLimit = ctx.autoRepliesLast24h < AI_MAX_REPLIES_24H;
   const handoff = (text: string, guess: Intent | null): AiPlan =>
-    underLimit && !ctx.alreadyHandedOff ? { action: "handoff", text, guess } : { action: "silent", guess, quiet: false };
+    underLimit && !ctx.alreadyHandedOff
+      ? { action: "handoff", text, guess }
+      : { action: "silent", guess, quiet: false };
 
   if (ctx.media) return handoff(mediaText(ctx.clientName, ctx.when), null);
   if (ctx.text.length > AI_MAX_CHARS) return handoff(handoffText(ctx.clientName, ctx.when), null);
 
   const verdict = await classify();
   const intent = asIntent(verdict);
-  if (intent && verdict && verdict.confidence >= AI_MIN_CONFIDENCE) return { action: "apply", intent, sendAck: underLimit };
+  if (intent && verdict && verdict.confidence >= AI_MIN_CONFIDENCE)
+    return { action: "apply", intent, sendAck: underLimit };
   return handoff(handoffText(ctx.clientName, ctx.when), intent);
 }

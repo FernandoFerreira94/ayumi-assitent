@@ -4,13 +4,7 @@ import { getDb, withTenant } from "@/db/client";
 import { appointments, clients, messages, tenants } from "@/db/schema";
 import { sendToAll } from "@/features/push/core";
 import type { PushPort } from "@/features/push/port";
-import {
-  CORRECTION_HOURS,
-  OWNER_QUIET_HOURS,
-  planAiReply,
-  type AiPlan,
-  type AiVerdict,
-} from "./ai-policy";
+import { CORRECTION_HOURS, OWNER_QUIET_HOURS, planAiReply, type AiPlan, type AiVerdict } from "./ai-policy";
 import type { MessagingPort } from "./port";
 import { isQuietHour } from "@/features/reminders/quiet";
 import { clientCall, slotLabel } from "@/features/reminders/text";
@@ -39,7 +33,13 @@ const firstName = (name: string) => name.trim().split(/\s+/)[0];
  * Notificação no celular da dona. Só para o que ela pediu: confirmou, quer cancelar, quer remarcar (e quando a IA
  * passou a conversa, porque a cliente ouviu que a profissional responde). Mensagem solta não vira notificação.
  */
-const pushTitle = (name: string, intent: Intent | null, guess: Intent | null, correction: boolean, handedOff: boolean) => {
+const pushTitle = (
+  name: string,
+  intent: Intent | null,
+  guess: Intent | null,
+  correction: boolean,
+  handedOff: boolean,
+) => {
   const first = firstName(name);
   if (correction && intent) return `${first} corrigiu a resposta: ${GUESS_LABEL[intent]}`;
   if (intent === "confirm") return `${first} confirmou o horário`;
@@ -74,7 +74,12 @@ type Target = { id: string; handedOff: boolean; correction: boolean; status: str
 export async function handleInbound(msg: InboundText, deps: InboundDeps): Promise<InboundResult> {
   const now = deps.now ?? new Date();
   const [t] = await getDb()
-    .select({ id: tenants.id, aiEnabled: tenants.aiEnabled, aiRules: tenants.aiRules, fullName: tenants.clientNameFull })
+    .select({
+      id: tenants.id,
+      aiEnabled: tenants.aiEnabled,
+      aiRules: tenants.aiRules,
+      fullName: tenants.clientNameFull,
+    })
     .from(tenants)
     .where(eq(tenants.whatsappInstance, msg.instance));
   if (!t) return { handled: false, reason: "tenant" };
@@ -118,7 +123,12 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
     // dada há pouco (a cliente pode ter errado o número e corrigir)
     let target: Target | null = null;
     const [open] = await tx
-      .select({ id: appointments.id, handoff: appointments.aiHandoffAt, status: appointments.status, startsAt: appointments.startsAt })
+      .select({
+        id: appointments.id,
+        handoff: appointments.aiHandoffAt,
+        status: appointments.status,
+        startsAt: appointments.startsAt,
+      })
       .from(appointments)
       .where(
         and(
@@ -132,10 +142,21 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
       .orderBy(asc(appointments.startsAt))
       .limit(1);
     if (open)
-      target = { id: open.id, handedOff: !!open.handoff, correction: false, status: open.status, startsAt: open.startsAt };
+      target = {
+        id: open.id,
+        handedOff: !!open.handoff,
+        correction: false,
+        status: open.status,
+        startsAt: open.startsAt,
+      };
     else {
       const [recent] = await tx
-        .select({ id: appointments.id, handoff: appointments.aiHandoffAt, status: appointments.status, startsAt: appointments.startsAt })
+        .select({
+          id: appointments.id,
+          handoff: appointments.aiHandoffAt,
+          status: appointments.status,
+          startsAt: appointments.startsAt,
+        })
         .from(appointments)
         .where(
           and(
@@ -245,7 +266,10 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
   } else if (target && handedOff) {
     const apptId = target.id;
     await withTenant(tenantId, (tx) =>
-      tx.update(appointments).set({ aiHandoffAt: now }).where(and(eq(appointments.id, apptId), isNull(appointments.aiHandoffAt))),
+      tx
+        .update(appointments)
+        .set({ aiHandoffAt: now })
+        .where(and(eq(appointments.id, apptId), isNull(appointments.aiHandoffAt))),
     );
   }
 

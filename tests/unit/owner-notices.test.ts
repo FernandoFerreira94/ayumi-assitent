@@ -126,12 +126,7 @@ describe("textos", () => {
     expect(dayEndText(0, one, { off: true }, false).body).toContain("Amanhã: folga.");
   });
   it("nenhum texto fala de dinheiro", () => {
-    const all = [
-      ...EMPTY_DAY,
-      ...DAY_END,
-      ...DAY_END_LATE,
-      clientGreetingFallback("Natal", "X"),
-    ];
+    const all = [...EMPTY_DAY, ...DAY_END, ...DAY_END_LATE, clientGreetingFallback("Natal", "X")];
     for (const t of all) expect(t).not.toMatch(/R\$|reais|faturamento|ganho/i);
   });
   it("roteiro sem IA", () => {

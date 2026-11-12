@@ -226,7 +226,9 @@ async function build(
           cancelled: gone.filter((r) => r.status === "cancelled").length,
           reschedule: asking.length,
         },
-        off ? { off: true } : { off: false, count: next.length, firstTime: next[0] ? formatTime(next[0].startsAt) : null },
+        off
+          ? { off: true }
+          : { off: false, count: next.length, firstTime: next[0] ? formatTime(next[0].startsAt) : null },
         late,
       );
       return { ...t, variant, detail: null, tag: kind };
