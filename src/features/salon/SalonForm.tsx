@@ -6,23 +6,26 @@ import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import type { ActionResult } from "@/lib/errors";
 import { saveSalon } from "./actions";
-import { ageFrom, SEGMENTS, type Segment } from "./schema";
+import { maskPhone } from "@/lib/phone";
+import { SEGMENTS, type Segment } from "./schema";
 
 const input = "min-h-13 w-full min-w-0 rounded-full border px-5 text-base font-semibold";
 
-/** Meu perfil: quem é a pessoa, o salão e os segmentos em que atua. */
+/** Meu perfil: quem é a pessoa, o salão (nome e telefone comercial) e os segmentos em que atua. */
 export function SalonForm({
   initial,
 }: {
   initial: {
     name: string;
     ownerName: string;
-    birthDate: string;
-    profession: string;
+    /** Já mascarado; vazio = sem telefone */
+    businessPhone: string;
+    /** O telefone veio do WhatsApp conectado (ainda não salvo) */
+    phoneFromWhatsapp: boolean;
     segments: Segment[];
   };
 }) {
-  const [birth, setBirth] = useState(initial.birthDate);
+  const [phone, setPhone] = useState(initial.businessPhone);
   const [picked, setPicked] = useState<Set<Segment>>(new Set(initial.segments));
   const [state, action] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
     const res = await saveSalon(prev, fd);
@@ -31,7 +34,6 @@ export function SalonForm({
     return res;
   }, null);
   const field = state && !state.ok ? state.field : undefined;
-  const age = birth ? ageFrom(birth) : null;
 
   return (
     <form action={action} className="grid gap-6">
@@ -46,44 +48,6 @@ export function SalonForm({
             placeholder="Ex.: Yumi Tanaka"
             className={input}
             aria-invalid={field === "ownerName"}
-          />
-        </label>
-        <div className="grid grid-cols-[minmax(0,1fr)_5.5rem] items-end gap-3">
-          <label className="grid min-w-0 gap-1 text-sm font-bold">
-            Data de nascimento
-            <input
-              name="birthDate"
-              type="date"
-              value={birth}
-              max={new Date().toISOString().slice(0, 10)}
-              onChange={(e) => setBirth(e.target.value)}
-              className={input}
-              aria-invalid={field === "birthDate"}
-            />
-          </label>
-          <p className="grid gap-1 text-sm font-bold">
-            Idade
-            <output
-              aria-live="polite"
-              className="grid min-h-13 place-items-center rounded-full bg-soft px-3 text-base font-bold text-primary-text"
-            >
-              {age === null ? "—" : `${age} anos`}
-            </output>
-          </p>
-        </div>
-        {field === "birthDate" ? (
-          <span role="alert" className="text-xs font-semibold text-primary-text">
-            Confira a data de nascimento
-          </span>
-        ) : null}
-        <label className="grid gap-1 text-sm font-bold">
-          Profissão
-          <input
-            name="profession"
-            defaultValue={initial.profession}
-            placeholder="Ex.: Nail designer, cabeleireira"
-            className={input}
-            aria-invalid={field === "profession"}
           />
         </label>
       </section>
@@ -105,6 +69,32 @@ export function SalonForm({
               Dê um nome ao salão
             </span>
           ) : null}
+        </label>
+        <label className="grid gap-1 text-sm font-bold">
+          Telefone comercial
+          <input
+            name="businessPhone"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            value={phone}
+            onChange={(e) => setPhone(maskPhone(e.target.value))}
+            placeholder="(11) 98765-4321"
+            className={input}
+            aria-invalid={field === "businessPhone"}
+            aria-describedby="phone-hint"
+          />
+          {field === "businessPhone" ? (
+            <span role="alert" className="text-xs font-semibold text-primary-text">
+              Confira o telefone com DDD
+            </span>
+          ) : (
+            <span id="phone-hint" className="text-xs font-semibold text-muted">
+              {initial.phoneFromWhatsapp && phone === initial.businessPhone
+                ? "Puxamos do seu WhatsApp conectado. Pode trocar se o comercial for outro."
+                : "O número que suas clientes usam para falar com o salão."}
+            </span>
+          )}
         </label>
         <div className="grid gap-1 text-sm font-bold">
           <span id="seg-label">Segmentos (marque quantos fizerem sentido)</span>

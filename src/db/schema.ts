@@ -25,10 +25,13 @@ export const tenants = pgTable("tenants", {
   instagram: text("instagram"),
   /** Um dos BUSINESS_TYPES de features/salon/schema */
   businessType: text("business_type"),
-  /** Nome da pessoa dona do salão, data de nascimento (a idade sai dela) e profissão */
+  /** Nome da pessoa dona do salão (menu e saudação dos avisos do dia) */
   ownerName: text("owner_name"),
+  /** Sem uso e fora da tela desde a 0029 (LGPD: não pedir dado sem uso). Mantidas para não perder o histórico. */
   birthDate: date("birth_date"),
   profession: text("profession"),
+  /** Telefone comercial do salão em E.164 (+55...); null = ainda não salvo (a tela sugere o do WhatsApp) */
+  businessPhone: text("business_phone"),
   /** Segmentos de atuação, um ou mais dos SEGMENTS de features/salon/schema */
   segments: text("segments")
     .array()
