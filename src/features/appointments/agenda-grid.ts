@@ -4,9 +4,9 @@ import { hhmm, type Span } from "./timeline";
 
 /** Passo do arraste, das bolinhas e das setas do teclado. */
 export const SNAP_MIN = 15;
-/** A grade mostra 08h–20h; atendimento fora disso estica a janela para não sumir. */
-const GRID_START = 8 * 60;
-const GRID_END = 20 * 60;
+/** A grade mostra 06h–23h (mesma faixa que o expediente aceita); atendimento fora disso estica a janela. */
+const GRID_START = 6 * 60;
+const GRID_END = 23 * 60;
 
 export const snap = (m: number) => Math.round(m / SNAP_MIN) * SNAP_MIN;
 

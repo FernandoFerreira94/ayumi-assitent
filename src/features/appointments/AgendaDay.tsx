@@ -133,7 +133,7 @@ export function AgendaDay({
   blockButton,
 }: {
   date: string;
-  /** Janela da grade, 08–20 esticada se preciso. */
+  /** Janela da grade, 06–23 esticada se preciso. */
   win: Span;
   /** Expediente; null = salão fechado. */
   hours: Span | null;
