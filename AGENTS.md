@@ -40,7 +40,13 @@ Este arquivo **roteia**. O detalhe de cada módulo fica em `docs/modulos/`.
 - **Só mobile/iPhone**, o mais perto de app iOS nativo. Tema sempre claro, marca Lavanda Digital + Quicksand, vidro (glass).
 - **Nunca página/navegação para ação**: tudo em sheet/diálogo por cima da tela (vaul). Seletores de cliente/serviço = `components/ui/LetterPicker.tsx`. Navegação sem reload; tela abre no topo.
 - Ícones só de `components/ui/Icon.tsx`. Toasts via `components/feedback/toast.tsx` (`notify`, Sonner no topo; mascote por tipo em `components/brand/moods.ts`). Animação Órbita só no agendar (`BookingOverlay`).
-- Teclado no iPhone: centralizado no `components/system/KeyboardWatcher.tsx` + bloco "Teclado do iPhone" do `globals.css` (sheets vaul e `.notif-dialog` sobem juntos com o teclado, com transição; campo focado rola para a vista; campos nunca < 16px). Nos sheets só `repositionInputs={false}`; não colocar estilo de teclado no componente. Tela cheia que não deve subir: classe `booking-ov`.
+- **Regra de UX: teclado no iPhone** (vale para todo campo, sheet e diálogo, atuais e novos):
+  1. O campo focado fica sempre visível acima do teclado, com folga; ao trocar de campo ou a textarea crescer, ele continua à vista.
+  2. Sheet ou diálogo nunca fica cortado nem escondido atrás do teclado; o botão principal continua alcançável.
+  3. Subida e descida junto com o teclado sempre animadas e suaves (curva das sheets do iOS, ~0,32s), na entrada e na saída; nada de salto seco. Respeitar "reduzir movimento".
+  4. Campo de texto/select nunca com fonte menor que 16px (evita o zoom do iOS).
+  5. Sem rolagem/salto da página por trás; a barra de abas some com o teclado aberto.
+  Como: é centralizado no `components/system/KeyboardWatcher.tsx` + bloco "Teclado do iPhone" do `globals.css`. Sheet (vaul) só precisa de `repositionInputs={false}`; diálogo central usa `.notif-dialog`/`.notif-panel`. Não colocar estilo de teclado no componente nem criar hook próprio. Tela cheia que não deve subir: classe `booking-ov`.
 - Menu lateral / avatar no header: não mexer sem pedido.
 - Erros para a usuária só pelo catálogo `src/lib/errors.ts` (pt-BR). Server action devolve `ok()/fail()`.
 - Dados sempre por estúdio: `requireTenant()` + `withTenant(tenantId, tx => ...)` (RLS com `app.tenant_id`). Nunca `getDb()` direto em dado de estúdio, exceto rotinas que iteram estúdios (worker) ou leitura de `tenants`/`memberships` pelo dono.
