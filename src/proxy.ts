@@ -4,9 +4,13 @@ import { NextResponse, type NextRequest } from "next/server";
 // Checagem otimista (só olha o cookie). A validação real é feita no servidor por requireSession().
 // Se o cookie existe mas a sessão não vale mais, requireSession() manda para /login?sessao=invalida:
 // aqui apagamos os cookies do Better Auth, senão /login voltaria para /agenda em loop infinito.
+const PUBLIC_PATHS = new Set(["/privacidade", "/termos"]);
+
 export function proxy(request: NextRequest) {
   const logged = !!getSessionCookie(request);
   const { pathname, searchParams } = request.nextUrl;
+  // Páginas públicas (exigidas pelo Google OAuth): abertas com ou sem login
+  if (PUBLIC_PATHS.has(pathname)) return NextResponse.next();
   if (pathname.startsWith("/login") && searchParams.get("sessao") === "invalida") {
     const res = NextResponse.next();
     for (const { name } of request.cookies.getAll()) {

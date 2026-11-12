@@ -15,7 +15,7 @@ export const SPLASH_KEY = "mimo-splash";
  * Roda no <head>, antes de pintar: se o splash já passou nesta abertura do app (ou é teste
  * automatizado), esconde antes do primeiro quadro, para não piscar.
  */
-export const splashGate = `try{if(sessionStorage.getItem("${SPLASH_KEY}")||navigator.webdriver)document.documentElement.dataset.splash="off"}catch(e){}`;
+export const splashGate = `try{if(sessionStorage.getItem("${SPLASH_KEY}")||navigator.webdriver||["/privacidade","/termos"].indexOf(location.pathname)>-1)document.documentElement.dataset.splash="off"}catch(e){}`;
 
 /**
  * Entrada "Revelação": a bolha cresce na tela lavanda, vira o Mimo e a tela clara se abre de dentro
