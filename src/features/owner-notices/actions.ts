@@ -115,17 +115,3 @@ export async function clearLocation(): Promise<ActionResult> {
     return fail("UNKNOWN");
   }
 }
-
-/** Interruptor "Bom dia das 8h" em Ajustes > Avisos do dia. */
-export async function setGoodMorning(on: unknown): Promise<ActionResult> {
-  const { tenantId } = await requireTenant();
-  const p = z.boolean().safeParse(on);
-  if (!p.success) return fail("VALIDATION");
-  try {
-    await getDb().update(tenants).set({ goodMorning: p.data }).where(eq(tenants.id, tenantId));
-    revalidatePath("/ajustes");
-    return ok();
-  } catch {
-    return fail("UNKNOWN");
-  }
-}

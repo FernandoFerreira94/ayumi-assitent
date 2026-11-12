@@ -42,7 +42,6 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
         city: tenants.city,
         state: tenants.state,
         locationSource: tenants.locationSource,
-        goodMorning: tenants.goodMorning,
       })
       .from(tenants)
       .where(eq(tenants.id, tenantId)),
@@ -77,7 +76,7 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
       </Group>
       <Group title="Avisos do dia">
         <section id="avisos-do-dia" aria-label="Avisos do dia" className="scroll-mt-6">
-          <DailyNoticesCard goodMorning={salon?.goodMorning ?? true} />
+          <DailyNoticesCard />
         </section>
       </Group>
       <Group title="Mensagens para a cliente">

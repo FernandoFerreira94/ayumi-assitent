@@ -13,8 +13,6 @@ import {
   dayEndText,
   dayOffBankSize,
   dayOffText,
-  GOOD_MORNING,
-  goodMorningText,
   HOLIDAY_ASK,
   morningBankSize,
   morningText,
@@ -34,7 +32,6 @@ export type Salon = {
   state: string | null;
   latitude: number | null;
   longitude: number | null;
-  goodMorning?: boolean;
 };
 
 export type NoticeAi = {
@@ -129,7 +126,7 @@ async function recentVariants(tx: Tx, kind: NoticeKind): Promise<number[]> {
     .from(ownerNotices)
     .where(eq(ownerNotices.kind, kind))
     .orderBy(desc(ownerNotices.day))
-    .limit(kind === "good_morning" ? 14 : 3);
+    .limit(3);
   return r.map((x) => x.v);
 }
 
@@ -186,10 +183,6 @@ async function build(
   const hello = greeting(now, salon.ownerName);
   const recent = await recentVariants(tx, kind);
   switch (kind) {
-    case "good_morning": {
-      const variant = pickVariant(GOOD_MORNING.length, recent);
-      return { ...goodMorningText(variant, hello), variant, detail: null, tag: kind };
-    }
     case "day_off": {
       const f = await (deps.forecast ?? defaultForecast)(salon);
       const sunny = !!f && isSunny(f);
@@ -301,7 +294,6 @@ export async function runTenantNotices(
     appts: live.map((r) => ({ start: localMin(r.startsAt), end: localMin(r.endsAt) })),
     fullDayBlock: rows.length === 0 && (await blockedAllDay(tx, today, h)),
     greetTomorrow: !!tomorrowHoliday?.greet,
-    goodMorning: salon.goodMorning,
   });
 
   for (const { kind, tomorrow } of due) {
