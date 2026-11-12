@@ -30,7 +30,7 @@ test("primeiro acesso: tour obrigatório passa pelo Painel e pela configuração
   for (const name of [
     "1. Conecte o WhatsApp",
     "2. Conecte o Google Agenda",
-    "3. Avisos e previsão do tempo",
+    "3. Notificação e previsão do tempo",
     "4. Monte suas mensagens",
     "5. Leitura das respostas",
     "6. Seus horários",
