@@ -14,6 +14,45 @@ export function pickVariant(size: number, recent: number[], rand: () => number =
 const plural = (n: number, one: string, many: string) => (n === 1 ? `1 ${one}` : `${n} ${many}`);
 const fill = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k: string) => vars[k] ?? "");
 
+/* ------------------------------------------------- bom dia das 7h */
+
+export const GOOD_MORNING = [
+  "Que hoje seja um dia leve, cheio de clientes felizes e de coisas boas para você.",
+  "Cada cliente que senta na sua cadeira leva um pouco do seu carinho. Faça de hoje um dia especial.",
+  "Comece o dia com calma, respire fundo e confie: você é muito boa no que faz.",
+  "O seu talento transforma o dia de muita gente. Vá com tudo hoje!",
+  "Um passo de cada vez, um atendimento de cada vez. Você está construindo algo lindo.",
+  "Hoje é uma nova chance de fazer um trabalho do jeitinho que você sonha. Aproveite!",
+  "Seja gentil com você hoje: o seu esforço já vale muito.",
+  "Capriche no sorriso, ele é o melhor acabamento de qualquer atendimento.",
+  "Quem faz com amor faz diferente. Que o seu dia seja cheio disso!",
+  "Respira, toma um café e lembra: você chegou até aqui por mérito seu.",
+  "Pequenos cuidados, grandes resultados. Tenha um dia incrível!",
+  "O dia começou, e com ele novas oportunidades. Vai com fé e com coragem.",
+  "Você faz as pessoas se sentirem bonitas. Isso é um dom, e hoje é dia de usar.",
+  "Que não falte energia, nem paciência, nem café quentinho hoje.",
+  "Todo grande negócio começou com um dia comum de trabalho bem feito. Bora!",
+  "Não precisa ser perfeito, precisa ser feito com carinho. E você faz.",
+  "Hoje é dia de brilhar, e você já tem tudo para isso.",
+  "Confie no seu processo: cada dia de dedicação fica registrado nos resultados.",
+  "Que as suas mãos criem coisas lindas hoje e o seu coração fique em paz.",
+  "A sua agenda é feita de gente que confia em você. Que orgulho disso!",
+  "Acorda o ânimo! O dia está esperando o seu melhor, e você sempre entrega.",
+  "Que hoje a correria seja pequena e as boas notícias, grandes.",
+  "Seu trabalho tem valor, seu tempo tem valor, você tem valor. Ótimo dia!",
+  "Comece devagar, termine orgulhosa. Esse é o plano de hoje.",
+  "Um dia bom é feito de atitudes simples. Comece com um sorriso no espelho.",
+  "Sonhos grandes se constroem com dias como o de hoje. Segue firme!",
+  "Que a gratidão abra o seu dia e a alegria feche. Você merece.",
+  "Hoje o universo conspira a seu favor. Aproveite cada momento.",
+  "Persistência é o seu superpoder. Mais um dia para mostrar isso!",
+  "Aproveite o dia: ele é seu, do jeitinho que você fizer dele.",
+];
+
+export function goodMorningText(variant: number, hello: string): NoticeText {
+  return { title: `${hello}! ☀️`, body: GOOD_MORNING[variant % GOOD_MORNING.length]! };
+}
+
 /* ----------------------------------------------------------------- folga */
 
 export const DAY_OFF = [

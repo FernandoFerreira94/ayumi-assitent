@@ -1,13 +1,25 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { notify } from "@/components/feedback/toast";
 import { Icon, TileTitle } from "@/components/ui/Icon";
-import { sendTestNotice } from "./actions";
+import { Switch } from "@/components/ui/Switch";
+import { sendTestNotice, setGoodMorning } from "./actions";
 
 /** Ajustes > Avisos do dia: o que chega e o botão de teste. A localização fica em Conexões (LocationToggle). */
-export function DailyNoticesCard() {
+export function DailyNoticesCard(props: { goodMorning: boolean }) {
   const [testing, start] = useTransition();
+  const [morning, setMorning] = useState(props.goodMorning);
+  const [saving, startSaving] = useTransition();
+  function toggleMorning(next: boolean) {
+    startSaving(async () => {
+      const res = await setGoodMorning(next).catch(() => null);
+      if (res?.ok) {
+        setMorning(next);
+        notify.success(next ? "Bom dia das 7h ligado" : "Bom dia das 7h desligado");
+      } else notify.error(res ? res.code : "NETWORK", () => toggleMorning(next));
+    });
+  }
   function test() {
     start(async () => {
       const res = await sendTestNotice().catch(() => null);
@@ -27,9 +39,16 @@ export function DailyNoticesCard() {
           Avisos do dia
         </TileTitle>
         <p className="text-sm font-semibold text-muted">
-          Bom dia com as clientes do dia e a previsão do tempo, folga, fim do expediente, roteiro da semana no domingo à
+          Bom dia motivacional às 7h, resumo das clientes do dia com a previsão do tempo, folga, fim do expediente, roteiro da semana no domingo à
           noite e datas comemorativas. Chegam com o app fechado, na tela bloqueada.
         </p>
+      </div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-bold">Bom dia às 7h</p>
+          <p className="text-sm font-semibold text-muted">Uma mensagem motivacional todo dia, sem repetir.</p>
+        </div>
+        <Switch checked={morning} onChange={toggleMorning} busy={saving} label="Bom dia às 7h" />
       </div>
       <div className="grid gap-2">
         <button

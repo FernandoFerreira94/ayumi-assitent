@@ -30,7 +30,8 @@ const work: DayInput = {
   fullDayBlock: false,
   greetTomorrow: false,
 };
-const kinds = (d: DayInput) => dueNotices(d).map((x) => x.kind);
+const kinds = (d: DayInput) => dueNotices(d).map((x) => x.kind).filter((k) => k !== "good_morning");
+const has = (d: DayInput) => dueNotices(d).map((x) => x.kind).includes("good_morning");
 
 describe("quando cada aviso sai", () => {
   it("resumo da manhã 2 horas antes da primeira cliente", () => {
@@ -181,5 +182,16 @@ describe("emoji do aviso", () => {
     expect(mascotTitle("Bom dia, Yumi! ☀️", "bambu")).toBe("Bom dia, Yumi! ☀️ 🐼");
     expect(mascotTitle("Bom dia", "xyz")).toBe("Bom dia");
     expect(mascotTitle("Bom dia")).toBe("Bom dia");
+  });
+});
+
+describe("bom dia das 7h", () => {
+  it("sai todo dia entre 7h e 10h, só se estiver ligado", () => {
+    expect(has({ ...work, nowMin: h(6, 59) })).toBe(false);
+    expect(has({ ...work, nowMin: h(7) })).toBe(true);
+    expect(has({ ...work, nowMin: h(9, 55) })).toBe(true);
+    expect(has({ ...work, nowMin: h(10) })).toBe(false);
+    expect(has({ ...work, nowMin: h(7), hours: null })).toBe(true);
+    expect(has({ ...work, nowMin: h(7), goodMorning: false })).toBe(false);
   });
 });

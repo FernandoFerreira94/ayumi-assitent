@@ -58,6 +58,7 @@ export const tenants = pgTable("tenants", {
   latitude: doublePrecision("latitude"),
   longitude: doublePrecision("longitude"),
   /** "device" = localização do celular (sempre atualizada), "manual" = cidade digitada; null = sem localização */
+  goodMorning: boolean("good_morning").notNull().default(true),
   locationSource: text("location_source").$type<"device" | "manual">(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -290,7 +291,7 @@ export const ownerNotices = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id, { onDelete: "cascade" }),
-    kind: text("kind").notNull().$type<"day_off" | "morning" | "day_end" | "week" | "holiday">(),
+    kind: text("kind").notNull().$type<"day_off" | "morning" | "day_end" | "week" | "holiday" | "good_morning">(),
     day: date("day", { mode: "string" }).notNull(),
     variant: smallint("variant").notNull().default(0),
     title: text("title").notNull(),
