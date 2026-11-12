@@ -11,6 +11,8 @@
 - Páginas públicas (sem login, exigidas pelo Google OAuth): `/privacidade` e `/termos` (`features/legal/LegalPage.tsx`), liberadas em `PUBLIC_PATHS` do `proxy.ts`, sem splash; links no rodapé do login. Texto descreve escopos Google, Evolution, Anthropic, Open-Meteo, Sentry, Railway: mexeu em integração/dado, atualize o texto.
 - API: `api/health` (healthcheck Railway), `api/version`, `api/whatsapp/webhook`.
 
+- Cadastro barrado: `ALLOWED_EMAILS` (Railway, web) é a lista do piloto; fora dela o `databaseHooks.user.create.before` lança `NOT_ALLOWED`. Na volta do Google, `app/api/auth/[...all]/route.ts` troca o JSON de erro por redirect para `/login?error=CODE`, que mostra texto + toast (`authErrorText`).
+
 ## Tabelas (todas com `tenant_id` e RLS para `app_user`)
 `tenants`, `memberships`, `clients`, `services`, `service_categories`, `appointments`, `appointment_services`, `blocks`, `working_hours`, `slot_lists`, `messages`, `expenses`, `push_subscriptions`, `owner_notices` + tabelas do Better Auth.
 
