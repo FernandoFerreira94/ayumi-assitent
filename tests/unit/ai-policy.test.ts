@@ -45,6 +45,13 @@ describe("planAiReply", () => {
     expect(await planAiReply(ctx(), says(v))).toMatchObject({ action: "handoff", text: handoffText("Bia Souza"), guess: null });
   });
 
+  it("textos de passagem dizem quem responde e que o horário continua reservado", () => {
+    expect(handoffText("Bia", "amanhã às 14:00")).toContain("Não consegui entender sua mensagem");
+    expect(handoffText("Bia", "amanhã às 14:00")).toContain("Seu horário de amanhã às 14:00 continua reservado.");
+    expect(mediaText("Bia")).toContain("ainda não consigo ouvir áudios");
+    expect(mediaText("Bia")).toContain("1 para confirmar, 2 para cancelar ou 3 para remarcar");
+  });
+
   it("áudio/foto não chama o modelo e avisa que a profissional continua", async () => {
     const classify = says({ intent: "confirm", confidence: 1 });
     expect(await planAiReply(ctx({ media: true, text: "[áudio]" }), classify)).toEqual({

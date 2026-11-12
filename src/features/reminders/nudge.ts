@@ -7,14 +7,9 @@ import { recordMessage } from "@/features/messaging/store";
 import { getReminderSettings } from "./core";
 import { secondReminderText } from "./text";
 
-/** Horário em que a cliente pode receber mensagem automática (fuso de Brasília, UTC-3 fixo). */
-export const QUIET_FROM_HOUR = 21;
-export const QUIET_UNTIL_HOUR = 8;
+import { isQuietHour } from "./quiet";
 
-export function isQuietHour(now: Date): boolean {
-  const h = (now.getUTCHours() + 24 - 3) % 24;
-  return h >= QUIET_FROM_HOUR || h < QUIET_UNTIL_HOUR;
-}
+export { isQuietHour, QUIET_FROM_HOUR, QUIET_UNTIL_HOUR } from "./quiet";
 
 type Due = {
   id: string;

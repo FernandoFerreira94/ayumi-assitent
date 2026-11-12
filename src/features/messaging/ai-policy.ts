@@ -14,12 +14,17 @@ export const OWNER_QUIET_HOURS = 12;
 /** A cliente pode corrigir a resposta até 2h depois de ter respondido ao lembrete. */
 export const CORRECTION_HOURS = 2;
 
-/** Passagem para a profissional, com tom acolhedor. O nome vem pronto (primeiro nome ou inteiro, como em Ajustes). */
-export const handoffText = (clientName: string) =>
-  `Oi, ${clientName}! Recebi sua mensagem e já passei para a profissional, ela te responde rapidinho 💜`;
-/** Áudio, foto ou figurinha: mesmo acolhimento, sem fingir que entendeu o conteúdo. */
-export const mediaText = (clientName: string) =>
-  `Oi, ${clientName}! Recebi seu envio e já passei para a profissional, ela te responde rapidinho 💜`;
+const keeps = (when?: string | null) => (when ? ` Seu horário de ${when} continua reservado.` : "");
+
+/**
+ * Passagem para a profissional: educada, direta e sem deixar dúvida (quem responde e o que acontece com o horário).
+ * O nome vem pronto (primeiro nome ou inteiro, como em Ajustes); `when` = "amanhã às 14:00".
+ */
+export const handoffText = (clientName: string, when?: string | null) =>
+  `Oi, ${clientName}! Não consegui entender sua mensagem por aqui, então já passei para a profissional, que vai te responder pessoalmente.${keeps(when)} 💜`;
+/** Áudio, foto, vídeo ou figurinha: ainda não lemos; diz isso e mostra como responder por escrito. */
+export const mediaText = (clientName: string, when?: string | null) =>
+  `Oi, ${clientName}! Por aqui ainda não consigo ouvir áudios nem abrir fotos ou vídeos, então já passei para a profissional, que vai te responder pessoalmente.${keeps(when)} Se preferir, responda por escrito: 1 para confirmar, 2 para cancelar ou 3 para remarcar 💜`;
 
 export type AiContext = {
   /** Áudio, foto ou figurinha: a IA não lê */
@@ -27,6 +32,8 @@ export type AiContext = {
   text: string;
   /** Nome da cliente como vai na mensagem (primeiro nome ou inteiro, como a dona escolheu em Ajustes) */
   clientName: string;
+  /** Horário do agendamento em jogo ("amanhã às 14:00"), para a resposta não deixar dúvida */
+  when?: string | null;
   /** A dona escreveu para esta cliente nas últimas 12h */
   ownerWroteRecently: boolean;
   /** Respostas automáticas já enviadas a esta cliente nas últimas 24h */
@@ -60,11 +67,11 @@ export async function planAiReply(ctx: AiContext, classify: () => Promise<AiVerd
   const handoff = (text: string, guess: Intent | null): AiPlan =>
     underLimit && !ctx.alreadyHandedOff ? { action: "handoff", text, guess } : { action: "silent", guess, quiet: false };
 
-  if (ctx.media) return handoff(mediaText(ctx.clientName), null);
-  if (ctx.text.length > AI_MAX_CHARS) return handoff(handoffText(ctx.clientName), null);
+  if (ctx.media) return handoff(mediaText(ctx.clientName, ctx.when), null);
+  if (ctx.text.length > AI_MAX_CHARS) return handoff(handoffText(ctx.clientName, ctx.when), null);
 
   const verdict = await classify();
   const intent = asIntent(verdict);
   if (intent && verdict && verdict.confidence >= AI_MIN_CONFIDENCE) return { action: "apply", intent, sendAck: underLimit };
-  return handoff(handoffText(ctx.clientName), intent);
+  return handoff(handoffText(ctx.clientName, ctx.when), intent);
 }

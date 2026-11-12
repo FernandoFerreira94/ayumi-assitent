@@ -11,8 +11,6 @@ import {
   clientGreetingFallback,
   dayEndBank,
   dayEndText,
-  dayOffBankSize,
-  dayOffText,
   HOLIDAY_ASK,
   morningBankSize,
   morningText,
@@ -22,7 +20,7 @@ import {
   type NoticeText,
   type WeekDay,
 } from "./texts";
-import { forecastToday, isSunny, weatherEmoji, weatherLine, type Forecast } from "./weather";
+import { forecastToday, weatherEmoji, weatherLine, type Forecast } from "./weather";
 import { mascotTitle } from "@/components/brand/mascots";
 
 export type Salon = {
@@ -183,19 +181,6 @@ async function build(
   const hello = greeting(now, salon.ownerName);
   const recent = await recentVariants(tx, kind);
   switch (kind) {
-    case "day_off": {
-      const f = await (deps.forecast ?? defaultForecast)(salon);
-      const sunny = !!f && isSunny(f);
-      const variant = pickVariant(dayOffBankSize(sunny), recent);
-      const h = holidayOn(today, salon.state, salon.city);
-      const t = dayOffText(variant, {
-        greeting: hello,
-        sunny,
-        holiday: h?.name,
-        sky: f ? weatherEmoji(f.code, isNight(hello)) : undefined,
-      });
-      return { ...withWeather(t, f), variant, detail: null, tag: kind };
-    }
     case "morning": {
       const summary = await daySummary(tx, rows);
       const variant = pickVariant(morningBankSize(!summary), recent);
@@ -212,9 +197,39 @@ async function build(
         appts: live.map((r) => ({ start: localMin(r.startsAt), end: localMin(r.endsAt) })),
       });
       const late = (end ?? 0) >= LATE_MIN;
-      const served = live.filter((r) => r.endsAt <= now).length;
-      const variant = pickVariant(dayEndBank(served, late).length, recent);
-      return { ...dayEndText(variant, served, late), variant, detail: null, tag: kind };
+      const asking = rows.filter((r) => r.status === "reschedule_requested");
+      const [from, to] = dayRange(today);
+      const gone = await tx
+        .select({ status: appointments.status })
+        .from(appointments)
+        .where(
+          and(
+            gte(appointments.startsAt, from),
+            lt(appointments.startsAt, to),
+            inArray(appointments.status, ["no_show", "cancelled"]),
+          ),
+        );
+      const tomorrow = addDays(today, 1);
+      const th = week[weekdayOf(tomorrow)] ?? null;
+      const next = (await dayAppointments(tx, tomorrow)).filter((r) => r.status !== "reschedule_requested");
+      const off = isDayOff({
+        hours: th,
+        appts: next,
+        fullDayBlock: next.length === 0 && (await blockedAllDay(tx, tomorrow, th)),
+      });
+      const variant = pickVariant(dayEndBank(late).length, recent);
+      const t = dayEndText(
+        variant,
+        {
+          served: live.filter((r) => r.endsAt <= now).length,
+          noShow: gone.filter((r) => r.status === "no_show").length,
+          cancelled: gone.filter((r) => r.status === "cancelled").length,
+          reschedule: asking.length,
+        },
+        off ? { off: true } : { off: false, count: next.length, firstTime: next[0] ? formatTime(next[0].startsAt) : null },
+        late,
+      );
+      return { ...t, variant, detail: null, tag: kind };
     }
     case "week": {
       const monday = addDays(today, 1);
@@ -337,27 +352,15 @@ export async function runTenantNotices(
 }
 
 /**
- * Aviso de teste (botão em Ajustes): o mesmo resumo de hoje que sairia de manhã, com os dados reais, ou a
- * mensagem de folga se hoje não tem expediente. Não fica registrado.
+ * Aviso de teste (botão em Ajustes): o mesmo resumo de hoje que sairia de manhã, com os dados reais (dia sem
+ * clientes mostra a agenda livre). Não fica registrado.
  */
 export async function testNotice(tx: Tx, now: Date, salon: Salon, deps: Pick<NoticeDeps, "forecast"> = {}) {
   const today = todayStr(now);
-  const week = await getHours(tx);
-  const h = week[weekdayOf(today)] ?? null;
   const rows = await dayAppointments(tx, today);
   const hello = greeting(now, salon.ownerName);
   const f = await (deps.forecast ?? defaultForecast)(salon);
-  const off = isDayOff({
-    hours: h,
-    appts: rows,
-    fullDayBlock: rows.length === 0 && (await blockedAllDay(tx, today, h)),
-  });
   const rand = (n: number) => Math.floor(Math.random() * n);
-  if (off) {
-    const sunny = !!f && isSunny(f);
-    const sky = f ? weatherEmoji(f.code, isNight(hello)) : undefined;
-    return withWeather(dayOffText(rand(dayOffBankSize(sunny)), { greeting: hello, sunny, sky }), f);
-  }
   const summary = await daySummary(tx, rows);
   const sky = f ? weatherEmoji(f.code, isNight(hello)) : undefined;
   return withWeather(morningText(rand(morningBankSize(!summary)), hello, summary, sky), f);

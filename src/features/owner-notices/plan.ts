@@ -2,7 +2,7 @@
  * Quando cada aviso do dia sai (regra pura, testável). O worker roda a cada 5 minutos e pergunta "o que está na
  * hora agora?"; a tabela owner_notices garante uma vez só por tipo e dia.
  */
-export type NoticeKind = "day_off" | "morning" | "day_end" | "week" | "holiday";
+export type NoticeKind = "morning" | "day_end" | "week" | "holiday";
 
 export type DayInput = {
   /** Minutos desde 00:00 no fuso do estúdio */
@@ -20,8 +20,6 @@ export type DayInput = {
 };
 
 export const LATE_MIN = 19 * 60;
-const DAY_OFF_FROM = 9 * 60;
-const DAY_OFF_UNTIL = 13 * 60;
 const END_WINDOW = 3 * 60;
 
 export const isDayOff = (d: { hours: unknown; appts: readonly unknown[]; fullDayBlock: boolean }) =>
@@ -36,9 +34,8 @@ export function dayEndMin(d: Pick<DayInput, "hours" | "appts">): number | null {
 export function dueNotices(d: DayInput): { kind: NoticeKind; tomorrow: boolean }[] {
   const out: { kind: NoticeKind; tomorrow: boolean }[] = [];
   const m = d.nowMin;
-  if (isDayOff(d)) {
-    if (m >= DAY_OFF_FROM && m < DAY_OFF_UNTIL) out.push({ kind: "day_off", tomorrow: false });
-  } else if (d.hours) {
+  // Folga não manda aviso: o sistema só fala quando há trabalho no dia
+  if (!isDayOff(d) && d.hours) {
     if (d.appts.length) {
       const first = Math.min(...d.appts.map((a) => a.start));
       // Duas horas antes da primeira cliente (se ela chega cedo, o aviso sai mais cedo também)

@@ -153,6 +153,8 @@ export const appointments = pgTable(
     nudgeSentAt: timestamp("nudge_sent_at", { withTimezone: true }),
     /** Quando a dona foi avisada de que a cliente não respondeu aos avisos (uma vez por agendamento) */
     noReplyAt: timestamp("no_reply_at", { withTimezone: true }),
+    /** Resposta automática guardada porque a cliente escreveu entre 21h e 6h; sai às 6h */
+    pendingReply: text("pending_reply"),
     /** Desconto do agendamento: "pct" (value = %) ou "brl" (value = centavos). price_cents já vem descontado. */
     discountKind: text("discount_kind").$type<"pct" | "brl">(),
     discountValue: integer("discount_value"),

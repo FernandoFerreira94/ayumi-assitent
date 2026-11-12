@@ -28,7 +28,7 @@ export function DailyNoticesCard() {
         </TileTitle>
         <p className="text-sm font-semibold text-muted">
           Bom dia 2 horas antes da primeira cliente, com quantas clientes você tem, o primeiro horário e a previsão do tempo.
-          Também folga, fim do expediente, roteiro da semana no domingo à noite e datas comemorativas. Chegam com o app fechado, na tela bloqueada.
+          No fim do expediente, o resumo de hoje e de amanhã. Também o roteiro da semana no domingo à noite e as datas comemorativas. Chegam com o app fechado, na tela bloqueada.
         </p>
       </div>
       <div className="grid gap-2">

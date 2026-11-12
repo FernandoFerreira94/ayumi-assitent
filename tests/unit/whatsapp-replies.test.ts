@@ -115,13 +115,19 @@ describe("resposta automática ao lembrete", () => {
   it("confirmar agradece com o primeiro nome", () => {
     expect(ackText("confirm", "Maria Silva")).toContain("Oba, Maria! Seu horário está confirmado");
   });
-  it("cancelar e remarcar só dizem que a profissional vai verificar o melhor horário", () => {
+  it("cancelar e remarcar dizem que recebeu o pedido e que a profissional continua, sem cancelar nada", () => {
     for (const intent of ["cancel", "reschedule"] as const) {
-      const t = ackText(intent, "Bia Souza");
+      const t = ackText(intent, "Bia Souza", false, "amanhã às 14:00");
       expect(t).toContain("Bia!");
-      expect(t).toContain("ver com a profissional o melhor horário");
+      expect(t).toContain("o horário de amanhã às 14:00");
+      expect(t).toContain("A profissional vai");
       expect(t).not.toMatch(/cancelei|cancelado/i);
     }
+  });
+  it("confirmar com o horário não deixa dúvida", () => {
+    expect(ackText("confirm", "Maria Silva", false, "amanhã às 14:00")).toContain(
+      "Seu horário de amanhã às 14:00 está confirmado",
+    );
   });
 });
 
