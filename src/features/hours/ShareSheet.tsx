@@ -142,7 +142,7 @@ export function ShareSheet({
       notify.success("Texto copiado", "Cole no WhatsApp ou no Instagram.");
       close();
     } catch {
-      notify.error("UNKNOWN", copy);
+      notify.error("CLIPBOARD", copy);
     } finally {
       setBusy(false);
     }

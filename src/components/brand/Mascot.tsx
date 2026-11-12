@@ -28,9 +28,12 @@ const SMILE = "M249.7 293.05A12 12 0 0 1 230.3 293.05";
 /**
  * shy: tapa os olhos (senha escondida) · peek: espia (senha à mostra) · thinking: olhos de luz,
  * enquanto espera o servidor · worried: erro · wink: piscadinha (reação ao toque no login) ·
- * focused: olha para baixo com a boquinha apertada e uma gotinha de suor (agendando).
+ * focused: olha para baixo com a boquinha apertada e uma gotinha de suor (agendando) ·
+ * alert: olhos arregalados, sobrancelhas no alto e boquinha em "o" (aviso) · sad: sobrancelhas caídas,
+ * boca para baixo e uma lágrima (erro no toast; traços grossos para ler em 30 px).
  */
-export type MascotMood = "neutral" | "happy" | "shy" | "peek" | "thinking" | "worried" | "wink" | "focused";
+export type MascotMood =
+  "neutral" | "happy" | "shy" | "peek" | "thinking" | "worried" | "wink" | "focused" | "alert" | "sad";
 
 /** Roupa do clima da prancha "Humores do Mimo", por cima de qualquer humor. */
 export type MascotWeather = "rain" | "cold" | "hot" | "sun";
@@ -196,6 +199,25 @@ export function Mascot({
         </>
       );
       break;
+    case "alert":
+      face = (
+        <>
+          {openEyes}
+          <path d="M182 220Q202 204 222 220M258 220Q278 204 298 220" {...stroke} strokeWidth="10" />
+          <ellipse cx="240" cy="302" rx="13" ry="16" fill={EYE} />
+        </>
+      );
+      break;
+    case "sad":
+      face = (
+        <>
+          {openEyes}
+          <path d="M180 224L214 210M300 224L266 210" {...stroke} strokeWidth="10" />
+          <path d="M226 304A20 20 0 0 1 254 304" {...stroke} strokeWidth="10" />
+          <path d="M300 262C316 284 316 304 300 304C284 304 284 284 300 262Z" fill="#4C9BFF" />
+        </>
+      );
+      break;
     case "focused":
       face = (
         <>
@@ -219,7 +241,7 @@ export function Mascot({
         ? "M230.29 298.95A12 12 0 0 1 249.71 298.95"
         : mood === "focused"
           ? "M236 291Q246 294 256 290"
-          : mood === "shy" || mood === "thinking"
+          : mood === "shy" || mood === "thinking" || mood === "alert" || mood === "sad"
             ? null
             : SMILE;
 

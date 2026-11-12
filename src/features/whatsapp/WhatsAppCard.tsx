@@ -149,7 +149,7 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
           onClick={() =>
             navigator.clipboard.writeText(code).then(
               () => notify.success("Código copiado"),
-              () => notify.error("UNKNOWN"),
+              () => notify.error("CLIPBOARD"),
             )
           }
         >

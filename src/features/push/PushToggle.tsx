@@ -41,7 +41,10 @@ export function PushToggle({ publicKey }: { publicKey: string | null }) {
         const perm = await Notification.requestPermission();
         if (perm !== "granted") {
           setState(perm === "denied" ? "denied" : "off");
-          notify.error("NOT_ALLOWED");
+          notify.warning(
+            "Avisos bloqueados neste iPhone",
+            "Libere em Ajustes do iPhone > Notificações e tente de novo.",
+          );
           return;
         }
         const reg = await navigator.serviceWorker.ready;
