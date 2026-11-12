@@ -17,6 +17,7 @@
 
 ## Cuidados
 - Sempre claim antes de enviar e `release` em falha; dois workers não podem mandar o mesmo aviso.
+- Falha **recusada** (`MessagingRejectedError`, 400 da Evolution, ex.: número sem WhatsApp) não volta para a fila: fica como tentado. Só falha temporária/offline faz `release`. Toda falha loga `reminder_send_failed`/`nudge_send_failed`/`pending_send_failed` com o id do agendamento e o motivo (nunca o telefone).
 - Não reenviar aviso de horário que já passou; remarcar/cancelar precisa invalidar aviso pendente.
 - Mudou aqui: Redeploy do **worker** também.
 - Testes: `tests/db/nudge.test.ts`, `tests/unit/reminder-text.test.ts`, `nudge.test.ts`, `booking-text.test.ts`.

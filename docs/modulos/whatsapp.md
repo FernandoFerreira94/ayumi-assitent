@@ -24,5 +24,6 @@
 ## Cuidados
 - Webhook não é assinado pela Evolution: nunca exponha a URL nem mude a derivação do segredo sem reconfigurar as instâncias.
 - Nunca logue texto de mensagem nem telefone completo.
+- Erros da porta: 401/403/404 = `MessagingOfflineError` (reconectar); 400 = `MessagingRejectedError` (número recusado, não repetir; avulsa mostra `WHATSAPP_INVALID_NUMBER`); rede/5xx = `MessagingTransientError` (tentar de novo). Para log use `sendFailReason(e)`.
 - Web e worker precisam de `EVOLUTION_URL` e `EVOLUTION_API_KEY`.
 - Testes: `tests/db/whatsapp-inbound.test.ts`, `tests/e2e/mensagem.spec.ts`, `tests/unit/whatsapp-replies.test.ts`, `ai-policy.test.ts`, `evolution.test.ts`, `send-direct.test.ts`, `notifications.test.ts`.
