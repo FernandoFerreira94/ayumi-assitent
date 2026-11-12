@@ -2,7 +2,7 @@
  * Quando cada aviso do dia sai (regra pura, testável). O worker roda a cada 5 minutos e pergunta "o que está na
  * hora agora?"; a tabela owner_notices garante uma vez só por tipo e dia.
  */
-export type NoticeKind = "day_off" | "morning" | "day_end" | "week" | "holiday";
+export type NoticeKind = "day_off" | "morning" | "day_end" | "week" | "holiday" | "good_morning";
 
 export type DayInput = {
   /** Minutos desde 00:00 no fuso do estúdio */
@@ -17,11 +17,15 @@ export type DayInput = {
   fullDayBlock: boolean;
   /** Amanhã é data boa para mandar carinho às clientes */
   greetTomorrow: boolean;
+  /** Bom dia motivacional às 7h ligado (padrão) */
+  goodMorning?: boolean;
 };
 
 export const LATE_MIN = 19 * 60;
 const DAY_OFF_FROM = 9 * 60;
 const DAY_OFF_UNTIL = 13 * 60;
+const GOOD_MORNING_FROM = 7 * 60;
+const GOOD_MORNING_UNTIL = 10 * 60;
 const END_WINDOW = 3 * 60;
 
 export const isDayOff = (d: { hours: unknown; appts: readonly unknown[]; fullDayBlock: boolean }) =>
@@ -36,6 +40,9 @@ export function dayEndMin(d: Pick<DayInput, "hours" | "appts">): number | null {
 export function dueNotices(d: DayInput): { kind: NoticeKind; tomorrow: boolean }[] {
   const out: { kind: NoticeKind; tomorrow: boolean }[] = [];
   const m = d.nowMin;
+  // Todo dia às 7h (tolerância até 10h se o servidor atrasar); a tabela garante uma vez só
+  if (d.goodMorning !== false && m >= GOOD_MORNING_FROM && m < GOOD_MORNING_UNTIL)
+    out.push({ kind: "good_morning", tomorrow: false });
   if (isDayOff(d)) {
     if (m >= DAY_OFF_FROM && m < DAY_OFF_UNTIL) out.push({ kind: "day_off", tomorrow: false });
   } else if (d.hours) {

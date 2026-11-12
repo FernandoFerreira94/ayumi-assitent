@@ -19,6 +19,7 @@ export async function runOwnerNotices(push: PushPort, now = new Date()) {
       state: tenants.state,
       latitude: tenants.latitude,
       longitude: tenants.longitude,
+      goodMorning: tenants.goodMorning,
     })
     .from(tenants);
   const total = { sent: 0, removed: 0, failed: 0, kinds: [] as string[] };
