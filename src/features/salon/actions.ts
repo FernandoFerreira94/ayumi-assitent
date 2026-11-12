@@ -14,8 +14,7 @@ export async function saveSalon(_prev: ActionResult | null, form: FormData): Pro
   const p = salonInput.safeParse({
     name: form.get("name") ?? "",
     ownerName: form.get("ownerName") ?? "",
-    birthDate: form.get("birthDate") ?? "",
-    profession: form.get("profession") ?? "",
+    businessPhone: form.get("businessPhone") ?? "",
     segments: form.getAll("segments"),
   });
   if (!p.success) return fail("VALIDATION", String(p.error.issues[0]?.path[0] ?? ""));
@@ -25,8 +24,7 @@ export async function saveSalon(_prev: ActionResult | null, form: FormData): Pro
       .set({
         name: p.data.name,
         ownerName: p.data.ownerName || null,
-        birthDate: p.data.birthDate || null,
-        profession: p.data.profession || null,
+        businessPhone: p.data.businessPhone,
         segments: p.data.segments,
       })
       .where(eq(tenants.id, tenantId));
