@@ -42,7 +42,18 @@ describe("planAiReply", () => {
     ["outro assunto", { intent: "other", confidence: 0.99 }],
     ["erro ou sem chave", null],
   ])("%s passa para a profissional", async (_n, v) => {
-    expect(await planAiReply(ctx(), says(v))).toMatchObject({ action: "handoff", text: handoffText("Bia Souza"), guess: null });
+    expect(await planAiReply(ctx(), says(v))).toMatchObject({
+      action: "handoff",
+      text: handoffText("Bia Souza"),
+      guess: null,
+    });
+  });
+
+  it("textos de passagem dizem quem responde e que o horário continua reservado", () => {
+    expect(handoffText("Bia", "amanhã às 14:00")).toContain("Não consegui entender sua mensagem");
+    expect(handoffText("Bia", "amanhã às 14:00")).toContain("Seu horário de amanhã às 14:00 continua reservado.");
+    expect(mediaText("Bia")).toContain("ainda não consigo ouvir áudios");
+    expect(mediaText("Bia")).toContain("1 para confirmar, 2 para cancelar ou 3 para remarcar");
   });
 
   it("áudio/foto não chama o modelo e avisa que a profissional continua", async () => {
@@ -64,7 +75,11 @@ describe("planAiReply", () => {
 
   it("fica quieta se a dona escreveu nas últimas 12h, sem nem chamar o modelo", async () => {
     const classify = says({ intent: "confirm", confidence: 1 });
-    expect(await planAiReply(ctx({ ownerWroteRecently: true }), classify)).toEqual({ action: "silent", guess: null, quiet: true });
+    expect(await planAiReply(ctx({ ownerWroteRecently: true }), classify)).toEqual({
+      action: "silent",
+      guess: null,
+      quiet: true,
+    });
     expect(classify).not.toHaveBeenCalled();
   });
 
@@ -92,7 +107,10 @@ describe("planAiReply", () => {
 
 describe("parseVerdict", () => {
   it("aceita JSON válido, mesmo com texto em volta", () => {
-    expect(parseVerdict('Claro: {"intent":"confirm","confidence":0.97}')).toEqual({ intent: "confirm", confidence: 0.97 });
+    expect(parseVerdict('Claro: {"intent":"confirm","confidence":0.97}')).toEqual({
+      intent: "confirm",
+      confidence: 0.97,
+    });
   });
   it.each(["", "oi", '{"intent":"x","confidence":1}', '{"intent":"confirm","confidence":2}', '{"intent":"confirm"}'])(
     "recusa %j",

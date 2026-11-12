@@ -14,41 +14,6 @@ export function pickVariant(size: number, recent: number[], rand: () => number =
 const plural = (n: number, one: string, many: string) => (n === 1 ? `1 ${one}` : `${n} ${many}`);
 const fill = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k: string) => vars[k] ?? "");
 
-/* ----------------------------------------------------------------- folga */
-
-export const DAY_OFF = [
-  "Hoje é dia de folga. Desligue o modo agenda e aproveite o seu dia do jeitinho que você gosta.",
-  "Folga merecida! Cuide de você hoje: descanse, coma algo gostoso e recarregue as energias.",
-  "Hoje a agenda descansa e você também. Aproveite cada minuto do seu dia.",
-  "Dia livre para você. Que tal fazer algo que te deixa feliz e que a correria não deixa?",
-  "Folga é parte do trabalho bem feito. Descanse sem culpa, amanhã a gente continua.",
-  "Bom descanso! Hoje o compromisso mais importante é com você.",
-  "Hoje não tem cliente, tem você. Aproveite para respirar fundo e se cuidar.",
-  "Dia de folga chegou. Que seja leve, tranquilo e cheio de coisas boas.",
-];
-
-export const DAY_OFF_SUN = [
-  "Hoje é folga e o sol apareceu! Que tal uma caminhada ao ar livre ou um passeio para recarregar?",
-  "Folga com sol é presente. Aproveite para se mexer: uma corrida, uma bike ou um passeio no parque.",
-  "O dia está lindo lá fora. Bora aproveitar a folga com um pouco de sol, água e movimento?",
-  "Sol e folga no mesmo dia! Chame alguém especial e saia para curtir um pouco.",
-  "Dia de folga ensolarado: ótimo para uma atividade física leve e um sorvete depois, você merece.",
-  "Hoje o sol veio te visitar na folga. Que tal um momento de lazer ao ar livre?",
-];
-
-export function dayOffText(
-  variant: number,
-  o: { greeting: string; sunny: boolean; holiday?: string | null; sky?: string },
-): NoticeText {
-  const bank = o.sunny ? DAY_OFF_SUN : DAY_OFF;
-  const body = bank[variant % bank.length]!;
-  return {
-    title: `${o.greeting}! ${o.sky ?? skyEmoji(o.greeting)}`,
-    body: o.holiday ? `Hoje é ${o.holiday}. ${body}` : body,
-  };
-}
-export const dayOffBankSize = (sunny: boolean) => (sunny ? DAY_OFF_SUN : DAY_OFF).length;
-
 /* ----------------------------------------------------- resumo da manhã */
 
 const MORNING_OPENERS = [
@@ -106,38 +71,47 @@ export function morningText(
 
 /* ------------------------------------------------- fim do expediente */
 
+/** Fecho curto depois do resumo (sorteado para não repetir). */
 export const DAY_END = [
-  "Fim do expediente! {atendidas} hoje. Hora de descansar, você fez um ótimo trabalho.",
-  "Expediente encerrado. {atendidas} com todo o seu carinho. Agora é com você: descanse.",
-  "Mais um dia lindo de trabalho: {atendidas}. Desacelera e aproveita a noite.",
-  "Missão cumprida! {atendidas} saíram felizes hoje. Hora de recarregar.",
-  "Que dia! {atendidas}. Obrigada por cada detalhe, agora é hora de descansar.",
+  "Bom descanso, você fez um ótimo trabalho.",
+  "Agora é com você: descanse.",
+  "Aproveite a noite e recarregue as energias.",
+  "Obrigada por cada detalhe de hoje. Bom descanso!",
+  "Missão cumprida. Hora de descansar.",
 ];
 
 export const DAY_END_LATE = [
-  "Hoje trabalhamos muito: {atendidas}. Já passou da hora, vai descansar que você merece.",
-  "Que dia puxado! {atendidas} até agora. Hora de dormir e recuperar as energias.",
-  "Expediente longo hoje, e com muito carinho: {atendidas}. Descanse bem, amanhã tem mais.",
-  "Você deu tudo hoje: {atendidas}. Desliga, toma um banho gostoso e cama.",
-  "Hoje foi intenso! {atendidas}. Orgulho de você, agora é descanso.",
+  "Já passou da hora, vai descansar que você merece.",
+  "Dia puxado! Descanse bem.",
+  "Orgulho de você. Agora é descanso.",
+  "Desliga, toma um banho gostoso e cama.",
 ];
 
-export const DAY_END_EMPTY = [
-  "Fim do expediente. Hora de descansar e fechar o dia com calma.",
-  "Expediente encerrado por hoje. Aproveite a noite e descanse.",
-  "Pronto, dia encerrado. Hora de cuidar de você.",
-];
+/** O que aconteceu hoje: atendidas, faltas, cancelamentos e pedidos para remarcar ainda em aberto. */
+export type DayEndToday = { served: number; noShow: number; cancelled: number; reschedule: number };
+/** Amanhã: folga, ou quantas clientes e o primeiro horário (0 = agenda livre). */
+export type DayEndTomorrow = { off: true } | { off: false; count: number; firstTime: string | null };
 
-export function dayEndBank(served: number, late: boolean): string[] {
-  if (served === 0) return DAY_END_EMPTY;
-  return late ? DAY_END_LATE : DAY_END;
-}
+export const dayEndBank = (late: boolean) => (late ? DAY_END_LATE : DAY_END);
 
-export function dayEndText(variant: number, served: number, late: boolean): NoticeText {
-  const bank = dayEndBank(served, late);
+export function dayEndText(variant: number, today: DayEndToday, tomorrow: DayEndTomorrow, late: boolean): NoticeText {
+  const done = [
+    today.served ? plural(today.served, "cliente atendida", "clientes atendidas") : "nenhuma cliente atendida",
+  ];
+  if (today.noShow) done.push(plural(today.noShow, "falta", "faltas"));
+  if (today.cancelled) done.push(plural(today.cancelled, "cancelamento", "cancelamentos"));
+  if (today.reschedule) done.push(plural(today.reschedule, "pedido para remarcar", "pedidos para remarcar"));
+  const last = done.pop()!;
+  const todayLine = `Hoje: ${done.length ? `${done.join(", ")} e ${last}` : last}.`;
+  const tomorrowLine = tomorrow.off
+    ? "Amanhã: folga."
+    : tomorrow.count
+      ? `Amanhã: ${plural(tomorrow.count, "cliente", "clientes")}, a primeira às ${tomorrow.firstTime}.`
+      : "Amanhã: agenda livre por enquanto.";
+  const bank = dayEndBank(late);
   return {
     title: late ? "Hoje trabalhamos muito 🌙" : "Fim do expediente ✨",
-    body: fill(bank[variant % bank.length]!, { atendidas: plural(served, "cliente atendida", "clientes atendidas") }),
+    body: `${todayLine}\n${tomorrowLine}\n${bank[variant % bank.length]!}`,
   };
 }
 

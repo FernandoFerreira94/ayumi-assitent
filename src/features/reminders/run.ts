@@ -2,13 +2,14 @@ import "server-only";
 import { getDb, withTenant } from "@/db/client";
 import { tenants } from "@/db/schema";
 import type { MessagingPort } from "@/features/messaging/port";
+import { sendPendingReplies } from "@/features/messaging/pending";
 import type { PushPort } from "@/features/push/port";
 import { getReminderSettings, sendReminders, type ReminderRun } from "./core";
 import { notifyNoReplies } from "./no-reply";
 import { sendNudges } from "./nudge";
 
 /**
- * Uma rodada para todos os estúdios: 1º aviso, 2º aviso e, com `push`, o aviso à dona de quem não respondeu.
+ * Uma rodada para todos os estúdios: 1º aviso, 2º aviso, respostas guardadas da noite e, com `push`, o aviso à dona de quem não respondeu.
  * Erros de um estúdio não param os outros.
  */
 export async function runReminders(
@@ -30,6 +31,14 @@ export async function runReminders(
         console.error(JSON.stringify({ level: "warn", msg: "nudge_tenant_failed", tenant: t.id, err: String(e) }));
         return { sent: 0, failed: 0, offline: false };
       });
+      // Respostas que a cliente recebeu à noite ficaram guardadas: saem às 6h
+      const p = await withTenant(t.id, (tx) => sendPendingReplies(tx, port, now)).catch((e) => {
+        console.error(JSON.stringify({ level: "warn", msg: "pending_tenant_failed", tenant: t.id, err: String(e) }));
+        return { sent: 0, failed: 0, offline: false };
+      });
+      n.sent += p.sent;
+      n.failed += p.failed;
+      n.offline ||= p.offline;
       if (push)
         await withTenant(t.id, async (tx) =>
           notifyNoReplies(tx, push, now, (await getReminderSettings(tx)).secondHours),

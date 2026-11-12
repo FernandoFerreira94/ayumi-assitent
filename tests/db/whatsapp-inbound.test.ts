@@ -1,6 +1,14 @@
 // @vitest-environment node
 import postgres from "postgres";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+
+// Horário de silêncio (21h–6h) controlado pelo teste: parte daqui usa o relógio real
+const quiet = vi.hoisted(() => ({ on: false }));
+vi.mock("@/features/reminders/quiet", () => ({
+  isQuietHour: () => quiet.on,
+  QUIET_FROM_HOUR: 21,
+  QUIET_UNTIL_HOUR: 6,
+}));
 
 const url = process.env.DATABASE_URL;
 const d = url ? describe : describe.skip;
@@ -64,7 +72,7 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     const [a] = await admin`select status, reply_at from appointments where id = ${A}`;
     expect(a.status).toBe("confirmed");
     expect(a.reply_at).not.toBeNull();
-    expect(sent.at(-1)).toContain("+5511987655555|Oba, Bia! Seu horário está confirmado");
+    expect(sent.at(-1)).toContain("+5511987655555|Oba, Bia! Seu horário de amanhã às 10:00 está confirmado");
     const conv = await admin`select direction, kind, intent from messages where client_id = ${C} order by created_at`;
     expect(conv.map((m) => `${m.direction}:${m.kind}:${m.intent ?? ""}`)).toEqual([
       "in:client:confirm",
@@ -109,7 +117,8 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     });
     expect((await apptRow()).status).toBe("reschedule_requested");
     expect(sent).toHaveLength(1);
-    expect(sent[0]).toContain("ver com a profissional o melhor horário");
+    expect(sent[0]).toContain("Recebi seu pedido para cancelar o horário de amanhã às 10:00");
+    expect(sent[0]).toContain("A profissional vai falar com você");
   });
 
   it("'3' pede para remarcar sem mexer no horário e recebe a mesma resposta", async () => {
@@ -117,7 +126,32 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     sent.length = 0;
     expect(await handleInbound(msg("m4", "3"), deps)).toMatchObject({ intent: "reschedule" });
     expect((await apptRow()).status).toBe("reschedule_requested");
-    expect(sent[0]).toContain("ver com a profissional");
+    expect(sent[0]).toContain("Recebi seu pedido para remarcar o horário de amanhã às 10:00");
+  });
+
+  it("de 21h às 6h confirma na hora, mas a resposta à cliente fica guardada e sai às 6h", async () => {
+    const { sendPendingReplies } = await import("@/features/messaging/pending");
+    const { withTenant } = await import("@/db/client");
+    await reopen();
+    sent.length = 0;
+    quiet.on = true;
+    try {
+      expect(await handleInbound(msg("n1", "1"), deps)).toMatchObject({ intent: "confirm" });
+      expect((await apptRow()).status).toBe("confirmed");
+      expect(sent).toHaveLength(0);
+      const port = deps.portFor();
+      expect(await withTenant(T, (tx) => sendPendingReplies(tx, port, now))).toMatchObject({ sent: 0 });
+    } finally {
+      quiet.on = false;
+    }
+    const [{ pending_reply }] = await admin`select pending_reply from appointments where id = ${A}`;
+    expect(pending_reply).toContain("está confirmado");
+    expect(await withTenant(T, (tx) => sendPendingReplies(tx, deps.portFor(), now))).toMatchObject({ sent: 1 });
+    expect(sent).toEqual([`+5511987655555|${pending_reply}`]);
+    expect((await admin`select pending_reply from appointments where id = ${A}`)[0].pending_reply).toBeNull();
+    expect(
+      (await admin`select count(*)::int as n from messages where kind = 'auto_reply' and body = ${pending_reply}`)[0].n,
+    ).toBe(1);
   });
 
   it("texto livre não recebe resposta automática nenhuma", async () => {
@@ -130,7 +164,8 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
   });
 
   describe("com a IA ligada (modelo simulado)", () => {
-    const handoff = "Oi, Bia! Recebi sua mensagem e já passei para a profissional, ela te responde rapidinho 💜";
+    const handoff =
+      "+5511987655555|Oi, Bia! Não consegui entender sua mensagem por aqui, então já passei para a profissional";
     let verdict: { intent: string; confidence: number } | null;
     const ai = {
       ...deps,
@@ -144,7 +179,8 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
         starts_at = now() + interval '1 day', ends_at = now() + interval '1 day 1 hour' where id = ${A}`;
       sent.length = 0;
     };
-    const handoffAt = async () => (await admin`select ai_handoff_at from appointments where id = ${A}`)[0].ai_handoff_at;
+    const handoffAt = async () =>
+      (await admin`select ai_handoff_at from appointments where id = ${A}`)[0].ai_handoff_at;
     let n = 0;
     const m = (text: string, over: object = {}) => msg(`ai${++n}`, text, over);
 
@@ -164,7 +200,7 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
       verdict = { intent: "confirm", confidence: 0.95 };
       expect(await handleInbound(m("pode contar comigo, até amanhã"), ai)).toMatchObject({ intent: "confirm" });
       expect((await apptRow()).status).toBe("confirmed");
-      expect(sent[0]).toContain("Seu horário está confirmado");
+      expect(sent[0]).toMatch(/Seu horário de amanhã às \d{2}:\d{2} está confirmado/);
     });
 
     it("correção até 2h depois aplica a nova intenção (cancelar vira 'quer remarcar')", async () => {
@@ -177,7 +213,8 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
       await fresh();
       verdict = { intent: "other", confidence: 0.99 };
       await handleInbound(m("vocês trabalham no sábado? e quanto custa o gel?"), ai);
-      expect(sent).toEqual([`+5511987655555|${handoff}`]);
+      expect(sent).toHaveLength(1);
+      expect(sent[0]).toContain(handoff);
       expect(await handoffAt()).not.toBeNull();
       expect((await apptRow()).status).toBe("pending_confirmation");
       await handleInbound(m("e aí?"), ai);
@@ -188,14 +225,15 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
       await fresh();
       verdict = null;
       await handleInbound(m("vou me atrasar uns minutinhos"), ai);
-      expect(sent).toEqual([`+5511987655555|${handoff}`]);
+      expect(sent).toHaveLength(1);
+      expect(sent[0]).toContain(handoff);
     });
 
     it("áudio ou foto passa direto, sem perguntar ao modelo", async () => {
       await fresh();
       verdict = { intent: "confirm", confidence: 1 };
       await handleInbound(m("[áudio]", { media: true }), ai);
-      expect(sent[0]).toContain("já passei para a profissional");
+      expect(sent[0]).toContain("ainda não consigo ouvir áudios");
       expect((await apptRow()).status).toBe("pending_confirmation");
     });
 

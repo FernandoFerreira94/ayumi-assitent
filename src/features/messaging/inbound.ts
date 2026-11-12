@@ -4,15 +4,10 @@ import { getDb, withTenant } from "@/db/client";
 import { appointments, clients, messages, tenants } from "@/db/schema";
 import { sendToAll } from "@/features/push/core";
 import type { PushPort } from "@/features/push/port";
-import {
-  CORRECTION_HOURS,
-  OWNER_QUIET_HOURS,
-  planAiReply,
-  type AiPlan,
-  type AiVerdict,
-} from "./ai-policy";
+import { CORRECTION_HOURS, OWNER_QUIET_HOURS, planAiReply, type AiPlan, type AiVerdict } from "./ai-policy";
 import type { MessagingPort } from "./port";
-import { clientCall } from "@/features/reminders/text";
+import { isQuietHour } from "@/features/reminders/quiet";
+import { clientCall, slotLabel } from "@/features/reminders/text";
 import { ackText, parseIntent, phoneCandidates, type InboundText, type Intent } from "./replies";
 import { recordMessage } from "./store";
 
@@ -38,7 +33,13 @@ const firstName = (name: string) => name.trim().split(/\s+/)[0];
  * Notificação no celular da dona. Só para o que ela pediu: confirmou, quer cancelar, quer remarcar (e quando a IA
  * passou a conversa, porque a cliente ouviu que a profissional responde). Mensagem solta não vira notificação.
  */
-const pushTitle = (name: string, intent: Intent | null, guess: Intent | null, correction: boolean, handedOff: boolean) => {
+const pushTitle = (
+  name: string,
+  intent: Intent | null,
+  guess: Intent | null,
+  correction: boolean,
+  handedOff: boolean,
+) => {
   const first = firstName(name);
   if (correction && intent) return `${first} corrigiu a resposta: ${GUESS_LABEL[intent]}`;
   if (intent === "confirm") return `${first} confirmou o horário`;
@@ -61,7 +62,7 @@ export type InboundResult =
   | { handled: false; reason: "tenant" | "client" | "duplicate" }
   | { handled: true; intent: Intent | null; appointmentId: string | null };
 
-type Target = { id: string; handedOff: boolean; correction: boolean; status: string };
+type Target = { id: string; handedOff: boolean; correction: boolean; status: string; startsAt: Date };
 
 /**
  * Uma mensagem chegou pelo webhook. Liga ao estúdio (pela instância) e à cliente (pelo telefone),
@@ -73,7 +74,12 @@ type Target = { id: string; handedOff: boolean; correction: boolean; status: str
 export async function handleInbound(msg: InboundText, deps: InboundDeps): Promise<InboundResult> {
   const now = deps.now ?? new Date();
   const [t] = await getDb()
-    .select({ id: tenants.id, aiEnabled: tenants.aiEnabled, aiRules: tenants.aiRules, fullName: tenants.clientNameFull })
+    .select({
+      id: tenants.id,
+      aiEnabled: tenants.aiEnabled,
+      aiRules: tenants.aiRules,
+      fullName: tenants.clientNameFull,
+    })
     .from(tenants)
     .where(eq(tenants.whatsappInstance, msg.instance));
   if (!t) return { handled: false, reason: "tenant" };
@@ -117,7 +123,12 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
     // dada há pouco (a cliente pode ter errado o número e corrigir)
     let target: Target | null = null;
     const [open] = await tx
-      .select({ id: appointments.id, handoff: appointments.aiHandoffAt, status: appointments.status })
+      .select({
+        id: appointments.id,
+        handoff: appointments.aiHandoffAt,
+        status: appointments.status,
+        startsAt: appointments.startsAt,
+      })
       .from(appointments)
       .where(
         and(
@@ -130,10 +141,22 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
       )
       .orderBy(asc(appointments.startsAt))
       .limit(1);
-    if (open) target = { id: open.id, handedOff: !!open.handoff, correction: false, status: open.status };
+    if (open)
+      target = {
+        id: open.id,
+        handedOff: !!open.handoff,
+        correction: false,
+        status: open.status,
+        startsAt: open.startsAt,
+      };
     else {
       const [recent] = await tx
-        .select({ id: appointments.id, handoff: appointments.aiHandoffAt, status: appointments.status })
+        .select({
+          id: appointments.id,
+          handoff: appointments.aiHandoffAt,
+          status: appointments.status,
+          startsAt: appointments.startsAt,
+        })
         .from(appointments)
         .where(
           and(
@@ -145,7 +168,14 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
         )
         .orderBy(desc(appointments.replyAt))
         .limit(1);
-      if (recent) target = { id: recent.id, handedOff: !!recent.handoff, correction: true, status: recent.status };
+      if (recent)
+        target = {
+          id: recent.id,
+          handedOff: !!recent.handoff,
+          correction: true,
+          status: recent.status,
+          startsAt: recent.startsAt,
+        };
     }
 
     // Regras simples primeiro: de graça e previsíveis
@@ -192,7 +222,14 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
   else if (ai && target && deps.classify) {
     const classify = deps.classify;
     plan = await planAiReply(
-      { ...ai, media: !!msg.media, text: msg.text, clientName: clientCall(client.name, t.fullName), alreadyHandedOff: target.handedOff },
+      {
+        ...ai,
+        media: !!msg.media,
+        text: msg.text,
+        clientName: clientCall(client.name, t.fullName),
+        when: slotLabel(target.startsAt, now),
+        alreadyHandedOff: target.handedOff,
+      },
       () => classify(msg.text, t.aiRules),
     );
   } else plan = { action: "silent", guess: null, quiet: false };
@@ -209,7 +246,7 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
       intent = plan.intent;
       appointmentId = target.id;
       correction = target.correction;
-      if (plan.sendAck) ack = ackText(plan.intent, client.name, t.fullName);
+      if (plan.sendAck) ack = ackText(plan.intent, client.name, t.fullName, slotLabel(target.startsAt, now));
     }
   } else if (target && plan.action === "handoff") {
     handedOff = true;
@@ -229,8 +266,21 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
   } else if (target && handedOff) {
     const apptId = target.id;
     await withTenant(tenantId, (tx) =>
-      tx.update(appointments).set({ aiHandoffAt: now }).where(and(eq(appointments.id, apptId), isNull(appointments.aiHandoffAt))),
+      tx
+        .update(appointments)
+        .set({ aiHandoffAt: now })
+        .where(and(eq(appointments.id, apptId), isNull(appointments.aiHandoffAt))),
     );
+  }
+
+  // De 21h às 6h nada automático sai: a resposta fica guardada no agendamento e sai às 6h (messaging/pending.ts)
+  if (ack && target && isQuietHour(now)) {
+    const apptId = target.id;
+    const body = ack;
+    await withTenant(tenantId, (tx) =>
+      tx.update(appointments).set({ pendingReply: body }).where(eq(appointments.id, apptId)),
+    ).catch((e) => console.error(JSON.stringify({ level: "warn", msg: "pending_reply_failed", err: String(e) })));
+    ack = null;
   }
 
   if (ack) {
