@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import type { ActionResult } from "@/lib/errors";
@@ -9,7 +9,8 @@ import type { Day } from "./slots";
 import { TileTitle } from "@/components/ui/Icon";
 
 const NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
-const TIMES = Array.from({ length: 33 }, (_, i) => {
+// 06:00 a 23:00 de meia em meia hora (mesma faixa da grade do dia)
+const TIMES = Array.from({ length: 35 }, (_, i) => {
   const m = 6 * 60 + i * 30;
   return `${String(Math.floor(m / 60)).padStart(2, "0")}:${m % 60 ? "30" : "00"}`;
 });
@@ -17,7 +18,7 @@ const TIMES = Array.from({ length: 33 }, (_, i) => {
 const sel = "min-h-11 rounded-full border px-3 text-base font-semibold";
 
 export function HoursForm({ week }: { week: Day[] }) {
-  const [state, action] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
+  const [state, action, pending] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
     const res = await saveWorkingHours(prev, fd);
     if (res.ok) notify.success("Expediente salvo");
     else if (res.code !== "VALIDATION") notify.error(res.code);
@@ -29,7 +30,15 @@ export function HoursForm({ week }: { week: Day[] }) {
   const [pauseOn, setPauseOn] = useState(Boolean(saved));
 
   return (
-    <form action={action} className="glass grid gap-3 rounded-[1.75rem] p-5">
+    <form
+      // Sem <form action>: o React reseta o formulário depois da ação e o <select> voltava ao horário antigo
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        startTransition(() => action(fd));
+      }}
+      className="glass grid gap-3 rounded-[1.75rem] p-5"
+    >
       <TileTitle as="h2" icon="clock" tint="teal">
         Expediente
       </TileTitle>
@@ -108,7 +117,7 @@ export function HoursForm({ week }: { week: Day[] }) {
           </p>
         ) : null}
       </div>
-      <SubmitButton pendingLabel="Salvando…">Salvar expediente</SubmitButton>
+      <SubmitButton pending={pending} pendingLabel="Salvando…">Salvar expediente</SubmitButton>
     </form>
   );
 }

@@ -25,6 +25,10 @@ test("expediente salvo e vagas listadas com texto para copiar", async ({ page, c
   await page.getByLabel("Pausa: termina").selectOption("13:00");
   await page.getByRole("button", { name: "Salvar expediente" }).click();
   await expect(page.getByText("Expediente salvo")).toBeVisible();
+  // Depois de salvar o formulário mantém o que foi escolhido (antes o <select> voltava ao horário antigo)
+  await expect(page.locator(`select[name="closes-0"]`)).toHaveValue("22:00");
+  await page.reload();
+  await expect(page.locator(`select[name="opens-0"]`)).toHaveValue("06:00");
 
   await page.goto("/vagas");
   await expect(page.getByRole("link", { name: "Gel" })).toHaveAttribute("aria-current", "true");
