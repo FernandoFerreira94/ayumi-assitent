@@ -30,8 +30,7 @@ const work: DayInput = {
   fullDayBlock: false,
   greetTomorrow: false,
 };
-const kinds = (d: DayInput) => dueNotices(d).map((x) => x.kind).filter((k) => k !== "good_morning");
-const has = (d: DayInput) => dueNotices(d).map((x) => x.kind).includes("good_morning");
+const kinds = (d: DayInput) => dueNotices(d).map((x) => x.kind);
 
 describe("quando cada aviso sai", () => {
   it("resumo da manhã 2 horas antes da primeira cliente", () => {
@@ -187,13 +186,12 @@ describe("emoji do aviso", () => {
   });
 });
 
-describe("bom dia das 8h", () => {
-  it("sai todo dia entre 8h e 11h, só se estiver ligado", () => {
-    expect(has({ ...work, nowMin: h(7, 59) })).toBe(false);
-    expect(has({ ...work, nowMin: h(8) })).toBe(true);
-    expect(has({ ...work, nowMin: h(10, 55) })).toBe(true);
-    expect(has({ ...work, nowMin: h(11) })).toBe(false);
-    expect(has({ ...work, nowMin: h(8), hours: null })).toBe(true);
-    expect(has({ ...work, nowMin: h(8), goodMorning: false })).toBe(false);
+describe("bom dia", () => {
+  it("só sai 2 horas antes da primeira cliente, sem bom dia fixo às 8h", () => {
+    // primeira cliente às 10h
+    expect(kinds({ ...work, nowMin: h(7, 59) })).not.toContain("morning");
+    expect(kinds({ ...work, nowMin: h(8) })).toContain("morning");
+    expect(kinds({ ...work, appts: [{ start: h(13), end: h(14) }], nowMin: h(8) })).toEqual([]);
+    expect(kinds({ ...work, appts: [{ start: h(13), end: h(14) }], nowMin: h(11) })).toContain("morning");
   });
 });
