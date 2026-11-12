@@ -2,7 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { tenants } from "@/db/schema";
 import type { MessagingPort } from "@/features/messaging/port";
-import { MessagingOfflineError } from "@/features/messaging/port";
+import { MessagingOfflineError, MessagingRejectedError, sendFailReason } from "@/features/messaging/port";
 import { recordMessage } from "@/features/messaging/store";
 import { isQuietHour } from "./quiet";
 import { reminderText } from "./text";
@@ -90,6 +90,7 @@ export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Pro
     .from(tenants);
   const failedIds: string[] = [];
   let sent = 0;
+  let rejected = 0;
   let offline = false;
   for (const a of due) {
     if (offline) {
@@ -116,12 +117,15 @@ export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Pro
         )
         .catch((e) => console.error(JSON.stringify({ level: "warn", msg: "reminder_record_failed", err: String(e) })));
     } catch (e) {
-      failedIds.push(a.id);
+      console.error(JSON.stringify({ level: "warn", msg: "reminder_send_failed", appointment: a.id, reason: sendFailReason(e) }));
+      // Recusado (número sem WhatsApp): fica marcado como tentado e não volta para a fila, senão repete a cada 5 min
+      if (e instanceof MessagingRejectedError) rejected++;
+      else failedIds.push(a.id);
       if (e instanceof MessagingOfflineError) offline = true;
     }
   }
   await release(tx, failedIds);
-  return { sent, failed: failedIds.length, offline };
+  return { sent, failed: failedIds.length + rejected, offline };
 }
 
 export const getReminderHours = async (tx: Tx) =>

@@ -1,4 +1,4 @@
-import { MessagingOfflineError, MessagingTransientError, type MessagingPort } from "./port";
+import { MessagingOfflineError, MessagingRejectedError, MessagingTransientError, type MessagingPort } from "./port";
 
 type Config = { baseUrl: string; apiKey: string; instance: string };
 
@@ -21,6 +21,8 @@ export function evolutionMessaging(cfg: Config, fetchImpl: typeof fetch = fetch)
       }
       if (res.status === 401 || res.status === 403 || res.status === 404)
         throw new MessagingOfflineError(String(res.status));
+      // 400 = a Evolution recusou o pedido (quase sempre número sem WhatsApp): repetir não muda nada
+      if (res.status === 400) throw new MessagingRejectedError("400");
       if (!res.ok) throw new MessagingTransientError(String(res.status));
       // Já saiu: se a resposta vier estranha, perde-se só o id (o eco do webhook vira uma linha a mais)
       let body: { key?: { id?: string } } | null = null;

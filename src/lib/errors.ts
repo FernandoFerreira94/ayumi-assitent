@@ -6,6 +6,7 @@ export const ERROR_MESSAGES = {
   PHONE_EXISTS: "Este número já é de outra cliente.",
   GOOGLE_EXPIRED: "O acesso ao Google expirou. Reconecte para sincronizar.",
   WHATSAPP_UNAVAILABLE: "Não conseguimos falar com o WhatsApp agora. Tente de novo em instantes.",
+  WHATSAPP_INVALID_NUMBER: "O WhatsApp não aceitou este número. Confira o telefone da cliente.",
   WHATSAPP_OFFLINE: "O WhatsApp está desconectado. Reconecte para enviar mensagens.",
   NAME_TAKEN: "Já existe um com esse nome aqui. Escolha outro.",
   CATEGORY_NOT_EMPTY: "Mova ou exclua os serviços antes de excluir a categoria.",

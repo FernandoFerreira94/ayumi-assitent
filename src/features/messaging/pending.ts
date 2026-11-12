@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { isQuietHour } from "@/features/reminders/quiet";
-import { MessagingOfflineError, type MessagingPort } from "./port";
+import { MessagingOfflineError, MessagingRejectedError, sendFailReason, type MessagingPort } from "./port";
 import { recordMessage } from "./store";
 
 export type PendingRun = { sent: number; failed: number; offline: boolean };
@@ -44,7 +44,9 @@ export async function sendPendingReplies(tx: Tx, port: MessagingPort, now: Date)
         )
         .catch((e) => console.error(JSON.stringify({ level: "warn", msg: "pending_record_failed", err: String(e) })));
     } catch (e) {
-      await restore(tx, r.id, r.body);
+      console.error(JSON.stringify({ level: "warn", msg: "pending_send_failed", appointment: r.id, reason: sendFailReason(e) }));
+      // Recusado (número sem WhatsApp): descarta, senão repete a cada 5 min
+      if (!(e instanceof MessagingRejectedError)) await restore(tx, r.id, r.body);
       run.failed++;
       if (e instanceof MessagingOfflineError) run.offline = true;
     }

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { evolutionMessaging, messagingFromEnv } from "@/features/messaging/evolution";
-import { MessagingOfflineError, MessagingTransientError } from "@/features/messaging/port";
+import { MessagingOfflineError, MessagingRejectedError, MessagingTransientError, sendFailReason } from "@/features/messaging/port";
 
 const cfg = { baseUrl: "https://evo.test/", apiKey: "k", instance: "ayumi" };
 const res = (status: number) => ({ ok: status < 300, status }) as Response;
@@ -21,6 +21,8 @@ describe("Evolution (WhatsApp)", () => {
     await expect(mk(res(401)).sendText("+55119", "x")).rejects.toBeInstanceOf(MessagingOfflineError);
     await expect(mk(res(404)).sendText("+55119", "x")).rejects.toBeInstanceOf(MessagingOfflineError);
     await expect(mk(res(500)).sendText("+55119", "x")).rejects.toBeInstanceOf(MessagingTransientError);
+    // 400 = número recusado (sem WhatsApp): não é temporário, não vale repetir
+    await expect(mk(res(400)).sendText("+55119", "x")).rejects.toBeInstanceOf(MessagingRejectedError);
     const down = evolutionMessaging(cfg, vi.fn().mockRejectedValue(new Error("x")) as unknown as typeof fetch);
     await expect(down.sendText("+55119", "x")).rejects.toBeInstanceOf(MessagingTransientError);
   });
@@ -101,5 +103,11 @@ describe("Evolution admin", () => {
       instance: "studio-123e4567e89b12d3",
       pairingCode: "XXXX1111",
     });
+  });
+  it("motivo da falha para log não leva telefone nem texto", () => {
+    expect(sendFailReason(new MessagingRejectedError("400"))).toBe("rejected:400");
+    expect(sendFailReason(new MessagingOfflineError("401"))).toBe("offline:401");
+    expect(sendFailReason(new MessagingTransientError("500"))).toBe("transient:500");
+    expect(sendFailReason(new TypeError("+5511987654321"))).toBe("error:TypeError");
   });
 });
