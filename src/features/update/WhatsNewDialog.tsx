@@ -28,16 +28,19 @@ export function WhatsNewDialog({ enabled }: { enabled: boolean }) {
     if (list.length) void Promise.resolve().then(() => setReleases(list));
   }, [enabled, pathname, releases]);
 
+  // Só abre com novidades. Depois do "Entendi" a lista fica vazia ([]), que é truthy: checar o tamanho evita
+  // reabrir o diálogo vazio (só o fundo borrado, preso sobre o Painel).
   useEffect(() => {
-    if (releases && !ref.current?.open) ref.current?.showModal();
+    const dialog = ref.current;
+    if (releases?.length && dialog && !dialog.open) dialog.showModal();
   }, [releases]);
 
   function close() {
     try {
       localStorage.setItem(SEEN_VERSION_KEY, CURRENT_VERSION);
     } catch {}
-    ref.current?.close();
     setReleases([]);
+    if (ref.current?.open) ref.current.close();
   }
 
   const open = !!releases?.length;
