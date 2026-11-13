@@ -7,6 +7,7 @@ import { withTenant } from "@/db/client";
 import { listDay } from "@/features/appointments/core";
 import { listBlocks } from "@/features/blocks/core";
 import { importExternalEvents } from "@/features/google/server";
+import { importIcloudCalendar } from "@/features/calendar-feed/icloud-server";
 import { getHours } from "@/features/hours/core";
 import { CustomSheet } from "@/features/hours/CustomSheet";
 import { shortDayLabel } from "@/features/hours/custom-slots";
@@ -28,6 +29,7 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
   const now = new Date();
 
   await importExternalEvents(tenantId);
+  await importIcloudCalendar(tenantId);
   const { services, week, busy, lists } = await withTenant(tenantId, async (tx) => {
     const range: [Date, Date] = [dayRange(today)[0], dayRange(addDays(today, 6))[1]];
     const [appts, blks] = await Promise.all([listDay(tx, range), listBlocks(tx, range)]);

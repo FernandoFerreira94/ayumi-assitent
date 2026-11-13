@@ -10,13 +10,19 @@ import { sendBookingMessage } from "@/features/messaging/booking-send";
 import type { SyncResult } from "@/features/google/sync";
 import { searchClients } from "@/features/clients/core";
 import { listBookable } from "@/features/services/core";
-import { listBlocks } from "@/features/blocks/core";
+import { convertExternalBlock, listBlocks } from "@/features/blocks/core";
 import { dayRange, isDateStr, toInstant } from "@/lib/dates";
 import { editAppointment, insertAppointment, listDay, moveAppointment, setStatus } from "./core";
 import { dayVersion } from "./version";
 import { bookingOptions, type BookingOptions } from "./options";
 import { parseDiscount } from "./pricing";
 import { appointmentInput, STATUSES } from "./schema";
+
+class RollbackWith extends Error {
+  constructor(public readonly result: ActionResult<never>) {
+    super("rollback");
+  }
+}
 
 /** Opções da folha aberta pelo "Novo" do nav, que pode estar em qualquer tela. */
 export async function loadBookingOptions(): Promise<ActionResult<BookingOptions>> {
@@ -58,9 +64,23 @@ export async function createAppointment(_prev: ActionResult<{ id: string }> | nu
   if (!parsed.success) return fail("VALIDATION", String(parsed.error.issues[0]?.path[0] ?? ""));
   const discount = parseDiscount(formData.get("discountKind"), formData.get("discountValue"));
   if (discount === "invalid") return fail("VALIDATION", "discountValue");
-  const notes = String(formData.get("notes") ?? "").trim().slice(0, 300) || null;
+  const notes =
+    String(formData.get("notes") ?? "")
+      .trim()
+      .slice(0, 300) || null;
+  // "Transformar em agendamento": o evento de fora (iPhone/Google) que ocupava o horário sai junto
+  const fromBlock = z.string().uuid().safeParse(formData.get("fromBlockId"));
   try {
-    const res = await withTenant(tenantId, (tx) => insertAppointment(tx, tenantId, { ...parsed.data, discount, notes }));
+    const res = await withTenant(tenantId, async (tx) => {
+      if (fromBlock.success && !(await convertExternalBlock(tx, fromBlock.data))) return fail("NOT_FOUND");
+      const r = await insertAppointment(tx, tenantId, { ...parsed.data, discount, notes });
+      // sem agendamento, o evento volta como estava (desfaz a transação)
+      if (!r.ok && fromBlock.success) throw new RollbackWith(r);
+      return r;
+    }).catch((e) => {
+      if (e instanceof RollbackWith) return e.result;
+      throw e;
+    });
     if (!res.ok) return res;
     revalidatePath("/agenda");
     revalidatePath("/calendario");

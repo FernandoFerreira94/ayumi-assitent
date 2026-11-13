@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, lt, ne, sql } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNull, lt, ne, sql } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { appointments, blocks } from "@/db/schema";
 import { toInstant } from "@/lib/dates";
@@ -37,11 +37,21 @@ export async function removeBlock(tx: Tx, id: string): Promise<ActionResult> {
   return rows.length ? ok() : fail("NOT_ALLOWED");
 }
 
+/** Evento de fora (iPhone/Google) virou atendimento: some da agenda e deixa de ocupar o horário. */
+export async function convertExternalBlock(tx: Tx, id: string): Promise<boolean> {
+  const rows = await tx
+    .update(blocks)
+    .set({ convertedAt: new Date() })
+    .where(and(eq(blocks.id, id), inArray(blocks.source, ["google", "icloud"]), isNull(blocks.convertedAt)))
+    .returning({ id: blocks.id });
+  return rows.length > 0;
+}
+
 export const listBlocks = (tx: Tx, [from, to]: [Date, Date]) =>
   tx
     .select()
     .from(blocks)
-    .where(and(lt(blocks.startsAt, to), gt(blocks.endsAt, from)))
+    .where(and(lt(blocks.startsAt, to), gt(blocks.endsAt, from), isNull(blocks.convertedAt)))
     .orderBy(asc(blocks.startsAt));
 
 /** Há algum bloqueio cruzando [startsAt, endsAt)? */
@@ -49,7 +59,7 @@ export async function overlapsBlock(tx: Tx, startsAt: Date, endsAt: Date) {
   const r = await tx
     .select({ id: blocks.id })
     .from(blocks)
-    .where(and(lt(blocks.startsAt, endsAt), gt(blocks.endsAt, startsAt)))
+    .where(and(lt(blocks.startsAt, endsAt), gt(blocks.endsAt, startsAt), isNull(blocks.convertedAt)))
     .limit(1);
   return r.length > 0;
 }

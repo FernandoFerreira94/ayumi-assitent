@@ -53,6 +53,8 @@ export const tenants = pgTable("tenants", {
   calendarTokenHash: text("calendar_token_hash").unique(),
   /** No link do calendário, título sem o nome da cliente (só o serviço) */
   calendarHideNames: boolean("calendar_hide_names").notNull().default(false),
+  /** Link público (webcal/https) de um calendário do iCloud, lido só para trazer eventos; null = desligado. Nunca logar. */
+  icloudCalendarUrl: text("icloud_calendar_url"),
   /** Horas antes do horário do segundo aviso (para quem não respondeu); null = só um aviso */
   secondReminderHours: integer("second_reminder_hours").default(3),
   /** Antigo interruptor de valor. Sem uso: o valor agora é a chave {valor} no texto de agendamento */
@@ -200,9 +202,13 @@ export const blocks = pgTable("blocks", {
   startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
   endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
   reason: text("reason"),
-  /** "app" = bloqueio criado aqui; "google" = evento importado do Google Agenda (somente leitura) */
+  /** "app" = bloqueio criado aqui; "google"/"icloud" = evento importado (somente leitura) */
   source: text("source").notNull().default("app"),
   googleEventId: text("google_event_id"),
+  /** UID do evento do iCloud (com o início, nas repetições). */
+  externalUid: text("external_uid"),
+  /** Evento de fora que virou atendimento: escondido e não ocupa mais o horário. */
+  convertedAt: timestamp("converted_at", { withTimezone: true }),
 });
 
 export const workingHours = pgTable(

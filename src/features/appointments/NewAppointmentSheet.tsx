@@ -48,6 +48,7 @@ export function NewAppointmentSheet({
   time,
   clientId,
   serviceIds,
+  fromBlockId,
   onClosed,
 }: {
   date: string;
@@ -62,6 +63,8 @@ export function NewAppointmentSheet({
   clientId?: string;
   /** Serviços já escolhidos (toque num horário em Vagas). */
   serviceIds?: string[];
+  /** Evento de fora (iPhone/Google) que vira este atendimento: sai da agenda quando salvar. */
+  fromBlockId?: string;
   /** Avisa quando a folha fecha, para a agenda tirar o bloco provisório. */
   onClosed?: () => void;
 }) {
@@ -227,13 +230,14 @@ export function NewAppointmentSheet({
             ) : missing ? null : (
               // Fica montado por trás da Bolha: se der erro, a folha volta preenchida
               <form
-                key={`${formKey}-${date}-${time ?? ""}-${clientId ?? ""}-${serviceIds?.join(",") ?? ""}`}
+                key={`${formKey}-${date}-${time ?? ""}-${clientId ?? ""}-${serviceIds?.join(",") ?? ""}-${fromBlockId ?? ""}`}
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (!working) void book(new FormData(e.currentTarget));
                 }}
                 className="grid gap-3"
               >
+                {fromBlockId ? <input type="hidden" name="fromBlockId" value={fromBlockId} /> : null}
                 <LetterPicker
                   name="clientId"
                   label="Cliente"

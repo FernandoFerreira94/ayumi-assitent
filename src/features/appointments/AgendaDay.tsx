@@ -12,8 +12,9 @@ import {
 import { Drawer } from "vaul";
 import { notify } from "@/components/feedback/toast";
 import type { PickerOption } from "@/components/ui/LetterPicker";
+import { Icon } from "@/components/ui/Icon";
 import { BlockCard } from "@/features/blocks/BlockCard";
-import { formatDayTitle, formatShortDate } from "@/lib/dates";
+import { formatDayTitle, formatShortDate, todayStr } from "@/lib/dates";
 import { AppointmentCard } from "./AppointmentCard";
 import { rescheduleAppointment } from "./actions";
 import {
@@ -62,7 +63,18 @@ export type AgendaAppointment = Span & {
   discount: { label: string; from: string; off: string } | null;
   notes: string | null;
 };
-export type AgendaBlock = Span & { kind: "block"; id: string; reason: string | null; external?: boolean };
+/** Origem do evento de fora: "google" (Google Agenda) ou "icloud" (Calendário do iPhone). Sem = bloqueio do app. */
+export type ExternalSource = "google" | "icloud";
+export type AgendaBlock = Span & {
+  kind: "block";
+  id: string;
+  reason: string | null;
+  external?: ExternalSource;
+  /** O título bate com uma cliente (e serviços) cadastrada: sugere virar atendimento. */
+  guess?: { clientId: string; clientName: string; serviceIds: string[]; serviceNames: string[] } | null;
+};
+
+const SOURCE_LABEL: Record<ExternalSource, string> = { google: "Google Agenda", icloud: "Calendário do iPhone" };
 
 type Gesture = {
   id: string;
@@ -161,6 +173,8 @@ export function AgendaDay({
   const [showTip, setShowTip] = useState(false);
   const [temp, setTemp] = useState<Span | null>(null);
   const [newKey, setNewKey] = useState(0);
+  /** "Transformar em agendamento": a folha de agendar abre preenchida com o evento de fora. */
+  const [convert, setConvert] = useState<{ blockId: string; clientId?: string; serviceIds?: string[] } | null>(null);
   const [enter] = useState(() =>
     lastDate === null || lastDate === date ? undefined : date > lastDate ? "fwd" : "back",
   );
@@ -427,7 +441,12 @@ export function AgendaDay({
           ))}
           {hours ? null : <div className="ag-closed">Salão fechado</div>}
           {pause && hours ? (
-            <div className="ag-ev pause fixed-pause" style={place(pause, "pausa")} aria-label={`Pausa, ${range(pause)}`} role="img">
+            <div
+              className="ag-ev pause fixed-pause"
+              style={place(pause, "pausa")}
+              aria-label={`Pausa, ${range(pause)}`}
+              role="img"
+            >
               <b>Pausa</b>
               <span className="tm">{range(pause)}</span>
             </div>
@@ -440,8 +459,13 @@ export function AgendaDay({
               className={`ag-ev pause ${b.external ? "ext" : ""} ${b.end - b.start < 40 ? "short" : ""}`}
               style={place(b, b.id)}
               onClick={() => setDetailId(b.id)}
-              aria-label={`${b.external ? "Google Agenda" : "Bloqueado"}${b.reason ? ` · ${b.reason}` : ""}, ${range(b)}`}
+              aria-label={`${b.external ? `Evento do ${SOURCE_LABEL[b.external]}` : "Bloqueado"}${b.reason ? ` · ${b.reason}` : ""}, ${range(b)}`}
             >
+              {b.external ? (
+                <span className="ext-ic" aria-hidden="true">
+                  <Icon name={b.external === "google" ? "google" : "phone"} size={12} />
+                </span>
+              ) : null}
               <b>{b.reason ?? "Bloqueado"}</b>
               <span className="tm">{range(b)}</span>
             </button>
@@ -509,7 +533,9 @@ export function AgendaDay({
                 {span.end - span.start >= 45 ? (
                   <span className="sub">
                     {formatShortDate(date)} · {duration(span)}
-                    {span.end - span.start >= 90 ? ` · ${a.clientPhone}${CONFIRM_CHIP[a.status] ? "" : ` · ${STATUS_SHORT[a.status]}`}` : ""}
+                    {span.end - span.start >= 90
+                      ? ` · ${a.clientPhone}${CONFIRM_CHIP[a.status] ? "" : ` · ${STATUS_SHORT[a.status]}`}`
+                      : ""}
                   </span>
                 ) : null}
                 {(sel || lifted) && canDrag(a.status) ? (
@@ -546,10 +572,20 @@ export function AgendaDay({
         services={services}
         openKey={newKey}
         time={temp ? hhmm(temp.start) : undefined}
-        onClosed={() => setTemp(null)}
+        clientId={convert?.clientId}
+        serviceIds={convert?.serviceIds}
+        fromBlockId={convert?.blockId}
+        onClosed={() => {
+          setTemp(null);
+          setConvert(null);
+        }}
       />
 
-      <Drawer.Root repositionInputs={false} open={Boolean(detailAppt || detailBlock)} onOpenChange={(open) => !open && setDetailId(null)}>
+      <Drawer.Root
+        repositionInputs={false}
+        open={Boolean(detailAppt || detailBlock)}
+        onOpenChange={(open) => !open && setDetailId(null)}
+      >
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
           <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
@@ -557,7 +593,7 @@ export function AgendaDay({
               {detailAppt
                 ? detailAppt.clientName
                 : detailBlock?.external
-                  ? (detailBlock.reason ?? "Evento do Google")
+                  ? (detailBlock.reason ?? "Evento")
                   : "Horário bloqueado"}
             </Drawer.Title>
             <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
@@ -588,12 +624,17 @@ export function AgendaDay({
                   onSettled={() => setDetailId(null)}
                 />
               ) : detailBlock?.external ? (
-                <li className="glass rounded-2xl px-4 py-3">
-                  <p className="font-bold">Evento do Google Agenda</p>
-                  <p className="text-sm font-semibold text-muted">
-                    Somente leitura. Para mudar ou apagar, use o Google Agenda.
-                  </p>
-                </li>
+                <ExternalEventCard
+                  block={detailBlock}
+                  past={date < todayStr()}
+                  onConvert={() => {
+                    const g = detailBlock.guess;
+                    setConvert({ blockId: detailBlock.id, clientId: g?.clientId, serviceIds: g?.serviceIds });
+                    setTemp({ start: detailBlock.start, end: detailBlock.end });
+                    setDetailId(null);
+                    setNewKey((k) => k + 1);
+                  }}
+                />
               ) : detailBlock ? (
                 <BlockCard
                   id={detailBlock.id}
@@ -614,5 +655,53 @@ export function AgendaDay({
         </Drawer.Portal>
       </Drawer.Root>
     </>
+  );
+}
+
+/** Detalhe do evento de fora: origem discreta num círculo, só leitura e, se der, "Transformar em agendamento". */
+function ExternalEventCard({ block, past, onConvert }: { block: AgendaBlock; past: boolean; onConvert: () => void }) {
+  const src = block.external!;
+  const g = block.guess;
+  return (
+    <li className="glass grid gap-3 rounded-2xl px-4 py-3">
+      <div className="flex items-center gap-3">
+        <span
+          className="grid size-8 shrink-0 place-content-center rounded-full border border-[#d9d8e0] bg-[#f1f1f4] text-[#7c7a88]"
+          aria-hidden="true"
+        >
+          <Icon name={src === "google" ? "google" : "phone"} size={16} />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-bold">Do {SOURCE_LABEL[src]}</p>
+          <p className="text-xs font-semibold text-muted">
+            Não é um atendimento do app. Ocupa o horário. Para mudar ou apagar, use o{" "}
+            {src === "google" ? "Google Agenda" : "Calendário do iPhone"}.
+          </p>
+        </div>
+      </div>
+      {g ? (
+        <p className="rounded-xl bg-soft px-3 py-2 text-sm font-semibold text-primary-text">
+          Parece um atendimento: <b>{g.clientName}</b>
+          {g.serviceNames.length ? ` · ${g.serviceNames.join(" + ")}` : ""}
+        </p>
+      ) : null}
+      {past ? null : (
+        <button
+          type="button"
+          onClick={onConvert}
+          className={`flex min-h-11 items-center justify-center gap-2 rounded-full px-4 text-sm font-bold ${
+            g ? "bg-primary text-on-primary" : "btn-glass"
+          }`}
+        >
+          <Icon name="calendar" size={18} />
+          Transformar em agendamento
+        </button>
+      )}
+      {past ? null : (
+        <p className="-mt-1 px-1 text-xs font-semibold text-muted">
+          Depois, apague o evento no {src === "google" ? "Google Agenda" : "iPhone"} para ele não aparecer duas vezes.
+        </p>
+      )}
+    </li>
   );
 }
