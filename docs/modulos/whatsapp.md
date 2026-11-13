@@ -13,11 +13,12 @@
 - `messages` (direction, kind, body, intent, external_id, read_at), `tenants.whatsapp_instance`, configs de IA em `tenants` (`ai_enabled`, `ai_rules`), `appointments.ai_handoff_at`.
 
 ## Ligações
-- **Usa:** appointments (muda status), push (avisa a dona), reminders (textos/estado dos avisos).
+- **Usa:** appointments (muda status), push (avisa a dona), reminders (textos/estado dos avisos), perfil (telefone comercial como sugestão ao conectar).
 - **Usado por:** reminders e worker (porta de envio), appointments (mensagem de agendamento), clients (conversa), shell (estado na casca).
 
 ## Regras de negócio
 - Cancelar/remarcar pela cliente = "quer remarcar" (`reschedule_requested`); horário segue reservado, a dona decide.
+- Conectar: o campo do número vem com o telefone comercial do Meu perfil (`tenants.business_phone`), editável; Ajustes > WhatsApp lê e passa `profilePhone` ao `WhatsAppCard`.
 - Textos educados, com primeiro nome. IA sempre ligada; por ora só lê e repassa.
 - Sino/push só para: confirmou, pediu cancelar, pediu remarcar, não respondeu (e WhatsApp desconectado).
 
