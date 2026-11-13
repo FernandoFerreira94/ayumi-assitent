@@ -6,6 +6,10 @@ import { Mascot } from "@/components/brand/Mascot";
 import { finishTour } from "./actions";
 import { TOUR_STEPS, unionBox, type Box } from "./steps";
 
+/** No desktop a barra do rodapé existe no DOM mas está escondida: o tour olha só o que aparece. */
+const firstVisible = (selector: string) =>
+  [...document.querySelectorAll<HTMLElement>(selector)].find((el) => el.getClientRects().length > 0) ?? null;
+
 const START_TOUR = "tour:start";
 
 /** Abre o tour de novo (botão em Ajustes). */
@@ -18,7 +22,9 @@ const MAX_HOLE = 0.42;
 
 function measure(selector: string | undefined): Box | null {
   if (!selector) return null;
-  const rects = [...document.querySelectorAll(selector)].map((el) => el.getBoundingClientRect());
+  const rects = [...document.querySelectorAll(selector)]
+    .map((el) => el.getBoundingClientRect())
+    .filter((r) => r.width > 0 && r.height > 0);
   const box = unionBox(rects.map((r) => ({ top: r.top, left: r.left, width: r.width, height: r.height })));
   const max = window.innerHeight * MAX_HOLE;
   return box && box.height > max ? { ...box, height: max } : box;
@@ -52,7 +58,7 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
       if (s === null) return null;
       let n = s + 1;
       // Passo opcional sem o destaque na tela (app já instalado) é pulado
-      while (n < TOUR_STEPS.length - 1 && TOUR_STEPS[n].optional && !document.querySelector(TOUR_STEPS[n].target ?? "")) n++;
+      while (n < TOUR_STEPS.length - 1 && TOUR_STEPS[n].optional && !firstVisible(TOUR_STEPS[n].target ?? "")) n++;
       return n < TOUR_STEPS.length ? n : s;
     });
   }, []);
@@ -78,7 +84,7 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
     // querySelector("") lança SyntaxError: passo sem destaque (o primeiro e o último) não rola nada
     // Cartão alto (as mensagens) rola até o começo; o resto fica no meio da tela
     if (current.target) {
-      const el = document.querySelector(current.target);
+      const el = firstVisible(current.target);
       const tall = el ? el.getBoundingClientRect().height > window.innerHeight * MAX_HOLE : false;
       el?.scrollIntoView({ block: tall ? "start" : "center", behavior: "smooth" });
     }
