@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Drawer } from "vaul";
+import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { notify } from "@/components/feedback/toast";
 import { Icon } from "@/components/ui/Icon";
 import type { PickerOption } from "@/components/ui/LetterPicker";
@@ -35,6 +36,7 @@ export function EditAppointmentSheet({
   nested: boolean;
   triggerClassName: string;
 }) {
+  const side = useSheetSide();
   const [open, setOpen] = useState(false);
   const [services, setServices] = useState<PickerOption[] | null>(null);
   const [error, setError] = useState<ErrorCode | null>(null);
@@ -74,14 +76,15 @@ export function EditAppointmentSheet({
   }
 
   return (
-    <Root open={open} onOpenChange={onOpenChange} repositionInputs={false}>
+    <Root direction={side} open={open} onOpenChange={onOpenChange} repositionInputs={false}>
       <Drawer.Trigger className={triggerClassName}>
         <Icon name="reschedule" size={18} />
         Remarcar
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
-        <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
+        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
+<SidePanelClose />
           <Drawer.Title className="pb-1 text-xl font-bold">Editar {clientName.split(/\s+/)[0]}</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
             Mudou o horário? Ela recebe um lembrete novo para confirmar.

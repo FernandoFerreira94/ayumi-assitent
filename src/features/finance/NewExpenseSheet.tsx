@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { Drawer } from "vaul";
+import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import { messageFor, type ActionResult } from "@/lib/errors";
@@ -13,6 +14,7 @@ const input = "min-h-13 w-full rounded-2xl border px-4 text-base font-semibold";
 
 /** Lança um gasto num sheet sobre a tela, sem trocar de página. */
 export function NewExpenseSheet({ date }: { date: string }) {
+  const side = useSheetSide();
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [state, action] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
@@ -27,15 +29,14 @@ export function NewExpenseSheet({ date }: { date: string }) {
   const err = state && !state.ok ? state : null;
 
   return (
-    <Drawer.Root repositionInputs={false} open={open} onOpenChange={setOpen}>
+    <Drawer.Root direction={side} repositionInputs={false} open={open} onOpenChange={setOpen}>
       <Drawer.Trigger className="btn-tint min-h-12 w-full rounded-full px-4 text-sm font-bold">
         Lançar gasto
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-        <Drawer.Content
-          className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none"
-        >
+        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
+<SidePanelClose />
           <Drawer.Title className="pb-1 text-xl font-bold">Lançar gasto</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
             Produtos, aluguel, contas… o que saiu do caixa do estúdio.

@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { Drawer } from "vaul";
+import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import { openNewAppointment } from "@/features/appointments/QuickBook";
@@ -233,6 +234,7 @@ function EditSheet({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
+  const side = useSheetSide();
   const [phone, setPhone] = useState(client.phone);
   const [state, action] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
     const res = await updateClient(client.id, prev, fd);
@@ -247,12 +249,11 @@ function EditSheet({
   const err = state && !state.ok ? state : null;
 
   return (
-    <Drawer.Root repositionInputs={false} open={open} onOpenChange={onOpenChange}>
+    <Drawer.Root direction={side} repositionInputs={false} open={open} onOpenChange={onOpenChange}>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-        <Drawer.Content
-          className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none"
-        >
+        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
+<SidePanelClose />
           <Drawer.Title className="pb-1 text-xl font-bold">Editar cliente</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
             Os agendamentos dela continuam como estão.
@@ -327,6 +328,7 @@ function DeleteSheet({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
+  const side = useSheetSide();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ActionResult | null>(null);
 
@@ -346,7 +348,7 @@ function DeleteSheet({
   }
 
   return (
-    <Drawer.Root
+    <Drawer.Root direction={side}
       open={open}
       dismissible={!busy}
       onOpenChange={(v) => {
@@ -357,7 +359,8 @@ function DeleteSheet({
     >
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-        <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
+        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
+<SidePanelClose />
           <Drawer.Title className="pb-1 text-xl font-bold">Excluir {client.name}?</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
             A cliente e a conversa dela saem do app. Não dá para desfazer.
@@ -407,6 +410,7 @@ function CardSheet({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const side = useSheetSide();
   const [data, setData] = useState<ClientCard | null>(null);
   const [failed, setFailed] = useState(false);
   /** Muda a cada abertura ou "Tentar de novo" e dispara a busca. */
@@ -436,13 +440,14 @@ function CardSheet({
 
   const action = "flex min-h-13 items-center justify-center gap-2 rounded-2xl px-4 font-bold";
   return (
-    <Drawer.Root
+    <Drawer.Root direction={side}
       open={open}
       onOpenChange={onOpenChange}
     >
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-        <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
+        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
+<SidePanelClose />
           <Drawer.Title className="text-xl font-bold">{client.name}</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
             {client.phone}

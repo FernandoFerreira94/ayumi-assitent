@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Drawer } from "vaul";
+import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { formatMonthYear } from "@/lib/dates";
 
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -44,13 +45,14 @@ const chevron = (d: string) => (
 
 /** O nome do mês acima da faixa de dias abre esta folha para pular para outro mês. */
 export function MonthPicker({ date, today, base = "/calendario" }: { date: string; today: string; base?: string }) {
+  const side = useSheetSide();
   const [open, setOpen] = useState(false);
   const selYear = Number(date.slice(0, 4));
   const selMonth = Number(date.slice(5, 7));
   const [year, setYear] = useState(selYear);
 
   return (
-    <Drawer.Root
+    <Drawer.Root direction={side}
       open={open}
       onOpenChange={(o) => {
         setOpen(o);
@@ -87,7 +89,8 @@ export function MonthPicker({ date, today, base = "/calendario" }: { date: strin
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-        <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
+        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
+<SidePanelClose />
           <Drawer.Title className="pb-1 text-xl font-bold">Escolher mês</Drawer.Title>
           <Drawer.Description className="sr-only">A agenda abre no primeiro dia do mês escolhido.</Drawer.Description>
           <div className="flex items-center justify-between pb-3">

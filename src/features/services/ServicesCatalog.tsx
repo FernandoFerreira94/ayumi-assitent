@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Drawer } from "vaul";
+import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { notify } from "@/components/feedback/toast";
 import { formatBRL } from "@/lib/dates";
@@ -14,6 +15,7 @@ type Sheet = { kind: "service"; service?: CatalogService; preset?: { name?: stri
 
 /** Lista de serviços, com busca, reordenar e a folha de criar/editar. */
 export function ServicesCatalog({ services, startWithNew }: { services: CatalogService[]; startWithNew: boolean }) {
+  const side = useSheetSide();
   const router = useRouter();
   // Cópia local: reordenar e excluir aparecem na hora; o servidor manda a lista nova depois
   const [list, setList] = useState(services);
@@ -317,13 +319,12 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
         </div>
       )}
 
-      <Drawer.Root repositionInputs={false} open={open} onOpenChange={setOpen}>
+      <Drawer.Root direction={side} repositionInputs={false} open={open} onOpenChange={setOpen}>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-          <Drawer.Content
-            className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none"
-          >
-            <Drawer.Handle className="mb-3" />
+          <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
+<SidePanelClose />
+            <Drawer.Handle className="mb-3 md:hidden" />
             <Drawer.Title className="pb-1 text-xl font-bold">{sheetTitle}</Drawer.Title>
             <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
               Mudar preço ou duração vale só para os próximos agendamentos.

@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { Drawer } from "vaul";
+import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { notify } from "@/components/feedback/toast";
 import type { PickerOption } from "@/components/ui/LetterPicker";
 import { Icon } from "@/components/ui/Icon";
@@ -166,6 +167,7 @@ export function AgendaDay({
   /** Botão Bloquear; sem ele (no Painel) a fileira Bloquear/Agendar não aparece. */
   blockButton?: ReactNode;
 }) {
+  const side = useSheetSide();
   // Horário otimista depois do arraste, até o servidor mandar a agenda nova
   const [moved, setMoved] = useState<Record<string, Span>>({});
   const [prevAppointments, setPrevAppointments] = useState(appointments);
@@ -597,14 +599,15 @@ export function AgendaDay({
         }}
       />
 
-      <Drawer.Root
+      <Drawer.Root direction={side}
         repositionInputs={false}
         open={Boolean(detailAppt || detailBlock)}
         onOpenChange={(open) => !open && setDetailId(null)}
       >
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
-          <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
+          <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
+<SidePanelClose />
             <Drawer.Title className="pb-1 text-xl font-bold">
               {detailAppt
                 ? detailAppt.clientName

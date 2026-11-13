@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Drawer } from "vaul";
+import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { notify } from "@/components/feedback/toast";
 import { Icon, TileTitle } from "@/components/ui/Icon";
 import { Switch } from "@/components/ui/Switch";
@@ -57,6 +58,7 @@ export function IphoneCalendarCard({
   /** Já lê um calendário do iCloud (o link em si nunca vem para a tela). */
   icloudOn: boolean;
 }) {
+  const side = useSheetSide();
   const [enabled, setEnabled] = useState(initialEnabled);
   const [icloudOn, setIcloudOn] = useState(initialIcloud);
   const [icloudUrl, setIcloudUrl] = useState("");
@@ -175,7 +177,7 @@ export function IphoneCalendarCard({
   else if (googleConnected) hint = "Você já vê pelo Google Agenda. Toque para ver como.";
 
   return (
-    <Drawer.Root repositionInputs={false} open={open} onOpenChange={setOpen}>
+    <Drawer.Root direction={side} repositionInputs={false} open={open} onOpenChange={setOpen}>
       <div className="glass grid gap-3 rounded-[1.75rem] px-5 py-4">
         <div className="flex items-center justify-between gap-3">
           <Drawer.Trigger className="min-w-0 flex-1 text-left">
@@ -221,7 +223,8 @@ export function IphoneCalendarCard({
       </div>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-        <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[85dvh] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
+        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-h-[85dvh] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
+<SidePanelClose />
           <Drawer.Title className="pt-2 text-center text-xl font-bold">Calendário do iPhone</Drawer.Title>
           <Drawer.Description className="pb-4 text-center text-sm font-semibold text-muted">
             Duas direções, cada uma liga separado: trazer o que você já marca no iPhone para o app e mostrar os

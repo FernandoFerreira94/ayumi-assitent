@@ -2594,3 +2594,14 @@ textarea {
     margin-inline: 0;
   }
 }
+
+/* Painel lateral das folhas (tablet e desktop): borda e sombra do lado esquerdo em vez do topo. */
+@media (min-width: 48rem) {
+  .sheet[data-vaul-drawer-direction="right"] {
+    border-top: 0;
+    border-left: 1px solid var(--glass-line);
+    box-shadow:
+      var(--glass-rim),
+      -12px 0 40px rgba(40, 24, 110, 0.18);
+  }
+}
