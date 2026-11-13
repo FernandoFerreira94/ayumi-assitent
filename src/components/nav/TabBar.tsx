@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLayoutEffect, useRef } from "react";
 import { openNewAppointment } from "@/features/appointments/QuickBook";
+import { isNavActive } from "./nav-items";
 
 const svg = (d: React.ReactNode, filled = false) => (
   <svg
@@ -93,8 +94,6 @@ const TABS = [
   },
 ] as const;
 
-const isAt = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
-
 /**
  * Barra de vidro flutuante no estilo do iOS 26: pílula translúcida com as abas e uma lente lavanda que
  * desliza com mola até a aba atual, que mostra o nome embaixo do ícone; o + fica num botão redondo à parte (é ação, não aba).
@@ -133,7 +132,7 @@ export function TabBar() {
         <span className="tab-lens" aria-hidden="true" />
         <ul>
           {TABS.map((t) => {
-            const on = isAt(pathname, t.href);
+            const on = isNavActive(pathname, t.href);
             return (
               <li key={t.href}>
                 <Link
