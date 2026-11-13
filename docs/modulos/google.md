@@ -22,3 +22,4 @@
 - Problema conhecido: "Google Agenda pedindo reconectar sempre" (investigar refresh/escopo em `calendar.refreshAccessToken` e `server.googleAccessToken`).
 - Testes: `tests/unit/google-calendar.test.ts`, `google-import.test.ts`.
 - Evento do Google é só leitura no app; nunca identificar cliente pelo título.
+- Tokens do Google ficam **cifrados** (`account.encryptOAuthTokens`). Leitura/escrita direta por SQL passa por `features/google/token-crypto.ts` (`readToken`/`writeToken`); linha antiga em texto puro continua valendo. Desconectar revoga no Google (`calendar.revokeToken`) antes de apagar.

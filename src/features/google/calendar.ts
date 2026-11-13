@@ -185,3 +185,13 @@ export async function refreshAccessToken(
   const j = (await res.json()) as { access_token: string; expires_in: number };
   return { accessToken: j.access_token, expiresAt: new Date(Date.now() + j.expires_in * 1000) };
 }
+
+/** Revoga o acesso no Google (exigência das políticas ao desconectar). Token já inválido conta como revogado. */
+export async function revokeToken(token: string, fetchImpl: typeof fetch = fetch): Promise<void> {
+  const res = await fetchImpl("https://oauth2.googleapis.com/revoke", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ token }),
+  });
+  if (!res.ok && res.status !== 400) throw new GoogleApiError(String(res.status));
+}
