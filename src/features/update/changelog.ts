@@ -39,6 +39,10 @@ export const RELEASES: readonly Release[] = [
         kind: "layout",
         text: "Cada notificação do sino tem um ícone e uma cor: vermelho quando algo parou, laranja quando pede atenção, verde quando deu certo e azul para a rotina da agenda.",
       },
+      {
+        kind: "layout",
+        text: "Quando a notificação é de uma cliente, aparece a bolinha com as iniciais dela, sempre na mesma cor.",
+      },
     ],
   },
   {

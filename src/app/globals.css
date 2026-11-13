@@ -1670,6 +1670,19 @@ button {
     0 0 0 1px color-mix(in srgb, var(--t) 16%, transparent) inset,
     0 1px 0 rgba(255, 255, 255, 0.8) inset;
 }
+/* Selo do tipo no avatar da cliente: mesmas cores do quadradinho (Icon.tsx, TILE) */
+.aviso-badge-red {
+  background: #e5484d;
+}
+.aviso-badge-orange {
+  background: #f2923d;
+}
+.aviso-badge-green {
+  background: #25b864;
+}
+.aviso-badge-blue {
+  background: #3d7cf2;
+}
 .aviso-row[data-tone="danger"] {
   --t: var(--fail);
   --t-bg: var(--fail-bg);

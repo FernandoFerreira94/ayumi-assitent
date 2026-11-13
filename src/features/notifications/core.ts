@@ -22,6 +22,8 @@ export type Aviso = {
   href: string;
   icon: IconName;
   tone: AvisoTone;
+  /** Aviso de uma cliente: a linha mostra o avatar com as iniciais (cor fixa por cliente) no lugar do quadradinho. */
+  client?: { id: string; name: string };
 };
 
 type Inputs = {
@@ -98,6 +100,7 @@ export function messageAvisos(unread: UnreadSummary[]): Aviso[] {
           u.count > 1 ? `${u.count} mensagens novas · “${u.lastBody.slice(0, 60)}”` : `“${u.lastBody.slice(0, 80)}”`,
         href: conversationHref(u.clientId),
         ...INTENT_LOOK[u.lastIntent],
+        client: { id: u.clientId, name: u.clientName },
       };
     });
 }
@@ -111,6 +114,7 @@ export function noReplyAvisos(rows: { id: string; clientId: string; clientName: 
     href: conversationHref(r.clientId),
     icon: "message",
     tone: "warning",
+    client: { id: r.clientId, name: r.clientName },
   }));
 }
 
@@ -165,4 +169,13 @@ export function pendenciaAvisos(counts: {
     });
   }
   return avisos;
+}
+
+/** Cores do avatar das clientes (as mesmas dos serviços): sempre a mesma cor para a mesma cliente. */
+export const AVATAR_COLORS = ["lav", "rosa", "mel", "verde", "lilas", "azul"] as const;
+
+export function avatarColor(clientId: string): (typeof AVATAR_COLORS)[number] {
+  let h = 0;
+  for (const ch of clientId) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length]!;
 }

@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { notify } from "@/components/feedback/toast";
-import { IconTile, type Tint } from "@/components/ui/Icon";
+import { initials } from "@/components/nav/AppMenu";
+import { Icon, IconTile, type Tint } from "@/components/ui/Icon";
 import { markAllAvisosRead, markClientAvisoRead } from "./actions";
-import type { Aviso, AvisoTone } from "./core";
+import { avatarColor, type Aviso, type AvisoTone } from "./core";
 
 const READ_KEY = "mimo:avisos-lidos";
 /** Quanto arrastar para o lado (px) para o aviso contar como visto. */
@@ -273,7 +274,11 @@ function AvisoRow({ aviso, onOpen, onRead }: { aviso: Aviso; onOpen: () => void;
         }}
         className="flex min-w-0 flex-1 items-start gap-3 py-3 pl-3 pr-2"
       >
-        <IconTile name={aviso.icon} tint={TONE_TINT[aviso.tone]} />
+        {aviso.client ? (
+          <ClientAvatar client={aviso.client} icon={aviso.icon} tint={TONE_TINT[aviso.tone]} />
+        ) : (
+          <IconTile name={aviso.icon} tint={TONE_TINT[aviso.tone]} />
+        )}
         <span className="min-w-0">
           <span className="block font-bold">{aviso.title}</span>
           <span className="block text-sm font-semibold text-muted">{aviso.hint}</span>
@@ -299,5 +304,23 @@ function AvisoRow({ aviso, onOpen, onRead }: { aviso: Aviso; onOpen: () => void;
         </svg>
       </button>
     </li>
+  );
+}
+
+/** Iniciais da cliente (nome + sobrenome) na cor fixa dela, com o selo do tipo de aviso no canto. */
+function ClientAvatar({ client, icon, tint }: { client: { id: string; name: string }; icon: Aviso["icon"]; tint: Tint }) {
+  const c = avatarColor(client.id);
+  return (
+    <span aria-hidden="true" className="relative grid size-9 shrink-0">
+      <span
+        className="grid size-9 place-content-center rounded-full text-sm font-bold"
+        style={{ background: `var(--svc-${c}-soft)`, color: `var(--svc-${c}-ink)`, boxShadow: `0 0 0 1px var(--svc-${c}) inset` }}
+      >
+        {initials(client.name)}
+      </span>
+      <span className={`aviso-badge aviso-badge-${tint} absolute -bottom-1 -right-1 grid size-[18px] place-content-center rounded-full text-white ring-2 ring-white`}>
+        <Icon name={icon} size={11} />
+      </span>
+    </span>
   );
 }

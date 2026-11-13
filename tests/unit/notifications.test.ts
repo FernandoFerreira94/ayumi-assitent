@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildAvisos, messageAvisos, noReplyAvisos, pendenciaAvisos } from "@/features/notifications/core";
+import {
+  AVATAR_COLORS,
+  avatarColor,
+  buildAvisos,
+  messageAvisos,
+  noReplyAvisos,
+  pendenciaAvisos,
+} from "@/features/notifications/core";
 
 describe("avisos do app", () => {
   it("tudo conectado não gera aviso", () => {
@@ -65,5 +72,18 @@ describe("ícone e cor dos avisos", () => {
     const avisos = pendenciaAvisos({ toClose: 1, toConfirm: 1, unsynced: 1, toReschedule: 1 });
     for (const a of avisos) expect(a.icon && a.tone).toBeTruthy();
     expect(avisos.find((a) => a.id === "to-close")?.tone).toBe("info");
+  });
+});
+
+describe("avatar da cliente", () => {
+  it("aviso de cliente leva nome e id para as iniciais", () => {
+    const [a] = noReplyAvisos([{ id: "a1", clientId: "c9", clientName: "Bia Souza", time: "14:30" }]);
+    expect(a.client).toEqual({ id: "c9", name: "Bia Souza" });
+    expect(buildAvisos({ whatsapp: "other", google: true })[0].client).toBeUndefined();
+  });
+
+  it("cor fixa por cliente", () => {
+    expect(avatarColor("c9")).toBe(avatarColor("c9"));
+    expect(AVATAR_COLORS).toContain(avatarColor("qualquer-id"));
   });
 });
