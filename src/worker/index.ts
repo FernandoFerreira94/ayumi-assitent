@@ -34,7 +34,6 @@ async function main() {
     const r = await runReminders(
       (i) => messagingForInstance(i),
       new Date(),
-      process.env.EVOLUTION_INSTANCE,
       pushFromEnv(),
     );
     log({ level: r.failed ? "warn" : "info", msg: "reminders_run", ...r });

@@ -15,14 +15,13 @@ import { sendNudges } from "./nudge";
 export async function runReminders(
   portFor: (instance: string) => MessagingPort | null,
   now = new Date(),
-  fallbackInstance?: string,
   push: PushPort | null = null,
 ): Promise<ReminderRun> {
   const all = await getDb().select({ id: tenants.id, instance: tenants.whatsappInstance }).from(tenants);
   const total: ReminderRun = { sent: 0, failed: 0, offline: false };
   for (const t of all) {
-    const instance = t.instance ?? fallbackInstance;
-    const port = instance ? portFor(instance) : null;
+    // Só a instância do próprio estúdio: nunca enviar pelo WhatsApp de outro salão
+    const port = t.instance ? portFor(t.instance) : null;
     if (!port) continue; // estúdio sem WhatsApp conectado
     try {
       const r = await withTenant(t.id, (tx) => sendReminders(tx, port, now));

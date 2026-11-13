@@ -25,7 +25,7 @@ Comando de release/deploy: `pnpm db:migrate` antes de `pnpm start`.
 ## 3. Worker de lembretes (segundo serviço no Railway)
 
 - Mesmo repositório, comando de start: `pnpm worker` (usa pg-boss no mesmo Postgres; roda a cada 5 minutos).
-- Variáveis: `DATABASE_URL` (igual ao app) + `EVOLUTION_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE`.
+- Variáveis: `DATABASE_URL` (igual ao app) + `EVOLUTION_URL`, `EVOLUTION_API_KEY`.
 - Sem as variáveis da Evolution o worker sobe e apenas registra "reminders_skipped".
 - Lembrete sai 24 h antes do horário, uma única vez por agendamento; se o envio falha, tenta de novo na rodada seguinte.
 
@@ -59,4 +59,4 @@ Comando de release/deploy: `pnpm db:migrate` antes de `pnpm start`.
 Variáveis do app: `DATABASE_URL` (`${{Postgres.DATABASE_URL}}`), `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` (a URL pública), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `ALLOWED_EMAILS`.
 
 ## WhatsApp por estúdio
-Cada estúdio conecta o próprio número em **Ajustes > WhatsApp** (código de pareamento). O app cria a instância `studio-<id>` na Evolution. Variáveis no **app e no worker**: `EVOLUTION_URL` e `EVOLUTION_API_KEY` (a `AUTHENTICATION_API_KEY` da Evolution). `EVOLUTION_INSTANCE` virou opcional (instância de reserva para estúdios sem conexão pelo app).
+Cada estúdio conecta o próprio número em **Ajustes > WhatsApp** (código de pareamento). O app cria a instância `studio-<id>` na Evolution. Variáveis no **app e no worker**: `EVOLUTION_URL` e `EVOLUTION_API_KEY` (a `AUTHENTICATION_API_KEY` da Evolution). Não existe instância de reserva: estúdio sem WhatsApp conectado não envia nada (nunca usa o número de outro salão).
