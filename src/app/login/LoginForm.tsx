@@ -25,11 +25,11 @@ export function authErrorText(code: string | null | undefined): string | null {
   return "Não foi possível entrar. Tente de novo.";
 }
 
-type View = "start" | "email" | "signup";
+// Conta nova só pelo Google (e-mail já verificado por ele); e-mail e senha só para entrar.
+type View = "start" | "email";
 const HEAD: Record<View, [string, string]> = {
   start: ["Que bom te ver!", "Entre para abrir sua agenda."],
   email: ["Entrar com e-mail", "Use o e-mail e a senha da sua conta."],
-  signup: ["Criar sua conta", "Leva menos de 1 minuto."],
 };
 
 /** Cada toque no Bubbly é a próxima reação desta lista, em ordem; só movimento, sem legenda. */
@@ -156,24 +156,16 @@ export function LoginForm() {
     const fd = new FormData(e.currentTarget);
     const email = String(fd.get("email") ?? "").trim();
     const password = String(fd.get("password") ?? "");
-    const name = String(fd.get("name") ?? "").trim();
-    if (view === "signup" && name.length < 2) return fail("Digite seu nome.");
     if (!/^\S+@\S+\.\S+$/.test(email)) return fail("Digite um e-mail válido, como voce@salao.com.br.");
     if (!password) return fail("Digite sua senha.");
-    if (view === "signup" && password.length < 8) return fail("A senha precisa ter pelo menos 8 caracteres.");
     (document.activeElement as HTMLElement | null)?.blur();
     setPendingEmail(true);
     setError(null);
     try {
-      const res =
-        view === "signup"
-          ? await authClient.signUp.email({ name, email, password })
-          : await authClient.signIn.email({ email, password });
+      const res = await authClient.signIn.email({ email, password });
       if (res.error) return fail(authErrorText(res.error.code ?? res.error.message));
       setSuccess(true);
-      notify.success(
-        view === "signup" ? `Bem-vinda, ${name.split(" ")[0]}! Conta criada` : "Pronto! Abrindo sua agenda",
-      );
+      notify.success("Pronto! Abrindo sua agenda");
       router.replace("/agenda");
       router.refresh();
     } catch {
@@ -364,10 +356,7 @@ export function LoginForm() {
             Continuar com e-mail
           </button>
           <p className="text-center text-sm font-semibold text-muted">
-            Não tem conta?{" "}
-            <button type="button" onClick={() => go("signup")} className="min-h-11 font-bold text-primary-text">
-              Criar conta com e-mail
-            </button>
+            Primeira vez? Entre com o Google e sua conta é criada na hora.
           </p>
           <InstallGuide compact />
         </div>
@@ -379,21 +368,6 @@ export function LoginForm() {
           className={`login-view grid gap-3 ${worried ? "login-shake" : ""}`}
         >
           {back}
-          {view === "signup" ? (
-            <div className="grid gap-1">
-              <label htmlFor="name" className="pl-1.5 text-xs font-bold text-muted">
-                Nome
-              </label>
-              <input
-                id="name"
-                name="name"
-                autoComplete="name"
-                placeholder="Como quer ser chamada"
-                className={input}
-                {...textField}
-              />
-            </div>
-          ) : null}
           <div className="grid gap-1">
             <label htmlFor="email" className="pl-1.5 text-xs font-bold text-muted">
               E-mail
@@ -403,7 +377,7 @@ export function LoginForm() {
               name="email"
               type="email"
               required
-              autoComplete={view === "signup" ? "email" : "username"}
+              autoComplete="username"
               inputMode="email"
               placeholder="voce@salao.com.br"
               autoFocus
@@ -411,25 +385,12 @@ export function LoginForm() {
               {...textField}
             />
           </div>
-          {view === "signup"
-            ? passwordField("new-password", "Mínimo de 8 caracteres", true)
-            : passwordField("current-password", "Sua senha", false)}
-          <SubmitButton
-            pending={pendingEmail}
-            disabled={busy}
-            pendingLabel={view === "signup" ? "Criando conta…" : "Entrando…"}
-          >
-            {view === "signup" ? "Criar conta" : "Entrar"}
+          {passwordField("current-password", "Sua senha", false)}
+          <SubmitButton pending={pendingEmail} disabled={busy} pendingLabel="Entrando…">
+            Entrar
           </SubmitButton>
           <p className="text-center text-sm font-semibold text-muted">
-            {view === "signup" ? "Já tem conta? " : "Ainda não tem conta? "}
-            <button
-              type="button"
-              onClick={() => go(view === "signup" ? "email" : "signup")}
-              className="min-h-11 font-bold text-primary-text"
-            >
-              {view === "signup" ? "Entrar" : "Criar conta"}
-            </button>
+            Ainda não tem conta? Volte e entre com o Google.
           </p>
         </form>
       )}

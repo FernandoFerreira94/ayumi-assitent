@@ -10,8 +10,10 @@ export const auth = betterAuth({
   database: pool,
   baseURL: process.env.BETTER_AUTH_URL,
   secret: process.env.BETTER_AUTH_SECRET,
-  // E-mail e senha (cadastro só para e-mails autorizados: barrado em databaseHooks.user.create.before)
-  emailAndPassword: { enabled: true, minPasswordLength: 8, autoSignIn: true },
+  // E-mail e senha só para ENTRAR: conta nova nasce pelo Google (e-mail verificado por ele). Sem verificação de
+  // e-mail, cadastro por senha deixaria alguém criar conta com o e-mail de outra pessoa e manter acesso depois
+  // que ela entrasse pelo Google. A senha é criada em Ajustes > Calendários (setPassword) por quem já entrou.
+  emailAndPassword: { enabled: true, disableSignUp: true, minPasswordLength: 8 },
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
