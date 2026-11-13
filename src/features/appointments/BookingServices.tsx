@@ -154,7 +154,11 @@ export function BookingServices({
       </label>
 
       {picked.length ? (
-        <p id={`${uid}-total`} className="glass flex items-baseline justify-between gap-3 rounded-2xl px-4 py-3" aria-live="polite">
+        <p
+          id={`${uid}-total`}
+          className="glass flex items-baseline justify-between gap-3 rounded-2xl px-4 py-3"
+          aria-live="polite"
+        >
           <span className="text-sm font-semibold text-muted">
             {formatDuration(minutes)}
             {picked.length > 1 ? ` · ${picked.length} serviços` : ""}
