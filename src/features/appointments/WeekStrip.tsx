@@ -6,6 +6,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { formatCalendarTitle, formatDayTitle, formatMonthYear } from "@/lib/dates";
 import { useCalendarNav } from "@/features/calendar/nav";
 import { MonthPicker } from "./MonthPicker";
+import { RefreshButton } from "./RefreshButton";
 
 const WEEKDAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
 /** Tempo parado depois de rolar para considerar que a semana foi escolhida. */
@@ -150,13 +151,22 @@ export function WeekStrip({
           ))}
         </div>
       </nav>
-      {calendar ? <h2 className="pt-3 text-center text-[15px] font-bold">{formatCalendarTitle(date)}</h2> : null}
+      {/* Título centrado; o "Atualizar" fica colado à direita (no Calendário na linha do dia, no Painel na do resumo) */}
+      {calendar ? (
+        <div className="relative pt-3">
+          <h2 className="px-12 text-center text-[15px] font-bold leading-8">{formatCalendarTitle(date)}</h2>
+          <RefreshButton className="absolute -right-1.5 top-1.5" />
+        </div>
+      ) : null}
       {/* O resumo do dia leva ao Financeiro; a pílula é pequena, mas o toque pega 44px de altura */}
-      <p className="pt-1.5 text-center text-xs font-bold text-muted" aria-live="polite">
-        <Link href="/financeiro" aria-label={`${summary}. Ver financeiro`} className="glass relative inline-flex min-h-8 items-center rounded-full px-3 py-1 text-fg before:absolute before:-inset-y-1.5 before:inset-x-0 before:content-['']">
-          {summary} ›
-        </Link>
-      </p>
+      <div className="relative pt-1.5">
+        <p className="px-12 text-center text-xs font-bold text-muted" aria-live="polite">
+          <Link href="/financeiro" aria-label={`${summary}. Ver financeiro`} className="glass relative inline-flex min-h-8 items-center rounded-full px-3 py-1 text-fg before:absolute before:-inset-y-1.5 before:inset-x-0 before:content-['']">
+            {summary} ›
+          </Link>
+        </p>
+        {calendar ? null : <RefreshButton className="absolute -right-1.5 top-0" />}
+      </div>
     </div>
   );
 }

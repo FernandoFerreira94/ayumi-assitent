@@ -23,6 +23,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Skills versionadas (scripts de terceiros em CommonJS), não são código do app
+    ".claude/**",
   ]),
 ]);
 

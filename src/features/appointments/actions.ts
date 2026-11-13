@@ -12,6 +12,7 @@ import { searchClients } from "@/features/clients/core";
 import { listBookable } from "@/features/services/core";
 import { getHours } from "@/features/hours/core";
 import { convertExternalBlock, listBlocks } from "@/features/blocks/core";
+import { forceSyncExternalCalendars } from "@/features/blocks/external-sync";
 import { dayRange, isDateStr, toInstant } from "@/lib/dates";
 import { editAppointment, insertAppointment, listDay, moveAppointment, setStatus } from "./core";
 import { dayVersion } from "./version";
@@ -48,6 +49,17 @@ export async function agendaVersion(date: string): Promise<ActionResult<string>>
     return ok(
       await withTenant(tenantId, async (tx) => dayVersion(await listDay(tx, range), await listBlocks(tx, range))),
     );
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+/** Botão "Atualizar" (Calendário e Painel): traz agora os eventos do Google/iPhone; a tela recarrega os dados depois. */
+export async function refreshAgenda(): Promise<ActionResult> {
+  const { tenantId } = await requireTenant();
+  try {
+    await forceSyncExternalCalendars(tenantId);
+    return ok();
   } catch {
     return fail("UNKNOWN");
   }

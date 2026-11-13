@@ -33,6 +33,7 @@
 - Toda criação/edição/remarcação passa por `lockTenant` + `overlapsBlock`; não pule.
 - Fora do expediente (ou salão fechado) **não bloqueia** (13/11): `agenda-grid.conflictReason` só olha sobreposição; `outsideHours` vira aviso (dica do arraste em âmbar, texto no toast, aviso na folha de agendar, que recebe o expediente da semana via `week`). Pausa fixa do expediente continua ocupando.
 - Painel (`/agenda`) não tem a fileira Bloquear/Agendar (`DaySchedule actions={false}`); Bloquear fica no Calendário, agendar pelo + da barra ou toque no vazio.
+- Botão "Atualizar" pequeno (`RefreshButton`, 13/11) no `WeekStrip`: no Calendário à direita do título do dia, no Painel à direita do resumo. Chama `refreshAgenda` (força `forceSyncExternalCalendars`, Google + iCloud sem o limite de 2 min; toques em menos de 15 s caem no fluxo normal) e depois `router.refresh()`; ícone gira enquanto carrega, erro em toast com "Tentar de novo".
 - Mudou o que a tela do dia mostra? Inclua no `version.ts`, senão o "Atualizar" não aparece em outro aparelho.
 - Mudou status/horário: considere Google (sync), lembretes (`reminder_sent_at`) e sino.
 - Animação Órbita só aqui; demais ações usam toast.

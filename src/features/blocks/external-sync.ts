@@ -20,3 +20,24 @@ export function syncExternalCalendars(tenantId: string): Promise<void> {
   inflight.set(tenantId, p);
   return p;
 }
+
+/** Último "Atualizar" pedido à mão, por estúdio: segura toques repetidos sem bater no Google/iCloud a cada um. */
+const lastManual = new Map<string, number>();
+const MANUAL_MIN_MS = 15_000;
+
+/**
+ * Botão "Atualizar" do Calendário e do Painel: traz os calendários de fora agora, sem esperar os 2 min.
+ * Toques seguidos dentro de 15 s caem no fluxo normal (que reaproveita a importação em andamento). Nunca lança.
+ */
+export function forceSyncExternalCalendars(tenantId: string): Promise<void> {
+  const running = inflight.get(tenantId);
+  if (running) return running;
+  const now = Date.now();
+  if (now - (lastManual.get(tenantId) ?? 0) < MANUAL_MIN_MS) return syncExternalCalendars(tenantId);
+  lastManual.set(tenantId, now);
+  const p = Promise.all([importExternalEvents(tenantId, true), importIcloudCalendar(tenantId, true)])
+    .then(() => undefined)
+    .finally(() => inflight.delete(tenantId));
+  inflight.set(tenantId, p);
+  return p;
+}
