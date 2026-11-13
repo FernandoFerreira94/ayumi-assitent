@@ -2605,3 +2605,24 @@ textarea {
       -12px 0 40px rgba(40, 24, 110, 0.18);
   }
 }
+
+/* Hover só quando há mouse: no toque o estado grudaria depois do toque. */
+@media (hover: hover) and (pointer: fine) {
+  a[href],
+  button:not(:disabled),
+  [role="button"],
+  summary,
+  label[for] {
+    cursor: pointer;
+  }
+  .sidenav-link:not([aria-current="page"]):hover {
+    background: color-mix(in srgb, var(--fg) 5%, transparent);
+  }
+  .sidenav-new:hover {
+    background: color-mix(in srgb, var(--primary) 88%, var(--fg));
+  }
+  .btn-tint:hover,
+  .btn-glass:hover {
+    filter: brightness(0.97);
+  }
+}
