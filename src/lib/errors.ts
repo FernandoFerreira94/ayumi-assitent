@@ -2,7 +2,6 @@
 export const ERROR_MESSAGES = {
   SLOT_TAKEN: "Esse horário acabou de ser ocupado. Escolha outro.",
   HAS_APPOINTMENTS: "Há agendamentos nesse período. Cancele ou reagende antes de bloquear.",
-  CLIENT_HAS_APPOINTMENTS: "Esta cliente tem agendamentos. Cancele ou apague os horários dela antes de excluir.",
   PHONE_EXISTS: "Este número já é de outra cliente.",
   GOOGLE_EXPIRED: "O acesso ao Google expirou. Reconecte para sincronizar.",
   WHATSAPP_UNAVAILABLE: "Não conseguimos falar com o WhatsApp agora. Tente de novo em instantes.",

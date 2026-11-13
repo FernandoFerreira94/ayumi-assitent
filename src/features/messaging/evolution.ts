@@ -6,6 +6,8 @@ type Config = { baseUrl: string; apiKey: string; instance: string };
 export function evolutionMessaging(cfg: Config, fetchImpl: typeof fetch = fetch): MessagingPort {
   return {
     async sendText(toE164, text) {
+      // Só número E.164 de verdade (cliente anonimizada guarda "anon:<id>", cujos dígitos não são telefone)
+      if (!/^\+\d+$/.test(toE164)) throw new MessagingRejectedError("not_e164");
       let res: Response;
       try {
         res = await fetchImpl(

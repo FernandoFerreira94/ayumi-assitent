@@ -26,6 +26,12 @@ describe("Evolution (WhatsApp)", () => {
     const down = evolutionMessaging(cfg, vi.fn().mockRejectedValue(new Error("x")) as unknown as typeof fetch);
     await expect(down.sendText("+55119", "x")).rejects.toBeInstanceOf(MessagingTransientError);
   });
+  it("recusa o que não é telefone (cliente anonimizada) sem chamar a Evolution", async () => {
+    const f = vi.fn();
+    const port = evolutionMessaging({ baseUrl: "https://evo.test", apiKey: "k", instance: "i" }, f as unknown as typeof fetch);
+    await expect(port.sendText("anon:5511-aaaa", "x")).rejects.toBeInstanceOf(MessagingRejectedError);
+    expect(f).not.toHaveBeenCalled();
+  });
   it("sem URL e chave da Evolution não há porta", () => {
     expect(messagingForInstance("studio-a", {} as NodeJS.ProcessEnv)).toBeNull();
     expect(

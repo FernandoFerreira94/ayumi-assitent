@@ -1,6 +1,6 @@
-import { and, asc, count, desc, eq, gte, ilike, inArray, lt, ne, or, sum } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, ilike, inArray, isNull, lt, ne, or, sum } from "drizzle-orm";
 import type { Tx } from "@/db/client";
-import { appointments, clients, services } from "@/db/schema";
+import { appointments, clients, messages, services } from "@/db/schema";
 import { serviceLabel } from "@/features/appointments/core";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import type { ClientInput } from "./schema";
@@ -34,7 +34,8 @@ export async function searchClients(tx: Tx, q: string) {
   const filter = term
     ? or(ilike(clients.name, `%${term}%`), digits ? ilike(clients.phoneE164, `%${digits}%`) : undefined)
     : undefined;
-  return tx.select().from(clients).where(and(filter)).orderBy(asc(clients.name)).limit(200);
+  // Anonimizadas (excluídas com histórico) não aparecem em listas nem seletores
+  return tx.select().from(clients).where(and(isNull(clients.anonymizedAt), filter)).orderBy(asc(clients.name)).limit(200);
 }
 
 export async function updateClientRow(tx: Tx, id: string, input: ClientInput): Promise<ActionResult> {
@@ -54,15 +55,28 @@ export async function updateClientRow(tx: Tx, id: string, input: ClientInput): P
   }
 }
 
-/** Não apaga quem tem agendamentos: o histórico da agenda ficaria sem cliente. */
+/** Telefone guardado no lugar do real ao anonimizar: único por cliente e nunca um E.164 (ninguém recebe nada). */
+export const anonPhone = (id: string) => `anon:${id}`;
+
+/**
+ * Exclui a cliente. Sem agendamentos, apaga de vez. Com histórico, anonimiza (LGPD): some nome, telefone,
+ * e-mail, observações e conversa; os atendimentos ficam como "Cliente removida" para o financeiro não mudar.
+ */
 export async function deleteClientRow(tx: Tx, id: string): Promise<ActionResult> {
   const [used] = await tx
     .select({ id: appointments.id })
     .from(appointments)
     .where(eq(appointments.clientId, id))
     .limit(1);
-  if (used) return fail("CLIENT_HAS_APPOINTMENTS");
-  await tx.delete(clients).where(eq(clients.id, id));
+  if (!used) {
+    await tx.delete(clients).where(eq(clients.id, id));
+    return ok();
+  }
+  await tx.delete(messages).where(eq(messages.clientId, id));
+  await tx
+    .update(clients)
+    .set({ name: "Cliente removida", phoneE164: anonPhone(id), email: null, notes: null, anonymizedAt: new Date() })
+    .where(eq(clients.id, id));
   return ok();
 }
 
