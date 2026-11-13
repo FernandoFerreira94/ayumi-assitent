@@ -5,6 +5,11 @@ import { runReminders } from "@/features/reminders/run";
 import { pushFromEnv } from "@/features/push/webpush";
 import { runOwnerNotices } from "@/features/owner-notices/run";
 import { log as jlog } from "@/lib/log";
+import { adminFromEnv } from "@/features/messaging/evolution-admin";
+import { ensureWebhook } from "@/features/whatsapp/webhook";
+import { getDb } from "@/db/client";
+import { tenants } from "@/db/schema";
+import { isNotNull } from "drizzle-orm";
 
 const QUEUE = "send-reminders";
 const PUSH_QUEUE = "push-pendencias";
@@ -50,6 +55,8 @@ async function main() {
   // O resumo diário de pendências saiu: a dona só quer saber de confirmou, cancelar, remarcar e não respondeu
   await boss.unschedule(PUSH_QUEUE).catch(() => undefined);
   log({ level: "info", msg: "worker_started" });
+  // Cada instância passa a chamar o webhook com o próprio token (migração do token único; idempotente)
+  repointWebhooks().catch((e) => log({ level: "warn", msg: "webhook_repoint_failed", err: String(e) }));
 
   const stop = async () => {
     await boss.stop();
@@ -57,6 +64,17 @@ async function main() {
   };
   process.on("SIGTERM", stop);
   process.on("SIGINT", stop);
+}
+
+async function repointWebhooks() {
+  const admin = adminFromEnv();
+  if (!admin) return;
+  const rows = await getDb()
+    .select({ instance: tenants.whatsappInstance })
+    .from(tenants)
+    .where(isNotNull(tenants.whatsappInstance));
+  for (const r of rows) if (r.instance) await ensureWebhook(admin, r.instance);
+  log({ level: "info", msg: "webhook_repointed", count: rows.length });
 }
 
 main().catch((e) => {
