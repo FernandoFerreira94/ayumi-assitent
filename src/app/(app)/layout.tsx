@@ -5,6 +5,7 @@ import { DEFAULT_MASCOT, isMascotKind } from "@/components/brand/mascots";
 import { getDb } from "@/db/client";
 import { OfflineBanner } from "@/components/feedback/OfflineBanner";
 import { NavHistory } from "@/components/nav/BackButton";
+import { Shortcuts } from "@/components/nav/Shortcuts";
 import { SideNavSlot } from "@/components/nav/SideNavSlot";
 import { TabBar } from "@/components/nav/TabBar";
 import { QuickBook } from "@/features/appointments/QuickBook";
@@ -52,6 +53,9 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
       </div>
       <TabBar />
       <NavHistory />
+      <Suspense fallback={null}>
+        <Shortcuts />
+      </Suspense>
       <Suspense fallback={null}>
         <QuickBook />
       </Suspense>
