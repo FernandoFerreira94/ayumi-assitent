@@ -31,6 +31,17 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 /** Mais recente primeiro. */
 export const RELEASES: readonly Release[] = [
   {
+    version: "1.9.0",
+    date: "2026-11-13",
+    title: "Criar senha direto no aviso do Google",
+    items: [
+      {
+        kind: "improved",
+        text: "Se você entra só pelo Google e tenta desconectar a agenda, o aviso explica o motivo e já traz o botão Criar senha. Criou a senha, é só desconectar; depois você entra com seu e-mail e essa senha.",
+      },
+    ],
+  },
+  {
     version: "1.8.1",
     date: "2026-11-13",
     title: "Tela volta ao normal depois do aviso de atualização",
