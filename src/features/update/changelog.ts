@@ -31,6 +31,17 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 /** Mais recente primeiro. */
 export const RELEASES: readonly Release[] = [
   {
+    version: "1.10.0",
+    date: "2026-11-13",
+    title: "Compromissos do Google e do iPhone no Calendário",
+    items: [
+      {
+        kind: "new",
+        text: "Os compromissos que não são do app (do Google Agenda ou do Calendário do iPhone) agora aparecem em cinza nos dias do Calendário, com o ícone de onde vieram. Os que se repetem, como um curso todo dia às 18h, aparecem em todos os dias.",
+      },
+    ],
+  },
+  {
     version: "1.9.0",
     date: "2026-11-13",
     title: "Criar senha direto no aviso do Google",

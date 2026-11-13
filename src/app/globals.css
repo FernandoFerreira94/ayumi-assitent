@@ -2305,6 +2305,18 @@ main:has(> .cal-layer[data-view="month"]) {
   --c-soft: var(--svc-azul-soft);
   --c-ink: var(--svc-azul-ink);
 }
+/* Mês: evento de fora (Google/iPhone) em cinza liso, como na grade do dia, com o ícone da origem */
+.cal-pill[data-ext] {
+  color: #6f6d7a;
+  background: #efeff2;
+  font-weight: 600;
+}
+.cal-pill[data-ext] > svg {
+  display: inline-block;
+  margin-right: 2px;
+  vertical-align: -0.5px;
+  color: #8a8896;
+}
 /* Mês: ✓ verde = cliente confirmou; ponto âmbar = ainda pendente */
 .cal-pill[data-st="ok"]::before {
   content: "✓ ";

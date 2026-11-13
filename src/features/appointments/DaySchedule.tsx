@@ -8,8 +8,7 @@ import { minuteOf } from "@/features/appointments/timeline";
 import { WeekStrip } from "@/features/appointments/WeekStrip";
 import { listBlocks } from "@/features/blocks/core";
 import { guessAppointment } from "@/features/calendar-feed/match";
-import { importExternalEvents } from "@/features/google/server";
-import { importIcloudCalendar } from "@/features/calendar-feed/icloud-server";
+import { syncExternalCalendars } from "@/features/blocks/external-sync";
 import { getHours } from "@/features/hours/core";
 import { weekdayOf } from "@/features/hours/slots";
 import { NewBlockSheet } from "@/features/blocks/NewBlockSheet";
@@ -49,8 +48,7 @@ export async function DaySchedule({
   // Uma consulta para a janela toda: os pontinhos da faixa saem dela e o dia é filtrado daqui
   const weekRange: [Date, Date] = [dayRange(weeks[0][0])[0], dayRange(weeks[weeks.length - 1][6])[1]];
 
-  await importExternalEvents(tenantId);
-  await importIcloudCalendar(tenantId);
+  await syncExternalCalendars(tenantId);
   const { weekRows, dayBlocks, clients, services, openHours } = await withTenant(tenantId, async (tx) => ({
     openHours: await getHours(tx),
     dayBlocks: await listBlocks(tx, dayRange(date)),
