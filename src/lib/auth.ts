@@ -32,6 +32,20 @@ export const auth = betterAuth({
   advanced: { ipAddress: { ipAddressHeaders: ["x-forwarded-for", "x-real-ip"] } },
   session: { expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24 },
   databaseHooks: {
+    // Registro de acesso (Marco Civil, 6 meses): cada login vira uma linha; limpeza em features/retention
+    session: {
+      create: {
+        after: async (s) => {
+          await pool
+            .query("insert into access_log (user_id, ip, user_agent) values ($1, $2, $3)", [
+              s.userId,
+              s.ipAddress ?? null,
+              s.userAgent ?? null,
+            ])
+            .catch(() => undefined);
+        },
+      },
+    },
     user: {
       create: {
         before: async (user) => {

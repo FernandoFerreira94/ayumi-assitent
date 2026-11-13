@@ -4,6 +4,7 @@ import { messagingForInstance } from "@/features/messaging/evolution";
 import { runReminders } from "@/features/reminders/run";
 import { pushFromEnv } from "@/features/push/webpush";
 import { runOwnerNotices } from "@/features/owner-notices/run";
+import { runRetention } from "@/features/retention/run";
 import { log as jlog } from "@/lib/log";
 import { adminFromEnv } from "@/features/messaging/evolution-admin";
 import { ensureWebhook } from "@/features/whatsapp/webhook";
@@ -14,6 +15,7 @@ import { isNotNull } from "drizzle-orm";
 const QUEUE = "send-reminders";
 const PUSH_QUEUE = "push-pendencias";
 const NOTICES_QUEUE = "owner-notices";
+const RETENTION_QUEUE = "retention";
 const log = ({
   level,
   msg,
@@ -51,6 +53,13 @@ async function main() {
     if (!push) return log({ level: "warn", msg: "owner_notices_skipped", reason: "VAPID não configurado" });
     const r = await runOwnerNotices(push);
     if (r.kinds.length || r.failed) log({ level: r.failed ? "warn" : "info", msg: "owner_notices_run", ...r });
+  });
+  // Limpeza diária (LGPD/Marco Civil): registro de acesso > 200 dias e conversas > 12 meses
+  await boss.createQueue(RETENTION_QUEUE);
+  await boss.schedule(RETENTION_QUEUE, "15 7 * * *"); // 04:15 BRT
+  await boss.work(RETENTION_QUEUE, async () => {
+    const r = await runRetention();
+    log({ level: "info", msg: "retention_run", ...r });
   });
   // O resumo diário de pendências saiu: a dona só quer saber de confirmou, cancelar, remarcar e não respondeu
   await boss.unschedule(PUSH_QUEUE).catch(() => undefined);
