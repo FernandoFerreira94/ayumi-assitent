@@ -49,6 +49,10 @@ export const tenants = pgTable("tenants", {
   reminderHours: integer("reminder_hours").notNull().default(24),
   /** 1º aviso do WhatsApp ligado (padrão); desligado, só vale o 2º aviso */
   firstReminder: boolean("first_reminder").notNull().default(true),
+  /** SHA-256 do token do link de calendário assinado (Calendário do iPhone); null = link desligado */
+  calendarTokenHash: text("calendar_token_hash").unique(),
+  /** No link do calendário, título sem o nome da cliente (só o serviço) */
+  calendarHideNames: boolean("calendar_hide_names").notNull().default(false),
   /** Horas antes do horário do segundo aviso (para quem não respondeu); null = só um aviso */
   secondReminderHours: integer("second_reminder_hours").default(3),
   /** Antigo interruptor de valor. Sem uso: o valor agora é a chave {valor} no texto de agendamento */

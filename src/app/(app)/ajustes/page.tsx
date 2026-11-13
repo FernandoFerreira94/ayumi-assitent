@@ -5,6 +5,7 @@ import { getDb, withTenant } from "@/db/client";
 import { tenants } from "@/db/schema";
 import { GoogleCard } from "@/features/google/GoogleCard";
 import { isGoogleConnected } from "@/features/google/server";
+import { IphoneCalendarCard } from "@/features/calendar-feed/IphoneCalendarCard";
 import { getHours } from "@/features/hours/core";
 import { HoursForm } from "@/features/hours/HoursForm";
 import { getMessageSettings } from "@/features/reminders/core";
@@ -41,6 +42,8 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
         city: tenants.city,
         state: tenants.state,
         locationSource: tenants.locationSource,
+        calendarOn: tenants.calendarTokenHash,
+        calendarHideNames: tenants.calendarHideNames,
       })
       .from(tenants)
       .where(eq(tenants.id, tenantId)),
@@ -60,6 +63,13 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
             connected={google}
             failed={googleResult === "erro" || !!googleError}
             errorCode={typeof googleError === "string" ? googleError.slice(0, 60) : undefined}
+          />
+        </section>
+        <section id="iphone" aria-label="Calendário do iPhone" className="scroll-mt-6">
+          <IphoneCalendarCard
+            enabled={!!salon?.calendarOn}
+            hideNames={salon?.calendarHideNames ?? false}
+            googleConnected={google}
           />
         </section>
         <section id="avisos-celular" aria-label="Notificação" className="scroll-mt-6">
