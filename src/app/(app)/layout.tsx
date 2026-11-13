@@ -5,6 +5,7 @@ import { DEFAULT_MASCOT, isMascotKind } from "@/components/brand/mascots";
 import { getDb } from "@/db/client";
 import { OfflineBanner } from "@/components/feedback/OfflineBanner";
 import { NavHistory } from "@/components/nav/BackButton";
+import { SideNavSlot } from "@/components/nav/SideNavSlot";
 import { TabBar } from "@/components/nav/TabBar";
 import { QuickBook } from "@/features/appointments/QuickBook";
 import { ConversationHost } from "@/features/messaging/ConversationHost";
@@ -34,16 +35,21 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <>
       <OfflineBanner />
-      <Suspense
-        fallback={
-          <LoadingRegion label="Verificando seu acesso">
-            <Skeleton className="h-8 w-40" />
-            <Skeleton className="h-24 w-full" />
-          </LoadingRegion>
-        }
-      >
-        <AuthGate>{children}</AuthGate>
-      </Suspense>
+      <div className="md:flex">
+        <SideNavSlot />
+        <div className="min-w-0 flex-1">
+          <Suspense
+            fallback={
+              <LoadingRegion label="Verificando seu acesso">
+                <Skeleton className="h-8 w-40" />
+                <Skeleton className="h-24 w-full" />
+              </LoadingRegion>
+            }
+          >
+            <AuthGate>{children}</AuthGate>
+          </Suspense>
+        </div>
+      </div>
       <TabBar />
       <NavHistory />
       <Suspense fallback={null}>
