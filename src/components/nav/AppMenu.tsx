@@ -109,7 +109,8 @@ export function AppMenu({
         className="app-menu"
       >
         <div className="status-fill" aria-hidden="true" />
-        <div className="mx-auto grid max-w-[520px] gap-3 px-4 pb-3 pt-[max(env(safe-area-inset-top),16px)]">
+        {/* Coluna minmax(0,1fr): sem ela o nome longo (truncate) alarga o grid além da tela e empurra tudo à direita */}
+        <div className="mx-auto grid w-full max-w-[520px] grid-cols-[minmax(0,1fr)] gap-3 pb-3 pl-[max(env(safe-area-inset-left),16px)] pr-[max(env(safe-area-inset-right),16px)] pt-[max(env(safe-area-inset-top),16px)]">
           <Link href="/perfil" onClick={close} aria-label="Meu perfil" className="profile-link flex items-center gap-3">
             <span
               aria-hidden="true"
@@ -117,13 +118,13 @@ export function AppMenu({
             >
               {abbr}
             </span>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <b className="block truncate text-[17px] leading-tight">{userName ?? "Você"}</b>
               {studioName ? (
                 <span className="block truncate text-sm font-semibold text-muted">{studioName}</span>
               ) : null}
             </div>
-            <Mascot idle size={64} className="ml-auto shrink-0" />
+            <Mascot idle size={64} className="shrink-0" />
           </Link>
           <Link
             href="/perfil"
@@ -147,7 +148,7 @@ export function AppMenu({
               WhatsApp desconectado, toque para reconectar
             </Link>
           ) : null}
-          <ul className="grid grid-cols-3 gap-2">
+          <ul className="grid grid-cols-3 gap-2 [&>li]:min-w-0">
             {ITEMS.map((item) => {
               const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
               const badge = item.href === "/pendencias" && pendencias > 0 ? pendencias : 0;
@@ -174,7 +175,7 @@ export function AppMenu({
           </ul>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <SignOutButton />
-            <span className="px-2.5 font-mono text-xs text-muted">Bubbly {version}</span>
+            <span className="ml-auto px-2.5 font-mono text-xs text-muted">Bubbly {version}</span>
           </div>
           <button type="button" onClick={close} className="sr-only focus:not-sr-only">
             Fechar menu
