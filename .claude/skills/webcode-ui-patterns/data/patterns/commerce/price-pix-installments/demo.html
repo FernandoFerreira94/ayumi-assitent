@@ -1,0 +1,61 @@
+<style>
+  .ppi { min-height: 100vh; padding: 24px 16px; display: grid; gap: 20px; align-content: start; max-width: 720px; color: var(--wc-fg); font-size: var(--wc-font-size-sm); font-variant-numeric: tabular-nums; }
+  .ppi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 16px; }
+  .ppi-card { border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface); padding: 18px; display: grid; gap: 10px; align-content: start; }
+  .ppi-card h3 { margin: 0; font-size: var(--wc-font-size-md); font-weight: var(--wc-font-weight-semibold); }
+  .ppi-old { color: var(--wc-fg-muted); text-decoration: line-through; }
+  .ppi-pix { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+  .ppi-pix strong { font-size: var(--wc-font-size-xl); font-weight: var(--wc-font-weight-bold, 700); letter-spacing: -.01em; }
+  .ppi-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: var(--wc-radius-pill); background: var(--wc-success-soft); color: var(--wc-fg); font-size: var(--wc-font-size-xs); font-weight: var(--wc-font-weight-semibold); }
+  .ppi-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--wc-success); }
+  .ppi-card p { margin: 0; color: var(--wc-fg-muted); line-height: var(--wc-line-height-snug); }
+  .ppi-card p b { color: var(--wc-fg); font-weight: var(--wc-font-weight-semibold); }
+  .ppi label { display: grid; gap: 6px; color: var(--wc-fg-muted); }
+  .ppi select { min-height: 44px; padding: 0 12px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: inherit; }
+  .ppi select:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 1px; }
+  .ppi-total { font-size: var(--wc-font-size-xs); }
+  .ppi-mini { grid-template-columns: 72px minmax(0, 1fr); align-items: center; }
+  .ppi-thumb { aspect-ratio: 1; border-radius: var(--wc-radius-md); background: linear-gradient(135deg, var(--wc-accent-soft), var(--wc-sunken)); }
+  .ppi-mini .ppi-pix strong { font-size: var(--wc-font-size-lg); }
+  .ppi-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+</style>
+<div class="ppi">
+  <div class="ppi-grid">
+    <section class="ppi-card" aria-labelledby="ppi-h1">
+      <h3 id="ppi-h1">Cafeteira expresso Pro 15 bar</h3>
+      <span class="ppi-old"><span class="ppi-sr">Preço anterior: </span><span data-v="old"></span></span>
+      <div class="ppi-pix"><strong data-v="pix"></strong><span>no Pix</span><span class="ppi-badge" data-v="off"></span></div>
+      <p>ou <b data-v="card"></b> no cartão, <span data-v="inst"></span></p>
+      <label>Parcelas no cartão <select data-v="sel"></select></label>
+      <p class="ppi-total" data-v="total" role="status"></p>
+    </section>
+    <section class="ppi-card ppi-mini" aria-labelledby="ppi-h2">
+      <span class="ppi-thumb" aria-hidden="true"></span>
+      <div style="display:grid;gap:4px">
+        <h3 id="ppi-h2">Moedor de café elétrico</h3>
+        <div class="ppi-pix"><strong>R$ 189,05</strong><span>no Pix</span></div>
+        <p>ou 6x de <b>R$ 33,16</b> sem juros</p>
+      </div>
+    </section>
+  </div>
+</div>
+<script>
+(() => {
+  const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+  const P = { old: 1499, card: 1199, pixOff: .05, free: 10, rate: .0199, minInst: 10, max: 12 };
+  const $ = (k) => document.querySelector(`[data-v="${k}"]`);
+  const pix = Math.round(P.card * (1 - P.pixOff) * 100) / 100;
+  $('old').textContent = fmt.format(P.old); $('pix').textContent = fmt.format(pix); $('card').textContent = fmt.format(P.card);
+  $('off').textContent = `${Math.round(P.pixOff * 100)}% off · economize ${fmt.format(P.card - pix)}`;
+  $('inst').textContent = `em até ${P.free}x de ${fmt.format(Math.floor(P.card / P.free * 100) / 100)} sem juros`;
+  const plan = (n) => {
+    if (n <= P.free) return { per: Math.floor(P.card / n * 100) / 100, total: P.card, juros: false };
+    const per = Math.round(P.card * P.rate / (1 - Math.pow(1 + P.rate, -n)) * 100) / 100;
+    return { per, total: per * n, juros: true };
+  };
+  const sel = $('sel');
+  for (let n = 1; n <= P.max && P.card / n >= P.minInst; n++) { const p = plan(n); sel.add(new Option(`${n}x de ${fmt.format(p.per)}${p.juros ? ' com juros' : n === 1 ? ' à vista' : ' sem juros'}`, n)); }
+  const upd = () => { const p = plan(+sel.value); $('total').textContent = p.juros ? `Total ${fmt.format(p.total)} (juros de ${(P.rate * 100).toFixed(2).replace('.', ',')}% a.m.)` : `Total ${fmt.format(p.total)}, sem juros`; };
+  sel.addEventListener('change', upd); sel.value = String(P.free); upd();
+})();
+</script>

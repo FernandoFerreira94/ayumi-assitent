@@ -1,0 +1,102 @@
+<style>
+  .ct { height: 100vh; max-width: 720px; margin: 0 auto; display: grid; grid-template-rows: auto 1fr auto; background: var(--wc-bg); border-inline: 1px solid var(--wc-border); }
+  .ct-head { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--wc-border); background: var(--wc-surface); }
+  .ct-av { flex: none; width: 40px; height: 40px; border-radius: var(--wc-radius-pill); display: grid; place-items: center; background: var(--wc-accent-soft); color: var(--wc-fg); font-weight: var(--wc-font-weight-semibold); font-size: var(--wc-font-size-sm); }
+  .ct-head h2 { margin: 0; font-size: var(--wc-font-size-md); font-weight: var(--wc-font-weight-semibold); }
+  .ct-head p { margin: 0; font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); }
+  .ct-head .ct-tag { margin-left: auto; font-size: var(--wc-font-size-xs); padding: 3px 8px; border-radius: var(--wc-radius-pill); background: var(--wc-success-soft); color: var(--wc-success); }
+  .ct-log { margin: 0; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; overscroll-behavior: contain; }
+  .ct-day { align-self: center; margin: 14px 0 8px; font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); background: var(--wc-sunken); padding: 3px 10px; border-radius: var(--wc-radius-pill); }
+  .ct-msg { max-width: min(78%, 480px); display: grid; gap: 2px; padding: 8px 12px 6px; border-radius: 18px; background: var(--wc-surface); border: 1px solid var(--wc-border); line-height: var(--wc-line-height-snug); overflow-wrap: anywhere; }
+  .ct-msg.me { align-self: flex-end; background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); border-color: transparent; }
+  .ct-msg.them.tail { border-bottom-left-radius: 6px; margin-bottom: 8px; }
+  .ct-msg.me.tail { border-bottom-right-radius: 6px; margin-bottom: 8px; }
+  .ct-msg.new { animation: ct-in var(--wc-motion-duration-base) var(--wc-motion-ease-out) both; }
+  @keyframes ct-in { from { opacity: 0; transform: translateY(calc(8px * var(--wc-motion-distance))) scale(calc(1 - .03 * var(--wc-motion-distance))); } }
+  .ct-who { font-size: var(--wc-font-size-xs); font-weight: var(--wc-font-weight-semibold); color: var(--wc-accent); }
+  .ct-meta { justify-self: end; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-variant-numeric: tabular-nums; }
+  .ct-msg:not(.tail) .ct-meta { display: none; }
+  .ct-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .ct-typing { align-self: flex-start; display: inline-flex; gap: 4px; padding: 12px 14px; border-radius: 18px; background: var(--wc-surface); border: 1px solid var(--wc-border); }
+  .ct-typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--wc-fg-muted); animation: ct-dot 1.2s infinite ease-in-out; }
+  .ct-typing i:nth-child(2) { animation-delay: .15s; } .ct-typing i:nth-child(3) { animation-delay: .3s; }
+  @keyframes ct-dot { 0%, 60%, 100% { opacity: .35; } 30% { opacity: 1; } }
+  .ct-foot { padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid var(--wc-border); background: var(--wc-surface); display: grid; gap: 8px; }
+  .ct-quick { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  .ct-quick button { flex: none; font: inherit; font-size: var(--wc-font-size-sm); min-height: 36px; padding: 0 12px; border-radius: var(--wc-radius-pill); border: 1px solid var(--wc-border); background: var(--wc-bg); color: var(--wc-fg); cursor: pointer; }
+  .ct-form { display: flex; align-items: flex-end; gap: 8px; }
+  .ct-form label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .ct-form textarea { flex: 1; font: inherit; resize: none; field-sizing: content; min-height: 44px; max-height: 8lh; padding: 10px 14px; border-radius: 22px; border: 1px solid var(--wc-border-strong); background: var(--wc-bg); color: var(--wc-fg); }
+  .ct-send { flex: none; width: 44px; height: 44px; border-radius: var(--wc-radius-pill); border: 0; background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); display: grid; place-items: center; cursor: pointer; }
+  .ct-send:disabled { background: var(--wc-sunken); color: var(--wc-fg-muted); cursor: default; }
+  .ct button:focus-visible, .ct textarea:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .ct-typing i { animation: none; opacity: .7; } }
+</style>
+<section class="ct" aria-labelledby="ct-name">
+  <header class="ct-head"><span class="ct-av" aria-hidden="true">AR</span><div><h2 id="ct-name">Ana Ribeiro</h2><p>WhatsApp · pedido #10483</p></div><span class="ct-tag">Em atendimento</span></header>
+  <div class="ct-log" role="log" aria-live="polite" aria-label="Mensagens com Ana Ribeiro"></div>
+  <div class="ct-foot">
+    <div class="ct-quick" aria-label="Respostas rápidas" role="group">
+      <button type="button">Seu pedido saiu para entrega 🚚</button>
+      <button type="button">Pode me enviar o comprovante do Pix?</button>
+      <button type="button">Obrigado! Qualquer coisa, estou aqui.</button>
+    </div>
+    <form class="ct-form">
+      <label for="ct-input">Mensagem para Ana Ribeiro. Enter envia, Shift+Enter quebra a linha.</label>
+      <textarea id="ct-input" rows="1" placeholder="Mensagem"></textarea>
+      <button class="ct-send" type="submit" aria-label="Enviar" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg></button>
+    </form>
+  </div>
+</section>
+<script>
+(() => {
+  const log = document.querySelector('.ct-log');
+  const input = document.getElementById('ct-input');
+  const send = document.querySelector('.ct-send');
+  const STATUS = { sent: ['✓', 'enviada'], delivered: ['✓✓', 'entregue'], read: ['✓✓', 'lida'] };
+  const seed = [
+    { day: 'Ontem' },
+    { me: false, t: 'Oi! Fiz um pedido ontem à noite, o #10483.', h: '21:40' },
+    { me: false, t: 'Queria saber se dá para trocar o endereço de entrega.', h: '21:40' },
+    { me: true, t: 'Oi, Ana! Dá sim. Qual é o novo endereço?', h: '21:52', s: 'read', who: 'Carlos' },
+    { day: 'Hoje' },
+    { me: false, t: 'Rua Harmonia, 120, apto 34. Vila Madalena.', h: '08:03' },
+    { me: true, t: 'Prontinho, atualizei aqui. A entrega continua para hoje, entre 14h e 18h.', h: '08:10', s: 'read', who: 'Carlos' },
+    { me: false, t: 'Perfeito, obrigada!! 🙏', h: '08:11' },
+  ];
+  const nearEnd = () => log.scrollHeight - log.scrollTop - log.clientHeight < 80;
+  const add = (m, animate) => {
+    const prev = log.lastElementChild;
+    if (m.day) { const li = document.createElement('div'); li.className = 'ct-day'; li.setAttribute('role', 'separator'); li.textContent = m.day; log.append(li); return; }
+    const li = document.createElement('div');
+    li.className = `ct-msg ${m.me ? 'me' : 'them'} tail${animate ? ' new' : ''}`;
+    if (prev?.classList.contains(m.me ? 'me' : 'them')) prev.classList.remove('tail');
+    const st = m.me ? STATUS[m.s || 'sent'] : null;
+    li.innerHTML = `<span class="ct-sr">${m.me ? (m.who || 'Você') : 'Ana'} às ${m.h}:</span><span></span><span class="ct-meta">${m.h}${st ? ` <span aria-hidden="true" class="ct-st" style="${m.s === 'read' ? 'font-weight:700' : ''}">${st[0]}</span><span class="ct-sr ct-st-t">, ${st[1]}</span>` : ''}</span>`;
+    li.children[1].textContent = m.t;
+    const stick = nearEnd();
+    log.append(li);
+    if (stick || !animate) log.scrollTop = log.scrollHeight;
+    return li;
+  };
+  seed.forEach((m) => add(m, false));
+  const setStatus = (li, s) => { li.querySelector('.ct-st').textContent = STATUS[s][0]; li.querySelector('.ct-st').style.fontWeight = s === 'read' ? '700' : ''; li.querySelector('.ct-st-t').textContent = ', ' + STATUS[s][1]; };
+  const now = () => new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const submit = (text) => {
+    if (!text.trim()) return;
+    const li = add({ me: true, t: text.trim(), h: now(), s: 'sent' }, true);
+    input.value = ''; send.disabled = true;
+    setTimeout(() => setStatus(li, 'delivered'), 700);
+    setTimeout(() => {
+      setStatus(li, 'read');
+      const typing = document.createElement('div'); typing.className = 'ct-typing'; typing.setAttribute('aria-label', 'Ana está digitando'); typing.innerHTML = '<i></i><i></i><i></i>';
+      log.append(typing); log.scrollTop = log.scrollHeight;
+      setTimeout(() => { typing.remove(); add({ me: false, t: 'Combinado! 😊', h: now() }, true); }, 1400);
+    }, 1500);
+  };
+  input.addEventListener('input', () => { send.disabled = !input.value.trim(); });
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); submit(input.value); } });
+  document.querySelector('.ct-form').addEventListener('submit', (e) => { e.preventDefault(); submit(input.value); input.focus(); });
+  document.querySelector('.ct-quick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { input.value = b.textContent; send.disabled = false; input.focus(); } });
+})();
+</script>

@@ -1,0 +1,43 @@
+<style>
+  .tp { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 50; pointer-events: none; opacity: 0; transition: opacity var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  .tp.is-on { opacity: 1; }
+  .tp i { display: block; height: 100%; background: linear-gradient(90deg, var(--wc-gradient-2), var(--wc-accent)); transform-origin: 0 50%; transform: scaleX(var(--p, 0)); transition: transform var(--wc-motion-duration-slow) var(--wc-motion-ease-out); box-shadow: 0 0 10px var(--wc-accent); }
+  .tp-demo { min-height: 100vh; display: grid; place-content: center; gap: 16px; text-align: center; padding: 20px; }
+  .tp-demo h1 { font: var(--wc-font-weight-semibold) var(--wc-font-size-3xl) var(--wc-font-display); margin: 0; }
+  .tp-demo p { color: var(--wc-fg-muted); margin: 0; }
+  .tp-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .tp-actions button { font: inherit; font-weight: var(--wc-font-weight-medium); padding: 8px 14px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); cursor: pointer; }
+  .tp-actions button:first-child { background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); border-color: transparent; }
+  .tp-actions button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+</style>
+<div class="tp" role="progressbar" aria-label="Carregando página" aria-valuemin="0" aria-valuemax="100"><i></i></div>
+<main class="tp-demo" id="tp-main">
+  <h1 id="tp-title">Relatórios</h1>
+  <p>Simule uma navegação lenta ou rápida.</p>
+  <div class="tp-actions"><button type="button" data-ms="2400">Navegação lenta (2,4s)</button><button type="button" data-ms="100">Rápida (100ms)</button></div>
+</main>
+<script>
+(() => {
+  const bar = document.querySelector('.tp');
+  const fill = bar.firstElementChild;
+  const main = document.getElementById('tp-main');
+  let p = 0, trickle = 0, delay = 0;
+  const set = (v) => { p = v; fill.style.setProperty('--p', v); bar.setAttribute('aria-valuenow', Math.round(v * 100)); };
+  const start = () => {
+    clearTimeout(delay); clearInterval(trickle);
+    main.setAttribute('aria-busy', 'true');
+    delay = setTimeout(() => {
+      bar.classList.add('is-on'); set(0.08);
+      trickle = setInterval(() => set(p + (0.9 - p) * 0.12), 300);
+    }, 150);
+  };
+  const done = () => {
+    clearTimeout(delay); clearInterval(trickle);
+    main.setAttribute('aria-busy', 'false');
+    if (!bar.classList.contains('is-on')) return;
+    set(1);
+    setTimeout(() => { bar.classList.remove('is-on'); setTimeout(() => set(0), 250); }, 300);
+  };
+  document.querySelectorAll('[data-ms]').forEach((b) => b.addEventListener('click', () => { start(); setTimeout(done, +b.dataset.ms); }));
+})();
+</script>

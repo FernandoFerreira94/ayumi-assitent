@@ -1,0 +1,73 @@
+<style>
+  .ad-stage { min-height: 100vh; display: grid; place-content: center; gap: 12px; padding: 20px; text-align: center; }
+  .ad-row { display: flex; align-items: center; gap: 16px; padding: 14px 16px; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface); text-align: left; max-width: 100%; }
+  .ad-row div { flex: 1; min-width: 0; }
+  .ad-row small { display: block; color: var(--wc-fg-muted); }
+  .ad-btn { font: inherit; font-weight: var(--wc-font-weight-semibold); min-height: var(--wc-size-touch-min); padding: 0 16px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); cursor: pointer; transition: scale var(--wc-motion-duration-instant) var(--wc-motion-ease-out); }
+  .ad-btn:active { scale: .97; }
+  .ad-btn:focus-visible, .ad input:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .ad-btn.is-ghost-danger { color: var(--wc-danger); }
+  .ad-btn.is-danger { background: var(--wc-danger-solid); color: var(--wc-danger-solid-fg); border-color: transparent; }
+  .ad-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .ad-status { min-height: 1.5em; color: var(--wc-fg-muted); }
+  .ad { width: min(440px, calc(100% - 32px)); padding: 24px; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-xl); background: var(--wc-surface-raised); color: var(--wc-fg); box-shadow: var(--wc-shadow-lg); opacity: 1; scale: 1; transition: opacity var(--wc-motion-duration-base) var(--wc-motion-ease-out), scale var(--wc-motion-duration-base) var(--wc-motion-ease-out), display var(--wc-motion-duration-base) allow-discrete, overlay var(--wc-motion-duration-base) allow-discrete; }
+  .ad:not([open]) { opacity: 0; scale: .97; transition-duration: var(--wc-motion-duration-fast); transition-timing-function: var(--wc-motion-ease-in); }
+  @starting-style { .ad[open] { opacity: 0; scale: .97; } }
+  .ad::backdrop { background: var(--wc-scrim); transition: opacity var(--wc-motion-duration-base), display var(--wc-motion-duration-base) allow-discrete, overlay var(--wc-motion-duration-base) allow-discrete; }
+  .ad:not([open])::backdrop { opacity: 0; }
+  @starting-style { .ad[open]::backdrop { opacity: 0; } }
+  .ad.is-nudge { animation: ad-nudge var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  @keyframes ad-nudge { 50% { scale: 1.02; } }
+  .ad-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--wc-radius-pill); background: var(--wc-danger-soft); color: var(--wc-danger); margin-bottom: 12px; }
+  .ad h2 { margin: 0 0 8px; font: var(--wc-font-weight-semibold) var(--wc-font-size-lg)/var(--wc-line-height-snug) var(--wc-font-display); text-wrap: balance; }
+  .ad p { margin: 0 0 16px; color: var(--wc-fg-muted); }
+  .ad label { display: block; font-size: var(--wc-font-size-sm); margin-bottom: 6px; }
+  .ad code { font-family: var(--wc-font-mono); color: var(--wc-fg); background: var(--wc-sunken); padding: 1px 6px; border-radius: var(--wc-radius-sm); }
+  .ad input { width: 100%; min-height: var(--wc-size-touch-min); padding: 0 12px; font: inherit; font-size: max(16px, 1em); border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-bg); color: var(--wc-fg); }
+  .ad-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+  @media (max-width: 480px) { .ad-actions { flex-direction: column-reverse; } .ad-actions .ad-btn { width: 100%; } }
+  @media (prefers-reduced-motion: reduce) { .ad.is-nudge { animation: none; } .ad, .ad:not([open]) { scale: 1; } }
+</style>
+<div class="ad-stage">
+  <div class="ad-row">
+    <div><strong>Site 2026</strong><small>12 páginas · 3 integrações</small></div>
+    <button class="ad-btn is-ghost-danger" type="button" data-ad-open>Excluir projeto</button>
+  </div>
+  <p class="ad-status" role="status"></p>
+</div>
+<dialog class="ad" role="alertdialog" aria-labelledby="ad-title" aria-describedby="ad-desc">
+  <div class="ad-icon" aria-hidden="true">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+  </div>
+  <h2 id="ad-title">Excluir o projeto Site 2026?</h2>
+  <p id="ad-desc">As 12 páginas e as 3 integrações serão removidas para toda a equipe. Não dá para desfazer.</p>
+  <form method="dialog">
+    <label for="ad-confirm">Para confirmar, digite <code>Site 2026</code></label>
+    <input id="ad-confirm" autocomplete="off" spellcheck="false" aria-describedby="ad-hint">
+    <div class="ad-actions">
+      <button class="ad-btn" value="cancel" autofocus>Cancelar</button>
+      <button class="ad-btn is-danger" value="confirm" disabled aria-describedby="ad-hint">Excluir projeto</button>
+    </div>
+    <p id="ad-hint" hidden>O botão libera quando o nome digitado for igual ao do projeto.</p>
+  </form>
+</dialog>
+<script>
+(() => {
+  const dlg = document.querySelector('.ad');
+  const input = dlg.querySelector('#ad-confirm');
+  const danger = dlg.querySelector('.is-danger');
+  const status = document.querySelector('.ad-status');
+  const name = 'Site 2026';
+  document.querySelector('[data-ad-open]').addEventListener('click', () => { input.value = ''; danger.disabled = true; dlg.returnValue = ''; dlg.showModal(); });
+  input.addEventListener('input', () => { danger.disabled = input.value.trim() !== name; });
+  dlg.addEventListener('click', (e) => {
+    if (e.target !== dlg) return;
+    const r = dlg.getBoundingClientRect();
+    const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+    if (!inside) { dlg.classList.remove('is-nudge'); void dlg.offsetWidth; dlg.classList.add('is-nudge'); }
+  });
+  dlg.addEventListener('close', () => {
+    status.textContent = dlg.returnValue === 'confirm' ? 'Projeto Site 2026 excluído.' : '';
+  });
+})();
+</script>

@@ -1,0 +1,69 @@
+<style>
+  .ptr { height: 100vh; display: grid; grid-template-rows: auto 1fr; max-width: 520px; margin: 0 auto; color: var(--wc-fg); font-size: var(--wc-font-size-sm); }
+  .ptr-top { display: flex; justify-content: space-between; align-items: center; padding: 12px 8px 12px 16px; border-bottom: 1px solid var(--wc-border); }
+  .ptr-top h3 { margin: 0; font-size: var(--wc-font-size-lg); }
+  .ptr-btn { min-height: 44px; padding: 0 14px; border-radius: var(--wc-radius-pill); border: 0; background: var(--wc-sunken); color: var(--wc-fg); font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+  .ptr-btn[aria-busy="true"] svg { animation: ptr-r .8s linear infinite; }
+  .ptr-btn:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .ptr-scroll { position: relative; overflow-y: auto; overscroll-behavior-y: contain; }
+  .ptr-ind { position: absolute; left: 50%; top: 0; width: 36px; height: 36px; margin-left: -18px; border-radius: 50%; background: var(--wc-surface-raised); box-shadow: var(--wc-shadow); display: grid; place-items: center; color: var(--wc-accent); translate: 0 -48px; opacity: 0; z-index: 1; }
+  .ptr-ind svg { transition: none; }
+  .ptr-ind.is-spin svg { animation: ptr-r .8s linear infinite; }
+  @keyframes ptr-r { to { rotate: 1turn; } }
+  .ptr-list { list-style: none; margin: 0; padding: 0; background: var(--wc-bg); }
+  .ptr-scroll.is-back .ptr-list, .ptr-scroll.is-back .ptr-ind { transition: translate var(--wc-motion-spring-smooth-duration) var(--wc-motion-spring-smooth), opacity var(--wc-motion-duration-fast); }
+  .ptr-list li { display: flex; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--wc-border); font-variant-numeric: tabular-nums; }
+  .ptr-list li span { color: var(--wc-fg-muted); white-space: nowrap; }
+  .ptr-list li.is-new { animation: ptr-new 1.6s var(--wc-motion-ease-out); }
+  @keyframes ptr-new { from { background: var(--wc-accent-soft); } }
+  @media (prefers-reduced-motion: reduce) { .ptr-ind.is-spin svg, .ptr-btn[aria-busy="true"] svg { animation-duration: 2s; } .ptr-list li.is-new { animation: none; } }
+</style>
+<div class="ptr">
+  <div class="ptr-top"><h3>Entregas de hoje</h3><button type="button" class="ptr-btn" aria-busy="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/></svg>Atualizar</button></div>
+  <div class="ptr-scroll">
+    <span class="ptr-ind" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/></svg></span>
+    <ul class="ptr-list"></ul>
+  </div>
+  <p role="status" class="ptr-live" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)"></p>
+</div>
+<script>
+(() => {
+  const root = document.querySelector('.ptr'), sc = root.querySelector('.ptr-scroll'), list = root.querySelector('.ptr-list'), ind = root.querySelector('.ptr-ind'), btn = root.querySelector('.ptr-btn'), live = root.querySelector('.ptr-live');
+  const T = 64; let n = 2040, busy = false, round = 0;
+  const STREETS = ['R. Augusta', 'Av. Paulista', 'R. Oscar Freire', 'Al. Santos', 'R. da Consolação', 'R. Haddock Lobo', 'Av. Rebouças'];
+  const item = (cls = '') => { n--; return `<li class="${cls}"><b>#${n} · ${STREETS[n % STREETS.length]}, ${100 + (n * 37) % 900}</b><span>${['Saiu', 'Entregue', 'Na rota'][n % 3]}</span></li>`; };
+  list.innerHTML = Array.from({ length: 14 }, () => item()).join('');
+  const set = (y) => { list.style.translate = `0 ${y}px`; ind.style.translate = `0 ${Math.min(y, T + 8) - 44}px`; ind.style.opacity = Math.min(1, y / T); ind.querySelector('svg').style.rotate = `${y * 4}deg`; };
+  const refresh = () => {
+    if (busy) return; busy = true; btn.setAttribute('aria-busy', 'true'); ind.classList.add('is-spin');
+    setTimeout(() => {
+      const k = round++ % 3 === 2 ? 0 : 1 + (round % 3);
+      let html = ''; for (let i = 0; i < k; i++) { n += 2 * k + 1; html += item('is-new'); }
+      list.insertAdjacentHTML('afterbegin', html);
+      live.textContent = k ? `${k} ${k > 1 ? 'novas entregas' : 'nova entrega'}` : 'Nada novo por aqui';
+      busy = false; btn.setAttribute('aria-busy', 'false'); ind.classList.remove('is-spin');
+      sc.classList.add('is-back'); set(0);
+    }, 900);
+  };
+  // Toque: touchmove não passivo para impedir a rolagem só enquanto puxa no topo. Mouse: pointer events.
+  let y0 = null, y = 0, active = false, crossed = false;
+  const begin = (cy) => { if (sc.scrollTop > 0 || busy) return; y0 = cy; y = 0; active = false; crossed = false; };
+  const drag = (cy, ev) => {
+    if (y0 === null) return;
+    const d = cy - y0;
+    if (!active) { if (d < 8) { if (d < -8) y0 = null; return; } active = true; sc.classList.remove('is-back'); }
+    ev.cancelable && ev.preventDefault();
+    y = Math.max(0, Math.sqrt(d) * 9);
+    if (!crossed && y > T) { crossed = true; if (navigator.vibrate) try { navigator.vibrate(6); } catch {} }
+    set(y);
+  };
+  const finish = () => { if (y0 === null) return; y0 = null; if (!active) return; sc.classList.add('is-back'); if (y > T) { set(T); refresh(); } else set(0); };
+  sc.addEventListener('touchstart', (e) => begin(e.touches[0].clientY), { passive: true });
+  sc.addEventListener('touchmove', (e) => drag(e.touches[0].clientY, e), { passive: false });
+  sc.addEventListener('touchend', finish); sc.addEventListener('touchcancel', finish);
+  sc.addEventListener('pointerdown', (e) => { if (e.pointerType !== 'mouse' || e.button > 0) return; begin(e.clientY); });
+  addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') drag(e.clientY, e); });
+  addEventListener('pointerup', (e) => { if (e.pointerType === 'mouse') finish(); });
+  btn.addEventListener('click', () => { sc.scrollTo({ top: 0 }); sc.classList.add('is-back'); set(T); refresh(); });
+})();
+</script>

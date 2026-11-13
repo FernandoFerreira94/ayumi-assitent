@@ -1,0 +1,27 @@
+<style>
+  .bg { max-width: 1080px; margin: 0 auto; padding: 56px 20px; }
+  .bg h2 { font: var(--wc-font-weight-semibold) clamp(28px, 4vw, var(--wc-font-size-4xl)) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); margin: 0 0 24px; text-wrap: balance; }
+  .bg-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-rows: minmax(180px, auto); gap: 12px; }
+  .bg-c { position: relative; overflow: hidden; border-radius: var(--wc-radius-xl); padding: 24px; background: var(--wc-surface); border: 1px solid var(--wc-border); display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; transition: transform var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  .bg-c:hover { transform: translateY(calc(-2px * var(--wc-motion-distance))); }
+  .bg-c h3 { margin: 0; font: var(--wc-font-weight-semibold) var(--wc-font-size-xl) var(--wc-font-display); }
+  .bg-c p { margin: 0; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); max-width: 36ch; }
+  .s4 { grid-column: span 4; grid-row: span 2; } .s2 { grid-column: span 2; } .s3 { grid-column: span 3; }
+  .bg-main { background: radial-gradient(120% 90% at 100% 0%, var(--wc-gradient-2), transparent 60%), radial-gradient(80% 70% at 0% 0%, var(--wc-gradient-3), transparent 60%), var(--wc-surface); }
+  .bg-main h3 { font-size: var(--wc-font-size-4xl); letter-spacing: calc(var(--wc-tracking-tight) * 1em); }
+  .bg-big { font: var(--wc-font-weight-bold) var(--wc-font-size-6xl) / 1 var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tighter) * 1em); color: var(--wc-accent); margin-bottom: auto; font-variant-numeric: tabular-nums; }
+  .bg-bars { display: flex; align-items: end; gap: 6px; height: 72px; margin-bottom: auto; }
+  .bg-bars i { flex: 1; border-radius: var(--wc-radius-sm) var(--wc-radius-sm) 2px 2px; background: var(--wc-accent-soft); }
+  .bg-bars i:last-child { background: var(--wc-accent); }
+  @media (max-width: 760px) { .bg-grid { grid-template-columns: 1fr; } .s4, .s2, .s3 { grid-column: auto; grid-row: auto; } .bg-main { min-height: 280px; } }
+</style>
+<section class="bg">
+  <h2>Feito para quem vende todo dia</h2>
+  <div class="bg-grid">
+    <article class="bg-c s4 bg-main"><h3>Um caixa. Todos os canais.</h3><p>Loja física, site, iFood e WhatsApp entram no mesmo estoque, em tempo real.</p></article>
+    <article class="bg-c s2"><div class="bg-big">0,8s</div><h3>Pix na hora</h3><p>Conciliação automática por pedido.</p></article>
+    <article class="bg-c s2"><div class="bg-bars" aria-hidden="true"><i style="height:30%"></i><i style="height:45%"></i><i style="height:40%"></i><i style="height:70%"></i><i style="height:100%"></i></div><h3>Relatório do dia</h3><p>Chega no seu celular às 22h.</p></article>
+    <article class="bg-c s3"><h3>Nota fiscal sem digitar</h3><p>NF-e e NFC-e emitidas a cada venda, com contingência offline.</p></article>
+    <article class="bg-c s3"><h3>Funciona sem internet</h3><p>Vende offline e sincroniza quando a conexão volta.</p></article>
+  </div>
+</section>

@@ -1,0 +1,87 @@
+<style>
+  .pt { max-width: 1080px; margin: 0 auto; padding: 56px 20px 64px; display: grid; gap: 28px; justify-items: center; }
+  .pt-head { text-align: center; display: grid; gap: 10px; max-width: 620px; }
+  .pt-head h2 { margin: 0; font: var(--wc-font-weight-semibold) clamp(28px, 4.4vw, var(--wc-font-size-5xl)) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); text-wrap: balance; }
+  .pt-head p { margin: 0; color: var(--wc-fg-muted); }
+  .pt-cycle { display: inline-flex; padding: 4px; gap: 2px; border-radius: var(--wc-radius-pill); background: var(--wc-sunken); border: 1px solid var(--wc-border); }
+  .pt-cycle button { font: inherit; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-medium); min-height: 40px; padding: 0 16px; border: 0; border-radius: var(--wc-radius-pill); background: transparent; color: var(--wc-fg-muted); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background-color var(--wc-motion-duration-fast) var(--wc-motion-ease-out), color var(--wc-motion-duration-fast) var(--wc-motion-ease-out); }
+  .pt-cycle button[aria-pressed="true"] { background: var(--wc-surface); color: var(--wc-fg); box-shadow: var(--wc-shadow); }
+  .pt-cycle button:focus-visible, .pt-cta:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .pt-save { font-size: var(--wc-font-size-xs); padding: 2px 8px; border-radius: var(--wc-radius-pill); background: var(--wc-success-soft); color: var(--wc-success); }
+  .pt-grid { width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 16px; align-items: stretch; }
+  .pt-card { position: relative; display: flex; flex-direction: column; gap: 18px; padding: 28px 24px 24px; border-radius: var(--wc-radius-xl); background: var(--wc-surface); border: 1px solid var(--wc-border); }
+  .pt-card.is-pick { border-color: var(--wc-accent); box-shadow: 0 0 0 1px var(--wc-accent), var(--wc-shadow-lg); }
+  .pt-badge { position: absolute; top: -12px; left: 24px; font-size: var(--wc-font-size-xs); font-weight: var(--wc-font-weight-semibold); padding: 3px 10px; border-radius: var(--wc-radius-pill); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); }
+  .pt-card h3 { margin: 0; font: var(--wc-font-weight-semibold) var(--wc-font-size-xl) var(--wc-font-display); }
+  .pt-for { margin: 4px 0 0; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .pt-price { display: grid; gap: 4px; }
+  .pt-amount { display: flex; align-items: baseline; gap: 6px; }
+  .pt-amount strong { font: var(--wc-font-weight-bold) var(--wc-font-size-5xl) / 1 var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tighter) * 1em); font-variant-numeric: tabular-nums; }
+  .pt-amount span, .pt-note { color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .pt-note { min-height: 1.5em; font-variant-numeric: tabular-nums; }
+  .pt-note b { color: var(--wc-success); font-weight: var(--wc-font-weight-medium); }
+  .pt-cta { display: inline-flex; justify-content: center; align-items: center; min-height: var(--wc-size-touch-min); border-radius: var(--wc-radius-button); font-weight: var(--wc-font-weight-semibold); text-decoration: none; border: 1px solid var(--wc-border-strong); color: var(--wc-fg); background: var(--wc-surface); transition: transform var(--wc-motion-duration-fast) var(--wc-motion-ease-out); }
+  .pt-cta:active { transform: scale(calc(1 - .02 * var(--wc-motion-distance))); }
+  .is-pick .pt-cta { background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); border-color: transparent; }
+  .pt-list { list-style: none; margin: 0; padding: 18px 0 0; border-top: 1px solid var(--wc-border); display: grid; gap: 10px; font-size: var(--wc-font-size-sm); }
+  .pt-list li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; }
+  .pt-list li::before { content: "✓"; color: var(--wc-accent); font-weight: var(--wc-font-weight-bold); }
+  .pt-list .pt-inc { color: var(--wc-fg-muted); grid-template-columns: 1fr; }
+  .pt-list .pt-inc::before { content: none; }
+  .pt-foot { margin: 0; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); text-align: center; }
+</style>
+<section class="pt" aria-labelledby="pt-t">
+  <div class="pt-head">
+    <h2 id="pt-t">Um plano para cada fase da sua loja</h2>
+    <p>Teste 14 dias sem cartão. Troque de plano quando quiser, sem multa.</p>
+  </div>
+  <div class="pt-cycle" role="group" aria-label="Ciclo de cobrança">
+    <button type="button" data-cycle="month" aria-pressed="false">Mensal</button>
+    <button type="button" data-cycle="year" aria-pressed="true">Anual <span class="pt-save">2 meses grátis</span></button>
+  </div>
+  <div class="pt-grid">
+    <article class="pt-card" data-month="79" aria-labelledby="pt-1">
+      <div><h3 id="pt-1">Essencial</h3><p class="pt-for">Para quem está começando a vender online.</p></div>
+      <div class="pt-price"><div class="pt-amount"><strong></strong><span>/mês</span></div><p class="pt-note"></p></div>
+      <a class="pt-cta" href="#">Começar teste grátis</a>
+      <ul class="pt-list"><li>1 loja e até 500 pedidos/mês</li><li>Pix, cartão e boleto</li><li>NF-e automática</li><li>Suporte por e-mail</li></ul>
+    </article>
+    <article class="pt-card is-pick" data-month="189" aria-labelledby="pt-2">
+      <span class="pt-badge">Mais escolhido</span>
+      <div><h3 id="pt-2">Profissional</h3><p class="pt-for">Para operações com mais de um canal de venda.</p></div>
+      <div class="pt-price"><div class="pt-amount"><strong></strong><span>/mês</span></div><p class="pt-note"></p></div>
+      <a class="pt-cta" href="#">Começar teste grátis</a>
+      <ul class="pt-list"><li class="pt-inc">Tudo do Essencial, mais:</li><li>3 lojas e pedidos ilimitados</li><li>Integração com iFood e Mercado Livre</li><li>Automação de WhatsApp</li><li>Suporte por chat em horário comercial</li></ul>
+    </article>
+    <article class="pt-card" data-month="449" aria-labelledby="pt-3">
+      <div><h3 id="pt-3">Rede</h3><p class="pt-for">Para franquias e redes com várias unidades.</p></div>
+      <div class="pt-price"><div class="pt-amount"><strong></strong><span>/mês</span></div><p class="pt-note"></p></div>
+      <a class="pt-cta" href="#">Falar com vendas</a>
+      <ul class="pt-list"><li class="pt-inc">Tudo do Profissional, mais:</li><li>Lojas ilimitadas e estoque central</li><li>Permissões por unidade</li><li>API e webhooks</li><li>Gerente de conta dedicado</li></ul>
+    </article>
+  </div>
+  <p class="pt-foot" aria-live="polite" id="pt-live"></p>
+</section>
+<script>
+(() => {
+  const root = document.querySelector('.pt');
+  const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+  const live = root.querySelector('#pt-live');
+  let first = true;
+  const render = (cycle) => {
+    root.querySelectorAll('.pt-cycle button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cycle === cycle)));
+    root.querySelectorAll('.pt-card').forEach((card) => {
+      const m = Number(card.dataset.month);
+      const yearTotal = m * 10; // 2 meses grátis
+      card.querySelector('strong').textContent = brl.format(cycle === 'year' ? Math.round(yearTotal / 12) : m);
+      card.querySelector('.pt-note').innerHTML = cycle === 'year'
+        ? `${brl.format(yearTotal)} por ano no Pix ou cartão · <b>economize ${brl.format(m * 2)}</b>`
+        : 'Cobrado todo mês, cancele quando quiser';
+    });
+    if (!first) live.textContent = cycle === 'year' ? 'Mostrando preços do plano anual.' : 'Mostrando preços do plano mensal.';
+    first = false;
+  };
+  root.querySelector('.pt-cycle').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) render(b.dataset.cycle); });
+  render('year');
+})();
+</script>

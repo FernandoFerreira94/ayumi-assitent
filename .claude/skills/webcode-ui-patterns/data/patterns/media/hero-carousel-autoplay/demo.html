@@ -1,0 +1,55 @@
+<style>
+  .hca { padding: 24px 20px; color: var(--wc-fg); font-size: var(--wc-font-size-sm); max-width: 720px; }
+  .hca-wrap { position: relative; }
+  .hca-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; border-radius: var(--wc-radius-lg); overscroll-behavior-x: contain; }
+  .hca-track::-webkit-scrollbar { display: none; }
+  .hca-track:focus-visible, .hca button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .hca-slide { flex: 0 0 100%; scroll-snap-align: start; scroll-snap-stop: always; aspect-ratio: 16 / 8; display: grid; align-content: end; gap: 4px; padding: 24px; box-sizing: border-box; color: var(--wc-accent-solid-fg); }
+  .hca-slide h3 { margin: 0; font-size: var(--wc-font-size-xl); }
+  .hca-slide p { margin: 0; }
+  .hca-s0 { background: linear-gradient(135deg, var(--wc-accent-solid), var(--wc-accent-hover)); }
+  .hca-s1 { background: linear-gradient(135deg, var(--wc-fg), var(--wc-fg-muted)); color: var(--wc-bg); }
+  .hca-s2 { background: linear-gradient(135deg, var(--wc-danger-solid), var(--wc-accent-solid)); color: var(--wc-danger-solid-fg); }
+  .hca-arrow { position: absolute; top: 50%; translate: 0 -50%; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--wc-glass-border); background: var(--wc-glass-bg); backdrop-filter: blur(12px); color: var(--wc-fg); font-size: 20px; cursor: pointer; }
+  .hca-prev { left: 10px; } .hca-next { right: 10px; }
+  .hca-ctrl { display: flex; justify-content: center; align-items: center; gap: 2px; margin-top: 10px; }
+  .hca-ctrl button { min-width: 24px; height: 24px; display: grid; place-items: center; border: 0; background: none; padding: 0; cursor: pointer; border-radius: var(--wc-radius-pill); color: var(--wc-fg-muted); font: inherit; }
+  .hca-dot i { display: block; width: 8px; height: 8px; border-radius: var(--wc-radius-pill); background: var(--wc-fg-subtle); transition: width var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  .hca-dot[aria-current] i { width: 20px; background: var(--wc-fg); }
+  .hca-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  @media (prefers-reduced-motion: reduce) { .hca-dot i { transition: none; } }
+</style>
+<section class="hca" aria-roledescription="carrossel" aria-label="Destaques">
+  <div class="hca-wrap">
+    <div class="hca-track" tabindex="0" aria-live="off">
+      <div class="hca-slide hca-s0" role="group" aria-roledescription="slide" aria-label="1 de 3"><h3>Frete grátis acima de R$ 199</h3><p>Para todo o Sudeste até domingo.</p></div>
+      <div class="hca-slide hca-s1" role="group" aria-roledescription="slide" aria-label="2 de 3"><h3>5% off no Pix</h3><p>Desconto aplicado no checkout.</p></div>
+      <div class="hca-slide hca-s2" role="group" aria-roledescription="slide" aria-label="3 de 3"><h3>Coleção de inverno</h3><p>Peças novas toda semana.</p></div>
+    </div>
+    <button type="button" class="hca-arrow hca-prev" aria-label="Slide anterior">‹</button>
+    <button type="button" class="hca-arrow hca-next" aria-label="Próximo slide">›</button>
+  </div>
+  <div class="hca-ctrl"><button type="button" class="hca-play"></button></div>
+</section>
+<script>
+(() => {
+  const root = document.querySelector('.hca'), track = root.querySelector('.hca-track'), slides = [...track.children], ctrl = root.querySelector('.hca-ctrl'), play = root.querySelector('.hca-play');
+  let cur = 0, playing = !matchMedia('(prefers-reduced-motion: reduce)').matches, hover = false, focus = false, timer = 0;
+  const dots = slides.map((_, k) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'hca-dot'; b.setAttribute('aria-label', `Ir para o slide ${k + 1}`); b.innerHTML = '<i></i>'; b.onclick = () => go(k); ctrl.append(b); return b; });
+  const go = (k) => { cur = (k + slides.length) % slides.length; track.scrollTo({ left: slides[cur].offsetLeft - track.offsetLeft, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); };
+  const sync = () => { cur = Math.round(track.scrollLeft / track.clientWidth); dots.forEach((d, k) => d.toggleAttribute('aria-current', k === cur)); schedule(); };
+  const schedule = () => { clearTimeout(timer); const run = playing && !hover && !focus && !document.hidden; track.setAttribute('aria-live', run ? 'off' : 'polite'); if (run) timer = setTimeout(() => go(cur + 1), 5000); };
+  const paint = () => { play.innerHTML = (playing ? '❚❚' : '▶') + `<span class="hca-sr">${playing ? 'Pausar rotação automática' : 'Retomar rotação automática'}</span>`; schedule(); };
+  play.onclick = () => { playing = !playing; paint(); };
+  root.querySelector('.hca-prev').onclick = () => go(cur - 1);
+  root.querySelector('.hca-next').onclick = () => go(cur + 1);
+  let f = 0; track.addEventListener('scroll', () => { cancelAnimationFrame(f); f = requestAnimationFrame(sync); }, { passive: true });
+  root.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') { hover = true; schedule(); } });
+  root.addEventListener('pointerleave', () => { hover = false; schedule(); });
+  root.addEventListener('focusin', () => { focus = true; schedule(); });
+  root.addEventListener('focusout', (e) => { if (!root.contains(e.relatedTarget)) { focus = false; schedule(); } });
+  root.addEventListener('keydown', (e) => { const k = { ArrowLeft: cur - 1, ArrowRight: cur + 1, Home: 0, End: slides.length - 1 }[e.key]; if (k !== undefined) { e.preventDefault(); go(k); } });
+  document.addEventListener('visibilitychange', schedule);
+  paint(); sync();
+})();
+</script>

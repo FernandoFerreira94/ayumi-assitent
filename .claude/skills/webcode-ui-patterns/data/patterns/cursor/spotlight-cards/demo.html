@@ -1,0 +1,41 @@
+<style>
+  .sc-wrap { padding: 64px 20px; max-width: 1040px; margin: 0 auto; }
+  .sc-wrap h2 { font: var(--wc-font-weight-semibold) var(--wc-font-size-3xl) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); margin: 0 0 24px; }
+  .sc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .sc-card { --mx: -999px; --my: -999px; position: relative; padding: 24px; border-radius: var(--wc-radius-lg); background: var(--wc-surface); border: 1px solid var(--wc-border); overflow: hidden; outline: none; }
+  .sc-card::before, .sc-card::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  .sc-card::before { background: radial-gradient(360px circle at var(--mx) var(--my), var(--wc-accent-soft), transparent 60%); }
+  .sc-card::after { padding: 1px; background: radial-gradient(240px circle at var(--mx) var(--my), var(--wc-accent), transparent 70%); -webkit-mask: linear-gradient(black 0 0) content-box, linear-gradient(black 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+  @media (hover: hover) { .sc-grid:hover .sc-card::before, .sc-grid:hover .sc-card::after { opacity: 1; } }
+  .sc-card:focus-visible { --mx: 50%; --my: 0%; }
+  .sc-card:focus-visible::before, .sc-card:focus-visible::after { opacity: 1; }
+  .sc-card > * { position: relative; z-index: 1; }
+  .sc-ico { width: 36px; height: 36px; border-radius: var(--wc-radius-md); display: grid; place-items: center; background: var(--wc-sunken); border: 1px solid var(--wc-border); color: var(--wc-accent); }
+  .sc-card h3 { font: var(--wc-font-weight-semibold) var(--wc-font-size-lg) var(--wc-font-display); margin: 16px 0 6px; }
+  .sc-card p { margin: 0; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+</style>
+<section class="sc-wrap">
+  <h2>Tudo que o seu time precisa para entregar</h2>
+  <div class="sc-grid">
+    <article class="sc-card" tabindex="0"><div class="sc-ico" aria-hidden="true">⚡</div><h3>Deploy em 40s</h3><p>Cada commit vira um preview com URL própria para revisão.</p></article>
+    <article class="sc-card" tabindex="0"><div class="sc-ico" aria-hidden="true">◎</div><h3>Observabilidade</h3><p>Logs, traces e métricas com retenção de 30 dias inclusa.</p></article>
+    <article class="sc-card" tabindex="0"><div class="sc-ico" aria-hidden="true">⌘</div><h3>Tudo por atalho</h3><p>Paleta de comandos para qualquer ação, sem tirar a mão do teclado.</p></article>
+    <article class="sc-card" tabindex="0"><div class="sc-ico" aria-hidden="true">✦</div><h3>Rollback instantâneo</h3><p>Volte para qualquer versão anterior com um clique.</p></article>
+    <article class="sc-card" tabindex="0"><div class="sc-ico" aria-hidden="true">⛨</div><h3>SSO e auditoria</h3><p>SAML, SCIM e trilha de auditoria exportável para compliance.</p></article>
+    <article class="sc-card" tabindex="0"><div class="sc-ico" aria-hidden="true">◇</div><h3>Edge global</h3><p>18 regiões, incluindo São Paulo, com cache automático.</p></article>
+  </div>
+</section>
+<script>
+(() => {
+  const grid = document.querySelector('.sc-grid');
+  if (!matchMedia('(hover: hover)').matches) return;
+  const cards = [...grid.querySelectorAll('.sc-card')];
+  grid.addEventListener('pointermove', (e) => {
+    for (const c of cards) {
+      const r = c.getBoundingClientRect();
+      c.style.setProperty('--mx', e.clientX - r.left + 'px');
+      c.style.setProperty('--my', e.clientY - r.top + 'px');
+    }
+  });
+})();
+</script>

@@ -1,0 +1,132 @@
+<style>
+  .ls { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
+  .ls-form-side { display: grid; align-content: center; justify-items: center; padding: 40px 20px; }
+  .ls-box { width: min(380px, 100%); }
+  .ls-logo { display: inline-flex; align-items: center; gap: 8px; font: var(--wc-font-weight-bold) var(--wc-font-size-lg) var(--wc-font-display); color: var(--wc-fg); text-decoration: none; margin-bottom: 32px; }
+  .ls-logo i { width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(135deg, var(--wc-gradient-1), var(--wc-gradient-3)); }
+  .ls h1 { font: var(--wc-font-weight-semibold) var(--wc-font-size-3xl) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); margin: 0 0 6px; }
+  .ls-sub { color: var(--wc-fg-muted); margin: 0 0 24px; }
+  .ls-sub a, .ls-row a, .ls-foot a { color: var(--wc-accent); font-weight: var(--wc-font-weight-medium); text-decoration: none; }
+  .ls-sub a:hover, .ls-row a:hover, .ls-foot a:hover { text-decoration: underline; }
+  .ls-social { display: grid; gap: 8px; }
+  .ls-btn { position: relative; width: 100%; min-height: var(--wc-size-control-lg); display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 0 16px; border-radius: var(--wc-radius-button); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: inherit; font-weight: var(--wc-font-weight-medium); cursor: pointer; transition: background-color var(--wc-motion-duration-fast), scale var(--wc-motion-duration-fast); }
+  .ls-btn:hover { background: var(--wc-sunken); }
+  .ls-btn:active { scale: calc(1 - .02 * var(--wc-motion-distance)); }
+  .ls-last { font-size: 11px; font-weight: var(--wc-font-weight-semibold); padding: 2px 8px; border-radius: var(--wc-radius-pill); background: var(--wc-accent-soft); color: var(--wc-accent); }
+  .ls-or { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: var(--wc-fg-muted); font-size: var(--wc-font-size-xs); text-transform: uppercase; letter-spacing: calc(var(--wc-tracking-caps) * 1em); }
+  .ls-or::before, .ls-or::after { content: ""; flex: 1; height: 1px; background: var(--wc-border); }
+  .ls-alert { display: flex; gap: 10px; padding: 12px 14px; margin-bottom: 16px; border-radius: var(--wc-radius-md); background: var(--wc-danger-soft); color: var(--wc-fg); font-size: var(--wc-font-size-sm); outline: none; }
+  .ls-alert[hidden] { display: none; }
+  .ls-alert svg { color: var(--wc-danger); flex: none; margin-top: 2px; }
+  .ls-field { display: grid; gap: 6px; margin-bottom: 16px; }
+  .ls-row { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--wc-font-size-sm); }
+  .ls-field label { font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-medium); }
+  .ls-input { position: relative; }
+  .ls-input input { width: 100%; height: var(--wc-size-control-lg); padding: 0 14px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: inherit; transition: border-color var(--wc-motion-duration-fast), box-shadow var(--wc-motion-duration-fast); }
+  .ls-input input:focus { outline: 2px solid var(--wc-focus); outline-offset: 1px; }
+  .ls-input input[aria-invalid="true"] { border-color: var(--wc-danger); }
+  .ls-input:has(.ls-eye) input { padding-right: 48px; }
+  .ls-eye { position: absolute; right: 4px; top: 50%; translate: 0 -50%; width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: var(--wc-radius-sm); background: none; color: var(--wc-fg-muted); cursor: pointer; }
+  .ls-eye:hover { color: var(--wc-fg); }
+  .ls-eye .off, .ls-eye[aria-pressed="true"] .on { display: none; }
+  .ls-eye[aria-pressed="true"] .off { display: block; }
+  .ls-field p { margin: 0; }
+  .ls-err { font-size: var(--wc-font-size-sm); color: var(--wc-danger); }
+  .ls-hint { font-size: var(--wc-font-size-sm); color: var(--wc-warning); display: flex; gap: 6px; align-items: center; }
+  .ls-err:empty, .ls-hint[hidden] { display: none; }
+  .ls-check { display: flex; align-items: center; gap: 10px; margin: 4px 0 20px; font-size: var(--wc-font-size-sm); }
+  .ls-check input { width: 18px; height: 18px; accent-color: var(--wc-accent-solid); }
+  .ls-submit { min-height: var(--wc-size-control-lg); width: 100%; border: 0; border-radius: var(--wc-radius-button); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px; transition: background-color var(--wc-motion-duration-fast); }
+  .ls-submit:hover { background: var(--wc-accent-hover); }
+  .ls-submit[aria-busy="true"] { cursor: progress; }
+  .ls-spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: ls-spin .7s linear infinite; }
+  .ls-submit:not([aria-busy="true"]) .ls-spin { display: none; }
+  @keyframes ls-spin { to { rotate: 1turn; } }
+  .ls-foot { margin-top: 24px; text-align: center; font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .ls button:focus-visible, .ls a:focus-visible, .ls-check input:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .ls-brand { position: relative; overflow: hidden; margin: 12px; border-radius: var(--wc-radius-xl); display: grid; align-content: end; padding: 48px; color: var(--wc-color-white); background: radial-gradient(70% 60% at 80% 20%, var(--wc-gradient-2), transparent 70%), radial-gradient(60% 60% at 10% 90%, var(--wc-gradient-1), transparent 70%), linear-gradient(160deg, var(--wc-gradient-3), var(--wc-gradient-4)); }
+  .ls-brand::before { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, color-mix(in oklch, var(--wc-color-black) 60%, transparent), transparent 70%); }
+  .ls-brand blockquote { position: relative; margin: 0; font: var(--wc-font-weight-medium) var(--wc-font-size-2xl) / var(--wc-line-height-snug) var(--wc-font-display); max-width: 30ch; }
+  .ls-brand figcaption { position: relative; margin-top: 16px; font-size: var(--wc-font-size-sm); }
+  @media (max-width: 900px) { .ls { grid-template-columns: 1fr; } .ls-brand { display: none; } }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+<div class="ls">
+  <main class="ls-form-side">
+    <div class="ls-box">
+      <a class="ls-logo" href="#"><i aria-hidden="true"></i>Órbita</a>
+      <h1>Entrar</h1>
+      <p class="ls-sub">Novo por aqui? <a href="#">Crie sua conta grátis</a></p>
+      <div class="ls-social">
+        <button class="ls-btn" type="button" data-provider="google"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3ZM12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22Zm-5.6-8a6 6 0 0 1 0-3.9V7.5H3.1a10 10 0 0 0 0 9ZM12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.5l3.3 2.6C7.2 7.8 9.4 6 12 6Z"/></svg>Continuar com Google</button>
+        <button class="ls-btn" type="button" data-provider="apple"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 12.6c0-2.4 2-3.5 2-3.6a4.3 4.3 0 0 0-3.4-1.8c-1.4-.2-2.8.8-3.5.8s-1.8-.8-3-.8a4.5 4.5 0 0 0-3.8 2.3c-1.6 2.8-.4 7 1.2 9.2.8 1.1 1.7 2.4 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.2a10 10 0 0 0 1.3-2.6 4 4 0 0 1-2.5-3.6ZM14.1 5.6A4 4 0 0 0 15 2.5a4.2 4.2 0 0 0-2.8 1.4 3.9 3.9 0 0 0-1 3c1.1 0 2.2-.6 2.9-1.3Z"/></svg>Continuar com Apple</button>
+        <button class="ls-btn" type="button" data-provider="passkey"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 20c.8-3.4 3.6-5.5 7-5.5 1.2 0 2.3.3 3.3.8"/><circle cx="18" cy="13" r="2.5"/><path d="M18 15.5V21l1.5-1.2"/></svg>Entrar com passkey</button>
+      </div>
+      <p class="ls-or">ou com e-mail</p>
+      <form class="ls-form" novalidate>
+        <div class="ls-alert" role="alert" tabindex="-1" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span>E-mail ou senha incorretos. Confira e tente de novo, ou <a href="#">redefina a senha</a>.</span></div>
+        <div class="ls-field">
+          <label for="ls-email">E-mail de trabalho</label>
+          <div class="ls-input"><input id="ls-email" name="email" type="email" inputmode="email" autocomplete="username webauthn" required aria-describedby="ls-email-err" placeholder="voce@empresa.com.br"></div>
+          <p class="ls-err" id="ls-email-err" aria-live="polite"></p>
+        </div>
+        <div class="ls-field">
+          <div class="ls-row"><label for="ls-pass">Senha</label><a href="#">Esqueceu a senha?</a></div>
+          <div class="ls-input"><input id="ls-pass" name="password" type="password" autocomplete="current-password" required minlength="8" aria-describedby="ls-pass-err ls-caps">
+            <button class="ls-eye" type="button" aria-pressed="false" aria-controls="ls-pass"><span class="sr">Mostrar senha</span><svg class="on" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><svg class="off" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3 3.8M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a9.700 9.700 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg></button>
+          </div>
+          <p class="ls-hint" id="ls-caps" aria-live="polite" hidden>Caps Lock está ativado</p>
+          <p class="ls-err" id="ls-pass-err" aria-live="polite"></p>
+        </div>
+        <label class="ls-check"><input type="checkbox" name="remember" checked> Manter conectado neste dispositivo</label>
+        <button class="ls-submit" type="submit"><span class="ls-spin" aria-hidden="true"></span><span class="ls-label">Entrar</span></button>
+      </form>
+      <p class="ls-foot">Ao entrar você concorda com os <a href="#">Termos</a> e a <a href="#">Política de Privacidade</a>.</p>
+      <p class="sr" role="status" id="ls-status"></p>
+    </div>
+  </main>
+  <figure class="ls-brand" aria-hidden="true">
+    <blockquote>“Fechamos o mês em dois dias, não em duas semanas. O time parou de caçar planilha.”</blockquote>
+    <figcaption><b>Marina Costa</b> · Diretora financeira, Grupo Sol</figcaption>
+  </figure>
+</div>
+<script>
+(() => {
+  const form = document.querySelector('.ls-form'), email = form.email, pass = form.password, alertBox = form.querySelector('.ls-alert');
+  const status = document.getElementById('ls-status'), submit = form.querySelector('.ls-submit'), label = submit.querySelector('.ls-label');
+  const MSG = {
+    email: (el) => el.validity.valueMissing ? 'Informe seu e-mail.' : el.validity.typeMismatch ? 'Use um e-mail válido, como nome@empresa.com.br.' : '',
+    password: (el) => el.validity.valueMissing ? 'Informe sua senha.' : el.validity.tooShort ? 'A senha tem pelo menos 8 caracteres.' : '',
+  };
+  const touched = new Set();
+  function check(el) { const m = MSG[el.name](el); el.setAttribute('aria-invalid', String(!!m)); document.getElementById(el.id + '-err').textContent = m; return !m; }
+  [email, pass].forEach((el) => {
+    el.addEventListener('blur', () => { if (el.value) { touched.add(el); check(el); } });
+    el.addEventListener('input', () => { alertBox.hidden = true; if (touched.has(el)) check(el); });
+  });
+  const eye = form.querySelector('.ls-eye');
+  eye.addEventListener('click', () => { const on = eye.getAttribute('aria-pressed') !== 'true'; eye.setAttribute('aria-pressed', String(on)); pass.type = on ? 'text' : 'password'; eye.querySelector('.sr').textContent = on ? 'Ocultar senha' : 'Mostrar senha'; });
+  const caps = document.getElementById('ls-caps');
+  pass.addEventListener('keyup', (e) => { caps.hidden = !e.getModifierState?.('CapsLock'); });
+  pass.addEventListener('blur', () => (caps.hidden = true));
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    [email, pass].forEach((el) => touched.add(el));
+    const ok = [email, pass].map(check);
+    if (ok.includes(false)) { [email, pass][ok.indexOf(false)].focus(); return; }
+    submit.setAttribute('aria-busy', 'true'); label.textContent = 'Entrando…'; status.textContent = 'Entrando';
+    setTimeout(() => {
+      submit.removeAttribute('aria-busy'); label.textContent = 'Entrar';
+      if (pass.value !== 'senha-forte') { alertBox.hidden = false; alertBox.focus(); pass.select(); status.textContent = ''; }
+      else status.textContent = 'Login realizado. Redirecionando…';
+    }, 900);
+  });
+  // "último usado"
+  const KEY = 'wc-last-provider';
+  let last; try { last = localStorage.getItem(KEY) || 'google'; } catch { last = 'google'; }
+  document.querySelectorAll('[data-provider]').forEach((b) => {
+    if (b.dataset.provider === last) b.insertAdjacentHTML('beforeend', '<span class="ls-last">Último usado</span>');
+    b.addEventListener('click', () => { try { localStorage.setItem(KEY, b.dataset.provider); } catch {} status.textContent = `Abrindo ${b.textContent.replace('Último usado', '').trim()}…`; });
+  });
+})();
+</script>

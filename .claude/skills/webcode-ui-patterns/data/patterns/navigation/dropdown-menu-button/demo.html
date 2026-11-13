@@ -1,0 +1,114 @@
+<style>
+  .dm-stage { min-height: 100vh; padding: 24px 20px; display: grid; align-content: start; gap: 24px; max-width: 760px; margin: 0 auto; }
+  .dm-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface); }
+  .dm-bar h1 { margin: 0; font-size: var(--wc-font-size-md); font-weight: var(--wc-font-weight-semibold); }
+  .dm-trig { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px; border-radius: var(--wc-radius-button); border: 1px solid var(--wc-border); background: var(--wc-surface); color: var(--wc-fg); font: inherit; font-size: var(--wc-font-size-sm); cursor: pointer; }
+  .dm-trig:hover, .dm-trig[aria-expanded="true"] { background: var(--wc-sunken); }
+  .dm-trig:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .dm-trig .dm-av { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 10px; font-weight: var(--wc-font-weight-bold); color: var(--wc-color-white); background: linear-gradient(135deg, var(--wc-gradient-2), var(--wc-gradient-3)); }
+  .dm-icon { width: 36px; padding: 0; justify-content: center; }
+  .dm-row { display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface); }
+  .dm-row div { flex: 1; } .dm-row small { display: block; color: var(--wc-fg-muted); }
+  .dm-menu { position: fixed; inset: auto; margin: 0; min-width: 232px; padding: 4px; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface-raised); color: var(--wc-fg); box-shadow: var(--wc-shadow-lg); transform-origin: var(--ox, top) var(--oy, left); transition: opacity var(--wc-motion-duration-fast), scale var(--wc-motion-duration-fast) var(--wc-motion-ease-out), display var(--wc-motion-duration-fast) allow-discrete, overlay var(--wc-motion-duration-fast) allow-discrete; }
+  .dm-menu:not(:popover-open) { opacity: 0; scale: calc(1 - .04 * var(--wc-motion-distance)); }
+  @starting-style { .dm-menu:popover-open { opacity: 0; scale: calc(1 - .04 * var(--wc-motion-distance)); } }
+  .dm-label { padding: 8px 10px 4px; font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); }
+  .dm-label b { display: block; color: var(--wc-fg); font-size: var(--wc-font-size-sm); }
+  .dm-sep { height: 1px; margin: 4px -4px; background: var(--wc-border); }
+  [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"] { display: flex; align-items: center; gap: 10px; min-height: 34px; padding: 0 10px 0 30px; position: relative; border-radius: var(--wc-radius-sm); font-size: var(--wc-font-size-sm); cursor: default; outline: none; user-select: none; }
+  [role^="menuitem"]:focus { background: var(--wc-accent-soft); }
+  [role^="menuitem"]:focus kbd { color: var(--wc-fg); }
+  [role^="menuitem"][aria-disabled="true"] { color: var(--wc-fg-muted); }
+  [role^="menuitem"].dm-danger { color: var(--wc-danger); }
+  [role^="menuitem"].dm-danger:focus { background: var(--wc-danger-soft); }
+  [role^="menuitem"] kbd { margin-left: auto; font: var(--wc-font-size-xs) var(--wc-font-mono); color: var(--wc-fg-muted); letter-spacing: .08em; }
+  [role="menuitemcheckbox"][aria-checked="true"]::before { content: ""; position: absolute; left: 10px; width: 12px; height: 7px; border: solid currentColor; border-width: 0 0 2px 2px; rotate: -45deg; translate: 0 -2px; }
+  [role="menuitemradio"][aria-checked="true"]::before { content: ""; position: absolute; left: 12px; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .dm-out { font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+</style>
+<div class="dm-stage">
+  <div class="dm-bar"><h1>Pedidos</h1>
+    <button class="dm-trig" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="dm-acc"><span class="dm-av" aria-hidden="true">FL</span>Fernanda <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+  </div>
+  <div class="dm-row"><div><b>Pedido #10482</b><small>Grupo Sol · R$ 12.480,00</small></div>
+    <button class="dm-trig dm-icon" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="dm-row" aria-label="Ações do pedido #10482"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+  </div>
+  <p class="dm-out" role="status">Use setas, Home/End, letras para pular, Enter e Esc.</p>
+</div>
+<div class="dm-menu" id="dm-acc" role="menu" aria-label="Conta" popover="manual">
+  <div class="dm-label" role="presentation"><b>Fernanda Lima</b>fernanda@gruposol.com.br</div>
+  <div class="dm-sep" role="separator"></div>
+  <div role="menuitem">Perfil<kbd>⇧⌘P</kbd></div>
+  <div role="menuitem">Faturamento</div>
+  <div role="menuitem">Configurações<kbd>⌘,</kbd></div>
+  <div class="dm-sep" role="separator"></div>
+  <div role="menuitemcheckbox" aria-checked="true">Notificações por e-mail</div>
+  <div role="menuitemcheckbox" aria-checked="false">Modo compacto</div>
+  <div class="dm-sep" role="separator"></div>
+  <div role="menuitem" aria-disabled="true">Trocar de empresa</div>
+  <div role="menuitem">Sair<kbd>⇧⌘Q</kbd></div>
+</div>
+<div class="dm-menu" id="dm-row" role="menu" aria-label="Ações do pedido #10482" popover="manual">
+  <div role="menuitem">Abrir</div>
+  <div role="menuitem">Duplicar<kbd>⌘D</kbd></div>
+  <div role="menuitem">Copiar link</div>
+  <div class="dm-sep" role="separator"></div>
+  <div class="dm-label" role="presentation">Status</div>
+  <div role="group" aria-label="Status">
+    <div role="menuitemradio" aria-checked="true">Em separação</div>
+    <div role="menuitemradio" aria-checked="false">Enviado</div>
+    <div role="menuitemradio" aria-checked="false">Entregue</div>
+  </div>
+  <div class="dm-sep" role="separator"></div>
+  <div role="menuitem" class="dm-danger">Cancelar pedido<kbd>⌫</kbd></div>
+</div>
+<script>
+(() => {
+  const out = document.querySelector('.dm-out');
+  document.querySelectorAll('.dm-trig').forEach((btn) => {
+    const menu = document.getElementById(btn.getAttribute('aria-controls'));
+    const items = [...menu.querySelectorAll('[role^="menuitem"]')];
+    items.forEach((it) => (it.tabIndex = -1));
+    let buf = '', tBuf;
+    const focusAt = (i) => { const it = items[(i + items.length) % items.length]; it.focus(); };
+    function place() {
+      const r = btn.getBoundingClientRect(), mw = menu.offsetWidth, mh = menu.offsetHeight;
+      const right = r.right - mw >= 8; const up = r.bottom + 6 + mh > innerHeight - 8 && r.top - mh - 6 > 8;
+      menu.style.left = Math.max(8, Math.min(right ? r.right - mw : r.left, innerWidth - mw - 8)) + 'px';
+      menu.style.top = (up ? r.top - mh - 6 : r.bottom + 6) + 'px';
+      menu.style.setProperty('--ox', up ? 'bottom' : 'top'); menu.style.setProperty('--oy', right ? 'right' : 'left');
+    }
+    function open(at = 0) { menu.showPopover(); place(); btn.setAttribute('aria-expanded', 'true'); focusAt(at); }
+    function close(focus = true) { if (!menu.matches(':popover-open')) return; menu.hidePopover(); btn.setAttribute('aria-expanded', 'false'); if (focus) btn.focus(); }
+    function activate(it) {
+      if (it.getAttribute('aria-disabled') === 'true') return;
+      const role = it.getAttribute('role'), name = it.firstChild.textContent.trim();
+      if (role === 'menuitemcheckbox') { it.setAttribute('aria-checked', String(it.getAttribute('aria-checked') !== 'true')); out.textContent = `${name}: ${it.getAttribute('aria-checked') === 'true' ? 'ligado' : 'desligado'}`; return; }
+      if (role === 'menuitemradio') { it.parentElement.querySelectorAll('[role="menuitemradio"]').forEach((r) => r.setAttribute('aria-checked', String(r === it))); out.textContent = `Status: ${name}`; close(); return; }
+      out.textContent = `Ação: ${name}`; close();
+    }
+    btn.addEventListener('click', () => (menu.matches(':popover-open') ? close() : open()));
+    btn.addEventListener('keydown', (e) => { if (e.key === 'ArrowDown') { e.preventDefault(); open(0); } if (e.key === 'ArrowUp') { e.preventDefault(); open(-1); } });
+    menu.addEventListener('keydown', (e) => {
+      const i = items.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') { e.preventDefault(); focusAt(i + 1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); focusAt(i - 1); }
+      else if (e.key === 'Home') { e.preventDefault(); focusAt(0); }
+      else if (e.key === 'End') { e.preventDefault(); focusAt(-1); }
+      else if (e.key === 'Escape') { e.preventDefault(); close(); }
+      else if (e.key === 'Tab') close(false);
+      else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(items[i]); }
+      else if (e.key.length === 1 && /\S/.test(e.key)) {
+        clearTimeout(tBuf); buf += e.key.toLowerCase(); tBuf = setTimeout(() => (buf = ''), 500);
+        const order = [...items.slice(i + 1), ...items.slice(0, i + 1)];
+        const hit = order.find((it) => it.textContent.trim().toLowerCase().startsWith(buf)) || order.find((it) => it.textContent.trim().toLowerCase().startsWith(buf[0]));
+        hit?.focus();
+      }
+    });
+    menu.addEventListener('click', (e) => { const it = e.target.closest('[role^="menuitem"]'); if (it) activate(it); });
+    menu.addEventListener('pointermove', (e) => { const it = e.target.closest('[role^="menuitem"]'); if (it && document.activeElement !== it) it.focus(); });
+    document.addEventListener('pointerdown', (e) => { if (!menu.contains(e.target) && !btn.contains(e.target)) close(false); });
+    addEventListener('resize', () => menu.matches(':popover-open') && place());
+  });
+})();
+</script>

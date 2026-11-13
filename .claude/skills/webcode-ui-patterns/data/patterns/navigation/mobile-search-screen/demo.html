@@ -1,0 +1,99 @@
+<style>
+  .msr { min-height: 100vh; display: grid; place-items: center; padding: 16px; color: var(--wc-fg); font-size: var(--wc-font-size-sm); }
+  .msr-phone { display: flex; flex-direction: column; width: min(390px, 100%); height: min(760px, calc(100vh - 32px)); overflow: hidden; border-radius: var(--wc-radius-xl); border: 1px solid var(--wc-border); background: var(--wc-bg); box-shadow: var(--wc-shadow-lg); }
+  @media (max-width: 480px) { .msr { padding: 0; } .msr-phone { width: 100%; height: 100vh; height: 100dvh; border-radius: 0; border: 0; } }
+  .msr-title { display: grid; grid-template-rows: 1fr; transition: grid-template-rows var(--wc-motion-duration-base) var(--wc-motion-ease-out), opacity var(--wc-motion-duration-fast); }
+  .msr-title > div { overflow: hidden; }
+  .msr-title h3 { outline: none; margin: 0; padding: calc(16px + env(safe-area-inset-top)) 16px 8px; font: var(--wc-font-weight-bold) var(--wc-font-size-3xl) var(--wc-font-display); letter-spacing: var(--wc-tracking-tight); }
+  .msr.is-on .msr-title { grid-template-rows: 0fr; opacity: 0; }
+  .msr-bar { display: flex; align-items: center; gap: 4px; padding: 8px 16px; }
+  .msr.is-on .msr-bar { padding-top: calc(8px + env(safe-area-inset-top)); }
+  .msr-field { position: relative; flex: 1; }
+  .msr-field svg { position: absolute; left: 10px; top: 50%; translate: 0 -50%; color: var(--wc-fg-muted); pointer-events: none; }
+  .msr-field input { width: 100%; min-height: 40px; padding: 0 12px 0 34px; border: 0; border-radius: var(--wc-radius-md); background: var(--wc-sunken); color: var(--wc-fg); font: inherit; font-size: 16px; }
+  .msr-field input::-webkit-search-cancel-button { cursor: pointer; }
+  .msr-field input:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 1px; }
+  .msr-cancel { max-width: 0; overflow: hidden; opacity: 0; min-height: 44px; padding: 0; border: 0; background: none; color: var(--wc-accent); font: inherit; font-size: var(--wc-font-size-md); cursor: pointer; white-space: nowrap; transition: max-width var(--wc-motion-duration-base) var(--wc-motion-ease-out), opacity var(--wc-motion-duration-base), padding var(--wc-motion-duration-base); }
+  .msr.is-on .msr-cancel { max-width: 100px; opacity: 1; padding: 0 4px 0 8px; }
+  .msr-chips { display: flex; gap: 8px; padding: 0 16px 8px; overflow-x: auto; scrollbar-width: none; }
+  .msr-chips[hidden] { display: none; }
+  .msr-chips button { flex: none; min-height: 36px; padding: 0 14px; border-radius: var(--wc-radius-pill); border: 1px solid var(--wc-border); background: var(--wc-surface); color: var(--wc-fg); font: inherit; cursor: pointer; }
+  .msr-chips button[aria-pressed="true"] { background: var(--wc-fg); color: var(--wc-bg); border-color: var(--wc-fg); }
+  .msr-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 0 0 24px; }
+  .msr-sec { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px 4px; }
+  .msr-sec h4 { margin: 0; font-size: var(--wc-font-size-md); }
+  .msr-sec button { min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--wc-accent); font: inherit; cursor: pointer; }
+  .msr ul { list-style: none; margin: 0; padding: 0; }
+  .msr-rec li { display: flex; align-items: center; border-bottom: 1px solid var(--wc-border); margin-left: 16px; }
+  .msr-rec li > button:first-child { flex: 1; min-height: 48px; border: 0; background: none; color: var(--wc-fg); font: inherit; font-size: var(--wc-font-size-md); text-align: left; cursor: pointer; }
+  .msr-x { width: 44px; height: 44px; border: 0; background: none; color: var(--wc-fg-muted); font-size: 18px; cursor: pointer; }
+  .msr-res li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px 16px; animation: msr-in var(--wc-motion-duration-base) var(--wc-motion-ease-out) both; }
+  .msr-res i { width: 40px; height: 40px; border-radius: var(--wc-radius-md); display: grid; place-items: center; background: var(--wc-accent-soft); color: var(--wc-accent); font-style: normal; font-weight: var(--wc-font-weight-semibold); }
+  .msr-res b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .msr-res small { color: var(--wc-fg-muted); }
+  .msr mark { background: var(--wc-warning-soft); color: inherit; border-radius: 3px; padding: 0 1px; font-weight: var(--wc-font-weight-bold); }
+  @keyframes msr-in { from { opacity: 0; translate: 0 calc(6px * var(--wc-motion-distance)); } }
+  .msr-empty { padding: 40px 24px; text-align: center; color: var(--wc-fg-muted); }
+  .msr-empty b { display: block; color: var(--wc-fg); font-size: var(--wc-font-size-md); margin-bottom: 4px; }
+  .msr-st { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .msr-home { padding: 8px 16px; color: var(--wc-fg-muted); }
+  .msr-home div { height: 64px; margin-bottom: 10px; border-radius: var(--wc-radius-lg); background: var(--wc-surface); border: 1px solid var(--wc-border); }
+  .msr button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: -2px; }
+  @media (prefers-reduced-motion: reduce) { .msr-title, .msr-cancel { transition-duration: 1ms; } .msr-res li { animation: none; } }
+</style>
+<div class="msr">
+  <div class="msr-phone">
+    <div class="msr-title"><div><h3 tabindex="-1">Ordens</h3></div></div>
+    <div class="msr-bar" role="search">
+      <div class="msr-field"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" aria-label="Buscar ordens, clientes ou equipamentos" placeholder="Buscar" enterkeyhint="search" autocomplete="off" autocorrect="off"></div>
+      <button type="button" class="msr-cancel" tabindex="-1">Cancelar</button>
+    </div>
+    <div class="msr-chips" role="group" aria-label="Escopo da busca" hidden><button type="button" aria-pressed="true" data-s="all">Tudo</button><button type="button" aria-pressed="false" data-s="Aberta">Abertas</button><button type="button" aria-pressed="false" data-s="Concluída">Concluídas</button></div>
+    <div class="msr-body"></div>
+    <p class="msr-st" role="status"></p>
+  </div>
+</div>
+<script>
+(() => {
+  const DATA = [
+    ['2041', 'Padaria Pão Quente', 'Troca de compressor', 'Aberta'], ['2042', 'Clínica Sorriso', 'Limpeza de split', 'Aberta'], ['2038', 'Hotel Jardins', 'Compressor com ruído', 'Concluída'],
+    ['2035', 'Mercado Bom Preço', 'Câmara fria sem gelar', 'Concluída'], ['2044', 'Academia Forma', 'Instalação de split 24 mil BTUs', 'Aberta'], ['2030', 'Padaria Pão Quente', 'Vistoria preventiva', 'Concluída'],
+  ];
+  const root = document.querySelector('.msr'), input = root.querySelector('input'), cancel = root.querySelector('.msr-cancel'), chips = root.querySelector('.msr-chips'), body = root.querySelector('.msr-body'), st = root.querySelector('.msr-st');
+  let recents = ['compressor', 'Clínica Sorriso', 'split'], scope = 'all', t;
+  const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const norm = (s) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+  const hl = (s, q) => { const i = norm(s).indexOf(norm(q)); return i < 0 ? esc(s) : esc(s.slice(0, i)) + '<mark>' + esc(s.slice(i, i + q.length)) + '</mark>' + esc(s.slice(i + q.length)); };
+  const home = () => { body.innerHTML = '<p class="msr-home">Hoje · 4 visitas</p><div class="msr-home"><div></div><div></div><div></div></div>'; };
+  const idle = () => {
+    body.innerHTML = (recents.length ? `<div class="msr-sec"><h4>Recentes</h4><button type="button" data-clear>Limpar</button></div><ul class="msr-rec">${recents.map((r) => `<li><button type="button" data-q="${esc(r)}">${esc(r)}</button><button type="button" class="msr-x" data-rm="${esc(r)}" aria-label="Remover ${esc(r)} das recentes">×</button></li>`).join('')}</ul>` : '')
+      + `<div class="msr-sec"><h4>Sugestões</h4></div><ul class="msr-rec">${['Abertas hoje', 'Padaria Pão Quente'].map((r) => `<li><button type="button" data-q="${r}">${r}</button></li>`).join('')}</ul>`;
+  };
+  const search = () => {
+    const q = input.value.trim(); chips.hidden = !q;
+    if (!q) { st.textContent = ''; return idle(); }
+    const res = DATA.filter((d) => (scope === 'all' || d[3] === scope) && norm(d.join(' ')).includes(norm(q)));
+    st.textContent = res.length ? `${res.length} resultado${res.length > 1 ? 's' : ''}` : 'Nenhum resultado';
+    body.innerHTML = res.length ? `<ul class="msr-res">${res.map((d, i) => `<li style="animation-delay:${i * 30}ms"><i aria-hidden="true">${d[1][0]}</i><span><b>${hl(d[2], q)}</b><small>#${d[0]} · ${hl(d[1], q)} · ${d[3]}</small></span></li>`).join('')}</ul>`
+      : `<div class="msr-empty"><b>Nada para "${esc(q)}"</b>Confira a grafia, busque pelo número da OS ou troque o escopo para Tudo.</div>`;
+  };
+  const on = () => { if (root.classList.contains('is-on')) return; root.classList.add('is-on'); cancel.tabIndex = 0; search(); };
+  const off = () => { root.classList.remove('is-on'); cancel.tabIndex = -1; input.value = ''; chips.hidden = true; st.textContent = ''; input.blur(); home(); };
+  const remember = (q) => { q = q.trim(); if (!q) return; recents = [q, ...recents.filter((r) => norm(r) !== norm(q))].slice(0, 5); };
+  input.addEventListener('focus', on);
+  input.addEventListener('input', () => { clearTimeout(t); t = setTimeout(search, 120); });
+  const title = root.querySelector('.msr-title h3');
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { remember(input.value); input.blur(); }
+    if (e.key === 'Escape') { e.preventDefault(); if (input.value) { input.value = ''; search(); } else { off(); title.focus(); } }
+  });
+  cancel.onclick = () => { off(); title.focus(); };
+  chips.onclick = (e) => { const b = e.target.closest('[data-s]'); if (!b) return; scope = b.dataset.s; chips.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); search(); };
+  body.onclick = (e) => {
+    const q = e.target.closest('[data-q]'), rm = e.target.closest('[data-rm]'), cl = e.target.closest('[data-clear]');
+    if (q) { input.value = q.dataset.q; remember(q.dataset.q); search(); }
+    if (rm) { recents = recents.filter((r) => r !== rm.dataset.rm); idle(); input.focus(); }
+    if (cl) { recents = []; idle(); input.focus(); }
+  };
+  home();
+})();
+</script>

@@ -1,0 +1,73 @@
+<style>
+  .ap { min-height: 100vh; padding: 20px; display: grid; align-content: start; gap: 16px; }
+  .ap-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .ap-bar h1 { margin: 0 auto 0 0; font: var(--wc-font-weight-semibold) var(--wc-font-size-xl) var(--wc-font-display); }
+  .ap-trigger { anchor-name: --ap-trigger; display: inline-flex; align-items: center; gap: 8px; min-height: var(--wc-size-touch-min); padding: 0 14px; border: 1px solid var(--wc-border-strong); border-radius: var(--wc-radius-md); background: var(--wc-surface); color: var(--wc-fg); font: inherit; cursor: pointer; }
+  .ap-trigger:hover { background: var(--wc-sunken); }
+  .ap-trigger[aria-expanded="true"] { border-color: var(--wc-accent); }
+  .ap-trigger:focus-visible, .ap-panel :focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .ap-count { min-width: 20px; padding: 0 6px; border-radius: var(--wc-radius-pill); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font-size: var(--wc-font-size-xs); font-variant-numeric: tabular-nums; text-align: center; }
+  .ap-count:empty { display: none; }
+  .ap-panel { position-anchor: --ap-trigger; inset: auto; top: anchor(bottom); left: anchor(left); margin: 6px 0 0; position-try-fallbacks: flip-block, flip-inline; width: min(280px, calc(100vw - 32px)); padding: 12px; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface-raised); color: var(--wc-fg); box-shadow: var(--wc-shadow-lg); transform-origin: top left; opacity: 1; scale: 1; transition: opacity var(--wc-motion-duration-fast) var(--wc-motion-ease-out), scale var(--wc-motion-duration-fast) var(--wc-motion-ease-out), display var(--wc-motion-duration-fast) allow-discrete, overlay var(--wc-motion-duration-fast) allow-discrete; }
+  .ap-panel:not(:popover-open) { opacity: 0; scale: .96; transition-duration: var(--wc-motion-duration-instant); }
+  @starting-style { .ap-panel:popover-open { opacity: 0; scale: .96; } }
+  @media (prefers-reduced-motion: reduce) { .ap-panel, .ap-panel:not(:popover-open) { scale: 1; } }
+  .ap-panel h2 { margin: 0 0 8px; font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); font-weight: var(--wc-font-weight-medium); }
+  .ap-panel label { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 8px; border-radius: var(--wc-radius-sm); cursor: pointer; }
+  .ap-panel label:hover { background: var(--wc-sunken); }
+  .ap-panel input { width: 18px; height: 18px; accent-color: var(--wc-accent-solid); }
+  .ap-panel label span { flex: 1; }
+  .ap-panel small { color: var(--wc-fg-muted); font-variant-numeric: tabular-nums; }
+  .ap-foot { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--wc-border); }
+  .ap-link { min-height: 36px; padding: 0 10px; border: 0; border-radius: var(--wc-radius-sm); background: transparent; color: var(--wc-accent); font: inherit; cursor: pointer; }
+  .ap-link.is-solid { background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); }
+  .ap-result { color: var(--wc-fg-muted); }
+</style>
+<div class="ap">
+  <div class="ap-bar">
+    <h1>Pedidos</h1>
+    <button class="ap-trigger" type="button" popovertarget="ap-status">Status <span class="ap-count" aria-hidden="true"></span><span class="ap-sr" hidden></span></button>
+  </div>
+  <p class="ap-result" role="status">128 pedidos</p>
+</div>
+<div class="ap-panel" id="ap-status" popover aria-labelledby="ap-status-title">
+  <h2 id="ap-status-title">Filtrar por status</h2>
+  <label><input type="checkbox" value="Pago"><span>Pago</span><small>84</small></label>
+  <label><input type="checkbox" value="Em separação"><span>Em separação</span><small>27</small></label>
+  <label><input type="checkbox" value="Atrasado"><span>Atrasado</span><small>9</small></label>
+  <label><input type="checkbox" value="Cancelado"><span>Cancelado</span><small>8</small></label>
+  <div class="ap-foot">
+    <button class="ap-link" type="button" data-clear>Limpar</button>
+    <button class="ap-link is-solid" type="button" popovertarget="ap-status" popovertargetaction="hide">Aplicar</button>
+  </div>
+</div>
+<script>
+(() => {
+  const btn = document.querySelector('.ap-trigger');
+  const panel = document.getElementById('ap-status');
+  const count = btn.querySelector('.ap-count');
+  const result = document.querySelector('.ap-result');
+  const boxes = [...panel.querySelectorAll('input')];
+  const update = () => {
+    const on = boxes.filter((b) => b.checked);
+    count.textContent = on.length || '';
+    btn.setAttribute('aria-label', on.length ? `Status, ${on.length} filtro${on.length > 1 ? 's' : ''} ativo${on.length > 1 ? 's' : ''}` : 'Status');
+    const total = on.length ? on.reduce((s, b) => s + Number(b.parentElement.querySelector('small').textContent), 0) : 128;
+    result.textContent = `${total} pedidos`;
+  };
+  boxes.forEach((b) => b.addEventListener('change', update));
+  panel.querySelector('[data-clear]').addEventListener('click', () => { boxes.forEach((b) => (b.checked = false)); update(); });
+  panel.addEventListener('toggle', (e) => btn.setAttribute('aria-expanded', String(e.newState === 'open')));
+  // Fallback: sem anchor positioning, posiciona uma vez ao abrir.
+  if (!CSS.supports('anchor-name: --a')) {
+    panel.addEventListener('beforetoggle', (e) => {
+      if (e.newState !== 'open') return;
+      const r = btn.getBoundingClientRect();
+      panel.style.position = 'fixed';
+      panel.style.top = `${r.bottom}px`;
+      panel.style.left = `${Math.min(r.left, innerWidth - 296)}px`;
+    });
+  }
+  btn.setAttribute('aria-expanded', 'false');
+})();
+</script>

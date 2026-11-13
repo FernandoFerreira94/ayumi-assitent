@@ -1,0 +1,73 @@
+<style>
+  .cep { min-height: 100vh; display: grid; place-content: center; padding: 20px; }
+  .cep form { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px 12px; width: min(520px, calc(100vw - 40px)); }
+  .cep-f { display: grid; gap: 6px; grid-column: span 6; }
+  .cep-f.w2 { grid-column: span 2; } .cep-f.w4 { grid-column: span 4; } .cep-f.w3 { grid-column: span 3; }
+  @media (max-width: 480px) { .cep-f.w2, .cep-f.w4, .cep-f.w3 { grid-column: span 6; } .cep-f.w-uf { grid-column: span 2; } .cep-f.w-city { grid-column: span 4; } }
+  .cep label { font-weight: var(--wc-font-weight-medium); font-size: var(--wc-font-size-sm); }
+  .cep-box { position: relative; }
+  .cep input { width: 100%; min-height: var(--wc-size-touch-min); padding: 0 12px; font: inherit; font-size: max(16px, 1em); border: 1px solid var(--wc-border-strong); border-radius: var(--wc-radius-md); background: var(--wc-bg); color: var(--wc-fg); transition: background-color var(--wc-motion-duration-slow) var(--wc-motion-ease-out); }
+  .cep input:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .cep input.is-filled { background: var(--wc-accent-soft); transition-duration: var(--wc-motion-duration-fast); }
+  .cep-spin { position: absolute; right: 12px; top: 50%; width: 16px; height: 16px; margin-top: -8px; border-radius: 50%; border: 2px solid var(--wc-border-strong); border-top-color: var(--wc-accent); animation: cep-spin 700ms linear infinite; display: none; }
+  .cep.is-loading .cep-spin { display: block; }
+  @keyframes cep-spin { to { rotate: 1turn; } }
+  @media (prefers-reduced-motion: reduce) { .cep-spin { animation-duration: 2s; } }
+  .cep-status { font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); min-height: 1.4em; }
+  .cep-status.is-warn { color: var(--wc-warning); }
+  .cep-hint { font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); grid-column: span 6; }
+</style>
+<div class="cep">
+  <form novalidate>
+    <div class="cep-f w2">
+      <label for="cep-cep">CEP</label>
+      <div class="cep-box"><input id="cep-cep" inputmode="numeric" autocomplete="postal-code" maxlength="9" aria-describedby="cep-status"><span class="cep-spin" aria-hidden="true"></span></div>
+    </div>
+    <div class="cep-f w4"><span class="cep-status" id="cep-status" role="status"></span></div>
+    <div class="cep-f w4"><label for="cep-rua">Rua</label><input id="cep-rua" autocomplete="address-line1"></div>
+    <div class="cep-f w2"><label for="cep-num">Número</label><input id="cep-num" inputmode="numeric" autocomplete="address-line2"></div>
+    <div class="cep-f w3"><label for="cep-comp">Complemento (opcional)</label><input id="cep-comp"></div>
+    <div class="cep-f w3"><label for="cep-bairro">Bairro</label><input id="cep-bairro" autocomplete="address-level3"></div>
+    <div class="cep-f w4 w-city"><label for="cep-cidade">Cidade</label><input id="cep-cidade" autocomplete="address-level2"></div>
+    <div class="cep-f w2 w-uf"><label for="cep-uf">UF</label><input id="cep-uf" maxlength="2" autocomplete="address-level1" autocapitalize="characters"></div>
+    <p class="cep-hint">Exemplos: 01310-100, 20040-002, 30130-010 (qualquer outro simula CEP não encontrado).</p>
+  </form>
+</div>
+<script>
+(() => {
+  const BASE = {
+    '01310100': ['Avenida Paulista', 'Bela Vista', 'São Paulo', 'SP'],
+    '20040002': ['Rua da Assembleia', 'Centro', 'Rio de Janeiro', 'RJ'],
+    '30130010': ['Avenida Afonso Pena', 'Centro', 'Belo Horizonte', 'MG'],
+  };
+  const root = document.querySelector('.cep');
+  const cep = document.getElementById('cep-cep');
+  const status = document.getElementById('cep-status');
+  const f = ['rua', 'bairro', 'cidade', 'uf'].map((k) => document.getElementById('cep-' + k));
+  const cache = new Map();
+  let ctrl;
+  const lookup = (code, signal) => new Promise((res, rej) => {
+    const t = setTimeout(() => res(BASE[code] ?? null), 650);
+    signal.addEventListener('abort', () => { clearTimeout(t); rej(new DOMException('abort', 'AbortError')); });
+  });
+  cep.addEventListener('input', async () => {
+    const d = cep.value.replace(/\D/g, '').slice(0, 8);
+    cep.value = d.length > 5 ? d.slice(0, 5) + '-' + d.slice(5) : d;
+    ctrl?.abort();
+    status.classList.remove('is-warn');
+    if (d.length < 8) { root.classList.remove('is-loading'); status.textContent = ''; return; }
+    ctrl = new AbortController();
+    root.classList.add('is-loading');
+    status.textContent = 'Buscando endereço…';
+    try {
+      const r = cache.has(d) ? cache.get(d) : await lookup(d, ctrl.signal);
+      cache.set(d, r);
+      root.classList.remove('is-loading');
+      if (!r) { status.textContent = 'Não achamos esse CEP. Preencha o endereço abaixo.'; status.classList.add('is-warn'); f[0].focus(); return; }
+      f.forEach((el, i) => { el.value = r[i]; el.classList.add('is-filled'); setTimeout(() => el.classList.remove('is-filled'), 600); });
+      status.textContent = `Endereço encontrado: ${r[2]} – ${r[3]}. Falta o número.`;
+      document.getElementById('cep-num').focus();
+    } catch (e) { if (e.name !== 'AbortError') { root.classList.remove('is-loading'); status.textContent = 'Não foi possível buscar agora. Preencha o endereço abaixo.'; status.classList.add('is-warn'); } }
+  });
+})();
+</script>

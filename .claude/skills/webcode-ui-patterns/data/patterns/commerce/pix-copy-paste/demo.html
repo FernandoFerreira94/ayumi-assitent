@@ -1,0 +1,75 @@
+<style>
+  .pix { min-height: 100vh; padding: 20px 16px; display: grid; place-items: start center; color: var(--wc-fg); font-size: var(--wc-font-size-sm); font-variant-numeric: tabular-nums; }
+  .pix-card { width: 100%; max-width: 720px; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-xl); background: var(--wc-surface); padding: 20px; display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 640px) { .pix-card { grid-template-columns: minmax(0, 1fr) 220px; } .pix-qr { grid-column: 2; grid-row: 1 / span 3; } }
+  .pix-head h2 { margin: 0; font-size: var(--wc-font-size-lg); }
+  .pix-head h2:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .pix-head p { margin: 4px 0 0; color: var(--wc-fg-muted); }
+  .pix-amount { font-size: var(--wc-font-size-xl); font-weight: var(--wc-font-weight-bold, 700); margin-top: 6px; display: block; }
+  .pix-timer { display: inline-flex; gap: 6px; align-items: center; padding: 4px 10px; border-radius: var(--wc-radius-pill); background: var(--wc-warning-soft); margin-top: 8px; }
+  .pix-code { display: grid; gap: 8px; }
+  .pix-code code { display: block; padding: 10px 12px; border-radius: var(--wc-radius-md); background: var(--wc-sunken); font-size: var(--wc-font-size-xs); overflow-wrap: anywhere; max-height: 4.5lh; overflow: auto; user-select: all; }
+  .pix button { font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; }
+  .pix-copy { min-height: 48px; border-radius: var(--wc-radius-md); border: 0; background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); display: inline-flex; justify-content: center; align-items: center; gap: 8px; }
+  .pix-copy.is-ok { background: var(--wc-success-soft); color: var(--wc-fg); box-shadow: inset 0 0 0 1px var(--wc-success); }
+  .pix ol { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; color: var(--wc-fg-muted); }
+  .pix-qr { display: grid; gap: 8px; justify-items: center; align-content: start; }
+  .pix-qr svg { width: 100%; max-width: 200px; aspect-ratio: 1; padding: 10px; border-radius: var(--wc-radius-md); background: var(--wc-surface-raised); box-shadow: inset 0 0 0 1px var(--wc-border); color: var(--wc-fg); }
+  .pix-qr small { color: var(--wc-fg-muted); text-align: center; }
+  @media (max-width: 639px) { .pix-qr { display: none; } .pix-card.show-qr .pix-qr { display: grid; } }
+  .pix-toggle { border: 0; background: none; color: var(--wc-accent); text-decoration: underline; min-height: 36px; justify-self: start; }
+  @media (min-width: 640px) { .pix-toggle { display: none; } }
+  .pix-status { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--wc-radius-md); background: var(--wc-sunken); }
+  .pix-status i { width: 10px; height: 10px; border-radius: 50%; background: var(--wc-warning); animation: pix-p 1.2s ease-in-out infinite; }
+  @keyframes pix-p { 50% { opacity: .3; } }
+  .pix-card[data-s="paid"] .pix-status { background: var(--wc-success-soft); } .pix-card[data-s="paid"] .pix-status i { background: var(--wc-success); animation: none; }
+  .pix-card[data-s="expired"] .pix-status { background: var(--wc-danger-soft); } .pix-card[data-s="expired"] .pix-status i { background: var(--wc-danger); animation: none; }
+  .pix-card[data-s="paid"] .pix-code, .pix-card[data-s="paid"] ol, .pix-card[data-s="paid"] .pix-qr, .pix-card[data-s="paid"] .pix-timer, .pix-card[data-s="paid"] .pix-toggle,
+  .pix-card[data-s="expired"] .pix-code, .pix-card[data-s="expired"] .pix-qr, .pix-card[data-s="expired"] .pix-timer, .pix-card[data-s="expired"] .pix-toggle { display: none; }
+  .pix-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pix-acts button { min-height: 40px; padding: 0 12px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font-weight: normal; font-size: var(--wc-font-size-xs); }
+  .pix button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .pix-status i { animation: none; } }
+</style>
+<div class="pix">
+  <section class="pix-card" data-s="wait" aria-labelledby="pix-h">
+    <div class="pix-head"><h2 id="pix-h" tabindex="-1">Pague com Pix</h2><p>Pedido #1043 · Loja Café</p><strong class="pix-amount">R$ 370,22</strong><span class="pix-timer" role="timer" aria-live="off">Expira em <b class="pix-left">10:00</b></span></div>
+    <div class="pix-code">
+      <code id="pix-c" tabindex="0" aria-label="Código Pix copia e cola">00020126580014br.gov.bcb.pix0136a1b2c3d4-e5f6-7890-abcd-ef12345678905204000053039865405370225802BR5913LOJA CAFE LTDA6009SAO PAULO62070503***6304A1F3</code>
+      <button type="button" class="pix-copy">Copiar código Pix</button>
+    </div>
+    <ol><li>Abra o app do seu banco e escolha Pix.</li><li>Toque em "Pix copia e cola" e cole o código.</li><li>Confirme o valor e pague. A confirmação aparece aqui.</li></ol>
+    <button type="button" class="pix-toggle" aria-expanded="false">Mostrar QR Code</button>
+    <div class="pix-qr"><svg viewBox="0 0 29 29" role="img" aria-label="QR Code do Pix (ilustrativo). Use o código copia e cola se preferir."></svg><small>Escaneie com o app do banco</small></div>
+    <div class="pix-status" role="status"><i aria-hidden="true"></i><span class="pix-st">Aguardando pagamento…</span></div>
+    <div class="pix-acts" aria-label="Controles do demo"><button type="button" data-a="pay">Simular pagamento</button><button type="button" data-a="exp">Simular expiração</button></div>
+  </section>
+</div>
+<script>
+(() => {
+  const card = document.querySelector('.pix-card'), st = card.querySelector('.pix-st'), left = card.querySelector('.pix-left'), copy = card.querySelector('.pix-copy'), h = card.querySelector('#pix-h'), svg = card.querySelector('.pix-qr svg'), tog = card.querySelector('.pix-toggle'), timer = card.querySelector('.pix-timer');
+  let seed = 7, r = '';
+  const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  const finder = (x, y) => `<rect x="${x}" y="${y}" width="7" height="7" fill="currentColor"/><rect x="${x + 1}" y="${y + 1}" width="5" height="5" fill="var(--wc-surface-raised)"/><rect x="${x + 2}" y="${y + 2}" width="3" height="3" fill="currentColor"/>`;
+  for (let y = 0; y < 29; y++) for (let x = 0; x < 29; x++) { const inF = (x < 8 && y < 8) || (x > 20 && y < 8) || (x < 8 && y > 20); if (!inF && rnd() > .52) r += `<rect x="${x}" y="${y}" width="1" height="1" fill="currentColor"/>`; }
+  svg.innerHTML = r + finder(0, 0) + finder(22, 0) + finder(0, 22);
+  let secs = 600, t;
+  const fmtT = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  const setState = (s) => {
+    clearInterval(t); card.dataset.s = s;
+    if (s === 'paid') { h.textContent = 'Pagamento confirmado'; st.textContent = 'Pix recebido às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '. Enviamos o comprovante por e-mail.'; card.querySelector('.pix-acts').innerHTML = '<button type="button" data-a="reset">Ver pedido</button>'; h.focus(); }
+    if (s === 'expired') { h.textContent = 'O código Pix expirou'; st.textContent = 'Nenhum valor foi cobrado. Gere um novo código para pagar.'; card.querySelector('.pix-acts').innerHTML = '<button type="button" data-a="reset">Gerar novo código</button>'; h.focus(); }
+  };
+  const start = () => { secs = 600; card.dataset.s = 'wait'; h.textContent = 'Pague com Pix'; st.textContent = 'Aguardando pagamento…'; left.textContent = fmtT(secs); card.querySelector('.pix-acts').innerHTML = '<button type="button" data-a="pay">Simular pagamento</button><button type="button" data-a="exp">Simular expiração</button>';
+    t = setInterval(() => { secs--; left.textContent = fmtT(secs); if (secs === 300) timer.setAttribute('aria-live', 'polite'); if (secs <= 0) setState('expired'); }, 1000); };
+  copy.addEventListener('click', () => {
+    const txt = card.querySelector('#pix-c').textContent.replace(/\s/g, '');
+    navigator.clipboard?.writeText(txt).catch(() => {});
+    copy.classList.add('is-ok'); copy.textContent = '✓ Código copiado'; st.textContent = 'Código Pix copiado. Cole no app do banco.';
+    setTimeout(() => { copy.classList.remove('is-ok'); copy.textContent = 'Copiar código Pix'; }, 2500);
+  });
+  tog.addEventListener('click', () => { const on = card.classList.toggle('show-qr'); tog.setAttribute('aria-expanded', String(on)); tog.textContent = on ? 'Ocultar QR Code' : 'Mostrar QR Code'; });
+  card.addEventListener('click', (e) => { const a = e.target.closest('[data-a]')?.dataset.a; if (a === 'pay') setState('paid'); if (a === 'exp') setState('expired'); if (a === 'reset') { start(); copy.focus(); } });
+  start();
+})();
+</script>

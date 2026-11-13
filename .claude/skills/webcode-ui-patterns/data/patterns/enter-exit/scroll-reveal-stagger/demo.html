@@ -1,0 +1,27 @@
+<style>
+  .sr { max-width: 1040px; margin: 0 auto; padding: 48px 20px 240px; }
+  .sr-intro { min-height: 70vh; display: grid; align-content: center; }
+  .sr h2 { font: var(--wc-font-weight-semibold) clamp(28px, 4vw, var(--wc-font-size-5xl)) / var(--wc-line-height-snug) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); margin: 0; max-width: 18ch; }
+  .sr-intro p { color: var(--wc-fg-muted); }
+  .sr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 32px; }
+  .sr-item { padding: 24px; border-radius: var(--wc-radius-lg); background: var(--wc-surface); border: 1px solid var(--wc-border); box-shadow: var(--wc-shadow); }
+  .sr-item strong { display: block; font: var(--wc-font-weight-bold) var(--wc-font-size-4xl) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tighter) * 1em); color: var(--wc-accent); font-variant-numeric: tabular-nums; }
+  .sr-item p { margin: 6px 0 0; color: var(--wc-fg-muted); }
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .sr-item { animation: sr-in linear both; animation-timeline: view(); animation-range: entry calc(10% + var(--i, 0) * 6%) cover calc(30% + var(--i, 0) * 6%); }
+    }
+  }
+  @keyframes sr-in { from { opacity: 0; transform: translateY(24px) scale(.98); } }
+</style>
+<div class="sr">
+  <div class="sr-intro"><h2>Resultados que aparecem no seu fechamento</h2><p>Role para baixo ↓</p></div>
+  <div class="sr-grid">
+    <div class="sr-item" style="--i:0"><strong>3,2x</strong><p>mais pedidos recorrentes em 6 meses</p></div>
+    <div class="sr-item" style="--i:1"><strong>-41%</strong><p>em chamados de suporte</p></div>
+    <div class="sr-item" style="--i:2"><strong>12 min</strong><p>para emitir 500 notas fiscais</p></div>
+    <div class="sr-item" style="--i:0"><strong>R$ 0</strong><p>de taxa de setup</p></div>
+    <div class="sr-item" style="--i:1"><strong>4,9</strong><p>de nota média na App Store</p></div>
+    <div class="sr-item" style="--i:2"><strong>24/7</strong><p>suporte em português</p></div>
+  </div>
+</div>

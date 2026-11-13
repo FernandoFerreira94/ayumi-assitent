@@ -1,0 +1,75 @@
+<style>
+  .mm { min-height: 100vh; }
+  .mm-bar { position: relative; display: flex; align-items: center; gap: 4px; padding: 0 20px; min-height: 56px; border-bottom: 1px solid var(--wc-border); background: var(--wc-surface); }
+  .mm-bar strong { margin-right: 16px; font-family: var(--wc-font-display); }
+  .mm-top { display: flex; gap: 2px; margin: 0; padding: 0; list-style: none; }
+  .mm-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border: 0; border-radius: var(--wc-radius-md); background: none; color: var(--wc-fg); font: inherit; cursor: pointer; }
+  .mm-btn::after { content: "▾"; font-size: .7em; color: var(--wc-fg-muted); transition: rotate var(--wc-motion-duration-fast); }
+  .mm-btn[aria-expanded="true"] { background: var(--wc-sunken); }
+  .mm-btn[aria-expanded="true"]::after { rotate: 180deg; }
+  .mm-btn:focus-visible, .mm a:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .mm-panel { position: absolute; left: 0; right: 0; top: 100%; z-index: 5; display: grid; grid-template-columns: repeat(3, 1fr) 1.2fr; gap: 24px; padding: 24px 20px; background: var(--wc-surface-raised); border-bottom: 1px solid var(--wc-border); box-shadow: var(--wc-shadow-lg); opacity: 1; translate: 0 0; transition: opacity var(--wc-motion-duration-fast) var(--wc-motion-ease-out), translate var(--wc-motion-duration-fast) var(--wc-motion-ease-out); }
+  .mm-panel[hidden] { display: none; }
+  @starting-style { .mm-panel { opacity: 0; translate: 0 calc(-4px * var(--wc-motion-distance)); } }
+  .mm-panel h3 { margin: 0 0 8px; font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); font-weight: var(--wc-font-weight-medium); }
+  .mm-panel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  .mm-panel a { display: block; padding: 6px 0; color: var(--wc-fg); text-decoration: none; border-radius: var(--wc-radius-sm); }
+  .mm-panel a:hover { color: var(--wc-accent); }
+  .mm-promo { display: grid; align-content: end; gap: 6px; min-height: 160px; padding: 16px; border-radius: var(--wc-radius-lg); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); }
+  .mm-promo a { color: inherit; font-weight: var(--wc-font-weight-semibold); }
+  .mm-mobile { display: none; }
+  .mm-main { padding: 24px 20px; color: var(--wc-fg-muted); }
+  @media (max-width: 767px) {
+    .mm-top, .mm-panel { display: none !important; }
+    .mm-mobile { display: block; margin-left: auto; }
+    .mm-acc { position: absolute; left: 0; right: 0; top: 100%; z-index: 5; padding: 8px 12px 16px; background: var(--wc-surface-raised); border-bottom: 1px solid var(--wc-border); box-shadow: var(--wc-shadow-lg); }
+    .mm-acc[hidden] { display: none; }
+    .mm-acc .mm-btn { width: 100%; justify-content: space-between; min-height: var(--wc-size-touch-min); }
+    .mm-acc ul { list-style: none; margin: 0; padding: 0 12px 8px; }
+    .mm-acc a { display: block; padding: 10px 0; color: var(--wc-fg); }
+  }
+</style>
+<div class="mm">
+  <div class="mm-bar">
+    <strong>Casa&amp;Cia</strong>
+    <ul class="mm-top"></ul>
+    <div class="mm-mobile"><button class="mm-btn" type="button" aria-expanded="false" aria-controls="mm-acc">Categorias</button></div>
+    <div class="mm-acc" id="mm-acc" hidden></div>
+  </div>
+  <p class="mm-main">Passe o mouse, clique ou use Tab + Enter nas categorias. Esc fecha. No celular, vira sanfona.</p>
+</div>
+<script>
+(() => {
+  const CATS = {
+    Cozinha: [['Panelas', ['Antiaderente', 'Inox', 'Ferro fundido']], ['Utensílios', ['Facas', 'Tábuas', 'Medidores']], ['Eletroportáteis', ['Air fryer', 'Cafeteiras', 'Liquidificadores']]],
+    Quarto: [['Cama', ['Lençóis', 'Edredons', 'Travesseiros']], ['Organização', ['Cabides', 'Caixas', 'Gaveteiros']], ['Decoração', ['Luminárias', 'Quadros', 'Tapetes']]],
+    Banho: [['Toalhas', ['Rosto', 'Banho', 'Piso']], ['Acessórios', ['Saboneteiras', 'Porta-escovas', 'Lixeiras']], ['Organização', ['Prateleiras', 'Cestos', 'Ganchos']]],
+  };
+  const top = document.querySelector('.mm-top');
+  const bar = document.querySelector('.mm-bar');
+  const keys = Object.keys(CATS);
+  top.innerHTML = keys.map((k, i) => `<li><button class="mm-btn" type="button" aria-expanded="false" aria-controls="mm-p${i}">${k}</button></li>`).join('');
+  bar.insertAdjacentHTML('beforeend', keys.map((k, i) => `<div class="mm-panel" id="mm-p${i}" hidden>${CATS[k].map(([t, items]) => `<div><h3>${t}</h3><ul>${items.map((x) => `<li><a href="#${x}">${x}</a></li>`).join('')}</ul></div>`).join('')}<div class="mm-promo"><span>Ofertas de ${k}</span><a href="#oferta-${i}">Até 30% no Pix →</a></div></div>`).join(''));
+  const btns = [...top.querySelectorAll('.mm-btn')];
+  const panels = btns.map((b) => document.getElementById(b.getAttribute('aria-controls')));
+  let openI = -1, tOpen, tClose;
+  const open = (i) => { if (openI === i) return; close(); openI = i; btns[i].setAttribute('aria-expanded', 'true'); panels[i].hidden = false; };
+  function close(focus) { if (openI < 0) return; const i = openI; btns[i].setAttribute('aria-expanded', 'false'); panels[i].hidden = true; openI = -1; if (focus) btns[i].focus(); }
+  btns.forEach((b, i) => {
+    b.addEventListener('click', () => (openI === i ? close() : open(i)));
+    b.addEventListener('pointerenter', (e) => { if (e.pointerType !== 'mouse') return; clearTimeout(tClose); clearTimeout(tOpen); tOpen = setTimeout(() => open(i), openI >= 0 ? 0 : 120); });
+    b.addEventListener('pointerleave', () => { clearTimeout(tOpen); tClose = setTimeout(close, 200); });
+  });
+  panels.forEach((p) => { p.addEventListener('pointerenter', () => clearTimeout(tClose)); p.addEventListener('pointerleave', () => (tClose = setTimeout(close, 200))); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { close(true); closeAcc(true); } });
+  document.addEventListener('click', (e) => { if (!bar.contains(e.target)) { close(); closeAcc(); } });
+  bar.addEventListener('focusout', (e) => { if (openI >= 0 && !bar.contains(e.relatedTarget)) close(); });
+  // mobile
+  const accBtn = document.querySelector('.mm-mobile .mm-btn');
+  const acc = document.getElementById('mm-acc');
+  acc.innerHTML = keys.map((k, i) => `<div><button class="mm-btn" type="button" aria-expanded="false" aria-controls="mm-a${i}">${k}</button><ul id="mm-a${i}" hidden>${CATS[k].flatMap(([, items]) => items).map((x) => `<li><a href="#${x}">${x}</a></li>`).join('')}</ul></div>`).join('');
+  function closeAcc(focus) { if (acc.hidden) return; acc.hidden = true; accBtn.setAttribute('aria-expanded', 'false'); if (focus) accBtn.focus(); }
+  accBtn.addEventListener('click', () => { acc.hidden = !acc.hidden; accBtn.setAttribute('aria-expanded', String(!acc.hidden)); });
+  acc.addEventListener('click', (e) => { const b = e.target.closest('.mm-btn'); if (!b) return; const ul = document.getElementById(b.getAttribute('aria-controls')); ul.hidden = !ul.hidden; b.setAttribute('aria-expanded', String(!ul.hidden)); });
+})();
+</script>

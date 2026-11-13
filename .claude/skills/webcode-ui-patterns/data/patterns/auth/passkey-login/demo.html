@@ -1,0 +1,98 @@
+<style>
+  .pk-stage { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+  .pk { width: min(400px, 100%); display: grid; gap: 16px; }
+  .pk h1 { margin: 0; font: var(--wc-font-weight-semibold) var(--wc-font-size-2xl) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); outline: none; }
+  .pk-desc { margin: -8px 0 0; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .pk-field { display: grid; gap: 6px; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-medium); }
+  .pk-field[hidden] { display: none; }
+  .pk-field input { height: var(--wc-size-control-lg); padding: 0 14px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: inherit; font-weight: var(--wc-font-weight-regular); font-size: var(--wc-font-size-md); }
+  .pk-field input:focus { outline: 2px solid var(--wc-focus); outline-offset: 1px; }
+  .pk-btn { height: var(--wc-size-control-lg); display: inline-flex; align-items: center; justify-content: center; gap: 10px; border-radius: var(--wc-radius-button); font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; border: 1px solid transparent; }
+  .pk-primary { background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); }
+  .pk-primary:hover { background: var(--wc-accent-hover); }
+  .pk-secondary { background: var(--wc-surface); color: var(--wc-fg); border-color: var(--wc-border-strong); }
+  .pk-secondary:hover { background: var(--wc-sunken); }
+  .pk-btn[aria-busy="true"] { cursor: progress; }
+  .pk-btn[hidden] { display: none; }
+  .pk-ring { width: 18px; height: 18px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: pk-spin .8s linear infinite; }
+  @keyframes pk-spin { to { rotate: 1turn; } }
+  .pk-or { display: flex; align-items: center; gap: 12px; color: var(--wc-fg-muted); font-size: var(--wc-font-size-xs); }
+  .pk-or::before, .pk-or::after { content: ""; flex: 1; height: 1px; background: var(--wc-border); }
+  .pk-status { margin: 0; padding: 10px 12px; border-radius: var(--wc-radius-md); font-size: var(--wc-font-size-sm); background: var(--wc-sunken); }
+  .pk-status:empty { display: none; }
+  .pk-status[data-tone="ok"] { background: var(--wc-success-soft); color: var(--wc-fg); }
+  .pk-status[data-tone="err"] { background: var(--wc-danger-soft); color: var(--wc-fg); }
+  .pk-row { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .pk-link { font: inherit; font-size: var(--wc-font-size-sm); padding: 6px 0; border: 0; background: none; color: var(--wc-accent); font-weight: var(--wc-font-weight-medium); cursor: pointer; }
+  .pk-link[hidden] { display: none; }
+  .pk-offer { display: grid; gap: 10px; padding: 16px; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface); }
+  .pk-offer[hidden] { display: none; }
+  .pk-offer p { margin: 0; font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .pk-offer b { color: var(--wc-fg); font-size: var(--wc-font-size-md); }
+  .pk-sim { justify-self: center; font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); display: flex; gap: 8px; align-items: center; }
+  .pk-sim input { accent-color: var(--wc-accent-solid); }
+  .pk :focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .pk-ring { animation-duration: 1.6s; } }
+</style>
+<main class="pk-stage">
+  <form class="pk" novalidate>
+    <h1 tabindex="-1">Entrar</h1>
+    <p class="pk-desc">Use a passkey salva neste aparelho. Sem senha para lembrar.</p>
+    <label class="pk-field">E-mail<input type="email" name="email" autocomplete="username webauthn" placeholder="voce@empresa.com.br" value="ana@empresa.com.br"></label>
+    <label class="pk-field pk-pass" hidden>Senha<input type="password" name="password" autocomplete="current-password"></label>
+    <button class="pk-btn pk-primary pk-go" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="8" cy="8" r="4"/><path d="M10.5 11 20 20.5M16 16.5l2-2M18.5 19l2-2"/></svg><span>Entrar com passkey</span></button>
+    <button class="pk-btn pk-primary pk-submit" type="submit" hidden>Entrar</button>
+    <p class="pk-status" role="status" aria-live="polite"></p>
+    <div class="pk-or" aria-hidden="true">ou</div>
+    <div class="pk-row">
+      <button class="pk-link pk-use-pass" type="button">Usar senha</button>
+      <button class="pk-link pk-use-key" type="button" hidden>Usar passkey</button>
+      <button class="pk-link pk-mail" type="button">Receber código por e-mail</button>
+    </div>
+    <div class="pk-offer" hidden>
+      <b>Entrar mais rápido da próxima vez?</b>
+      <p>Crie uma passkey e use o Face ID, a digital ou o PIN do aparelho no lugar da senha.</p>
+      <button class="pk-btn pk-primary pk-create" type="button">Criar passkey</button>
+      <button class="pk-link pk-later" type="button">Agora não</button>
+    </div>
+    <label class="pk-sim"><input type="checkbox" class="pk-cancel-sim"> Simular cancelamento da biometria</label>
+  </form>
+</main>
+<script>
+(() => {
+  const f = document.querySelector('.pk'), go = f.querySelector('.pk-go'), status = f.querySelector('.pk-status'), pass = f.querySelector('.pk-pass'), submit = f.querySelector('.pk-submit');
+  const usePass = f.querySelector('.pk-use-pass'), useKey = f.querySelector('.pk-use-key'), offer = f.querySelector('.pk-offer'), sim = f.querySelector('.pk-cancel-sim');
+  const label = go.querySelector('span'), icon = go.querySelector('svg');
+  let busy = false;
+  const say = (msg, tone) => { status.textContent = msg; tone ? status.setAttribute('data-tone', tone) : status.removeAttribute('data-tone'); };
+  // Sem suporte a passkey: senha vira o caminho principal.
+  const supported = typeof window.PublicKeyCredential !== 'undefined';
+  function showPassword(focus) {
+    pass.hidden = false; submit.hidden = false; go.hidden = true; usePass.hidden = true; useKey.hidden = !supported; say('');
+    if (focus) pass.querySelector('input').focus();
+  }
+  function showKey() { pass.hidden = true; submit.hidden = true; go.hidden = false; usePass.hidden = false; useKey.hidden = true; say(''); go.focus(); }
+  if (!supported) { showPassword(false); say('Este navegador não aceita passkey. Entre com a senha.'); }
+  // A demo simula navigator.credentials.get: no produto real, o desafio vem do servidor.
+  function fakeGet() { return new Promise((ok, no) => setTimeout(() => sim.checked ? no(Object.assign(new Error('cancel'), { name: 'NotAllowedError' })) : ok({ id: 'demo' }), 1100)); }
+  go.addEventListener('click', async () => {
+    if (busy) return; busy = true;
+    go.setAttribute('aria-busy', 'true'); icon.style.display = 'none'; go.insertAdjacentHTML('afterbegin', '<span class="pk-ring" aria-hidden="true"></span>'); label.textContent = 'Aguardando o aparelho…';
+    say('Confirme com Face ID, digital ou o PIN do aparelho.');
+    try { await fakeGet(); say('Pronto, você entrou.', 'ok'); label.textContent = 'Entrou'; }
+    catch (e) { say(e.name === 'NotAllowedError' ? 'Você cancelou a verificação. Tente de novo ou use a senha.' : 'Não deu certo com a passkey. Use a senha ou receba um código.', e.name === 'NotAllowedError' ? '' : 'err'); label.textContent = 'Entrar com passkey'; }
+    finally { busy = false; go.removeAttribute('aria-busy'); go.querySelector('.pk-ring')?.remove(); icon.style.display = ''; }
+  });
+  usePass.addEventListener('click', () => showPassword(true));
+  useKey.addEventListener('click', showKey);
+  f.querySelector('.pk-mail').addEventListener('click', () => say('Enviamos um código de 6 dígitos para ' + f.email.value + '.'));
+  f.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!f.password.value) { say('Digite a senha.', 'err'); f.password.focus(); return; }
+    say('Pronto, você entrou.', 'ok');
+    if (supported) { offer.hidden = false; offer.querySelector('.pk-create').focus(); }
+  });
+  f.querySelector('.pk-create').addEventListener('click', () => { offer.hidden = true; say('Passkey criada. Da próxima vez, entre com a biometria.', 'ok'); });
+  f.querySelector('.pk-later').addEventListener('click', () => { offer.hidden = true; });
+})();
+</script>

@@ -1,0 +1,47 @@
+<style>
+  .cfn { min-height: 100vh; padding: 20px 16px; max-width: 640px; margin: 0 auto; display: grid; gap: 12px; align-content: start; color: var(--wc-fg); font-size: var(--wc-font-size-sm); font-variant-numeric: tabular-nums; }
+  .cfn-card { border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface); padding: 16px; display: grid; gap: 14px; }
+  .cfn h3 { margin: 0; font-size: var(--wc-font-size-md); }
+  .cfn-sub { margin: -8px 0 0; color: var(--wc-fg-muted); }
+  .cfn ol { list-style: none; margin: 0; padding: 0; display: grid; }
+  .cfn-step { display: grid; gap: 6px; padding: 8px; margin: 0 -8px; border-radius: var(--wc-radius-md); text-decoration: none; color: inherit; }
+  .cfn-step:hover { background: var(--wc-sunken); }
+  .cfn-step:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 0; }
+  .cfn-top { display: flex; justify-content: space-between; gap: 10px; }
+  .cfn-top b { font-weight: var(--wc-font-weight-semibold); }
+  .cfn-top span { color: var(--wc-fg-muted); white-space: nowrap; }
+  .cfn-top span em { font-style: normal; color: var(--wc-fg); font-weight: var(--wc-font-weight-semibold); }
+  .cfn-bar { height: 24px; border-radius: 0 4px 4px 0; background: var(--wc-accent); width: var(--w); min-width: 3px; transform-origin: left; animation: cfn-in var(--wc-motion-duration-slow) var(--wc-motion-ease-out) both; animation-delay: calc(var(--i) * 60ms); }
+  @keyframes cfn-in { from { transform: scaleX(0); } }
+  .cfn-gap { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 2px 0 2px 8px; color: var(--wc-fg-muted); font-size: var(--wc-font-size-xs); }
+  .cfn-gap.is-worst { color: var(--wc-fg); }
+  .cfn-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: var(--wc-radius-pill); background: var(--wc-warning-soft); font-weight: var(--wc-font-weight-semibold); }
+  .cfn-tag svg { color: var(--wc-warning); }
+  .cfn-d { padding: 1px 6px; border-radius: var(--wc-radius-pill); background: var(--wc-sunken); }
+  @media (prefers-reduced-motion: reduce) { .cfn-bar { animation: none; } }
+</style>
+<div class="cfn">
+  <section class="cfn-card" aria-labelledby="cfn-h">
+    <h3 id="cfn-h">3,1% das visitas viraram pedido em outubro</h3>
+    <p class="cfn-sub">Funil do checkout · comparação com setembro em pontos percentuais</p>
+    <ol></ol>
+  </section>
+</div>
+<script>
+(() => {
+  const S = [['Visitaram a loja', 48200, 46900], ['Viram um produto', 21400, 20300], ['Adicionaram ao carrinho', 5130, 4680], ['Iniciaram o checkout', 2890, 2700], ['Pagaram', 1494, 1310]];
+  const int = new Intl.NumberFormat('pt-BR'), pct = (x, d = 1) => (x * 100).toFixed(d).replace('.', ',') + '%';
+  const rates = S.slice(1).map((s, i) => s[1] / S[i][1]);
+  const worst = rates.indexOf(Math.min(...rates));
+  let html = '';
+  S.forEach((s, i) => {
+    html += `<li><a class="cfn-step" href="#etapa-${i + 1}" aria-label="Etapa ${i + 1}, ${s[0]}: ${int.format(s[1])}, ${pct(s[1] / S[0][1])} do topo. Ver pessoas"><span class="cfn-top" aria-hidden="true"><b>${s[0]}</b><span><em>${int.format(s[1])}</em> · ${pct(s[1] / S[0][1])}</span></span><span class="cfn-bar" aria-hidden="true" style="--w:${(s[1] / S[0][1] * 100).toFixed(2)}%;--i:${i}"></span></a>`;
+    if (i < S.length - 1) {
+      const r = rates[i], rp = S[i + 1][2] / S[i][2], dpp = (r - rp) * 100, lost = s[1] - S[i + 1][1];
+      html += `<div class="cfn-gap ${i === worst ? 'is-worst' : ''}"><span>↓ ${pct(r, 0)} seguiram</span><span class="cfn-d">${dpp >= 0 ? '+' : '−'}${Math.abs(dpp).toFixed(1).replace('.', ',')} p.p.</span>${i === worst ? `<span class="cfn-tag"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 8v5M12 17h.01"/></svg>Gargalo: ${int.format(lost)} saíram aqui</span>` : ''}</div>`;
+    }
+    html += '</li>';
+  });
+  document.querySelector('.cfn ol').innerHTML = html;
+})();
+</script>

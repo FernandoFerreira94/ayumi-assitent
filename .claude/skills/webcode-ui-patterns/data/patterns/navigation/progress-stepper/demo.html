@@ -1,0 +1,72 @@
+<style>
+  .pst { min-height: 100vh; padding: 24px 20px; display: grid; gap: 24px; align-content: start; max-width: 720px; color: var(--wc-fg); font-size: var(--wc-font-size-sm); }
+  .pst ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); position: relative; }
+  .pst-track { position: absolute; top: 15px; left: 12.5%; right: 12.5%; height: 2px; background: var(--wc-border); }
+  .pst-fill { position: absolute; inset: 0; background: var(--wc-accent-solid); transform-origin: left; transition: transform var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  .pst li { position: relative; display: grid; justify-items: center; gap: 6px; text-align: center; }
+  .pst-n { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-weight: var(--wc-font-weight-semibold); background: var(--wc-surface); border: 2px solid var(--wc-border); color: var(--wc-fg-muted); font-variant-numeric: tabular-nums; transition: background-color var(--wc-motion-duration-fast), border-color var(--wc-motion-duration-fast); }
+  .pst li[data-s="done"] .pst-n { background: var(--wc-accent-solid); border-color: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); }
+  .pst li[data-s="current"] .pst-n { border-color: var(--wc-accent-solid); color: var(--wc-accent-solid); }
+  .pst-l { color: var(--wc-fg-muted); }
+  .pst li[data-s="current"] .pst-l { color: var(--wc-fg); font-weight: var(--wc-font-weight-semibold); }
+  .pst li[data-s="done"] .pst-l { color: var(--wc-fg); }
+  .pst-btn { display: grid; justify-items: center; gap: 6px; font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; border-radius: var(--wc-radius-sm); }
+  .pst-btn:hover .pst-l { text-decoration: underline; }
+  .pst button:focus-visible, .pst h3:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .pst-mob { display: none; gap: 8px; }
+  .pst-bar { height: 6px; border-radius: var(--wc-radius-pill); background: var(--wc-sunken); overflow: hidden; }
+  .pst-bar i { display: block; height: 100%; background: var(--wc-accent-solid); transform-origin: left; transition: transform var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  .pst-card { padding: 20px; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface); display: grid; gap: 12px; }
+  .pst-card h3 { margin: 0; font-size: var(--wc-font-size-lg); }
+  .pst-card p { margin: 0; color: var(--wc-fg-muted); }
+  .pst-nav { display: flex; justify-content: space-between; gap: 8px; }
+  .pst-nav button { min-height: 44px; padding: 0 18px; border-radius: var(--wc-radius-md); font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); }
+  .pst-nav .pri { background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); border-color: transparent; }
+  .pst-nav button[hidden] { display: none; }
+  @media (max-width: 560px) { .pst ol { display: none; } .pst-mob { display: grid; } }
+  @media (prefers-reduced-motion: reduce) { .pst-fill, .pst-bar i { transition: none; } }
+</style>
+<div class="pst">
+  <nav aria-label="Etapas do pedido">
+    <ol><span class="pst-track" aria-hidden="true"><span class="pst-fill"></span></span></ol>
+    <div class="pst-mob" aria-hidden="true"><b class="pst-mt"></b><div class="pst-bar"><i></i></div></div>
+  </nav>
+  <section class="pst-card">
+    <h3 tabindex="-1"></h3>
+    <p class="pst-desc"></p>
+    <div class="pst-nav"><button type="button" class="pst-back">Voltar</button><button type="button" class="pri pst-next"></button></div>
+  </section>
+</div>
+<script>
+(() => {
+  const steps = [
+    { t: 'Carrinho', d: '3 itens · R$ 389,70. Confira quantidades e cupom.' },
+    { t: 'Entrega', d: 'CEP 01310-100 · Receba em até 3 dias úteis por R$ 19,90.' },
+    { t: 'Pagamento', d: 'Pix com 5% de desconto ou cartão em até 6x sem juros.' },
+    { t: 'Revisão', d: 'Confira tudo antes de finalizar. Você recebe a confirmação por e-mail.' },
+  ];
+  const root = document.querySelector('.pst'), ol = root.querySelector('ol'), h = root.querySelector('h3'), desc = root.querySelector('.pst-desc'), back = root.querySelector('.pst-back'), next = root.querySelector('.pst-next');
+  let cur = 0;
+  const render = (focus) => {
+    ol.querySelectorAll('li').forEach((li) => li.remove());
+    steps.forEach((s, i) => {
+      const st = i < cur ? 'done' : i === cur ? 'current' : 'todo';
+      const li = document.createElement('li'); li.dataset.s = st;
+      const inner = `<span class="pst-n" aria-hidden="true">${st === 'done' ? '✓' : i + 1}</span><span class="pst-l">${s.t}</span>`;
+      if (st === 'done') li.innerHTML = `<button type="button" class="pst-btn" data-i="${i}" aria-label="Voltar para ${s.t}, concluída">${inner}</button>`;
+      else { li.innerHTML = inner + `<span style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)">${st === 'current' ? ', etapa atual' : ', pendente'}</span>`; if (st === 'current') li.setAttribute('aria-current', 'step'); }
+      ol.append(li);
+    });
+    root.querySelector('.pst-fill').style.transform = `scaleX(${cur / (steps.length - 1)})`;
+    root.querySelector('.pst-bar i').style.transform = `scaleX(${(cur + 1) / steps.length})`;
+    root.querySelector('.pst-mt').textContent = `Etapa ${cur + 1} de ${steps.length}: ${steps[cur].t}`;
+    h.textContent = `${steps[cur].t} · etapa ${cur + 1} de ${steps.length}`; desc.textContent = steps[cur].d;
+    back.hidden = cur === 0; next.textContent = cur === steps.length - 1 ? 'Finalizar pedido' : `Continuar para ${steps[cur + 1].t}`;
+    if (focus) h.focus();
+  };
+  ol.addEventListener('click', (e) => { const b = e.target.closest('.pst-btn'); if (b) { cur = +b.dataset.i; render(true); } });
+  back.addEventListener('click', () => { cur = Math.max(0, cur - 1); render(true); });
+  next.addEventListener('click', () => { if (cur < steps.length - 1) { cur++; render(true); } else { desc.textContent = 'Pedido #1043 confirmado. Enviamos os detalhes por e-mail.'; next.hidden = true; back.hidden = true; } });
+  render(false);
+})();
+</script>

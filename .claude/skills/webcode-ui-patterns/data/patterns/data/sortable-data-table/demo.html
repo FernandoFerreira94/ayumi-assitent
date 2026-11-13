@@ -1,0 +1,88 @@
+<style>
+  .sdt { min-height: 100vh; padding: 20px; }
+  .sdt-bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .sdt-bar h2 { margin: 0; font: var(--wc-font-weight-semibold) var(--wc-font-size-xl) var(--wc-font-display); }
+  .sdt-dens { display: inline-flex; padding: 3px; border-radius: var(--wc-radius-md); background: var(--wc-sunken); border: 0; margin: 0; }
+  .sdt-dens legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .sdt-dens label { position: relative; padding: 6px 12px; border-radius: var(--wc-radius-sm); font-size: var(--wc-font-size-sm); cursor: pointer; color: var(--wc-fg-muted); }
+  .sdt-dens input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+  .sdt-dens label:has(input:checked) { background: var(--wc-surface); color: var(--wc-fg); box-shadow: var(--wc-shadow); }
+  .sdt-dens label:has(input:focus-visible) { outline: 2px solid var(--wc-focus); }
+  .sdt-wrap { max-height: 70vh; overflow: auto; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface); }
+  .sdt table { width: 100%; border-collapse: collapse; font-size: var(--wc-font-size-sm); }
+  .sdt caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .sdt thead th { position: sticky; top: 0; z-index: 1; background: var(--wc-surface); box-shadow: inset 0 -1px 0 var(--wc-border); text-align: left; font-weight: var(--wc-font-weight-medium); color: var(--wc-fg-muted); padding: 0; white-space: nowrap; }
+  .sdt th.num, .sdt td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .sdt thead button { display: inline-flex; align-items: center; gap: 4px; width: 100%; padding: 10px 12px; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; justify-content: inherit; }
+  .sdt th.num button { justify-content: flex-end; }
+  .sdt thead button:hover { color: var(--wc-fg); }
+  .sdt thead button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: -2px; }
+  .sdt thead button::after { content: "↕"; opacity: .35; font-size: .9em; }
+  .sdt th[aria-sort="ascending"] button::after { content: "↑"; opacity: 1; color: var(--wc-accent); }
+  .sdt th[aria-sort="descending"] button::after { content: "↓"; opacity: 1; color: var(--wc-accent); }
+  .sdt tbody th, .sdt tbody td { padding: 0 12px; height: 40px; border-top: 1px solid var(--wc-border); text-align: left; font-weight: var(--wc-font-weight-regular); white-space: nowrap; }
+  .sdt tbody tr:first-child > * { border-top: 0; }
+  .sdt tbody tr:hover { background: var(--wc-sunken); }
+  .sdt tbody th a { color: var(--wc-fg); font-weight: var(--wc-font-weight-medium); text-decoration: none; }
+  .sdt tbody th a:hover { color: var(--wc-accent); text-decoration: underline; }
+  .sdt tbody th a:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .sdt table[data-density="compact"] tbody > tr > * { height: 32px; }
+  .sdt table[data-density="comfortable"] tbody > tr > * { height: 52px; font-size: var(--wc-font-size-md); }
+  .sdt-st { display: inline-flex; align-items: center; gap: 6px; }
+  .sdt-st::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .sdt-st[data-s="Pago"] { color: var(--wc-success); } .sdt-st[data-s="Pendente"] { color: var(--wc-warning); } .sdt-st[data-s="Vencido"] { color: var(--wc-danger); }
+  .sdt-count { margin-top: 8px; font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+</style>
+<div class="sdt">
+  <div class="sdt-bar">
+    <h2 id="sdt-title">Contas a receber</h2>
+    <fieldset class="sdt-dens"><legend>Densidade</legend>
+      <label><input type="radio" name="sdt-d" value="compact">Compacta</label>
+      <label><input type="radio" name="sdt-d" value="default" checked>Padrão</label>
+      <label><input type="radio" name="sdt-d" value="comfortable">Confortável</label>
+    </fieldset>
+  </div>
+  <div class="sdt-wrap" tabindex="0" role="region" aria-labelledby="sdt-title">
+    <table data-density="default">
+      <caption>Contas a receber, ordenável por coluna</caption>
+      <thead><tr>
+        <th scope="col" data-k="doc"><button type="button">Documento</button></th>
+        <th scope="col" data-k="cliente"><button type="button">Cliente</button></th>
+        <th scope="col" data-k="status"><button type="button">Status</button></th>
+        <th scope="col" class="num" data-k="venc"><button type="button">Vencimento</button></th>
+        <th scope="col" class="num" data-k="valor"><button type="button">Valor (R$)</button></th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <p class="sdt-count" role="status"></p>
+</div>
+<script>
+(() => {
+  const rows = [
+    ['NF 4821', 'Mercado Bom Preço', 'Pago', '2026-10-05', 2140], ['NF 4822', 'Studio Lume', 'Pendente', '2026-10-30', 1020], ['NF 4823', 'Ana Ribeiro ME', 'Vencido', '2026-10-12', 389.9],
+    ['NF 4824', 'Padaria Estrela', 'Pago', '2026-10-08', 74.5], ['NF 4825', 'Clínica Vida', 'Pendente', '2026-11-04', 5600], ['NF 4826', 'Auto Peças Sul', 'Pago', '2026-10-15', 12890.75],
+    ['NF 4827', 'Café Aroma', 'Vencido', '2026-10-01', 640], ['NF 4828', 'Loja Verde', 'Pendente', '2026-11-10', 1999.99], ['NF 4829', 'Escola Saber', 'Pago', '2026-10-20', 3300],
+  ].map(([doc, cliente, status, venc, valor]) => ({ doc, cliente, status, venc, valor }));
+  const table = document.querySelector('.sdt table');
+  const tbody = table.tBodies[0];
+  const ths = [...table.tHead.rows[0].cells];
+  const money = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 });
+  const date = (s) => s.split('-').reverse().join('/');
+  const count = document.querySelector('.sdt-count');
+  let key = 'venc', dir = 1;
+  const render = () => {
+    const sorted = [...rows].sort((a, b) => (a[key] > b[key] ? 1 : a[key] < b[key] ? -1 : 0) * dir);
+    tbody.innerHTML = sorted.map((r) => `<tr><th scope="row"><a href="#${r.doc.replace(' ', '')}">${r.doc}</a></th><td>${r.cliente}</td><td><span class="sdt-st" data-s="${r.status}">${r.status}</span></td><td class="num">${date(r.venc)}</td><td class="num">${money.format(r.valor)}</td></tr>`).join('');
+    ths.forEach((th) => th.setAttribute('aria-sort', th.dataset.k === key ? (dir > 0 ? 'ascending' : 'descending') : 'none'));
+    const label = ths.find((t) => t.dataset.k === key).textContent.replace(' (R$)', '');
+    count.textContent = `${rows.length} documentos, ordenados por ${label.toLowerCase()} ${dir > 0 ? 'crescente' : 'decrescente'}`;
+  };
+  ths.forEach((th) => th.querySelector('button').addEventListener('click', () => { dir = key === th.dataset.k ? -dir : 1; key = th.dataset.k; render(); }));
+  const radios = document.querySelectorAll('[name="sdt-d"]');
+  let saved; try { saved = localStorage.getItem('wc-density'); } catch {}
+  if (saved) { table.dataset.density = saved; radios.forEach((r) => (r.checked = r.value === saved)); }
+  radios.forEach((r) => r.addEventListener('change', () => { table.dataset.density = r.value; try { localStorage.setItem('wc-density', r.value); } catch {} }));
+  render();
+})();
+</script>

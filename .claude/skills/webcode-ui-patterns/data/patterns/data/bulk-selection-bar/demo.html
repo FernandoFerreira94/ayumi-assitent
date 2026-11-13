@@ -1,0 +1,68 @@
+<style>
+  .bsb { min-height: 100vh; padding: 20px 20px 120px; }
+  .bsb h2 { margin: 0 0 12px; font: var(--wc-font-weight-semibold) var(--wc-font-size-xl) var(--wc-font-display); }
+  .bsb-list { border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface); overflow: hidden; }
+  .bsb-row { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 16px; border-top: 1px solid var(--wc-border); }
+  .bsb-row:first-child { border-top: 0; background: var(--wc-sunken); font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .bsb-row:has(input:checked):not(:first-child) { background: var(--wc-accent-soft); }
+  .bsb-row input { width: 18px; height: 18px; accent-color: var(--wc-accent-solid); flex: none; }
+  .bsb-row input:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .bsb-row span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bsb-row b { font-variant-numeric: tabular-nums; font-weight: var(--wc-font-weight-medium); }
+  .bsb-all { margin: 8px 0 0; font-size: var(--wc-font-size-sm); }
+  .bsb-all[hidden] { display: none; }
+  .bsb-all button, .bsb-bar button { font: inherit; cursor: pointer; }
+  .bsb-all button { border: 0; background: none; color: var(--wc-accent); text-decoration: underline; padding: 4px; }
+  .bsb-bar { position: fixed; left: 50%; bottom: max(16px, env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; max-width: calc(100vw - 24px); padding: 8px 8px 8px 16px; border-radius: var(--wc-radius-lg); background: var(--wc-fg); color: var(--wc-bg); box-shadow: var(--wc-shadow-lg); translate: -50% 0; opacity: 1; transition: translate var(--wc-motion-spring-snappy-duration) var(--wc-motion-spring-snappy), opacity var(--wc-motion-duration-fast); }
+  .bsb-bar[data-hidden="true"] { translate: -50% calc(120% * var(--wc-motion-distance)); opacity: 0; pointer-events: none; }
+  .bsb-bar output { font-variant-numeric: tabular-nums; white-space: nowrap; margin-right: 4px; }
+  .bsb-bar button { min-height: 36px; padding: 0 12px; border: 0; border-radius: var(--wc-radius-md); background: transparent; color: inherit; white-space: nowrap; }
+  .bsb-bar button:hover { background: color-mix(in oklab, var(--wc-bg) 15%, transparent); }
+  .bsb-bar button:focus-visible, .bsb-all button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .bsb-bar .is-danger { color: var(--wc-danger-solid-fg); background: var(--wc-danger-solid); }
+  @media (max-width: 480px) { .bsb-bar .opt { display: none; } }
+</style>
+<div class="bsb">
+  <h2 id="bsb-title">Pedidos</h2>
+  <div class="bsb-list" role="group" aria-labelledby="bsb-title"></div>
+  <p class="bsb-all" hidden>Os 8 pedidos desta página estão selecionados. <button type="button">Selecionar todos os 1.240 pedidos</button></p>
+  <div class="bsb-bar" role="region" aria-label="Ações em lote" data-hidden="true">
+    <output role="status"></output>
+    <button type="button" class="opt">Exportar</button>
+    <button type="button">Arquivar</button>
+    <button type="button" class="is-danger">Excluir</button>
+    <button type="button" data-clear aria-label="Limpar seleção">×</button>
+  </div>
+</div>
+<script>
+(() => {
+  const data = Array.from({ length: 8 }, (_, i) => ({ id: 1043 + i, nome: ['Ana Ribeiro', 'Mercado Bom Preço', 'Carlos Menezes', 'Studio Lume', 'Padaria Estrela', 'Clínica Vida', 'Café Aroma', 'Loja Verde'][i], valor: ['R$ 389,90', 'R$ 2.140,00', 'R$ 74,50', 'R$ 1.020,00', 'R$ 210,00', 'R$ 5.600,00', 'R$ 640,00', 'R$ 1.999,99'][i] }));
+  const list = document.querySelector('.bsb-list');
+  list.innerHTML = '<label class="bsb-row"><input type="checkbox" data-master aria-label="Selecionar todos desta página"><span>Pedido</span><b>Valor</b></label>' + data.map((d, i) => `<label class="bsb-row"><input type="checkbox" data-i="${i}" aria-label="Selecionar pedido ${d.id}"><span>#${d.id} · ${d.nome}</span><b>${d.valor}</b></label>`).join('');
+  const master = list.querySelector('[data-master]');
+  const boxes = [...list.querySelectorAll('[data-i]')];
+  const bar = document.querySelector('.bsb-bar');
+  const out = bar.querySelector('output');
+  const all = document.querySelector('.bsb-all');
+  let last = null, everything = false;
+  const sync = () => {
+    const n = boxes.filter((b) => b.checked).length;
+    master.checked = n === boxes.length; master.indeterminate = n > 0 && n < boxes.length;
+    if (n < boxes.length) everything = false;
+    all.hidden = !(n === boxes.length && !everything);
+    out.textContent = everything ? '1.240 selecionados' : n === 1 ? '1 selecionado' : `${n} selecionados`;
+    bar.dataset.hidden = String(n === 0);
+  };
+  boxes.forEach((b, i) => b.addEventListener('click', (e) => {
+    if (e.shiftKey && last !== null) { const [a, z] = [Math.min(last, i), Math.max(last, i)]; for (let k = a; k <= z; k++) boxes[k].checked = b.checked; }
+    last = i; sync();
+  }));
+  master.addEventListener('change', () => { boxes.forEach((b) => (b.checked = master.checked)); sync(); });
+  all.querySelector('button').addEventListener('click', () => { everything = true; sync(); });
+  const clear = () => { boxes.forEach((b) => (b.checked = false)); everything = false; sync(); master.focus(); };
+  bar.querySelector('[data-clear]').addEventListener('click', clear);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && bar.dataset.hidden === 'false') clear(); });
+  bar.querySelectorAll('button:not([data-clear])').forEach((b) => b.addEventListener('click', () => { out.textContent = `${b.textContent}: ${out.textContent} (demo)`; }));
+  sync();
+})();
+</script>

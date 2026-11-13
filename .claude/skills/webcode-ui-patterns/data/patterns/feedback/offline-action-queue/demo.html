@@ -1,0 +1,65 @@
+<style>
+  .oaq { min-height: 100vh; max-width: 480px; margin: 0 auto; padding: 16px 16px 40px; color: var(--wc-fg); font-size: var(--wc-font-size-sm); }
+  .oaq-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .oaq-top h3 { margin: 0; font: var(--wc-font-weight-bold) var(--wc-font-size-2xl) var(--wc-font-display); }
+  .oaq-net { display: flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; color: var(--wc-fg-muted); }
+  .oaq-net input { width: 20px; height: 20px; accent-color: var(--wc-accent-solid); }
+  .oaq-bar { display: flex; align-items: center; gap: 10px; min-height: 44px; margin-bottom: 12px; padding: 8px 14px; border-radius: var(--wc-radius-md); background: var(--wc-sunken); color: var(--wc-fg); transition: background var(--wc-motion-duration-base); }
+  .oaq-bar:empty { display: none; }
+  .oaq-bar.off { background: var(--wc-warning-soft); }
+  .oaq-bar.ok { background: var(--wc-success-soft); color: var(--wc-success); }
+  .oaq-bar.err { background: var(--wc-danger-soft); color: var(--wc-danger); }
+  .oaq-bar .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
+  .oaq-bar.sync .dot { animation: oaq-pulse 1s infinite; }
+  @keyframes oaq-pulse { 50% { opacity: .3; } }
+  .oaq ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .oaq li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; align-items: center; padding: 12px 14px; border-radius: var(--wc-radius-lg); background: var(--wc-surface); border: 1px solid var(--wc-border); }
+  .oaq li b { display: block; } .oaq li small { color: var(--wc-fg-muted); }
+  .oaq-act { min-height: 44px; padding: 0 14px; border-radius: var(--wc-radius-button); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: inherit; font-weight: var(--wc-font-weight-medium); cursor: pointer; }
+  .oaq-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: var(--wc-radius-pill); font-size: var(--wc-font-size-xs); font-weight: var(--wc-font-weight-semibold); }
+  .oaq-tag.pending { background: var(--wc-warning-soft); color: var(--wc-warning); }
+  .oaq-tag.syncing { background: var(--wc-accent-soft); color: var(--wc-accent); }
+  .oaq-tag.done { background: var(--wc-success-soft); color: var(--wc-success); }
+  .oaq-tag.failed { background: var(--wc-danger-soft); color: var(--wc-danger); }
+  .oaq-err { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 0; color: var(--wc-danger); font-size: var(--wc-font-size-xs); }
+  .oaq-err button { min-height: 44px; padding: 0 10px; border: 0; background: none; color: var(--wc-accent); font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; }
+  .oaq button:focus-visible, .oaq input:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .oaq-bar.sync .dot { animation: none; } }
+</style>
+<div class="oaq">
+  <div class="oaq-top"><h3>Entregas de hoje</h3><label class="oaq-net"><input type="checkbox" checked> Online</label></div>
+  <div class="oaq-bar" role="status"></div>
+  <ul></ul>
+</div>
+<script>
+(() => {
+  const DATA = [['#58201', 'Ana Lima · Rua Harmonia, 120'], ['#58202', 'Bruno Costa · Av. Rebouças, 3000'], ['#58203', 'Carla Dias · Rua Cardeal Arcoverde, 88', true], ['#58204', 'Diego Rocha · Rua dos Pinheiros, 501']];
+  const root = document.querySelector('.oaq'), ul = root.querySelector('ul'), bar = root.querySelector('.oaq-bar'), net = root.querySelector('.oaq-net input');
+  const items = DATA.map(([id, a, conflict]) => ({ id, a, conflict, state: 'todo' }));
+  let online = true, hideT;
+  const TAG = { pending: 'Pendente', syncing: 'Enviando…', done: 'Entregue', failed: 'Não enviada' };
+  const render = () => {
+    ul.innerHTML = items.map((it, i) => `<li><span><b>${it.id}</b><small>${it.a}</small></span>${it.state === 'todo' ? `<button type="button" class="oaq-act" data-i="${i}">Concluir entrega</button>` : `<span class="oaq-tag ${it.state}">${it.state === 'pending' ? '◷ ' : ''}${TAG[it.state]}</span>`}${it.state === 'failed' ? `<p class="oaq-err">O escritório cancelou este pedido às 10h12.<button type="button" data-retry="${i}">Tentar de novo</button></p>` : ''}</li>`).join('');
+  };
+  const say = (cls, txt, ttl) => { clearTimeout(hideT); bar.className = `oaq-bar ${cls}`; bar.innerHTML = `<span class="dot" aria-hidden="true"></span>${txt}`; if (ttl) hideT = setTimeout(() => { bar.textContent = ''; bar.className = 'oaq-bar'; }, ttl); };
+  const queued = () => items.filter((i) => i.state === 'pending');
+  const offMsg = () => { const n = queued().length; say('off', n ? `Sem conexão · ${n} ${n > 1 ? 'ações aguardando' : 'ação aguardando'} envio` : 'Sem conexão · você pode continuar trabalhando'); };
+  const send = (it) => new Promise((ok) => { it.state = 'syncing'; render(); setTimeout(() => { it.state = it.conflict ? 'failed' : 'done'; render(); ok(); }, 700); });
+  const flush = async () => {
+    const q = queued(); if (!q.length) return;
+    say('sync', `Sincronizando ${q.length} ${q.length > 1 ? 'ações' : 'ação'}…`);
+    for (const it of q) { if (!online) return offMsg(); await send(it); }
+    const fail = items.filter((i) => i.state === 'failed').length;
+    fail ? say('err', `${fail} ação não pôde ser enviada. Veja abaixo.`) : say('ok', 'Tudo sincronizado', 3000);
+  };
+  ul.onclick = (e) => {
+    const b = e.target.closest('[data-i]'), r = e.target.closest('[data-retry]');
+    if (b) { const it = items[b.dataset.i]; if (online) send(it).then(() => it.state === 'failed' && say('err', 'Pedido cancelado pelo escritório.')); else { it.state = 'pending'; render(); offMsg(); } ul.querySelector('button')?.focus(); }
+    if (r) { const it = items[r.dataset.retry]; it.conflict = false; it.state = 'pending'; render(); online ? flush() : offMsg(); }
+  };
+  net.onchange = () => { online = net.checked; online ? flush() : offMsg(); };
+  addEventListener('online', () => { net.checked = true; net.onchange(); });
+  addEventListener('offline', () => { net.checked = false; net.onchange(); });
+  render(); net.checked = false; net.onchange();
+})();
+</script>

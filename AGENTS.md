@@ -55,6 +55,21 @@ Este arquivo **roteia**. O detalhe de cada módulo fica em `docs/modulos/`.
 - `.env.local` aponta para o banco de **produção**: cuidado em teste local; desligue o proxy ao terminar. Nada de migration destrutiva sem OK.
 - Dependência nova só com motivo claro (prefira nativo).
 
+## Skills e fluxo de trabalho (local e nuvem)
+
+As skills do projeto ficam versionadas em `.claude/skills/`, então threads locais e na nuvem carregam as mesmas. O plugin **Superpowers** vem do marketplace oficial e é ativado em `.claude/settings.json`; se uma sessão não o carregar, rode `/plugin install superpowers@claude-plugins-official`.
+
+Fluxo de uma task, com a skill de cada etapa:
+
+| Etapa | Skill |
+|---|---|
+| Entender e planejar | `superpowers:brainstorming` (ideia nova) → `superpowers:writing-plans`; `context-engineering` para montar o contexto; `graphify` para achar código |
+| Implementar | `superpowers:test-driven-development`, `boas-praticas-codigo`; `engenharia-ia-sistemas` se tocar IA (classify, ai-policy, Anthropic); `supabase-postgres-best-practices` em migration, RLS e query |
+| UI | `webcode-design-language` → `webcode-ui-patterns` → `webcode-components`; `webcode-interface-craft` em tela nova. As regras de UI deste arquivo prevalecem (iPhone, vaul, `Icon.tsx`) |
+| Revisar, testar e caçar bugs | `superpowers:systematic-debugging` (bug), `doubt-driven-development` (decisão arriscada), `security-audit` (tenant, RLS, segredo), `performance-optimization`, `webcode-design-review` (tela), `superpowers:verification-before-completion` antes de dizer que terminou |
+
+Skill nova ou atualizada vem da fonte (`~/.agents/skills` ou o repo `webcode-design`) e é copiada para cá. Nunca coloque segredo, arquivo de ambiente ou token dentro de uma skill.
+
 ## Git e ambiente
 
 - Repo local: `C:\Users\ferna\Desktop\WebCode\Projetos\ayumi-assitent`. Para não brigar com outra thread, trabalhe num worktree (`git worktree add ..\ayumi-<tema> -b claude/<tema> origin/main`).

@@ -1,0 +1,36 @@
+<style>
+  .df { min-height: 100vh; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 32px; padding: 40px 20px; }
+  .df-phone { --w: 260px; width: min(var(--w), 100%); aspect-ratio: 9 / 19.5; border-radius: calc(var(--w) * .17); background: var(--wc-color-gray-950); padding: 10px; box-shadow: 0 0 0 1px var(--wc-border-strong), var(--wc-shadow-lg); position: relative; flex: none; }
+  .df-phone::before { content: ""; position: absolute; top: 20px; left: 50%; width: 30%; height: 26px; translate: -50% 0; border-radius: 99px; background: var(--wc-color-gray-950); z-index: 2; }
+  .df-screen { height: 100%; border-radius: calc(var(--w) * .14); overflow: hidden; background: var(--wc-bg); display: grid; grid-template-rows: auto 1fr; }
+  .df-app { padding: 60px 16px 16px; display: grid; gap: 10px; align-content: start; }
+  .df-app small { color: var(--wc-fg-muted); font-size: 11px; }
+  .df-app strong { font: var(--wc-font-weight-bold) var(--wc-font-size-2xl) var(--wc-font-display); }
+  .df-tile { border-radius: var(--wc-radius-lg); padding: 12px; background: var(--wc-surface); border: 1px solid var(--wc-border); font-size: 12px; display: flex; justify-content: space-between; }
+  .df-tile b { font-variant-numeric: tabular-nums; }
+  .df-hero { height: 110px; border-radius: var(--wc-radius-lg); background: linear-gradient(135deg, var(--wc-gradient-2), var(--wc-gradient-3)); }
+  .df-browser { --w: 560px; width: min(var(--w), 100%); border-radius: var(--wc-radius-lg); background: var(--wc-surface); border: 1px solid var(--wc-border); box-shadow: var(--wc-shadow-lg); overflow: hidden; }
+  .df-bar { display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: var(--wc-sunken); border-bottom: 1px solid var(--wc-border); }
+  .df-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--wc-border-strong); }
+  .df-url { margin-left: 12px; flex: 1; height: 24px; border-radius: var(--wc-radius-sm); background: var(--wc-surface); border: 1px solid var(--wc-border); font: 11px/22px var(--wc-font-mono); color: var(--wc-fg-muted); padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .df-page { padding: 32px 24px; display: grid; gap: 12px; }
+  .df-page h3 { margin: 0; font: var(--wc-font-weight-semibold) var(--wc-font-size-2xl) var(--wc-font-display); }
+  .df-page p { margin: 0; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .df-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .df-row span { height: 64px; border-radius: var(--wc-radius-md); background: var(--wc-sunken); }
+</style>
+<div class="df">
+  <div class="df-phone" role="img" aria-label="App mobile mostrando saldo e últimas transações">
+    <div class="df-screen"><div class="df-app">
+      <small>Saldo disponível</small><strong>R$ 12.480,32</strong>
+      <div class="df-hero"></div>
+      <div class="df-tile"><span>Mercado Pão</span><b>-R$ 84,90</b></div>
+      <div class="df-tile"><span>Pix de Lucas</span><b>+R$ 250,00</b></div>
+      <div class="df-tile"><span>Spotify</span><b>-R$ 21,90</b></div>
+    </div></div>
+  </div>
+  <div class="df-browser" role="img" aria-label="Página de checkout na web">
+    <div class="df-bar"><i></i><i></i><i></i><span class="df-url">loja.exemplo.com.br/checkout</span></div>
+    <div class="df-page"><h3>Finalizar compra</h3><p>Entrega amanhã em São Paulo · frete grátis acima de R$ 199</p><div class="df-row"><span></span><span></span><span></span></div></div>
+  </div>
+</div>

@@ -1,0 +1,85 @@
+<style>
+  .ts2 { max-width: 640px; margin: 0 auto; padding: 32px 20px 120px; display: grid; gap: 22px; }
+  .ts2-pro { display: flex; align-items: center; gap: 14px; }
+  .ts2-pro .ts2-av { width: 52px; height: 52px; border-radius: var(--wc-radius-pill); display: grid; place-items: center; background: var(--wc-accent-soft); color: var(--wc-fg); font-weight: var(--wc-font-weight-semibold); }
+  .ts2-pro h2 { margin: 0; font: var(--wc-font-weight-semibold) var(--wc-font-size-xl) var(--wc-font-display); }
+  .ts2-pro p { margin: 2px 0 0; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .ts2 fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+  .ts2 legend { padding: 0; margin-bottom: 10px; font-weight: var(--wc-font-weight-semibold); display: flex; justify-content: space-between; width: 100%; }
+  .ts2 legend small { font-weight: var(--wc-font-weight-regular); color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .ts2-days { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 2px 8px; scrollbar-width: thin; }
+  .ts2-day { flex: none; scroll-snap-align: start; position: relative; }
+  .ts2 input[type="radio"] { position: absolute; opacity: 0; inset: 0; margin: 0; pointer-events: none; }
+  .ts2-day span { display: grid; justify-items: center; gap: 2px; width: 72px; padding: 10px 0; border-radius: var(--wc-radius-lg); border: 1px solid var(--wc-border); background: var(--wc-surface); cursor: pointer; transition: border-color var(--wc-motion-duration-fast) var(--wc-motion-ease-out), background-color var(--wc-motion-duration-fast) var(--wc-motion-ease-out); }
+  .ts2-day small { font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); text-transform: uppercase; letter-spacing: calc(var(--wc-tracking-caps) * 1em); }
+  .ts2-day b { font: var(--wc-font-weight-semibold) var(--wc-font-size-2xl) / 1.1 var(--wc-font-display); font-variant-numeric: tabular-nums; }
+  .ts2-day em { font-style: normal; font-size: var(--wc-font-size-xs); color: var(--wc-success); }
+  .ts2-day.is-full em { color: var(--wc-fg-muted); }
+  .ts2 input:checked + span em { color: var(--wc-fg); }
+  .ts2 input:checked + span { border-color: var(--wc-accent); background: var(--wc-accent-soft); box-shadow: inset 0 0 0 1px var(--wc-accent); }
+  .ts2 input:focus-visible + span { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .ts2 input:disabled + span { cursor: not-allowed; color: var(--wc-fg-muted); background: var(--wc-sunken); border-style: dashed; }
+  .ts2-periods { display: grid; gap: 18px; }
+  .ts2-period legend { font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); font-weight: var(--wc-font-weight-medium); }
+  .ts2-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+  .ts2-slot { position: relative; }
+  .ts2-slot span { display: grid; place-items: center; min-height: var(--wc-size-touch-min); border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border); background: var(--wc-surface); font-variant-numeric: tabular-nums; font-weight: var(--wc-font-weight-medium); cursor: pointer; }
+  .ts2-slot span:hover { border-color: var(--wc-border-strong); }
+  .ts2-slot small { font-size: var(--wc-font-size-xs); font-weight: var(--wc-font-weight-regular); }
+  .ts2-tz { margin: 0; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .ts2-empty { margin: 0; padding: 18px; text-align: center; border-radius: var(--wc-radius-lg); background: var(--wc-sunken); color: var(--wc-fg-muted); }
+  .ts2-bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px max(20px, env(safe-area-inset-left)) calc(12px + env(safe-area-inset-bottom)); background: var(--wc-glass-bg); backdrop-filter: blur(var(--wc-blur-glass)); -webkit-backdrop-filter: blur(var(--wc-blur-glass)); border-top: 1px solid var(--wc-border); }
+  .ts2-bar > div { max-width: 600px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+  .ts2-bar p { flex: 1; margin: 0; font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .ts2-bar p b { display: block; color: var(--wc-fg); font-size: var(--wc-font-size-md); font-weight: var(--wc-font-weight-semibold); }
+  .ts2-bar button { font: inherit; font-weight: var(--wc-font-weight-semibold); min-height: var(--wc-size-touch-min); padding: 0 22px; border: 0; border-radius: var(--wc-radius-button); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); cursor: pointer; }
+  .ts2-bar button:disabled { background: var(--wc-sunken); color: var(--wc-fg-muted); cursor: not-allowed; }
+  .ts2-bar button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+</style>
+<form class="ts2" aria-labelledby="ts2-pro">
+  <div class="ts2-pro"><span class="ts2-av" aria-hidden="true">HS</span><div><h2 id="ts2-pro">Dra. Helena Souza</h2><p>Cardiologia · Clínica Vida, Pinheiros · R$ 280 ou convênio</p></div></div>
+  <fieldset><legend>Escolha o dia <small id="ts2-month"></small></legend><div class="ts2-days"></div></fieldset>
+  <div class="ts2-periods" aria-live="polite"></div>
+  <p class="ts2-tz">Horários de Brasília. Consulta de 30 minutos.</p>
+  <div class="ts2-bar"><div><p role="status" id="ts2-sum">Escolha um horário</p><button type="submit" disabled>Confirmar</button></div></div>
+</form>
+<script>
+(() => {
+  const form = document.querySelector('.ts2');
+  const daysEl = form.querySelector('.ts2-days');
+  const periodsEl = form.querySelector('.ts2-periods');
+  const sum = form.querySelector('#ts2-sum');
+  const btn = form.querySelector('.ts2-bar button');
+  const wd = new Intl.DateTimeFormat('pt-BR', { weekday: 'short' });
+  const full = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const start = new Date(2026, 9, 28);
+  const all = ['08:00', '08:30', '09:00', '09:30', '10:00', '11:00', '13:30', '14:00', '15:00', '16:30', '18:00', '18:30'];
+  const days = Array.from({ length: 10 }, (_, i) => {
+    const d = new Date(start); d.setDate(start.getDate() + i);
+    const closed = d.getDay() === 0;
+    const free = closed ? [] : all.filter((_, j) => (j * 7 + i * 3) % 5 !== 0 && !(d.getDay() === 6 && j > 5));
+    const taken = closed ? [] : all.filter((t) => !free.includes(t) && !(d.getDay() === 6 && all.indexOf(t) > 5));
+    return { d, free, taken, closed };
+  });
+  form.querySelector('#ts2-month').textContent = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(start);
+  daysEl.innerHTML = days.map((x, i) => `<label class="ts2-day${x.free.length ? '' : ' is-full'}"><input type="radio" name="dia" value="${i}"${x.free.length ? '' : ' disabled'}><span><small>${wd.format(x.d).replace('.', '')}</small><b>${x.d.getDate()}</b><em>${x.closed ? 'fechado' : x.free.length ? x.free.length + ' livres' : 'esgotado'}</em></span></label>`).join('');
+  const period = (t) => (t < '12:00' ? 'Manhã' : t < '18:00' ? 'Tarde' : 'Noite');
+  const update = () => {
+    const di = form.querySelector('input[name="dia"]:checked')?.value;
+    const t = form.querySelector('input[name="hora"]:checked')?.value;
+    btn.disabled = !t;
+    sum.innerHTML = t ? `<b>${full.format(days[di].d)}, ${t}</b>Dra. Helena Souza · presencial` : 'Escolha um horário';
+  };
+  const renderSlots = (i) => {
+    const x = days[i];
+    const slots = [...x.free.map((t) => ({ t, ok: true })), ...x.taken.map((t) => ({ t, ok: false }))].sort((a, b) => a.t.localeCompare(b.t));
+    const groups = ['Manhã', 'Tarde', 'Noite'].map((p) => [p, slots.filter((s) => period(s.t) === p)]).filter(([, s]) => s.length);
+    periodsEl.innerHTML = groups.map(([p, s]) => `<fieldset class="ts2-period"><legend>${p}</legend><div class="ts2-grid">${s.map((o) => `<label class="ts2-slot"><input type="radio" name="hora" value="${o.t}"${o.ok ? '' : ' disabled'}><span>${o.ok ? o.t : `<s>${o.t}</s><small>esgotado</small>`}</span></label>`).join('')}</div></fieldset>`).join('') || '<p class="ts2-empty">Sem horários neste dia.</p>';
+    update();
+  };
+  form.addEventListener('change', (e) => { if (e.target.name === 'dia') renderSlots(e.target.value); else update(); });
+  form.addEventListener('submit', (e) => { e.preventDefault(); sum.innerHTML = '<b>Consulta agendada</b>Enviamos a confirmação por WhatsApp e e-mail.'; btn.disabled = true; });
+  const first = form.querySelector('input[name="dia"]:not(:disabled)');
+  first.checked = true; renderSlots(first.value);
+})();
+</script>

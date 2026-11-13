@@ -1,0 +1,34 @@
+<style>
+  .es-wrap { max-width: 1040px; margin: 0 auto; padding: 40px 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .es { border: 1px dashed var(--wc-border-strong); border-radius: var(--wc-radius-lg); padding: 40px 24px; display: grid; justify-items: center; text-align: center; gap: 8px; background: var(--wc-surface); }
+  .es svg { width: 80px; height: 80px; margin-bottom: 8px; }
+  .es h3 { margin: 0; font: var(--wc-font-weight-semibold) var(--wc-font-size-lg) var(--wc-font-display); }
+  .es p { margin: 0 0 12px; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); max-width: 32ch; }
+  .es-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .es-actions button { font: inherit; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-semibold); height: var(--wc-size-control-md); padding: 0 16px; border-radius: var(--wc-radius-md); cursor: pointer; border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); }
+  .es-actions button.pri { background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); border-color: transparent; }
+  .es-actions button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .es.err { border-style: solid; border-color: var(--wc-border); }
+  .es-code { font: var(--wc-font-size-xs) var(--wc-font-mono); color: var(--wc-fg-muted); }
+</style>
+<div class="es-wrap">
+  <section class="es" aria-labelledby="es1">
+    <svg viewBox="0 0 80 80" fill="none" aria-hidden="true"><rect x="10" y="18" width="60" height="48" rx="10" fill="var(--wc-accent-soft)"/><rect x="20" y="30" width="28" height="5" rx="2.5" fill="var(--wc-accent)"/><rect x="20" y="41" width="40" height="5" rx="2.5" fill="var(--wc-border-strong)"/><rect x="20" y="52" width="22" height="5" rx="2.5" fill="var(--wc-border-strong)"/><circle cx="62" cy="20" r="10" fill="var(--wc-accent-solid)"/><path d="M62 15v10M57 20h10" stroke="var(--wc-accent-solid-fg)" stroke-width="2.5" stroke-linecap="round"/></svg>
+    <h3 id="es1">Cadastre seu primeiro produto</h3>
+    <p>Com produtos cadastrados você vende no PDV, no site e no iFood com o mesmo estoque.</p>
+    <div class="es-actions"><button class="pri" type="button">Novo produto</button><button type="button">Importar planilha</button></div>
+  </section>
+  <section class="es" aria-labelledby="es2">
+    <svg viewBox="0 0 80 80" fill="none" aria-hidden="true"><circle cx="36" cy="36" r="20" fill="var(--wc-sunken)" stroke="var(--wc-border-strong)" stroke-width="3"/><path d="m51 51 14 14" stroke="var(--wc-border-strong)" stroke-width="6" stroke-linecap="round"/><path d="M29 33h.01M43 33h.01M30 43c4-3 8-3 12 0" stroke="var(--wc-fg-muted)" stroke-width="3" stroke-linecap="round"/></svg>
+    <h3 id="es2">Nenhum pedido com “camiseta azul GG”</h3>
+    <p>Tente buscar pelo número do pedido ou limpe os filtros de data.</p>
+    <div class="es-actions"><button class="pri" type="button">Limpar filtros</button></div>
+  </section>
+  <section class="es err" aria-labelledby="es3">
+    <svg viewBox="0 0 80 80" fill="none" aria-hidden="true"><path d="M40 12 72 66H8Z" fill="var(--wc-danger-soft)" stroke="var(--wc-danger)" stroke-width="3" stroke-linejoin="round"/><path d="M40 32v14M40 55h.01" stroke="var(--wc-danger)" stroke-width="4" stroke-linecap="round"/></svg>
+    <h3 id="es3">Não conseguimos carregar o financeiro</h3>
+    <p>A conexão com o banco expirou. Seus dados estão seguros; reconecte para atualizar.</p>
+    <div class="es-actions"><button class="pri" type="button">Reconectar banco</button><button type="button">Tentar de novo</button></div>
+    <span class="es-code">Código FIN-401 · 27/10 13:42</span>
+  </section>
+</div>

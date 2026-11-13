@@ -1,0 +1,41 @@
+<style>
+  .tc-stage { min-height: 100vh; display: grid; place-content: center; padding: 20px; perspective: 900px; }
+  .tc { --rx: 0deg; --ry: 0deg; --gx: 50%; --gy: 50%; --go: 0; position: relative; width: min(380px, 100%); aspect-ratio: 1.586; border-radius: var(--wc-radius-xl); padding: 24px; display: grid; grid-template-rows: auto 1fr auto; color: var(--wc-accent-solid-fg); background: linear-gradient(135deg, var(--wc-gradient-2), var(--wc-gradient-3) 55%, var(--wc-gradient-4)); box-shadow: var(--wc-shadow-lg); transform: rotateX(var(--rx)) rotateY(var(--ry)); transform-style: preserve-3d; transition: transform var(--wc-motion-spring-smooth-duration) var(--wc-motion-spring-smooth); overflow: hidden; }
+  .tc.is-active { transition: transform 80ms linear; }
+  .tc::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at var(--gx) var(--gy), rgb(255 255 255 / .55), transparent 55%); mix-blend-mode: soft-light; opacity: var(--go); transition: opacity var(--wc-motion-duration-base); pointer-events: none; }
+  .tc-top { display: flex; justify-content: space-between; align-items: center; font: var(--wc-font-weight-semibold) var(--wc-font-size-lg) var(--wc-font-display); }
+  .tc-chip { width: 42px; height: 32px; border-radius: 6px; background: linear-gradient(135deg, rgb(255 255 255 / .7), rgb(255 255 255 / .25)); }
+  .tc-num { align-self: end; font: var(--wc-font-weight-medium) var(--wc-font-size-xl) var(--wc-font-mono); letter-spacing: .08em; text-shadow: 0 1px 2px rgb(0 0 0 / .25); }
+  .tc-bottom { display: flex; justify-content: space-between; font-size: var(--wc-font-size-sm); opacity: .9; margin-top: 8px; }
+</style>
+<div class="tc-stage">
+  <div class="tc" role="img" aria-label="Cartão Órbita Black, final 4821">
+    <div class="tc-top"><span>Órbita Black</span><span class="tc-chip"></span></div>
+    <div class="tc-num">•••• •••• •••• 4821</div>
+    <div class="tc-bottom"><span>MARINA COSTA</span><span>09/31</span></div>
+  </div>
+</div>
+<script>
+(() => {
+  const card = document.querySelector('.tc');
+  if (!matchMedia('(hover: hover) and (prefers-reduced-motion: no-preference)').matches) return;
+  const max = 10;
+  card.addEventListener('pointermove', (e) => {
+    const r = card.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width;
+    const py = (e.clientY - r.top) / r.height;
+    card.classList.add('is-active');
+    card.style.setProperty('--ry', (px - 0.5) * 2 * max + 'deg');
+    card.style.setProperty('--rx', (0.5 - py) * 2 * max + 'deg');
+    card.style.setProperty('--gx', px * 100 + '%');
+    card.style.setProperty('--gy', py * 100 + '%');
+    card.style.setProperty('--go', 1);
+  });
+  card.addEventListener('pointerleave', () => {
+    card.classList.remove('is-active');
+    card.style.setProperty('--rx', '0deg');
+    card.style.setProperty('--ry', '0deg');
+    card.style.setProperty('--go', 0);
+  });
+})();
+</script>

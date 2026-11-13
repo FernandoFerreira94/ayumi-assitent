@@ -1,0 +1,109 @@
+<style>
+  .nc-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 20px; border-bottom: 1px solid var(--wc-border); background: var(--wc-surface); }
+  .nc-bar b { font: var(--wc-font-weight-semibold) var(--wc-font-size-md) var(--wc-font-display); }
+  .nc-bell { position: relative; width: 44px; height: 44px; border-radius: var(--wc-radius-pill); border: 0; background: transparent; color: var(--wc-fg); display: grid; place-items: center; cursor: pointer; anchor-name: --nc-bell; }
+  .nc-bell:hover, .nc-bell[aria-expanded="true"] { background: var(--wc-sunken); }
+  .nc-badge { position: absolute; top: 6px; right: 5px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--wc-radius-pill); background: var(--wc-danger-solid); color: var(--wc-danger-solid-fg); font-size: 11px; font-weight: var(--wc-font-weight-bold); display: grid; place-items: center; font-variant-numeric: tabular-nums; box-shadow: 0 0 0 2px var(--wc-surface); }
+  .nc-badge:empty { display: none; }
+  .nc-badge.pop { animation: nc-pop var(--wc-motion-spring-bouncy-duration, .4s) var(--wc-motion-spring-bouncy, ease-out); }
+  @keyframes nc-pop { 50% { transform: scale(calc(1 + .3 * var(--wc-motion-distance))); } }
+  .nc-panel { margin: 0; inset: auto; position: fixed; position-anchor: --nc-bell; top: anchor(bottom); right: anchor(right); margin-top: 8px; width: min(400px, calc(100vw - 24px)); max-height: min(560px, calc(100vh - 80px)); padding: 0; border-radius: var(--wc-radius-xl); border: 1px solid var(--wc-border); background: var(--wc-surface-raised); color: var(--wc-fg); box-shadow: var(--wc-shadow-lg); overflow: hidden; display: none; flex-direction: column; }
+  .nc-panel:popover-open { display: flex; animation: nc-in var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  @supports not (position-anchor: --a) { .nc-panel { top: 64px; right: 12px; } }
+  @keyframes nc-in { from { opacity: 0; transform: translateY(calc(-6px * var(--wc-motion-distance))) scale(calc(1 - .02 * var(--wc-motion-distance))); } }
+  .nc-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 16px 8px; }
+  .nc-head h2 { margin: 0; font: var(--wc-font-weight-semibold) var(--wc-font-size-lg) var(--wc-font-display); }
+  .nc-link { font: inherit; font-size: var(--wc-font-size-sm); border: 0; background: transparent; color: var(--wc-accent); cursor: pointer; min-height: 32px; padding: 0 6px; border-radius: var(--wc-radius-sm); }
+  .nc-tabs { display: flex; gap: 4px; padding: 0 12px 8px; border-bottom: 1px solid var(--wc-border); }
+  .nc-tabs button { font: inherit; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-medium); min-height: 36px; padding: 0 12px; border: 0; border-radius: var(--wc-radius-pill); background: transparent; color: var(--wc-fg-muted); cursor: pointer; }
+  .nc-tabs button[aria-selected="true"] { background: var(--wc-sunken); color: var(--wc-fg); }
+  .nc-list { overflow-y: auto; padding: 4px 0 8px; }
+  .nc-day { margin: 0; padding: 12px 16px 4px; font-size: var(--wc-font-size-xs); font-weight: var(--wc-font-weight-semibold); color: var(--wc-fg-muted); text-transform: uppercase; letter-spacing: calc(var(--wc-tracking-caps) * 1em); }
+  .nc-list ul { list-style: none; margin: 0; padding: 0; }
+  .nc-item { position: relative; display: grid; grid-template-columns: 36px 1fr auto; gap: 12px; padding: 10px 16px; }
+  .nc-item:hover { background: var(--wc-sunken); }
+  .nc-ico { width: 36px; height: 36px; border-radius: var(--wc-radius-pill); display: grid; place-items: center; background: var(--wc-sunken); font-size: 16px; }
+  .nc-item p { margin: 0; font-size: var(--wc-font-size-sm); line-height: var(--wc-line-height-snug); }
+  .nc-item p a { color: inherit; text-decoration: none; }
+  .nc-item p a::after { content: ""; position: absolute; inset: 0; }
+  .nc-item time { display: block; margin-top: 2px; font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); }
+  .nc-act { position: relative; z-index: 1; margin-top: 8px; font: inherit; font-size: var(--wc-font-size-xs); font-weight: var(--wc-font-weight-semibold); min-height: 32px; padding: 0 12px; border-radius: var(--wc-radius-pill); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); cursor: pointer; }
+  .nc-dot { width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: var(--wc-accent); }
+  .nc-item:not(.unread) .nc-dot { visibility: hidden; }
+  .nc-item:not(.unread) p { color: var(--wc-fg-muted); }
+  .nc-empty { padding: 40px 16px; text-align: center; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .nc-undo { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0; padding: 8px 16px; border-top: 1px solid var(--wc-border); font-size: var(--wc-font-size-sm); background: var(--wc-sunken); }
+  .nc-undo[hidden] { display: none; }
+  .nc-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .nc-page { padding: 32px 20px; color: var(--wc-fg-muted); }
+  .nc button:focus-visible, .nc a:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  @media (max-width: 639px) { .nc-panel { position: fixed; inset: 0; width: 100%; max-height: none; height: 100%; margin: 0; border-radius: 0; } }
+</style>
+<div class="nc">
+  <div class="nc-bar"><b>Painel Loja</b><button class="nc-bell" type="button" popovertarget="nc-panel" aria-expanded="false"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg><span class="nc-badge" aria-hidden="true"></span></button></div>
+  <p class="nc-page">Toque no sino para abrir ou fechar as notificações.</p>
+  <div class="nc-panel" id="nc-panel" popover aria-labelledby="nc-t">
+    <div class="nc-head"><h2 id="nc-t">Notificações</h2><button class="nc-link" type="button" data-all>Marcar todas como lidas</button></div>
+    <div class="nc-tabs" role="tablist" aria-label="Filtro"><button role="tab" type="button" aria-selected="true" aria-controls="nc-list" data-f="all">Todas</button><button role="tab" type="button" aria-selected="false" aria-controls="nc-list" data-f="unread" tabindex="-1">Não lidas</button></div>
+    <div class="nc-list" id="nc-list" role="tabpanel" tabindex="0" aria-labelledby="nc-t"></div>
+    <p class="nc-undo" hidden><span>Todas marcadas como lidas.</span><button class="nc-link" type="button" data-undo>Desfazer</button></p>
+  </div>
+  <p class="nc-sr" role="status" id="nc-live"></p>
+</div>
+<script>
+(() => {
+  const root = document.querySelector('.nc');
+  const bell = root.querySelector('.nc-bell');
+  const panel = root.querySelector('#nc-panel');
+  const badge = root.querySelector('.nc-badge');
+  const list = root.querySelector('#nc-list');
+  const undo = root.querySelector('.nc-undo');
+  const live = root.querySelector('#nc-live');
+  const rtf = new Intl.RelativeTimeFormat('pt-BR', { numeric: 'auto' });
+  const items = [
+    { id: 1, ico: '💸', html: '<b>Pix recebido</b> de Mercado Bom Preço: R$ 2.140,00 do pedido #1044.', min: 4, unread: true },
+    { id: 2, ico: '✍️', html: '<b>Rafael Alves</b> pediu aprovação de desconto de 12% para Café Aroma.', min: 38, unread: true, act: 'Aprovar' },
+    { id: 3, ico: '📦', html: 'Estoque de <b>Café especial 250g</b> abaixo do mínimo (8 unidades).', min: 95, unread: true, act: 'Repor' },
+    { id: 4, ico: '💬', html: '<b>Ana Ribeiro</b> respondeu no WhatsApp: “Perfeito, obrigada!!”', min: 60 * 20, unread: false },
+    { id: 5, ico: '🧾', html: 'NF-e <b>4027</b> autorizada pela SEFAZ.', min: 60 * 26, unread: false },
+  ];
+  let filter = 'all';
+  let quiet = true; // a demo abre o painel sem mover o foco
+  let snapshot = null;
+  const rel = (m) => (m < 60 ? rtf.format(-m, 'minute') : m < 1440 ? rtf.format(-Math.round(m / 60), 'hour') : rtf.format(-Math.round(m / 1440), 'day'));
+  const count = () => items.filter((i) => i.unread).length;
+  const render = () => {
+    const n = count();
+    const prev = badge.textContent;
+    badge.textContent = n ? (n > 99 ? '99+' : String(n)) : '';
+    if (prev && prev !== badge.textContent && n) { badge.classList.remove('pop'); void badge.offsetWidth; badge.classList.add('pop'); }
+    bell.setAttribute('aria-label', n ? `Notificações, ${n} não lidas` : 'Notificações, nenhuma não lida');
+    const shown = items.filter((i) => filter === 'all' || i.unread);
+    const groups = [['Hoje', shown.filter((i) => i.min < 1440)], ['Ontem', shown.filter((i) => i.min >= 1440)]].filter(([, g]) => g.length);
+    list.innerHTML = groups.length ? groups.map(([d, g], gi) => `<h3 class="nc-day" id="nc-d${gi}">${d}</h3><ul aria-labelledby="nc-d${gi}">${g.map((i) => `<li class="nc-item${i.unread ? ' unread' : ''}" data-id="${i.id}"><span class="nc-ico" aria-hidden="true">${i.ico}</span><div><p><a href="#">${i.unread ? '<span class="nc-sr">Não lida: </span>' : ''}${i.html}</a></p><time>${rel(i.min)}</time>${i.act ? `<button class="nc-act" type="button">${i.act}</button>` : ''}</div><span class="nc-dot" aria-hidden="true"></span></li>`).join('')}</ul>`).join('') : '<p class="nc-empty">Tudo em dia. Nenhuma notificação não lida.</p>';
+  };
+  panel.addEventListener('toggle', (e) => { bell.setAttribute('aria-expanded', String(e.newState === 'open')); if (e.newState === 'open' && !quiet) list.querySelector('a, button')?.focus(); quiet = false; });
+  root.querySelector('.nc-tabs').addEventListener('click', (e) => { const t = e.target.closest('[role="tab"]'); if (t) selectTab(t); });
+  const selectTab = (t) => { root.querySelectorAll('[role="tab"]').forEach((b) => { const on = b === t; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; }); filter = t.dataset.f; t.focus(); render(); };
+  root.querySelector('.nc-tabs').addEventListener('keydown', (e) => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { const tabs = [...root.querySelectorAll('[role="tab"]')]; const i = tabs.indexOf(document.activeElement); selectTab(tabs[(i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length]); } });
+  list.addEventListener('click', (e) => {
+    const li = e.target.closest('.nc-item'); if (!li) return;
+    e.preventDefault();
+    const it = items.find((i) => i.id === Number(li.dataset.id));
+    const act = e.target.closest('.nc-act');
+    if (act) { it.act = null; it.html = it.html.replace('pediu aprovação de', 'teve aprovado o'); live.textContent = 'Ação concluída.'; }
+    it.unread = false; render();
+  });
+  root.querySelector('[data-all]').addEventListener('click', () => {
+    if (!count()) return;
+    snapshot = items.map((i) => i.unread); items.forEach((i) => { i.unread = false; });
+    render(); undo.hidden = false; live.textContent = 'Todas as notificações marcadas como lidas.';
+    clearTimeout(undo.t); undo.t = setTimeout(() => { undo.hidden = true; snapshot = null; }, 5000);
+  });
+  root.querySelector('[data-undo]').addEventListener('click', () => { if (snapshot) items.forEach((i, k) => { i.unread = snapshot[k]; }); undo.hidden = true; render(); live.textContent = 'Desfeito.'; });
+  render();
+  panel.showPopover?.();
+  // nova notificação chegando
+  setTimeout(() => { items.unshift({ id: 6, ico: '🛵', html: 'Pedido <b>#10483</b> saiu para entrega com Marcos.', min: 0, unread: true }); render(); live.textContent = 'Nova notificação: pedido 10483 saiu para entrega.'; }, 2500);
+})();
+</script>

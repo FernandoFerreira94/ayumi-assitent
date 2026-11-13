@@ -1,0 +1,83 @@
+<style>
+  .ags { min-height: 100vh; padding: 24px 16px; max-width: 640px; margin: 0 auto; display: grid; gap: 14px; align-content: start; color: var(--wc-fg); font-size: var(--wc-font-size-sm); }
+  .ags details { border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface); }
+  .ags summary { display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; list-style: none; min-height: 44px; font-weight: var(--wc-font-weight-semibold); border-radius: var(--wc-radius-lg); }
+  .ags summary::-webkit-details-marker { display: none; }
+  .ags summary::after { content: ""; margin-left: auto; width: 8px; height: 8px; border-right: 2px solid var(--wc-fg-muted); border-bottom: 2px solid var(--wc-fg-muted); rotate: 45deg; transition: rotate var(--wc-motion-duration-fast); }
+  .ags details[open] > summary::after { rotate: -135deg; }
+  .ags summary small { font-weight: normal; color: var(--wc-fg-muted); font-variant-numeric: tabular-nums; }
+  .ags ol { list-style: none; margin: 0; padding: 0 14px 12px; display: grid; }
+  .ags li { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; column-gap: 10px; padding: 8px 0; position: relative; animation: ags-in var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  @keyframes ags-in { from { opacity: 0; translate: 0 calc(4px * var(--wc-motion-distance)); } }
+  .ags li:not(:last-child)::before { content: ""; position: absolute; left: 9px; top: 30px; bottom: -6px; width: 2px; background: var(--wc-border); }
+  .ags-ic { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; background: var(--wc-sunken); color: var(--wc-fg-muted); }
+  .ags li[data-s="run"] .ags-ic { border: 2px solid var(--wc-accent); border-right-color: transparent; background: none; animation: ags-r .8s linear infinite; }
+  @keyframes ags-r { to { rotate: 1turn; } }
+  .ags li[data-s="ok"] .ags-ic { background: var(--wc-success-soft); color: var(--wc-success); }
+  .ags li[data-s="err"] .ags-ic { background: var(--wc-danger-soft); color: var(--wc-danger); }
+  .ags-t { line-height: var(--wc-line-height-snug); }
+  .ags-t span { color: var(--wc-fg-muted); }
+  .ags-d { color: var(--wc-fg-muted); font-size: var(--wc-font-size-xs); font-variant-numeric: tabular-nums; padding-top: 2px; }
+  .ags-more { grid-column: 2 / -1; margin-top: 4px; }
+  .ags-more summary { padding: 0; min-height: 28px; font-weight: normal; color: var(--wc-accent); font-size: var(--wc-font-size-xs); }
+  .ags-more summary::after { display: none; }
+  .ags-more pre { margin: 4px 0 0; padding: 8px 10px; border-radius: var(--wc-radius-sm); background: var(--wc-sunken); font-size: var(--wc-font-size-xs); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .ags-err { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .ags-err p { flex-basis: 100%; margin: 0; color: var(--wc-fg); }
+  .ags button { min-height: 36px; padding: 0 12px; border-radius: var(--wc-radius-sm); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; }
+  .ags button.pri { background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); border-color: transparent; }
+  .ags button:focus-visible, .ags summary:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .ags-final { margin: 0; line-height: var(--wc-line-height-relaxed, 1.6); }
+  @media (prefers-reduced-motion: reduce) { .ags li, .ags li[data-s="run"] .ags-ic { animation: none; } }
+  .ags-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+</style>
+<div class="ags">
+  <details open><summary><span class="ags-sum">Trabalhando…</span> <small class="ags-time"></small></summary><ol></ol></details>
+  <p class="ags-final" hidden></p>
+  <button type="button" class="ags-again" hidden>Executar de novo</button>
+  <p class="ags-sr" role="status" id="ags-live"></p>
+</div>
+<script>
+(() => {
+  const root = document.querySelector('.ags'), det = root.querySelector('details'), ol = root.querySelector('ol'), sum = root.querySelector('.ags-sum'), time = root.querySelector('.ags-time'), final = root.querySelector('.ags-final'), again = root.querySelector('.ags-again'), live = document.getElementById('ags-live');
+  const STEPS = [
+    { run: 'Lendo a planilha de clientes…', ok: 'Li <b>clientes.xlsx</b>', res: '1.240 linhas', raw: 'read_file("clientes.xlsx") → 1240 rows, 9 cols', ms: 900 },
+    { run: 'Buscando pedidos dos últimos 90 dias…', ok: 'Busquei pedidos dos últimos 90 dias', res: '3.812 pedidos', raw: 'query_orders({ since: "2026-07-29" }) → 3812', ms: 1100 },
+    { run: 'Consultando CNPJs na Receita…', ok: 'Consultei 38 CNPJs na Receita', res: '38 ativos', raw: 'cnpj_lookup(38) → 38 ok', ms: 1300, failOnce: true, err: 'A consulta de CNPJ demorou demais e foi interrompida. Nenhum dado foi alterado.' },
+    { run: 'Montando a lista de inativos…', ok: 'Montei a lista de clientes inativos', res: '212 clientes', raw: 'filter(last_order > 90d) → 212', ms: 700 },
+  ];
+  let i, t0, failed;
+  const sr = (s) => `<span class="ags-sr">, ${s}</span>`;
+  const sec = () => ((performance.now() - t0) / 1000).toFixed(0) + 's';
+  const tick = setInterval(() => { if (det.dataset.running) time.textContent = sec(); }, 500);
+  const run = () => {
+    if (i >= STEPS.length) return done();
+    const s = STEPS[i], li = document.createElement('li'), st = performance.now();
+    li.dataset.s = 'run'; li.innerHTML = `<span class="ags-ic" aria-hidden="true"></span><span class="ags-t">${s.run}${sr('em andamento')}</span><span class="ags-d"></span>`;
+    ol.append(li); live.textContent = s.run.replace('…', '');
+    setTimeout(() => {
+      const d = ((performance.now() - st) / 1000).toFixed(1).replace('.', ',') + 's';
+      if (s.failOnce && !failed) {
+        failed = true; li.dataset.s = 'err';
+        li.innerHTML = `<span class="ags-ic" aria-hidden="true">!</span><span class="ags-t">Não consegui consultar os CNPJs${sr('falhou')}</span><span class="ags-d">${d}</span><div class="ags-err"><p>${s.err}</p><button type="button" class="pri" data-r>Tentar de novo</button><button type="button" data-k>Pular esta etapa</button></div>`;
+        sum.textContent = 'Precisa de você'; delete det.dataset.running; live.textContent = 'Uma etapa falhou: ' + s.err;
+        li.querySelector('[data-r]').focus();
+        li.querySelector('[data-r]').onclick = () => { li.remove(); det.dataset.running = '1'; sum.textContent = 'Trabalhando…'; run(); };
+        li.querySelector('[data-k]').onclick = () => { li.querySelector('.ags-err').remove(); li.querySelector('.ags-t').innerHTML = `Pulei a consulta de CNPJs${sr('pulada')}`; det.dataset.running = '1'; sum.textContent = 'Trabalhando…'; i++; run(); };
+        return;
+      }
+      li.dataset.s = 'ok';
+      li.innerHTML = `<span class="ags-ic" aria-hidden="true">✓</span><span class="ags-t">${s.ok} <span>· ${s.res}</span>${sr('concluído')}</span><span class="ags-d">${d}</span><details class="ags-more"><summary>Detalhes</summary><pre>${s.raw}</pre></details>`;
+      i++; run();
+    }, s.ms);
+  };
+  const done = () => {
+    delete det.dataset.running; sum.textContent = `${ol.children.length} passos`; time.textContent = sec(); det.open = false;
+    final.hidden = false; final.textContent = 'Encontrei 212 clientes sem compra há mais de 90 dias, 38 deles empresas com CNPJ ativo. A lista está pronta para exportar ou virar uma campanha.';
+    again.hidden = false; live.textContent = 'Concluído em ' + sec();
+  };
+  const start = () => { ol.innerHTML = ''; i = 0; failed = false; t0 = performance.now(); det.open = true; det.dataset.running = '1'; sum.textContent = 'Trabalhando…'; final.hidden = true; again.hidden = true; run(); };
+  again.addEventListener('click', start);
+  start();
+})();
+</script>

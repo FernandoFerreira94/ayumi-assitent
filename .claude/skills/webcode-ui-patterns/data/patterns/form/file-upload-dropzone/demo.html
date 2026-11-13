@@ -1,0 +1,81 @@
+<style>
+  .fud { padding: 24px 20px; color: var(--wc-fg); font-size: var(--wc-font-size-sm); max-width: 520px; display: grid; gap: 12px; }
+  .fud-zone { display: grid; justify-items: center; gap: 8px; padding: 28px 20px; text-align: center; border: 1px dashed var(--wc-border-strong); border-radius: var(--wc-radius-lg); background: var(--wc-surface); cursor: pointer; transition: border-color var(--wc-motion-duration-fast), background-color var(--wc-motion-duration-fast), scale var(--wc-motion-duration-fast) var(--wc-motion-ease-out); }
+  .fud-zone:hover { border-color: var(--wc-focus); }
+  .fud-zone[data-drag] { border-color: var(--wc-focus); background: var(--wc-accent-soft); scale: 1.01; }
+  .fud-zone p { margin: 0; }
+  .fud small { color: var(--wc-fg-muted); }
+  .fud button { min-height: 36px; padding: 0 14px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: inherit; cursor: pointer; }
+  .fud button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .fud ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .fud li { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 8px; padding: 10px 8px 10px 12px; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-md); background: var(--wc-surface); }
+  .fud li[data-s="error"] { border-color: var(--wc-danger); }
+  .fud li > :not(button) { grid-column: 1; }
+  .fud li .n { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+  .fud li .n b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--wc-font-weight-medium); }
+  .fud li .n span { color: var(--wc-fg-muted); font-variant-numeric: tabular-nums; flex: none; }
+  .fud li .st { font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); }
+  .fud li[data-s="done"] .st { color: var(--wc-success); }
+  .fud li[data-s="error"] .st { color: var(--wc-danger); }
+  .fud li .x, .fud li .r { width: 36px; min-height: 36px; padding: 0; border: 0; grid-row: 1 / span 2; }
+  .fud li .r { grid-column: 2; } .fud li .x { grid-column: 3; }
+  .fud-bar { height: 6px; border-radius: var(--wc-radius-pill); background: var(--wc-sunken); overflow: hidden; }
+  .fud-bar i { display: block; height: 100%; background: var(--wc-accent-solid); }
+  .fud-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  @media (prefers-reduced-motion: reduce) { .fud-zone { transition: none; } .fud-zone[data-drag] { scale: 1; } }
+</style>
+<div class="fud">
+  <div class="fud-zone">
+    <p><b>Arraste e solte aqui</b> <span style="color:var(--wc-fg-muted)">ou</span></p>
+    <button type="button" aria-describedby="fud-hint">Escolher arquivos</button>
+    <small id="fud-hint">PDF ou imagem, até 5 MB. Arquivos com "erro" no nome falham na 1ª tentativa.</small>
+    <input type="file" multiple accept=".pdf,image/*" hidden>
+  </div>
+  <ul aria-label="Arquivos"></ul>
+  <p class="fud-sr" aria-live="polite"></p>
+</div>
+<script>
+(() => {
+  const MAX = 5 * 1024 * 1024, root = document.querySelector('.fud'), zone = root.querySelector('.fud-zone'), input = root.querySelector('input'), list = root.querySelector('ul'), live = root.querySelector('[aria-live]');
+  const fmt = (b) => b < 1024 ? `${b} B` : b < 1048576 ? `${(b / 1024).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} KB` : `${(b / 1048576).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} MB`;
+  const ok = (f) => /\.pdf$/i.test(f.name) || f.type.startsWith('image/');
+  const failed = new WeakSet();
+  const send = (f, li) => {
+    li.dataset.s = 'up'; let p = 0;
+    const tick = () => {
+      if (!li.isConnected) return;
+      p += 10 + Math.random() * 15;
+      if (/erro/i.test(f.name) && p > 50 && !failed.has(f)) { failed.add(f); return paint(f, li, 'error', 'Conexão interrompida. Tente de novo.', true); }
+      if (p >= 100) { live.textContent = `${f.name} enviado.`; return paint(f, li, 'done', '✓ Enviado'); }
+      paint(f, li, 'up', null, false, p); setTimeout(tick, 200);
+    };
+    tick();
+  };
+  const paint = (f, li, s, msg, retry, p = 0) => {
+    li.dataset.s = s;
+    li.innerHTML = `<div class="n"><b>${f.name}</b><span>${fmt(f.size)}</span></div>`
+      + (s === 'up' ? `<div class="fud-bar" role="progressbar" aria-label="Enviando ${f.name}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(Math.min(p, 100))}"><i style="width:${Math.min(p, 100)}%"></i></div>` : `<p class="st" style="margin:0">${msg}</p>`)
+      + (retry ? `<button type="button" class="r" aria-label="Tentar enviar ${f.name} de novo">↻</button>` : '')
+      + `<button type="button" class="x" aria-label="${s === 'up' ? 'Cancelar envio de' : 'Remover'} ${f.name}">×</button>`;
+    li.querySelector('.x').onclick = () => { li.remove(); live.textContent = `${f.name} removido.`; };
+    if (retry) li.querySelector('.r').onclick = () => send(f, li);
+    if (s === 'error') live.textContent = `${f.name}: ${msg}`;
+  };
+  const add = (files) => [...files].forEach((f) => {
+    const li = document.createElement('li'); list.append(li);
+    if (!ok(f)) return paint(f, li, 'error', 'Tipo não aceito. Envie PDF ou imagem.');
+    if (f.size > MAX) return paint(f, li, 'error', `Arquivo com ${fmt(f.size)}. O máximo é 5 MB.`);
+    send(f, li);
+  });
+  root.querySelector('.fud-zone button').onclick = () => input.click();
+  zone.onclick = (e) => { if (!e.target.closest('button')) input.click(); };
+  input.onchange = () => { add(input.files); input.value = ''; };
+  let depth = 0;
+  zone.addEventListener('dragenter', (e) => { e.preventDefault(); depth++; zone.dataset.drag = ''; });
+  zone.addEventListener('dragover', (e) => e.preventDefault());
+  zone.addEventListener('dragleave', () => { if (--depth <= 0) { depth = 0; delete zone.dataset.drag; } });
+  zone.addEventListener('drop', (e) => { e.preventDefault(); depth = 0; delete zone.dataset.drag; add(e.dataTransfer.files); });
+  root.addEventListener('paste', (e) => { if (e.clipboardData.files.length) { e.preventDefault(); add(e.clipboardData.files); } });
+  add([new File(['x'.repeat(240000)], 'contrato-social.pdf', { type: 'application/pdf' }), new File(['x'.repeat(90000)], 'rg-erro.pdf', { type: 'application/pdf' }), new File(['x'], 'planilha.xlsx')]);
+})();
+</script>

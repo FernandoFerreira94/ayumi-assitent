@@ -1,0 +1,83 @@
+<style>
+  .pw { min-height: 100vh; min-height: 100dvh; max-width: 440px; margin: 0 auto; display: flex; flex-direction: column; background: var(--wc-bg); }
+  .pw-top { display: flex; justify-content: flex-end; padding: max(12px, env(safe-area-inset-top)) 12px 0; }
+  .pw-x { width: var(--wc-size-control-md); height: var(--wc-size-control-md); border-radius: 50%; border: 0; display: grid; place-items: center; background: var(--wc-sunken); color: var(--wc-fg-muted); cursor: pointer; }
+  .pw-main { flex: 1; padding: 4px 20px 20px; display: grid; gap: 20px; align-content: start; }
+  .pw-ic { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); }
+  .pw h1 { margin: 0; font: var(--wc-font-weight-bold) var(--wc-font-size-3xl) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); }
+  .pw-benefits { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .pw-benefits li { display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: start; font-size: var(--wc-font-size-md); }
+  .pw-benefits svg { color: var(--wc-accent); margin-top: 1px; }
+  .pw-plans { border: 0; padding: 0; margin: 0; display: grid; gap: 10px; }
+  .pw-plans legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .pw-plan { position: relative; display: grid; grid-template-columns: 22px 1fr auto; gap: 2px 12px; align-items: center; padding: 14px 16px; border-radius: var(--wc-radius-lg); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); cursor: pointer; transition: border-color var(--wc-motion-duration-fast), background-color var(--wc-motion-duration-fast); }
+  .pw-plan:has(:checked) { border-color: var(--wc-accent-solid); background: var(--wc-accent-soft); box-shadow: inset 0 0 0 1px var(--wc-accent-solid); }
+  .pw-plan:has(:focus-visible) { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .pw-plan input { grid-row: span 2; width: 20px; height: 20px; margin: 0; accent-color: var(--wc-accent-solid); }
+  .pw-plan b { font-weight: var(--wc-font-weight-semibold); }
+  .pw-plan small { grid-column: 2; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .pw-price { grid-row: 1 / 3; grid-column: 3; text-align: right; font-weight: var(--wc-font-weight-semibold); }
+  .pw-price small { display: block; font-weight: var(--wc-font-weight-regular); }
+  .pw-tag { position: absolute; top: -10px; right: 14px; padding: 2px 8px; border-radius: 999px; background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font-size: var(--wc-font-size-xs); font-weight: var(--wc-font-weight-semibold); }
+  .pw-trial { list-style: none; margin: 0; padding: 0 0 0 4px; display: grid; gap: 14px; }
+  .pw-trial li { position: relative; padding-left: 26px; font-size: var(--wc-font-size-sm); }
+  .pw-trial li::before { content: ""; position: absolute; left: 0; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: var(--wc-accent-solid); }
+  .pw-trial li:not(:last-child)::after { content: ""; position: absolute; left: 5px; top: 18px; bottom: -14px; width: 2px; background: var(--wc-border-strong); }
+  .pw-trial b { display: block; font-size: var(--wc-font-size-md); }
+  .pw-trial span { color: var(--wc-fg-muted); }
+  .pw-trial[hidden] { display: none; }
+  .pw-foot { position: sticky; bottom: 0; display: grid; gap: 8px; padding: 12px 20px max(16px, env(safe-area-inset-bottom)); background: var(--wc-bg); border-top: 1px solid var(--wc-border); }
+  .pw-cta { height: var(--wc-size-control-lg); border: 0; border-radius: var(--wc-radius-button); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font: inherit; font-weight: var(--wc-font-weight-semibold); font-size: var(--wc-font-size-md); cursor: pointer; transition: scale var(--wc-motion-duration-fast) var(--wc-motion-ease-out); }
+  .pw-cta:hover { background: var(--wc-accent-hover); }
+  .pw-cta:active { scale: .98; }
+  .pw-cta[aria-busy="true"] { opacity: .85; cursor: progress; }
+  .pw-sum { margin: 0; text-align: center; font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); }
+  .pw-links { display: flex; justify-content: center; gap: 16px; }
+  .pw-links button, .pw-links a { font: inherit; font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); background: none; border: 0; padding: 6px 2px; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .pw :focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .pw-ok { color: var(--wc-success); }
+  @media (prefers-reduced-motion: reduce) { .pw-cta { transition: none; } }
+</style>
+<main class="pw">
+  <div class="pw-top"><button class="pw-x" type="button" aria-label="Fechar e continuar no plano grátis"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+  <div class="pw-main">
+    <span class="pw-ic" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7Z"/></svg></span>
+    <h1>Desbloqueie o Pro</h1>
+    <ul class="pw-benefits">
+      <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>Relatórios ilimitados e exportação em PDF</li>
+      <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>Sincroniza no celular, tablet e computador</li>
+      <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>Suporte prioritário pelo WhatsApp</li>
+    </ul>
+    <fieldset class="pw-plans">
+      <legend>Escolha o plano</legend>
+      <label class="pw-plan"><input type="radio" name="plan" value="anual" checked><b>Anual</b><span class="pw-price">R$ 14,99<small>por mês</small></span><small>R$ 179,90 por ano · 7 dias grátis</small><span class="pw-tag" aria-hidden="true">Economize 25%</span></label>
+      <label class="pw-plan"><input type="radio" name="plan" value="mensal"><b>Mensal</b><span class="pw-price">R$ 19,90<small>por mês</small></span><small>Cancele quando quiser</small></label>
+    </fieldset>
+    <ol class="pw-trial" aria-label="Como funciona o teste grátis">
+      <li><b>Hoje</b><span>Acesso completo ao Pro, sem cobrança.</span></li>
+      <li><b>Dia 5</b><span>Lembramos você por e-mail antes de cobrar.</span></li>
+      <li><b>Dia 7</b><span>Começa a assinatura. Cancele antes e não paga nada.</span></li>
+    </ol>
+  </div>
+  <div class="pw-foot">
+    <button class="pw-cta" type="button">Começar 7 dias grátis</button>
+    <p class="pw-sum" aria-live="polite">Depois, R$ 179,90 por ano. Cancele quando quiser.</p>
+    <div class="pw-links"><button type="button" class="pw-restore">Restaurar compra</button><a href="#termos">Termos</a><a href="#privacidade">Privacidade</a></div>
+  </div>
+</main>
+<script>
+(() => {
+  const root = document.querySelector('.pw'), cta = root.querySelector('.pw-cta'), sum = root.querySelector('.pw-sum'), trial = root.querySelector('.pw-trial');
+  const plans = { anual: { cta: 'Começar 7 dias grátis', sum: 'Depois, R$ 179,90 por ano. Cancele quando quiser.', trial: true }, mensal: { cta: 'Assinar por R$ 19,90/mês', sum: 'Cobrança mensal de R$ 19,90. Cancele quando quiser.', trial: false } };
+  const cur = () => root.querySelector('[name=plan]:checked').value;
+  function sync() { const p = plans[cur()]; cta.textContent = p.cta; sum.textContent = p.sum; trial.hidden = !p.trial; }
+  root.addEventListener('change', sync);
+  cta.addEventListener('click', () => {
+    if (cta.getAttribute('aria-busy')) return;
+    cta.setAttribute('aria-busy', 'true'); cta.textContent = 'Abrindo pagamento…';
+    setTimeout(() => { cta.removeAttribute('aria-busy'); sync(); sum.innerHTML = '<span class="pw-ok">Assinatura ativa.</span> Bem-vindo ao Pro.'; }, 900);
+  });
+  root.querySelector('.pw-restore').addEventListener('click', () => { sum.textContent = 'Nenhuma compra anterior encontrada nesta conta.'; });
+  root.querySelector('.pw-x').addEventListener('click', () => { sum.textContent = 'Você continua no plano grátis.'; });
+})();
+</script>

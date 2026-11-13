@@ -1,0 +1,90 @@
+<style>
+  .pc { max-width: 1000px; margin: 0 auto; padding: 48px 20px 64px; display: grid; gap: 20px; }
+  .pc h2 { margin: 0; font: var(--wc-font-weight-semibold) clamp(26px, 3.6vw, var(--wc-font-size-4xl)) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); }
+  .pc-pick { display: none; padding: 4px; gap: 2px; border-radius: var(--wc-radius-pill); background: var(--wc-sunken); border: 1px solid var(--wc-border); }
+  .pc-pick button { flex: 1; font: inherit; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-medium); min-height: 40px; border: 0; border-radius: var(--wc-radius-pill); background: transparent; color: var(--wc-fg-muted); cursor: pointer; }
+  .pc-pick button[aria-pressed="true"] { background: var(--wc-surface); color: var(--wc-fg); box-shadow: var(--wc-shadow); }
+  .pc button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .pc table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: var(--wc-font-size-sm); }
+  .pc caption { text-align: left; color: var(--wc-fg-muted); padding-bottom: 12px; }
+  .pc thead th { position: sticky; top: 0; z-index: 1; background: var(--wc-bg); padding: 14px 12px; text-align: center; vertical-align: bottom; border-bottom: 1px solid var(--wc-border-strong); font-weight: var(--wc-font-weight-semibold); font-size: var(--wc-font-size-md); }
+  .pc thead th:first-child { text-align: left; width: 40%; }
+  .pc-plan small { display: block; font-weight: var(--wc-font-weight-regular); font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); font-variant-numeric: tabular-nums; }
+  .pc-tag { display: inline-block; margin-bottom: 6px; font-size: var(--wc-font-size-xs); font-weight: var(--wc-font-weight-semibold); padding: 2px 8px; border-radius: var(--wc-radius-pill); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); }
+  .pc tbody th, .pc tbody td { padding: 12px; border-bottom: 1px solid var(--wc-border); }
+  .pc tbody th { text-align: left; font-weight: var(--wc-font-weight-regular); }
+  .pc tbody td { text-align: center; font-variant-numeric: tabular-nums; }
+  .pc .is-pick { background: color-mix(in oklab, var(--wc-accent-soft) 60%, transparent); }
+  .pc thead .is-pick { background: var(--wc-accent-soft); border-radius: var(--wc-radius-md) var(--wc-radius-md) 0 0; }
+  .pc-group th { padding: 0 !important; border-bottom: 1px solid var(--wc-border); }
+  .pc-group button { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; padding: 18px 12px 10px; border: 0; background: transparent; color: var(--wc-fg); font: var(--wc-font-weight-semibold) var(--wc-font-size-sm) var(--wc-font-body); text-transform: uppercase; letter-spacing: calc(var(--wc-tracking-caps) * 1em); cursor: pointer; }
+  .pc-group svg { transition: transform var(--wc-motion-duration-fast) var(--wc-motion-ease-out); }
+  .pc-group button[aria-expanded="false"] svg { transform: rotate(-90deg); }
+  .pc-yes { color: var(--wc-success); font-weight: var(--wc-font-weight-bold); }
+  .pc-no { color: var(--wc-fg-muted); }
+  .pc-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  @media (max-width: 639px) {
+    .pc-pick { display: flex; }
+    .pc [data-col]:not(.is-shown) { display: none; }
+    .pc thead th:first-child { width: 60%; }
+  }
+</style>
+<section class="pc" aria-labelledby="pc-t">
+  <h2 id="pc-t">Compare os planos</h2>
+  <div class="pc-pick" role="group" aria-label="Plano exibido na tabela">
+    <button type="button" data-show="1" aria-pressed="false">Essencial</button>
+    <button type="button" data-show="2" aria-pressed="true">Profissional</button>
+    <button type="button" data-show="3" aria-pressed="false">Rede</button>
+  </div>
+  <table>
+    <caption>Preços no plano anual. Todos os planos incluem Pix, NF-e e app no celular.</caption>
+    <thead>
+      <tr>
+        <th scope="col">Recurso</th>
+        <th scope="col" data-col="1" class="pc-plan">Essencial<small>R$ 66/mês</small></th>
+        <th scope="col" data-col="2" class="pc-plan is-pick"><span class="pc-tag">Mais escolhido</span><br>Profissional<small>R$ 158/mês</small></th>
+        <th scope="col" data-col="3" class="pc-plan">Rede<small>R$ 374/mês</small></th>
+      </tr>
+    </thead>
+    <tbody data-group="vendas">
+      <tr class="pc-group"><th colspan="4" scope="colgroup"><button type="button" aria-expanded="true">Vendas<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></th></tr>
+      <tr><th scope="row">Lojas</th><td data-col="1">1</td><td data-col="2" class="is-pick">3</td><td data-col="3">Ilimitadas</td></tr>
+      <tr><th scope="row">Pedidos por mês</th><td data-col="1">500</td><td data-col="2" class="is-pick">Ilimitados</td><td data-col="3">Ilimitados</td></tr>
+      <tr><th scope="row">iFood e Mercado Livre</th><td data-col="1" data-v="0"></td><td data-col="2" class="is-pick" data-v="1"></td><td data-col="3" data-v="1"></td></tr>
+      <tr><th scope="row">Caixa offline</th><td data-col="1" data-v="1"></td><td data-col="2" class="is-pick" data-v="1"></td><td data-col="3" data-v="1"></td></tr>
+    </tbody>
+    <tbody data-group="equipe">
+      <tr class="pc-group"><th colspan="4" scope="colgroup"><button type="button" aria-expanded="true">Equipe e controle<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></th></tr>
+      <tr><th scope="row">Usuários</th><td data-col="1">2</td><td data-col="2" class="is-pick">10</td><td data-col="3">Ilimitados</td></tr>
+      <tr><th scope="row">Permissões por unidade</th><td data-col="1" data-v="0"></td><td data-col="2" class="is-pick" data-v="0"></td><td data-col="3" data-v="1"></td></tr>
+      <tr><th scope="row">Histórico de alterações</th><td data-col="1">30 dias</td><td data-col="2" class="is-pick">1 ano</td><td data-col="3">Ilimitado</td></tr>
+    </tbody>
+    <tbody data-group="suporte">
+      <tr class="pc-group"><th colspan="4" scope="colgroup"><button type="button" aria-expanded="true">Integrações e suporte<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></th></tr>
+      <tr><th scope="row">API e webhooks</th><td data-col="1" data-v="0"></td><td data-col="2" class="is-pick" data-v="0"></td><td data-col="3" data-v="1"></td></tr>
+      <tr><th scope="row">Automação de WhatsApp</th><td data-col="1" data-v="0"></td><td data-col="2" class="is-pick" data-v="1"></td><td data-col="3" data-v="1"></td></tr>
+      <tr><th scope="row">Suporte</th><td data-col="1">E-mail</td><td data-col="2" class="is-pick">Chat</td><td data-col="3">Gerente dedicado</td></tr>
+    </tbody>
+  </table>
+</section>
+<script>
+(() => {
+  const root = document.querySelector('.pc');
+  root.querySelectorAll('td[data-v]').forEach((td) => {
+    td.innerHTML = td.dataset.v === '1'
+      ? '<span class="pc-yes" aria-hidden="true">✓</span><span class="pc-sr">Incluído</span>'
+      : '<span class="pc-no" aria-hidden="true">—</span><span class="pc-sr">Não incluído</span>';
+  });
+  const show = (n) => {
+    root.querySelectorAll('.pc-pick button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.show === n)));
+    root.querySelectorAll('[data-col]').forEach((c) => c.classList.toggle('is-shown', c.dataset.col === n));
+  };
+  root.querySelector('.pc-pick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) show(b.dataset.show); });
+  show('2');
+  root.querySelectorAll('.pc-group button').forEach((b) => b.addEventListener('click', () => {
+    const open = b.getAttribute('aria-expanded') !== 'true';
+    b.setAttribute('aria-expanded', String(open));
+    [...b.closest('tbody').rows].slice(1).forEach((r) => { r.hidden = !open; });
+  }));
+})();
+</script>

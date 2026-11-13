@@ -1,0 +1,27 @@
+<style>
+  .sw-list { max-width: 420px; margin: 0 auto; padding: 48px 20px; }
+  .sw-list h2 { font: var(--wc-font-weight-semibold) var(--wc-font-size-xl) var(--wc-font-display); margin: 0 0 12px; }
+  .sw-group { border-radius: var(--wc-radius-lg); background: var(--wc-surface); border: 1px solid var(--wc-border); }
+  .sw-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; min-height: 56px; }
+  .sw-row + .sw-row { border-top: 1px solid var(--wc-border); }
+  .sw-row label { flex: 1; cursor: pointer; }
+  .sw-row small { display: block; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .sw { --pad: 2px; --k: 27px; position: relative; flex: none; width: 51px; height: 31px; border-radius: var(--wc-radius-pill); border: 0; padding: 0; cursor: pointer; background: var(--wc-control-border); transition: background-color var(--wc-motion-duration-base) var(--wc-motion-ease-out); -webkit-tap-highlight-color: transparent; }
+  .sw[aria-checked="true"] { background: var(--wc-success); }
+  .sw:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .sw::after { content: ""; position: absolute; top: var(--pad); left: var(--pad); width: var(--k); height: var(--k); border-radius: var(--wc-radius-pill); background: var(--wc-color-white); box-shadow: 0 2px 6px rgb(0 0 0 / .2), 0 0 0 .5px rgb(0 0 0 / .04); transition: transform var(--wc-motion-spring-snappy-duration) var(--wc-motion-spring-snappy), width var(--wc-motion-duration-fast) var(--wc-motion-ease-out); }
+  .sw[aria-checked="true"]::after { transform: translateX(20px); }
+  .sw:active::after { width: 33px; }
+  .sw[aria-checked="true"]:active::after { transform: translateX(14px); }
+</style>
+<div class="sw-list">
+  <h2>Notificações</h2>
+  <div class="sw-group">
+    <div class="sw-row"><label for="sw1">Novos pedidos<small>Push e som no app</small></label><button class="sw" id="sw1" role="switch" aria-checked="true"></button></div>
+    <div class="sw-row"><label for="sw2">Resumo diário por e-mail<small>Enviado às 8h</small></label><button class="sw" id="sw2" role="switch" aria-checked="false"></button></div>
+    <div class="sw-row"><label for="sw3">Alertas de estoque baixo</label><button class="sw" id="sw3" role="switch" aria-checked="true"></button></div>
+  </div>
+</div>
+<script>
+document.querySelectorAll('.sw').forEach((s) => s.addEventListener('click', () => s.setAttribute('aria-checked', s.getAttribute('aria-checked') !== 'true')));
+</script>

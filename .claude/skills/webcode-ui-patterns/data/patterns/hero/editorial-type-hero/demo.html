@@ -1,0 +1,29 @@
+<style>
+  .eh { padding: clamp(48px, 10vw, 120px) clamp(20px, 6vw, 72px) 64px; max-width: 1200px; margin: 0 auto; }
+  .eh-meta { display: flex; flex-wrap: wrap; gap: 8px 32px; font: var(--wc-font-size-xs) var(--wc-font-mono); text-transform: uppercase; letter-spacing: calc(var(--wc-tracking-caps) * 1em); color: var(--wc-fg-muted); padding-bottom: 20px; border-bottom: 1px solid var(--wc-border-strong); }
+  .eh-meta span:first-child { color: var(--wc-fg); }
+  .eh h1 { font: var(--wc-font-weight-regular) clamp(48px, 10vw, 136px) / .95 var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); margin: 40px 0 0; }
+  .eh-line { display: block; overflow: clip; padding-bottom: .06em; }
+  .eh-line > span { display: inline-block; transform: translateY(calc(105% * var(--wc-motion-distance))); opacity: 0; animation: eh-up var(--wc-motion-duration-slower) var(--wc-motion-ease-emphasized) forwards; animation-delay: calc(var(--i) * var(--wc-motion-duration-stagger) * 3 + 120ms); }
+  .eh h1 em { font-style: italic; color: var(--wc-accent); }
+  @keyframes eh-up { to { transform: none; opacity: 1; } }
+  .eh-foot { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 32px; align-items: end; margin-top: 56px; }
+  .eh-foot p { margin: 0; max-width: 44ch; font-size: var(--wc-font-size-lg); color: var(--wc-fg-muted); opacity: 0; animation: eh-up var(--wc-motion-duration-slow) var(--wc-motion-ease-out) 700ms forwards; }
+  .eh-link { font: var(--wc-font-weight-medium) var(--wc-font-size-md) var(--wc-font-body); color: var(--wc-fg); text-decoration: none; border-bottom: 1px solid currentColor; padding-bottom: 2px; white-space: nowrap; }
+  .eh-link span { display: inline-block; transition: transform var(--wc-motion-duration-fast) var(--wc-motion-ease-out); }
+  .eh-link:hover span { transform: translateX(calc(4px * var(--wc-motion-distance))); }
+  .eh-link:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 4px; }
+  @media (max-width: 600px) { .eh-foot { grid-template-columns: 1fr; } }
+</style>
+<section class="eh">
+  <div class="eh-meta"><span>Estúdio Norte</span><span>Arquitetura e interiores</span><span>São Paulo · Lisboa</span><span>Desde 2011</span></div>
+  <h1>
+    <span class="eh-line"><span style="--i:0">Espaços que</span></span>
+    <span class="eh-line"><span style="--i:1">envelhecem <em>bem</em>,</span></span>
+    <span class="eh-line"><span style="--i:2">por escolha.</span></span>
+  </h1>
+  <div class="eh-foot">
+    <p>Projetamos casas e escritórios com materiais honestos, luz natural e manutenção pensada para os próximos trinta anos.</p>
+    <a class="eh-link" href="#">Ver projetos <span aria-hidden="true">→</span></a>
+  </div>
+</section>

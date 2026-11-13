@@ -1,0 +1,59 @@
+<style>
+  .fa-page { min-height: 30vh; display: grid; place-content: center; padding: 40px 20px; text-align: center; color: var(--wc-fg-muted); }
+  .fa { background: var(--wc-bg); border-top: 1px solid var(--wc-border); }
+  .fa-in { max-width: 1120px; margin: 0 auto; padding: 48px 20px 24px; }
+  .fa-cta { position: relative; overflow: hidden; display: grid; grid-template-columns: 1.3fr 1fr; gap: 32px; align-items: center; padding: 40px; border-radius: var(--wc-radius-xl); color: var(--wc-color-white); background: radial-gradient(70% 90% at 100% 0%, var(--wc-gradient-2), transparent 70%), linear-gradient(140deg, var(--wc-gradient-3), var(--wc-gradient-4)); }
+  .fa-cta::before { content: ""; position: absolute; inset: 0; background: color-mix(in oklch, var(--wc-color-black) 38%, transparent); }
+  .fa-cta > * { position: relative; }
+  .fa-cta h2 { margin: 0 0 10px; font: var(--wc-font-weight-semibold) clamp(26px, 3.4vw, var(--wc-font-size-4xl)) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); }
+  .fa-cta p { margin: 0; max-width: 40ch; }
+  .fa-rate { display: flex; align-items: center; gap: 8px; margin-top: 14px !important; font-size: var(--wc-font-size-sm); }
+  .fa-rate span[aria-hidden] { letter-spacing: 2px; color: var(--wc-warning); }
+  .fa-stores { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+  .fa-store { display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 16px; border-radius: var(--wc-radius-md); background: var(--wc-color-black); color: var(--wc-color-white); text-decoration: none; border: 1px solid color-mix(in oklch, var(--wc-color-white) 30%, transparent); transition: scale var(--wc-motion-duration-fast); }
+  .fa-store:hover { scale: calc(1 + .03 * var(--wc-motion-distance)); }
+  .fa-store small { display: block; font-size: 10px; line-height: 1.1; }
+  .fa-store b { display: block; font-size: var(--wc-font-size-md); line-height: 1.1; }
+  .fa-store:focus-visible, .fa-cta a:focus-visible { outline: 2px solid var(--wc-color-white); outline-offset: 3px; }
+  .fa-qr { justify-self: end; display: grid; justify-items: center; gap: 10px; padding: 16px; border-radius: var(--wc-radius-lg); background: var(--wc-color-white); color: var(--wc-color-black); text-align: center; font-size: var(--wc-font-size-xs); }
+  .fa-code { width: 132px; height: 132px; position: relative; background: repeating-conic-gradient(var(--wc-color-black) 0 25%, transparent 0 50%) 0 0 / 12px 12px, repeating-linear-gradient(90deg, var(--wc-color-black) 0 6px, transparent 6px 18px) 0 0 / 100% 100%; -webkit-mask: radial-gradient(circle at 50% 50%, transparent 14px, var(--wc-color-black) 15px); mask: radial-gradient(circle at 50% 50%, transparent 14px, var(--wc-color-black) 15px); }
+  .fa-code::before, .fa-code::after { content: ""; position: absolute; width: 34px; height: 34px; border: 7px solid var(--wc-color-black); background: var(--wc-color-white); box-shadow: inset 0 0 0 5px var(--wc-color-white), inset 0 0 0 20px var(--wc-color-black); }
+  .fa-code::before { top: 0; left: 0; } .fa-code::after { top: 0; right: 0; }
+  .fa-qr a { color: inherit; }
+  .fa-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 24px; margin-top: 28px; font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .fa-bottom nav { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  .fa-bottom a { color: inherit; text-decoration: none; }
+  .fa-bottom a:hover { color: var(--wc-fg); }
+  .fa-bottom a:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  @media (max-width: 720px) { .fa-cta { grid-template-columns: 1fr; padding: 28px 20px; } .fa-qr { display: none; } .fa-stores.is-android .fa-play { order: -1; } .fa-store { flex: 1 1 160px; justify-content: center; } }
+</style>
+<main class="fa-page"><p>Página do app. Footer com download abaixo.</p></main>
+<footer class="fa">
+  <div class="fa-in">
+    <section class="fa-cta" aria-labelledby="fa-title">
+      <div>
+        <h2 id="fa-title">Sua consulta a dois toques</h2>
+        <p>Agende, receba lembretes e veja resultados de exames no app da Clínica Viva.</p>
+        <p class="fa-rate"><span aria-hidden="true">★★★★★</span><span>4,8 de 5 · 32 mil avaliações</span></p>
+        <div class="fa-stores">
+          <a class="fa-store fa-apple" href="#"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.6c0-2.4 2-3.5 2-3.6a4.3 4.3 0 0 0-3.4-1.8c-1.4-.2-2.8.8-3.5.8s-1.8-.8-3-.8a4.5 4.5 0 0 0-3.8 2.3c-1.6 2.8-.4 7 1.2 9.2.8 1.1 1.7 2.4 2.9 2.3 1.2 0 1.600-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.2a10 10 0 0 0 1.3-2.6 4 4 0 0 1-2.5-3.6ZM14.1 5.6A4 4 0 0 0 15 2.5a4.2 4.2 0 0 0-2.8 1.4 3.9 3.9 0 0 0-1 3c1.1 0 2.2-.6 2.9-1.3Z"/></svg><span><small>Baixar na</small><b>App Store</b></span></a>
+          <a class="fa-store fa-play" href="#"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 2.8v18.4c0 .4.4.6.7.4L20 12.8c.4-.2.4-.7 0-.9L4.7 2.4c-.3-.2-.7 0-.7.4Z"/></svg><span><small>Disponível no</small><b>Google Play</b></span></a>
+        </div>
+      </div>
+      <figure class="fa-qr" style="margin:0">
+        <span class="fa-code" role="img" aria-label="QR code que abre a página do app Clínica Viva na loja do seu celular"></span>
+        <figcaption>Aponte a câmera do celular<br>ou <a href="#">envie o link por SMS</a></figcaption>
+      </figure>
+    </section>
+    <div class="fa-bottom">
+      <span>© 2026 Clínica Viva · CNPJ 00.000.000/0001-00 · Resp. técnico: Dr. Paulo Souza, CRM-SP 000000</span>
+      <nav aria-label="Rodapé"><a href="#">Ajuda</a><a href="#">Privacidade</a><a href="#">Termos</a><a href="#">Trabalhe conosco</a></nav>
+    </div>
+  </div>
+</footer>
+<script>
+(() => {
+  const ua = (navigator.userAgentData?.platform || navigator.userAgent || '').toLowerCase();
+  if (ua.includes('android')) document.querySelector('.fa-stores').classList.add('is-android');
+})();
+</script>

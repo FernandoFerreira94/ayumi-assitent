@@ -1,0 +1,73 @@
+<style>
+  .sb { --sb-w: 248px; display: grid; grid-template-columns: var(--sb-w) minmax(0, 1fr); min-height: 100vh; transition: grid-template-columns var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  .sb[data-collapsed="true"] { --sb-w: 64px; }
+  @media (prefers-reduced-motion: reduce) { .sb { transition: none; } }
+  .sb-side { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 12px 8px; border-right: 1px solid var(--wc-border); background: var(--wc-surface); overflow: hidden; }
+  .sb-ws { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 8px; margin-bottom: 8px; border-radius: var(--wc-radius-md); font-weight: var(--wc-font-weight-semibold); white-space: nowrap; }
+  .sb-logo { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: var(--wc-radius-sm); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font-size: var(--wc-font-size-sm); }
+  .sb-group { margin: 12px 0 4px; padding: 0 10px; font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
+  .sb ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  .sb-link { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 10px; border-radius: var(--wc-radius-md); color: var(--wc-fg-muted); text-decoration: none; white-space: nowrap; }
+  .sb-link:hover { background: var(--wc-sunken); color: var(--wc-fg); }
+  .sb-link[aria-current="page"] { background: var(--wc-accent-soft); color: var(--wc-accent); font-weight: var(--wc-font-weight-medium); }
+  .sb-link:focus-visible, .sb button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: -2px; }
+  .sb-ico { display: grid; place-items: center; flex: none; width: 24px; font-size: 18px; line-height: 1; }
+  .sb-badge { margin-left: auto; min-width: 20px; padding: 0 6px; border-radius: var(--wc-radius-pill); background: var(--wc-danger-solid); color: var(--wc-danger-solid-fg); font-size: var(--wc-font-size-xs); text-align: center; font-variant-numeric: tabular-nums; }
+  .sb[data-collapsed="true"] .sb-txt, .sb[data-collapsed="true"] .sb-group { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .sb[data-collapsed="true"] .sb-badge { position: absolute; margin: -18px 0 0 18px; min-width: 8px; height: 8px; padding: 0; font-size: 0; }
+  .sb-link, .sb-ws { position: relative; }
+  .sb-foot { margin-top: auto; display: grid; gap: 2px; }
+  .sb-toggle { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 10px; border: 0; border-radius: var(--wc-radius-md); background: none; color: var(--wc-fg-muted); font: inherit; cursor: pointer; white-space: nowrap; }
+  .sb-toggle:hover { background: var(--wc-sunken); }
+  .sb[data-collapsed="true"] .sb-toggle .sb-ico { rotate: 180deg; }
+  .sb-main { padding: 20px 24px; min-width: 0; }
+  .sb-main h1 { margin: 0 0 8px; font: var(--wc-font-weight-semibold) var(--wc-font-size-2xl) var(--wc-font-display); }
+  .sb-main p { color: var(--wc-fg-muted); max-width: 60ch; }
+  .sb-menu { display: none; min-height: 44px; padding: 0 14px; margin-bottom: 12px; border: 1px solid var(--wc-border-strong); border-radius: var(--wc-radius-md); background: var(--wc-surface); color: var(--wc-fg); font: inherit; cursor: pointer; }
+  .sb-dlg { margin: 0; width: min(300px, 85vw); max-width: none; height: 100%; max-height: none; padding: 0; border: 0; background: var(--wc-surface); color: var(--wc-fg); box-shadow: var(--wc-shadow-lg); transition: translate var(--wc-motion-spring-smooth-duration) var(--wc-motion-spring-smooth), display var(--wc-motion-duration-slow) allow-discrete, overlay var(--wc-motion-duration-slow) allow-discrete; }
+  .sb-dlg:not([open]) { translate: -100% 0; transition-duration: var(--wc-motion-duration-fast); }
+  @starting-style { .sb-dlg[open] { translate: -100% 0; } }
+  .sb-dlg::backdrop { background: var(--wc-scrim); }
+  .sb-dlg .sb-side { height: 100%; border: 0; }
+  @media (max-width: 767px) { .sb { grid-template-columns: minmax(0, 1fr); } .sb > .sb-side { display: none; } .sb-menu { display: inline-flex; align-items: center; gap: 8px; } }
+</style>
+<div class="sb" data-collapsed="false">
+  <nav class="sb-side" id="sb-nav" aria-label="Principal"></nav>
+  <main class="sb-main">
+    <button class="sb-menu" type="button" aria-haspopup="dialog">☰ Menu</button>
+    <h1>Pedidos</h1>
+    <p>Recolha a sidebar pelo botão no rodapé ou com a tecla <b>[</b>. A escolha fica salva. No celular, a navegação abre num painel.</p>
+  </main>
+</div>
+<dialog class="sb-dlg" aria-label="Menu"></dialog>
+<script>
+(() => {
+  const NAV = [
+    [null, [['◎', 'Início'], ['▤', 'Pedidos', 'page'], ['◇', 'Produtos'], ['☺', 'Clientes']]],
+    ['Financeiro', [['$', 'A receber', null, 3], ['⇄', 'Conciliação'], ['▦', 'Relatórios']]],
+    ['Operação', [['⚑', 'Entregas'], ['✉', 'Atendimento', null, 12]]],
+  ];
+  const html = (withToggle) => `<div class="sb-ws"><span class="sb-logo" aria-hidden="true">LV</span><span class="sb-txt">Loja Verde</span></div>` +
+    NAV.map(([g, items]) => (g ? `<p class="sb-group">${g}</p>` : '') + `<ul>${items.map(([ico, label, cur, badge]) => `<li><a class="sb-link" href="#${label}" title="${label}${badge ? ` (${badge} pendentes)` : ''}" ${cur ? 'aria-current="page"' : ''}><span class="sb-ico" aria-hidden="true">${ico}</span><span class="sb-txt">${label}</span>${badge ? `<span class="sb-badge"><span class="sb-txt">${badge} pendentes</span><span aria-hidden="true">${badge}</span></span>` : ''}</a></li>`).join('')}</ul>`).join('') +
+    `<div class="sb-foot"><a class="sb-link" href="#ajustes" title="Configurações"><span class="sb-ico" aria-hidden="true">⚙</span><span class="sb-txt">Configurações</span></a>${withToggle ? `<button class="sb-toggle" type="button" aria-controls="sb-nav" aria-expanded="true" title="Recolher [ ]"><span class="sb-ico" aria-hidden="true">«</span><span class="sb-txt">Recolher</span></button>` : ''}</div>`;
+  const shell = document.querySelector('.sb');
+  const nav = document.getElementById('sb-nav');
+  const dlg = document.querySelector('.sb-dlg');
+  nav.innerHTML = html(true);
+  dlg.innerHTML = `<nav class="sb-side" aria-label="Principal">${html(false)}</nav>`;
+  const toggle = nav.querySelector('.sb-toggle');
+  const set = (c) => {
+    shell.dataset.collapsed = String(c);
+    toggle.setAttribute('aria-expanded', String(!c));
+    toggle.title = c ? 'Expandir [ ]' : 'Recolher [ ]';
+    toggle.querySelector('.sb-txt').textContent = c ? 'Expandir' : 'Recolher';
+    try { localStorage.setItem('wc-sidebar', c ? '1' : '0'); } catch {}
+  };
+  let saved; try { saved = localStorage.getItem('wc-sidebar'); } catch {}
+  set(saved === '1');
+  toggle.addEventListener('click', () => set(shell.dataset.collapsed !== 'true'));
+  document.addEventListener('keydown', (e) => { if (e.key === '[' && !e.target.matches('input, textarea, [contenteditable]') && !dlg.open) set(shell.dataset.collapsed !== 'true'); });
+  document.querySelector('.sb-menu').addEventListener('click', () => dlg.showModal());
+  dlg.addEventListener('click', (e) => { if (e.target === dlg || e.target.closest('a')) dlg.close(); });
+})();
+</script>

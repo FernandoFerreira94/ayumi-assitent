@@ -1,0 +1,89 @@
+<style>
+  .swr { min-height: 100vh; max-width: 520px; margin: 0 auto; color: var(--wc-fg); font-size: var(--wc-font-size-sm); }
+  .swr h3 { margin: 0; padding: 20px 16px 8px; font-size: var(--wc-font-size-lg); }
+  .swr ul { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--wc-border); }
+  .swr li { position: relative; overflow: hidden; border-bottom: 1px solid var(--wc-border); }
+  .swr-acts { position: absolute; inset: 0 0 0 auto; display: flex; }
+  .swr-acts button { width: 80px; border: 0; font: inherit; font-size: var(--wc-font-size-xs); font-weight: var(--wc-font-weight-semibold); color: var(--wc-accent-solid-fg); cursor: pointer; display: grid; place-items: center; align-content: center; gap: 4px; }
+  .swr-acts .arc { background: var(--wc-accent-solid); }
+  .swr-acts .del { background: var(--wc-danger-solid); color: var(--wc-danger-solid-fg); }
+  .swr-row { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 8px 12px 16px; background: var(--wc-bg); touch-action: pan-y; user-select: none; transition: translate var(--wc-motion-spring-snappy-duration) var(--wc-motion-spring-snappy); }
+  .swr-row.is-drag { transition: none; }
+  .swr-row:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: -2px; }
+  .swr-av { width: 40px; height: 40px; border-radius: 50%; background: var(--wc-accent-soft); display: grid; place-items: center; font-weight: var(--wc-font-weight-semibold); }
+  .swr-t { min-width: 0; }
+  .swr-t b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .swr-t span { color: var(--wc-fg-muted); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .swr-more { width: 44px; height: 44px; border-radius: 50%; border: 0; background: none; color: var(--wc-fg-muted); font-size: 20px; cursor: pointer; }
+  .swr button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: -2px; }
+  .swr li.is-out { display: grid; grid-template-rows: 1fr; transition: grid-template-rows var(--wc-motion-duration-base) var(--wc-motion-ease-in), opacity var(--wc-motion-duration-base); }
+  .swr li.is-out.go { grid-template-rows: 0fr; opacity: 0; border-bottom-width: 0; }
+  .swr li.is-out > * { min-height: 0; }
+  .swr-menu { position: absolute; right: 8px; top: calc(100% - 8px); z-index: 2; min-width: 180px; padding: 4px; border-radius: var(--wc-radius-md); background: var(--wc-surface-raised); box-shadow: var(--wc-shadow-lg); border: 1px solid var(--wc-border); display: grid; }
+  .swr-menu button { min-height: 44px; text-align: left; padding: 0 12px; border: 0; border-radius: var(--wc-radius-sm); background: none; color: var(--wc-fg); font: inherit; cursor: pointer; }
+  .swr-menu button:hover { background: var(--wc-sunken); }
+  .swr-menu .del { color: var(--wc-danger); }
+  .swr li:has(.swr-menu) { overflow: visible; z-index: 2; }
+  .swr-toast { position: fixed; left: 50%; bottom: 20px; translate: -50% 0; display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px; border-radius: var(--wc-radius-pill); background: var(--wc-fg); color: var(--wc-bg); box-shadow: var(--wc-shadow-lg); max-width: calc(100vw - 32px); }
+  .swr-toast button { min-height: 36px; padding: 0 12px; border-radius: var(--wc-radius-pill); border: 0; background: var(--wc-bg); color: var(--wc-fg); font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; }
+  .swr-toast[hidden] { display: none; }
+  .swr-hint { padding: 12px 16px; color: var(--wc-fg-muted); font-size: var(--wc-font-size-xs); margin: 0; }
+  @media (prefers-reduced-motion: reduce) { .swr-row { transition-duration: 1ms; } }
+</style>
+<div class="swr">
+  <h3>Caixa de entrada</h3>
+  <ul></ul>
+  <p class="swr-hint">Arraste uma conversa para a esquerda, use ⋯ ou foque a linha e tecle Delete.</p>
+  <div class="swr-toast" role="status" hidden><span></span><button type="button">Desfazer</button></div>
+</div>
+<script>
+(() => {
+  const DATA = [['Ana Lima', 'Pedido #1043 chegou certinho, obrigada!'], ['Bruno Costa', 'Consegue entregar amanhã cedo?'], ['Carla Dias', 'Mandei o comprovante do Pix'], ['Diego Rocha', 'Qual o prazo para Manaus?'], ['Elisa Mota', 'Quero trocar o tamanho da camiseta']];
+  const root = document.querySelector('.swr'), ul = root.querySelector('ul'), toast = root.querySelector('.swr-toast'); let last, ttl;
+  const W = 160;
+  ul.innerHTML = DATA.map(([n, m], i) => `<li data-i="${i}"><div class="swr-acts" aria-hidden="true"><button type="button" class="arc" tabindex="-1" data-a="arc">Arquivar</button><button type="button" class="del" tabindex="-1" data-a="del">Excluir</button></div><div class="swr-row" tabindex="0" aria-label="Conversa com ${n}: ${m}"><span class="swr-av" aria-hidden="true">${n[0]}</span><span class="swr-t"><b>${n}</b><span>${m}</span></span><button type="button" class="swr-more" aria-label="Mais ações para ${n}" aria-haspopup="menu" aria-expanded="false">⋯</button></div></li>`).join('');
+  const close = (except) => ul.querySelectorAll('.swr-row').forEach((r) => { if (r !== except) { r.style.translate = ''; r.previousElementSibling.setAttribute('aria-hidden', 'true'); r.previousElementSibling.querySelectorAll('button').forEach((b) => (b.tabIndex = -1)); } });
+  const closeMenus = () => ul.querySelectorAll('.swr-menu').forEach((m) => { m.previousElementSibling?.querySelector?.('.swr-more')?.setAttribute('aria-expanded', 'false'); m.remove(); });
+  const act = (li, a) => {
+    closeMenus();
+    const name = li.querySelector('b').textContent, next = li.nextElementSibling ?? li.previousElementSibling;
+    li.classList.add('is-out'); requestAnimationFrame(() => li.classList.add('go'));
+    last = { li, idx: [...ul.children].indexOf(li) };
+    setTimeout(() => { li.remove(); li.classList.remove('is-out', 'go'); li.querySelector('.swr-row').style.translate = ''; next?.querySelector('.swr-row')?.focus(); }, 220);
+    toast.hidden = false; toast.querySelector('span').textContent = `Conversa com ${name} ${a === 'del' ? 'excluída' : 'arquivada'}`;
+    clearTimeout(ttl); ttl = setTimeout(() => (toast.hidden = true), 6000);
+    if (navigator.vibrate) try { navigator.vibrate(8); } catch {}
+  };
+  toast.querySelector('button').onclick = () => { if (!last) return; ul.insertBefore(last.li, ul.children[last.idx] ?? null); last.li.querySelector('.swr-row').focus(); toast.hidden = true; last = null; };
+  ul.addEventListener('pointerdown', (e) => {
+    const row = e.target.closest('.swr-row'); if (!row || e.target.closest('button') || e.button > 0) return;
+    const x0 = e.clientX, y0 = e.clientY, base = parseFloat(row.style.translate) || 0, w = row.offsetWidth; let dx = 0, mode = null;
+    const move = (ev) => {
+      const mx = ev.clientX - x0, my = ev.clientY - y0;
+      if (!mode) { if (Math.abs(mx) < 8 && Math.abs(my) < 8) return; mode = Math.abs(mx) > Math.abs(my) ? 'x' : 'y'; if (mode === 'x') { row.setPointerCapture(ev.pointerId); row.classList.add('is-drag'); close(row); } }
+      if (mode !== 'x') return;
+      dx = Math.min(0, base + mx); row.style.translate = `${Math.max(dx, -w)}px 0`;
+    };
+    const up = () => {
+      row.removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
+      if (mode !== 'x') return; row.classList.remove('is-drag');
+      const li = row.parentElement, acts = row.previousElementSibling;
+      if (dx < -w * .6) { row.style.translate = `${-w}px 0`; act(li, 'arc'); return; }
+      const open = dx < -W * .3; row.style.translate = open ? `${-W}px 0` : '';
+      acts.setAttribute('aria-hidden', String(!open)); acts.querySelectorAll('button').forEach((b) => (b.tabIndex = open ? 0 : -1));
+    };
+    row.addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('pointercancel', up);
+  });
+  ul.addEventListener('click', (e) => {
+    const a = e.target.closest('[data-a]'); if (a) { if (a.dataset.a === 'read') { const more = a.closest('li').querySelector('.swr-more'); closeMenus(); more.focus(); return; } return act(a.closest('li'), a.dataset.a); }
+    const m = e.target.closest('.swr-more');
+    if (m) { const open = m.getAttribute('aria-expanded') === 'true'; closeMenus(); close(); if (open) return; m.setAttribute('aria-expanded', 'true'); const menu = document.createElement('div'); menu.className = 'swr-menu'; menu.setAttribute('role', 'menu'); menu.innerHTML = '<button type="button" role="menuitem" data-a="arc">Arquivar</button><button type="button" role="menuitem" data-a="read">Marcar como não lida</button><button type="button" role="menuitem" class="del" data-a="del">Excluir</button>'; m.closest('li').append(menu); menu.querySelector('button').focus(); return; }
+  });
+  ul.addEventListener('keydown', (e) => {
+    const menu = e.target.closest('.swr-menu');
+    if (menu) { const bs = [...menu.querySelectorAll('button')], i = bs.indexOf(e.target); if (e.key === 'ArrowDown') { e.preventDefault(); bs[(i + 1) % bs.length].focus(); } if (e.key === 'ArrowUp') { e.preventDefault(); bs[(i - 1 + bs.length) % bs.length].focus(); } if (e.key === 'Escape') { const more = menu.parentElement.querySelector('.swr-more'); closeMenus(); more.focus(); } return; }
+    const row = e.target.closest('.swr-row'); if (row && e.target === row && (e.key === 'Delete' || e.key === 'Backspace')) { e.preventDefault(); act(row.parentElement, 'del'); }
+  });
+  document.addEventListener('pointerdown', (e) => { if (!e.target.closest('.swr li')) { close(); closeMenus(); } });
+})();
+</script>

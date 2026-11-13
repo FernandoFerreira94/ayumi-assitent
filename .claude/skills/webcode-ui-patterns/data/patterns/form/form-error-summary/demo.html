@@ -1,0 +1,75 @@
+<style>
+  .fes { min-height: 100vh; display: grid; place-content: center; padding: 20px; }
+  .fes form { display: grid; gap: 16px; width: min(420px, calc(100vw - 40px)); }
+  .fes h2 { margin: 0; font: var(--wc-font-weight-semibold) var(--wc-font-size-xl) var(--wc-font-display); }
+  .fes-sum { padding: 14px 16px; border: 2px solid var(--wc-danger); border-radius: var(--wc-radius-md); background: var(--wc-danger-soft); }
+  .fes-sum[hidden] { display: none; }
+  .fes-sum:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .fes-sum h3 { margin: 0 0 6px; font-size: var(--wc-font-size-md); color: var(--wc-danger); }
+  .fes-sum ul { margin: 0; padding-left: 18px; }
+  .fes-sum a { color: var(--wc-danger); font-weight: var(--wc-font-weight-medium); }
+  .fes-f { display: grid; gap: 6px; }
+  .fes-f label { font-weight: var(--wc-font-weight-medium); }
+  .fes-f input { min-height: var(--wc-size-touch-min); padding: 0 12px; font: inherit; font-size: max(16px, 1em); border: 1px solid var(--wc-border-strong); border-radius: var(--wc-radius-md); background: var(--wc-bg); color: var(--wc-fg); }
+  .fes-f input:focus-visible, .fes button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .fes-f input[aria-invalid="true"] { border-color: var(--wc-danger); border-width: 2px; }
+  .fes-err { display: flex; gap: 6px; align-items: start; font-size: var(--wc-font-size-sm); color: var(--wc-danger); }
+  .fes-err:empty { display: none; }
+  .fes-err::before { content: "!"; display: grid; place-items: center; flex: none; width: 16px; height: 16px; margin-top: 2px; border-radius: 50%; background: var(--wc-danger-solid); color: var(--wc-danger-solid-fg); font-size: 11px; font-weight: var(--wc-font-weight-bold); }
+  .fes-help { font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .fes button { min-height: var(--wc-size-control-lg); border: 0; border-radius: var(--wc-radius-md); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; }
+  .fes-done { color: var(--wc-success); }
+</style>
+<div class="fes">
+  <form novalidate>
+    <h2>Criar conta</h2>
+    <div class="fes-sum" role="alert" tabindex="-1" hidden><h3>Corrija 0 campos para continuar</h3><ul></ul></div>
+    <div class="fes-f"><label for="fes-nome">Nome completo</label><input id="fes-nome" autocomplete="name" aria-describedby="fes-nome-e"><span class="fes-err" id="fes-nome-e"></span></div>
+    <div class="fes-f"><label for="fes-email">E-mail</label><input id="fes-email" type="email" autocomplete="email" aria-describedby="fes-email-e"><span class="fes-err" id="fes-email-e"></span></div>
+    <div class="fes-f"><label for="fes-tel">Celular com DDD</label><input id="fes-tel" type="tel" inputmode="tel" autocomplete="tel-national" aria-describedby="fes-tel-h fes-tel-e"><span class="fes-help" id="fes-tel-h">Ex.: (11) 98765-4321</span><span class="fes-err" id="fes-tel-e"></span></div>
+    <div class="fes-f"><label for="fes-senha">Senha</label><input id="fes-senha" type="password" autocomplete="new-password" aria-describedby="fes-senha-h fes-senha-e"><span class="fes-help" id="fes-senha-h">Mínimo de 8 caracteres.</span><span class="fes-err" id="fes-senha-e"></span></div>
+    <button type="submit">Criar conta</button>
+    <p class="fes-done" role="status"></p>
+  </form>
+</div>
+<script>
+(() => {
+  const form = document.querySelector('.fes form');
+  const sum = form.querySelector('.fes-sum');
+  const rules = {
+    'fes-nome': (v) => !v.trim() ? 'Digite seu nome completo.' : !/\s\S/.test(v.trim()) ? 'Digite nome e sobrenome.' : '',
+    'fes-email': (v) => !v.trim() ? 'Digite seu e-mail.' : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? 'Digite o e-mail completo, como nome@empresa.com.' : '',
+    'fes-tel': (v) => { const d = v.replace(/\D/g, ''); return !d ? 'Digite seu celular.' : d.length !== 11 ? 'O celular precisa de DDD + 9 números.' : ''; },
+    'fes-senha': (v) => v.length < 8 ? `A senha precisa de pelo menos 8 caracteres (faltam ${8 - v.length}).` : '',
+  };
+  const touched = new Set();
+  const check = (id) => {
+    const el = document.getElementById(id);
+    const msg = rules[id](el.value);
+    document.getElementById(id + '-e').textContent = msg;
+    el.setAttribute('aria-invalid', String(!!msg));
+    return msg;
+  };
+  Object.keys(rules).forEach((id) => {
+    const el = document.getElementById(id);
+    el.addEventListener('blur', () => { if (el.value) touched.add(id); if (touched.has(id)) check(id); });
+    el.addEventListener('input', () => { if (touched.has(id)) check(id); });
+  });
+  const tel = document.getElementById('fes-tel');
+  tel.addEventListener('input', () => {
+    const d = tel.value.replace(/\D/g, '').slice(0, 11);
+    tel.value = d.length > 6 ? `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}` : d.length > 2 ? `(${d.slice(0, 2)}) ${d.slice(2)}` : d;
+  });
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const errs = Object.keys(rules).map((id) => { touched.add(id); return [id, check(id)]; }).filter(([, m]) => m);
+    form.querySelector('.fes-done').textContent = '';
+    if (!errs.length) { sum.hidden = true; form.querySelector('.fes-done').textContent = 'Conta criada. Enviamos um link de confirmação para o seu e-mail.'; return; }
+    sum.querySelector('h3').textContent = errs.length === 1 ? 'Corrija 1 campo para continuar' : `Corrija ${errs.length} campos para continuar`;
+    sum.querySelector('ul').innerHTML = errs.map(([id, m]) => `<li><a href="#${id}">${m}</a></li>`).join('');
+    sum.hidden = false;
+    sum.focus();
+  });
+  sum.addEventListener('click', (e) => { const a = e.target.closest('a'); if (!a) return; e.preventDefault(); document.querySelector(a.getAttribute('href')).focus(); });
+})();
+</script>

@@ -1,0 +1,56 @@
+<style>
+  .fp { position: fixed; top: 14px; left: 50%; translate: -50% 0; z-index: 10; width: max-content; max-width: calc(100% - 24px); padding: 8px; display: flex; align-items: center; gap: 8px; border-radius: var(--wc-radius-pill); background: var(--wc-glass-bg); border: 1px solid var(--wc-glass-border); box-shadow: var(--wc-shadow), inset 0 1px 0 var(--wc-glass-highlight); backdrop-filter: blur(var(--wc-blur-glass)) saturate(180%); -webkit-backdrop-filter: blur(var(--wc-blur-glass)) saturate(180%); }
+  @supports (animation-timeline: scroll()) {
+    .fp { animation: fp-compact linear both; animation-timeline: scroll(); animation-range: 0 120px; }
+    @keyframes fp-compact { from { padding: 10px; top: 22px; } to { padding: 6px; top: 10px; } }
+  }
+  .fp-logo { display: grid; place-items: center; width: 36px; height: 36px; border-radius: var(--wc-radius-pill); background: var(--wc-fg); color: var(--wc-bg); text-decoration: none; font: var(--wc-font-weight-bold) var(--wc-font-size-sm) var(--wc-font-display); }
+  .fp-nav { position: relative; display: flex; }
+  .fp-hl { position: absolute; top: 0; bottom: 0; left: 0; width: var(--w, 0); translate: var(--x, 0) 0; border-radius: var(--wc-radius-pill); background: var(--wc-sunken); opacity: var(--o, 0); transition: translate var(--wc-motion-spring-snappy-duration) var(--wc-motion-spring-snappy), width var(--wc-motion-spring-snappy-duration) var(--wc-motion-spring-snappy), opacity var(--wc-motion-duration-fast); }
+  @media (prefers-reduced-motion: reduce) { .fp-hl { transition: opacity var(--wc-motion-duration-fast); } }
+  .fp-nav a { position: relative; padding: 8px 14px; border-radius: var(--wc-radius-pill); color: var(--wc-fg-muted); text-decoration: none; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-medium); transition: color var(--wc-motion-duration-fast); }
+  .fp-nav a:hover, .fp-nav a[aria-current] { color: var(--wc-fg); }
+  .fp-cta { padding: 8px 16px; border-radius: var(--wc-radius-pill); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); text-decoration: none; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-semibold); white-space: nowrap; }
+  .fp-menu { display: none; width: 36px; height: 36px; border-radius: var(--wc-radius-pill); border: 0; background: var(--wc-sunken); color: var(--wc-fg); cursor: pointer; place-items: center; }
+  .fp a:focus-visible, .fp button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .fp-sheet { position: fixed; top: 70px; left: 12px; right: 12px; z-index: 9; padding: 8px; border-radius: var(--wc-radius-xl); background: var(--wc-surface-raised); border: 1px solid var(--wc-border); box-shadow: var(--wc-shadow-lg); display: grid; transform-origin: 50% 0; transition: opacity var(--wc-motion-duration-fast), scale var(--wc-motion-spring-snappy-duration) var(--wc-motion-spring-snappy), display var(--wc-motion-duration-fast) allow-discrete; }
+  .fp-sheet[hidden] { display: none; opacity: 0; scale: calc(1 - .04 * var(--wc-motion-distance)); }
+  @starting-style { .fp-sheet:not([hidden]) { opacity: 0; scale: calc(1 - .04 * var(--wc-motion-distance)); } }
+  .fp-sheet a { padding: 14px; border-radius: var(--wc-radius-md); color: var(--wc-fg); text-decoration: none; font-size: var(--wc-font-size-lg); }
+  .fp-sheet a:hover { background: var(--wc-sunken); }
+  .fp-sheet a:focus-visible { outline: 2px solid var(--wc-focus); }
+  @media (max-width: 600px) { .fp { width: calc(100% - 24px); justify-content: space-between; } .fp-nav { display: none; } .fp-menu { display: grid; } .fp-cta { margin-left: auto; } }
+  @media (min-width: 601px) { .fp-sheet { display: none !important; } }
+  .fp-page { min-height: 200vh; padding: 140px 20px; text-align: center; background: radial-gradient(50% 40% at 50% 0%, var(--wc-accent-soft), transparent); }
+  .fp-page h1 { font: var(--wc-font-weight-semibold) clamp(34px, 7vw, var(--wc-font-size-7xl)) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tighter) * 1em); margin: 0 auto 16px; max-width: 14ch; }
+  .fp-page p { color: var(--wc-fg-muted); max-width: 44ch; margin: 0 auto; }
+</style>
+<header class="fp">
+  <a class="fp-logo" href="#" aria-label="Estúdio Nimbo, início">N</a>
+  <nav class="fp-nav" aria-label="Principal">
+    <span class="fp-hl" aria-hidden="true"></span>
+    <a href="#" aria-current="page">Trabalhos</a><a href="#">Serviços</a><a href="#">Sobre</a><a href="#">Diário</a>
+  </nav>
+  <a class="fp-cta" href="#">Fale conosco</a>
+  <button class="fp-menu" type="button" aria-expanded="false" aria-controls="fp-sheet" aria-label="Abrir menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 8h16M4 16h16"/></svg></button>
+</header>
+<nav class="fp-sheet" id="fp-sheet" aria-label="Principal (mobile)" hidden><a href="#" aria-current="page">Trabalhos</a><a href="#">Serviços</a><a href="#">Sobre</a><a href="#">Diário</a></nav>
+<main class="fp-page"><h1>Estúdio de design para marcas com pressa</h1><p>Passe o mouse ou use Tab nos links: o destaque desliza até eles e volta para a página atual.</p></main>
+<script>
+(() => {
+  const nav = document.querySelector('.fp-nav'), hl = nav.querySelector('.fp-hl');
+  const current = nav.querySelector('[aria-current]');
+  const to = (a) => { if (!a) { hl.style.setProperty('--o', 0); return; } hl.style.setProperty('--x', a.offsetLeft + 'px'); hl.style.setProperty('--w', a.offsetWidth + 'px'); hl.style.setProperty('--o', 1); };
+  to(current);
+  nav.addEventListener('pointerover', (e) => { const a = e.target.closest('a'); if (a) to(a); });
+  nav.addEventListener('focusin', (e) => to(e.target.closest('a')));
+  nav.addEventListener('pointerleave', () => { if (!nav.contains(document.activeElement)) to(current); });
+  nav.addEventListener('focusout', (e) => { if (!nav.contains(e.relatedTarget)) to(current); });
+  addEventListener('resize', () => to(current));
+  document.fonts?.ready.then(() => to(current));
+  const btn = document.querySelector('.fp-menu'), sheet = document.getElementById('fp-sheet');
+  const set = (open, focus) => { sheet.hidden = !open; btn.setAttribute('aria-expanded', String(open)); btn.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu'); if (!open && focus) btn.focus(); };
+  btn.addEventListener('click', () => set(sheet.hidden));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !sheet.hidden) set(false, true); });
+})();
+</script>

@@ -1,0 +1,88 @@
+<style>
+  .ot { max-width: 520px; margin: 0 auto; padding: 24px 20px 40px; display: grid; gap: 16px; }
+  .ot-card { padding: 20px; border-radius: var(--wc-radius-xl); background: var(--wc-surface); border: 1px solid var(--wc-border); display: grid; gap: 14px; }
+  .ot-top small { color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .ot-eta { margin: 2px 0 0; font: var(--wc-font-weight-bold) var(--wc-font-size-4xl) / 1.05 var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); font-variant-numeric: tabular-nums; }
+  .ot-now { margin: 0; color: var(--wc-fg-muted); }
+  .ot-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+  .ot-bar i { height: 6px; border-radius: var(--wc-radius-pill); background: var(--wc-sunken); overflow: hidden; position: relative; }
+  .ot-bar i::after { content: ""; position: absolute; inset: 0; background: var(--wc-accent); transform-origin: left; transform: scaleX(0); transition: transform var(--wc-motion-duration-slow) var(--wc-motion-ease-out); }
+  .ot-bar i.done::after { transform: scaleX(1); }
+  .ot-bar i.cur::after { transform: scaleX(.5); }
+  .ot-code { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: var(--wc-radius-lg); background: var(--wc-accent-soft); }
+  .ot-code[hidden] { display: none; }
+  .ot-code span { font-size: var(--wc-font-size-sm); }
+  .ot-code b { font: var(--wc-font-weight-bold) var(--wc-font-size-2xl) var(--wc-font-mono); letter-spacing: .2em; }
+  .ot-rider { display: flex; align-items: center; gap: 12px; }
+  .ot-rider[hidden] { display: none; }
+  .ot-av { width: 44px; height: 44px; border-radius: var(--wc-radius-pill); display: grid; place-items: center; background: var(--wc-sunken); font-weight: var(--wc-font-weight-semibold); }
+  .ot-rider p { flex: 1; margin: 0; font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .ot-rider p b { display: block; color: var(--wc-fg); font-size: var(--wc-font-size-md); }
+  .ot-btn { width: 44px; height: 44px; border-radius: var(--wc-radius-pill); border: 1px solid var(--wc-border); background: var(--wc-surface); color: var(--wc-fg); display: grid; place-items: center; text-decoration: none; cursor: pointer; }
+  .ot h2 { margin: 0; font-size: var(--wc-font-size-md); font-weight: var(--wc-font-weight-semibold); }
+  .ot-steps { list-style: none; margin: 0; padding: 0; display: grid; }
+  .ot-step { position: relative; display: grid; grid-template-columns: 28px 1fr auto; gap: 12px; padding-bottom: 18px; }
+  .ot-step:last-child { padding-bottom: 0; }
+  .ot-step::before { content: ""; position: absolute; left: 13px; top: 26px; bottom: 2px; width: 2px; border-radius: 1px; background: var(--wc-border); }
+  .ot-step:last-child::before { display: none; }
+  .ot-step.done::before { background: var(--wc-success); }
+  .ot-mark { width: 28px; height: 28px; border-radius: var(--wc-radius-pill); display: grid; place-items: center; border: 2px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-success-soft); font-size: 14px; font-weight: var(--wc-font-weight-bold); }
+  .ot-step.done .ot-mark { background: var(--wc-success); border-color: var(--wc-success); color: var(--wc-surface); }
+  .ot-step.cur .ot-mark { border-color: var(--wc-accent); box-shadow: 0 0 0 4px var(--wc-accent-soft); }
+  .ot-step.cur .ot-mark::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--wc-accent); animation: ot-pulse 1.6s ease-in-out infinite; }
+  @keyframes ot-pulse { 50% { opacity: .4; } }
+  .ot-step b { display: block; font-weight: var(--wc-font-weight-medium); }
+  .ot-step:not(.done):not(.cur) b { color: var(--wc-fg-muted); font-weight: var(--wc-font-weight-regular); }
+  .ot-step span { font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .ot-step time { font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); font-variant-numeric: tabular-nums; }
+  .ot-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .ot-help { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ot-help a, .ot-help button { flex: 1; display: inline-flex; justify-content: center; align-items: center; min-height: var(--wc-size-touch-min); padding: 0 14px; border-radius: var(--wc-radius-button); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: inherit; font-weight: var(--wc-font-weight-medium); text-decoration: none; cursor: pointer; white-space: nowrap; }
+  .ot a:focus-visible, .ot button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .ot-step.cur .ot-mark::after { animation: none; } }
+</style>
+<section class="ot" aria-labelledby="ot-t">
+  <section class="ot-card">
+    <div class="ot-top"><small id="ot-t">Pedido #10483 · Sabor da Vila</small><p class="ot-eta" id="ot-eta"></p><p class="ot-now" role="status" id="ot-now"></p></div>
+    <div class="ot-bar" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="ot-code" hidden><span>Código de entrega<br>Informe ao entregador</span><b>4827</b></div>
+    <div class="ot-rider" hidden><span class="ot-av" aria-hidden="true">MS</span><p><b>Marcos Silva</b>Moto Honda CG · placa final 3F27</p><a class="ot-btn" href="#" aria-label="Mandar mensagem para Marcos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></a><a class="ot-btn" href="tel:+5511900000000" aria-label="Ligar para Marcos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg></a></div>
+  </section>
+  <section class="ot-card" aria-labelledby="ot-h">
+    <h2 id="ot-h">Andamento</h2>
+    <ol class="ot-steps"></ol>
+  </section>
+  <div class="ot-help"><a href="#">Problema com o pedido?</a><button type="button" id="ot-next">Simular próxima etapa</button></div>
+</section>
+<script>
+(() => {
+  const steps = [
+    { t: 'Pagamento aprovado', d: 'Pix confirmado', h: '18:32' },
+    { t: 'Pedido aceito', d: 'O restaurante começou a preparar', h: '18:34' },
+    { t: 'Pronto para retirada', d: 'Aguardando o entregador', h: '18:51' },
+    { t: 'Saiu para entrega', d: 'Marcos está a caminho', h: '18:58' },
+    { t: 'Entregue', d: 'Bom apetite!', h: '19:16' },
+  ];
+  const eta = ['Chega entre 19:10 e 19:25', 'Chega entre 19:10 e 19:25', 'Chega entre 19:10 e 19:20', 'Chega em ~12 min', 'Pedido entregue'];
+  const now = ['Pagamento aprovado. Aguardando o restaurante.', 'O restaurante está preparando seu pedido.', 'Pronto! O entregador está indo buscar.', 'Saiu para entrega com Marcos.', 'Entregue às 19:16.'];
+  let cur = 2;
+  const ol = document.querySelector('.ot-steps');
+  const render = () => {
+    ol.innerHTML = steps.map((s, i) => {
+      const st = i < cur || cur === steps.length - 1 && i === cur ? 'done' : i === cur ? 'cur' : '';
+      const label = st === 'done' ? 'concluído' : st === 'cur' ? 'etapa atual' : 'pendente';
+      return `<li class="ot-step ${st}"${st === 'cur' ? ' aria-current="step"' : ''}><span class="ot-mark" aria-hidden="true">${st === 'done' ? '✓' : ''}</span><div><b>${s.t}</b><span>${s.d}</span><span class="ot-sr"> (${label})</span></div><time>${i <= cur ? s.h : ''}</time></li>`;
+    }).join('');
+    document.querySelectorAll('.ot-bar i').forEach((b, i) => { b.className = i < cur || (cur === steps.length - 1) ? 'done' : i === cur ? 'cur' : ''; });
+    document.getElementById('ot-eta').textContent = eta[cur];
+    document.getElementById('ot-now').textContent = now[cur];
+    document.querySelector('.ot-code').hidden = cur !== 3;
+    document.querySelector('.ot-rider').hidden = cur !== 3;
+    const btn = document.getElementById('ot-next');
+    btn.disabled = cur === steps.length - 1;
+    btn.textContent = cur === steps.length - 1 ? 'Pedido concluído' : 'Simular próxima etapa';
+  };
+  document.getElementById('ot-next').addEventListener('click', () => { if (cur < steps.length - 1) { cur++; render(); } });
+  render();
+})();
+</script>

@@ -1,0 +1,105 @@
+<style>
+  .ae { position: sticky; top: 0; z-index: 20; background: var(--wc-glass-bg); backdrop-filter: blur(var(--wc-blur-glass)) saturate(180%); -webkit-backdrop-filter: blur(var(--wc-blur-glass)) saturate(180%); border-bottom: 1px solid var(--wc-glass-border); }
+  .ae-row { max-width: 1024px; margin: 0 auto; height: 48px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; }
+  .ae-logo { display: grid; place-items: center; width: 32px; height: 32px; color: var(--wc-fg); }
+  .ae-top { display: flex; list-style: none; margin: 0; padding: 0; }
+  .ae-top button, .ae-icon { font: inherit; font-size: var(--wc-font-size-xs); background: none; border: 0; color: var(--wc-fg); opacity: .8; padding: 0 10px; height: 48px; cursor: pointer; }
+  .ae-top button:hover, .ae-top button[aria-expanded="true"] { opacity: 1; }
+  .ae-icon { display: grid; place-items: center; width: 40px; padding: 0; }
+  .ae button:focus-visible, .ae a:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: -2px; border-radius: var(--wc-radius-sm); }
+  .ae-burger { display: none; }
+  .ae-burger i { display: block; width: 16px; height: 1.5px; margin: 3px 0; background: currentColor; transition: rotate var(--wc-motion-duration-base) var(--wc-motion-ease-out), translate var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  .ae-burger[aria-expanded="true"] i:first-child { translate: 0 2.25px; rotate: 45deg; }
+  .ae-burger[aria-expanded="true"] i:last-child { translate: 0 -2.25px; rotate: -45deg; }
+  .ae-panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--wc-motion-duration-slow) var(--wc-motion-ease-emphasized); }
+  .ae-panel.is-open { grid-template-rows: 1fr; }
+  .ae-panel > div { overflow: hidden; }
+  .ae-sub { max-width: 1024px; margin: 0 auto; padding: 32px 16px 48px 64px; display: none; gap: 56px; }
+  .ae-sub.is-active { display: flex; }
+  .ae-sub h2 { margin: 0 0 14px; font-size: var(--wc-font-size-xs); font-weight: var(--wc-font-weight-regular); color: var(--wc-fg-muted); }
+  .ae-sub ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .ae-sub li { opacity: 1; translate: 0 0; transition: opacity var(--wc-motion-duration-slow) var(--wc-motion-ease-out), translate var(--wc-motion-duration-slow) var(--wc-motion-ease-out); transition-delay: calc(80ms + var(--i, 0) * 25ms); }
+  .ae-panel:not(.is-open) .ae-sub li { opacity: 0; translate: 0 calc(-6px * var(--wc-motion-distance)); transition-delay: 0s; transition-duration: var(--wc-motion-duration-fast); }
+  .ae-sub a { color: var(--wc-fg); text-decoration: none; font-size: var(--wc-font-size-sm); }
+  .ae-sub .ae-big a { font: var(--wc-font-weight-semibold) var(--wc-font-size-2xl) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); }
+  .ae-sub a:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .ae-scrim { position: fixed; inset: 0; z-index: 10; background: color-mix(in oklch, var(--wc-bg) 40%, transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); opacity: 0; pointer-events: none; transition: opacity var(--wc-motion-duration-slow); }
+  .ae-scrim.is-on { opacity: 1; pointer-events: auto; }
+  @media (prefers-reduced-motion: reduce) { .ae-panel { transition: none; } .ae-sub li { transition: none; } }
+  @media (max-width: 760px) {
+    .ae-top { display: none; } .ae-burger { display: grid; }
+    .ae-panel.is-open { min-height: calc(100dvh - 48px); }
+    .ae-sub { padding: 16px 32px 40px; flex-direction: column; gap: 32px; }
+  }
+  .ae-page { max-width: 1024px; margin: 0 auto; padding: 72px 20px 400px; text-align: center; }
+  .ae-page h1 { font: var(--wc-font-weight-semibold) clamp(36px, 7vw, var(--wc-font-size-7xl)) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tighter) * 1em); margin: 0 0 12px; }
+  .ae-page p { color: var(--wc-fg-muted); font-size: var(--wc-font-size-lg); }
+</style>
+<header class="ae">
+  <div class="ae-row">
+    <a class="ae-logo" href="#" aria-label="Lumen, início"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="12" r="3.5" fill="currentColor"/></svg></a>
+    <nav aria-label="Principal"><ul class="ae-top">
+      <li><button type="button" aria-expanded="false" aria-controls="ae-s0">Câmeras</button></li>
+      <li><button type="button" aria-expanded="false" aria-controls="ae-s1">Lentes</button></li>
+      <li><button type="button" aria-expanded="false" aria-controls="ae-s2">Acessórios</button></li>
+      <li><button type="button" aria-expanded="false" aria-controls="ae-s3">Suporte</button></li>
+    </ul></nav>
+    <button class="ae-icon ae-burger" type="button" aria-expanded="false" aria-controls="ae-sm" aria-label="Menu"><span><i></i><i></i></span></button>
+  </div>
+  <div class="ae-panel"><div>
+    <div class="ae-sub" id="ae-s0">
+      <div><h2>Explore câmeras</h2><ul class="ae-big"><li style="--i:0"><a href="#">Lumen X2</a></li><li style="--i:1"><a href="#">Lumen Pocket</a></li><li style="--i:2"><a href="#">Lumen Cine</a></li><li style="--i:3"><a href="#">Comparar modelos</a></li></ul></div>
+      <div><h2>Comprar</h2><ul><li style="--i:4"><a href="#">Comprar câmera</a></li><li style="--i:5"><a href="#">Troca com desconto</a></li><li style="--i:6"><a href="#">Parcelamento em 12x</a></li></ul></div>
+      <div><h2>Mais</h2><ul><li style="--i:7"><a href="#">Galeria de clientes</a></li><li style="--i:8"><a href="#">Workshops</a></li></ul></div>
+    </div>
+    <div class="ae-sub" id="ae-s1">
+      <div><h2>Explore lentes</h2><ul class="ae-big"><li style="--i:0"><a href="#">Grande angular</a></li><li style="--i:1"><a href="#">Retrato 85mm</a></li><li style="--i:2"><a href="#">Zoom 24–70</a></li></ul></div>
+      <div><h2>Guias</h2><ul><li style="--i:3"><a href="#">Qual lente escolher</a></li><li style="--i:4"><a href="#">Compatibilidade</a></li></ul></div>
+    </div>
+    <div class="ae-sub" id="ae-s2">
+      <div><h2>Acessórios</h2><ul class="ae-big"><li style="--i:0"><a href="#">Baterias</a></li><li style="--i:1"><a href="#">Tripés</a></li><li style="--i:2"><a href="#">Bolsas</a></li></ul></div>
+    </div>
+    <div class="ae-sub" id="ae-s3">
+      <div><h2>Suporte</h2><ul class="ae-big"><li style="--i:0"><a href="#">Assistência técnica</a></li><li style="--i:1"><a href="#">Garantia</a></li><li style="--i:2"><a href="#">Fale conosco</a></li></ul></div>
+      <div><h2>Rápido</h2><ul><li style="--i:3"><a href="#">Status do reparo</a></li><li style="--i:4"><a href="#">Manuais</a></li></ul></div>
+    </div>
+    <nav class="ae-sub" id="ae-sm" aria-label="Principal (mobile)">
+      <ul class="ae-big"><li style="--i:0"><a href="#">Câmeras</a></li><li style="--i:1"><a href="#">Lentes</a></li><li style="--i:2"><a href="#">Acessórios</a></li><li style="--i:3"><a href="#">Suporte</a></li></ul>
+      <div><h2>Atalhos</h2><ul><li style="--i:4"><a href="#">Meus pedidos</a></li><li style="--i:5"><a href="#">Conta</a></li></ul></div>
+    </nav>
+  </div></div>
+</header>
+<div class="ae-scrim" aria-hidden="true"></div>
+<main class="ae-page"><h1>Lumen X2</h1><p>Passe o mouse ou clique em “Câmeras”: o header cresce e a página desfoca.</p></main>
+<script>
+(() => {
+  const panel = document.querySelector('.ae-panel'), scrim = document.querySelector('.ae-scrim'), header = document.querySelector('.ae');
+  const btns = [...document.querySelectorAll('.ae [aria-controls]')];
+  let cur = null, tOpen, tClose;
+  function open(b) {
+    if (cur === b) return;
+    btns.forEach((x) => { x.setAttribute('aria-expanded', String(x === b)); document.getElementById(x.getAttribute('aria-controls')).classList.toggle('is-active', x === b); });
+    cur = b; panel.classList.add('is-open'); scrim.classList.add('is-on');
+  }
+  function close(focus) {
+    if (!cur) return; const b = cur; cur = null;
+    b.setAttribute('aria-expanded', 'false'); panel.classList.remove('is-open'); scrim.classList.remove('is-on');
+    const sub = document.getElementById(b.getAttribute('aria-controls'));
+    const hide = () => { if (!cur) sub.classList.remove('is-active'); };
+    matchMedia('(prefers-reduced-motion: reduce)').matches ? hide() : setTimeout(hide, 400);
+    if (focus) b.focus();
+  }
+  btns.forEach((b) => {
+    b.addEventListener('click', () => (cur === b ? close() : open(b)));
+    if (b.closest('.ae-top')) {
+      b.addEventListener('pointerenter', (e) => { if (e.pointerType !== 'mouse') return; clearTimeout(tClose); clearTimeout(tOpen); tOpen = setTimeout(() => open(b), cur ? 0 : 150); });
+      b.addEventListener('pointerleave', () => clearTimeout(tOpen));
+    }
+  });
+  header.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && cur && cur.closest('.ae-top')) tClose = setTimeout(close, 250); });
+  header.addEventListener('pointerenter', () => clearTimeout(tClose));
+  scrim.addEventListener('click', () => close());
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(true); });
+  header.addEventListener('focusout', (e) => { if (cur && !header.contains(e.relatedTarget) && e.relatedTarget) close(); });
+})();
+</script>

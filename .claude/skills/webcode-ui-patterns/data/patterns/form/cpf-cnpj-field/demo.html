@@ -1,0 +1,95 @@
+<style>
+  .doc { min-height: 100vh; display: grid; place-content: center; padding: 20px; }
+  .doc-field { display: grid; gap: 6px; width: min(360px, calc(100vw - 40px)); }
+  .doc-field label { font-weight: var(--wc-font-weight-medium); }
+  .doc-field input { min-height: var(--wc-size-touch-min); padding: 0 12px; font: inherit; font-size: max(16px, 1em); font-variant-numeric: tabular-nums; letter-spacing: .02em; border: 1px solid var(--wc-border-strong); border-radius: var(--wc-radius-md); background: var(--wc-bg); color: var(--wc-fg); transition: border-color var(--wc-motion-duration-fast); }
+  .doc-field input:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .doc-field input[aria-invalid="true"] { border-color: var(--wc-danger); }
+  .doc-help { font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .doc-error { font-size: var(--wc-font-size-sm); color: var(--wc-danger); }
+  .doc-ok { font-size: var(--wc-font-size-sm); color: var(--wc-success); }
+  .doc-error:empty, .doc-ok:empty { display: none; }
+  .doc-try { margin-top: 16px; font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .doc-try button { font: inherit; color: var(--wc-accent); background: none; border: 0; padding: 4px; cursor: pointer; text-decoration: underline; }
+  .doc-try button:focus-visible { outline: 2px solid var(--wc-focus); }
+</style>
+<div class="doc">
+  <div class="doc-field">
+    <label for="doc-input">CPF ou CNPJ</label>
+    <input id="doc-input" autocomplete="off" inputmode="text" autocapitalize="characters" spellcheck="false" maxlength="18" aria-describedby="doc-help doc-error">
+    <span class="doc-help" id="doc-help">Só números ou letras; a pontuação entra sozinha.</span>
+    <span class="doc-error" id="doc-error"></span>
+    <span class="doc-ok" aria-live="polite"></span>
+    <p class="doc-try">Teste colar: <button type="button" data-v="52998224725">CPF</button> <button type="button" data-v="11222333000181">CNPJ</button> <button type="button" data-v="12ABC34501DE35">CNPJ alfanumérico</button></p>
+  </div>
+</div>
+<script>
+(() => {
+  const input = document.getElementById('doc-input');
+  const err = document.getElementById('doc-error');
+  const ok = document.querySelector('.doc-ok');
+  const help = document.getElementById('doc-help');
+  let touched = false;
+  const clean = (v) => v.toUpperCase().replace(/[^0-9A-Z]/g, '');
+  const sanitize = (raw) => {
+    // CPF só números; CNPJ: 12 primeiras posições alfanuméricas, 2 últimas numéricas.
+    let out = '';
+    for (const c of raw) {
+      const i = out.length;
+      if (i >= 14) break;
+      if (/[0-9]/.test(c) || (/[A-Z]/.test(c) && i < 12)) out += c;
+    }
+    return out;
+  };
+  const format = (v) => {
+    if (v.length <= 11 && /^\d*$/.test(v)) {
+      return v.replace(/^(\d{3})(\d)/, '$1.$2').replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d{1,2})$/, '.$1-$2');
+    }
+    return v.replace(/^(\w{2})(\w)/, '$1.$2').replace(/^(\w{2})\.(\w{3})(\w)/, '$1.$2.$3').replace(/\.(\w{3})(\w)/, '.$1/$2').replace(/(\w{4})(\d{1,2})$/, '$1-$2');
+  };
+  const val = (c) => c.charCodeAt(0) - 48;
+  const cpfOk = (d) => {
+    if (d.length !== 11 || /^(\d)\1+$/.test(d)) return false;
+    for (const n of [9, 10]) {
+      let s = 0; for (let i = 0; i < n; i++) s += +d[i] * (n + 1 - i);
+      if (((s * 10) % 11) % 10 !== +d[n]) return false;
+    }
+    return true;
+  };
+  const cnpjOk = (d) => {
+    if (d.length !== 14 || /^(\w)\1+$/.test(d)) return false;
+    for (const n of [12, 13]) {
+      let s = 0, w = n - 7;
+      for (let i = 0; i < n; i++) { s += val(d[i]) * w; w = w === 2 ? 9 : w - 1; }
+      const dv = s % 11 < 2 ? 0 : 11 - (s % 11);
+      if (dv !== +d[n]) return false;
+    }
+    return true;
+  };
+  const validate = () => {
+    const d = clean(input.value);
+    let msg = '';
+    if (!d) msg = 'Digite o CPF ou o CNPJ.';
+    else if (d.length < 11 || (d.length > 11 && d.length < 14)) msg = 'Faltam números: o CPF tem 11 e o CNPJ tem 14 caracteres.';
+    else if (d.length === 11 && !cpfOk(d)) msg = 'Esse CPF não existe. Confira os números.';
+    else if (d.length === 14 && !cnpjOk(d)) msg = 'Esse CNPJ não existe. Confira os caracteres.';
+    err.textContent = msg;
+    input.setAttribute('aria-invalid', String(!!msg));
+    ok.textContent = msg ? '' : (d.length === 11 ? 'CPF válido' : 'CNPJ válido');
+  };
+  const apply = () => {
+    const pos = input.selectionStart ?? input.value.length;
+    const before = sanitize(clean(input.value.slice(0, pos))).length;
+    const d = sanitize(clean(input.value));
+    input.value = format(d);
+    let k = 0, p = 0;
+    while (p < input.value.length && k < before) { if (/[0-9A-Z]/.test(input.value[p])) k++; p++; }
+    input.setSelectionRange(p, p);
+    help.textContent = d.length > 11 || /[A-Z]/.test(d) ? 'Formato de CNPJ: 00.000.000/0000-00' : 'Só números ou letras; a pontuação entra sozinha.';
+    if (touched) validate();
+  };
+  input.addEventListener('input', apply);
+  input.addEventListener('blur', () => { if (input.value) { touched = true; validate(); } });
+  document.querySelectorAll('.doc-try button').forEach((b) => b.addEventListener('click', () => { input.value = b.dataset.v; input.focus(); apply(); touched = true; validate(); }));
+})();
+</script>

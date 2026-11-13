@@ -1,0 +1,68 @@
+<style>
+  .cst { min-height: 100vh; display: grid; grid-template-rows: auto 1fr; color: var(--wc-fg); font-size: var(--wc-font-size-sm); }
+  .cst-bar { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  .cst-bar.is-on { grid-template-rows: 1fr; }
+  .cst-bar > div { overflow: hidden; }
+  .cst-in { display: flex; align-items: center; gap: 10px; padding: 10px 20px; background: var(--wc-warning-soft); border-bottom: 1px solid var(--wc-border); }
+  .cst-bar[data-mode="sync"] .cst-in { background: var(--wc-accent-soft); }
+  .cst-bar[data-mode="done"] .cst-in { background: var(--wc-success-soft); }
+  .cst-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--wc-warning); flex: none; }
+  .cst-bar[data-mode="sync"] .cst-dot { background: var(--wc-accent); animation: cst-p 1s ease-in-out infinite; }
+  .cst-bar[data-mode="done"] .cst-dot { background: var(--wc-success); }
+  @keyframes cst-p { 50% { opacity: .3; } }
+  @media (prefers-reduced-motion: reduce) { .cst-bar, .cst-bar[data-mode="sync"] .cst-dot { transition: none; animation: none; } }
+  .cst-main { padding: 20px; display: grid; gap: 16px; align-content: start; max-width: 560px; }
+  .cst-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cst button { min-height: 44px; padding: 0 16px; border-radius: var(--wc-radius-md); font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); }
+  .cst button.pri { background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); border-color: transparent; }
+  .cst button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .cst ul { list-style: none; margin: 0; padding: 0; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-md); background: var(--wc-surface); }
+  .cst li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--wc-border); font-variant-numeric: tabular-nums; }
+  .cst li:first-child { border-top: 0; }
+  .cst-tag { font-size: var(--wc-font-size-xs); padding: 2px 8px; border-radius: var(--wc-radius-pill); background: var(--wc-sunken); color: var(--wc-fg-muted); white-space: nowrap; }
+  .cst-tag.pend { background: var(--wc-warning-soft); color: var(--wc-fg); }
+  .cst-empty { padding: 14px; color: var(--wc-fg-muted); }
+</style>
+<div class="cst">
+  <div class="cst-bar" data-mode="off"><div><div class="cst-in"><i class="cst-dot" aria-hidden="true"></i><span class="cst-txt"></span></div></div></div>
+  <div class="cst-main">
+    <div class="cst-tools">
+      <button type="button" class="pri" id="cst-sale">Registrar venda</button>
+      <button type="button" id="cst-net" aria-pressed="false">Simular offline</button>
+    </div>
+    <ul id="cst-list"><li class="cst-empty">Nenhuma venda hoje.</li></ul>
+    <p role="status" id="cst-live" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)"></p>
+  </div>
+</div>
+<script>
+(() => {
+  const bar = document.querySelector('.cst-bar'), txt = bar.querySelector('.cst-txt'), list = document.getElementById('cst-list'), live = document.getElementById('cst-live'), net = document.getElementById('cst-net');
+  let online = true, n = 1040, items = [], hide;
+  const brl = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const pending = () => items.filter((i) => i.pending).length;
+  const show = (mode, text) => { clearTimeout(hide); bar.dataset.mode = mode; txt.textContent = text; bar.classList.add('is-on'); live.textContent = text; };
+  const render = () => {
+    list.innerHTML = items.length ? items.map((i) => `<li><span>Venda #${i.id} · ${brl(i.v)}</span><span class="cst-tag ${i.pending ? 'pend' : ''}">${i.pending ? 'Pendente' : 'Sincronizada'}</span></li>`).join('') : '<li class="cst-empty">Nenhuma venda hoje.</li>';
+    if (!online) show('off', `Você está offline. ${pending() ? pending() + (pending() > 1 ? ' vendas aguardam' : ' venda aguarda') + ' envio.' : 'As vendas ficam salvas aqui.'}`);
+  };
+  const sync = () => {
+    if (!pending()) { bar.classList.remove('is-on'); return; }
+    show('sync', `Conexão de volta. Enviando ${pending()}…`);
+    const step = () => {
+      const i = items.find((x) => x.pending);
+      if (!i || !online) return;
+      i.pending = false; render();
+      if (pending()) { txt.textContent = `Conexão de volta. Enviando ${pending()}…`; setTimeout(step, 450); }
+      else { show('done', 'Tudo sincronizado.'); hide = setTimeout(() => bar.classList.remove('is-on'), 3000); }
+    };
+    setTimeout(step, 450);
+  };
+  document.getElementById('cst-sale').addEventListener('click', () => { items.unshift({ id: ++n, v: Math.round(20 + Math.random() * 180) + .9, pending: !online }); render(); });
+  net.addEventListener('click', () => {
+    online = !online; net.setAttribute('aria-pressed', String(!online)); net.textContent = online ? 'Simular offline' : 'Voltar online';
+    online ? sync() : render();
+  });
+  addEventListener('offline', () => { if (online) net.click(); });
+  addEventListener('online', () => { if (!online) net.click(); });
+})();
+</script>

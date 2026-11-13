@@ -1,0 +1,28 @@
+<style>
+  @property --gb-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+  .gb-stage { min-height: 100vh; display: grid; place-content: center; padding: 24px; }
+  .gb { position: relative; width: min(340px, 100%); padding: 1px; border-radius: var(--wc-radius-xl); background: conic-gradient(from var(--gb-angle), var(--wc-border) 0deg, var(--wc-gradient-1) 60deg, var(--wc-gradient-2) 120deg, var(--wc-gradient-3) 180deg, var(--wc-border) 240deg); animation: gb-spin 6s linear infinite; isolation: isolate; }
+  .gb::before { content: ""; position: absolute; inset: 8px; z-index: -1; border-radius: inherit; background: inherit; filter: blur(24px); opacity: .5; }
+  @keyframes gb-spin { to { --gb-angle: 360deg; } }
+  @media (prefers-reduced-motion: reduce) { .gb { animation: none; } }
+  .gb-in { border-radius: calc(var(--wc-radius-xl) - 1px); background: var(--wc-surface); padding: 28px; }
+  .gb-tag { display: inline-block; font: var(--wc-font-weight-semibold) var(--wc-font-size-xs) var(--wc-font-mono); text-transform: uppercase; letter-spacing: calc(var(--wc-tracking-caps) * 1em); color: var(--wc-accent); background: var(--wc-accent-soft); padding: 4px 8px; border-radius: var(--wc-radius-pill); }
+  .gb h3 { font: var(--wc-font-weight-semibold) var(--wc-font-size-xl) var(--wc-font-display); margin: 16px 0 4px; }
+  .gb-price { font: var(--wc-font-weight-bold) var(--wc-font-size-5xl) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tighter) * 1em); font-variant-numeric: tabular-nums; }
+  .gb-price small { font-size: var(--wc-font-size-md); color: var(--wc-fg-muted); font-weight: var(--wc-font-weight-regular); letter-spacing: 0; }
+  .gb ul { padding: 0; margin: 20px 0; list-style: none; display: grid; gap: 8px; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .gb li::before { content: "✓"; color: var(--wc-success); margin-right: 8px; font-weight: 700; }
+  .gb a { display: flex; justify-content: center; align-items: center; height: var(--wc-size-control-md); border-radius: var(--wc-radius-md); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); text-decoration: none; font-weight: var(--wc-font-weight-semibold); }
+  .gb a:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+</style>
+<div class="gb-stage">
+  <div class="gb">
+    <div class="gb-in">
+      <span class="gb-tag">Mais escolhido</span>
+      <h3>Pro</h3>
+      <div class="gb-price">R$ 149<small>/mês por usuário</small></div>
+      <ul><li>Automação ilimitada</li><li>Agente de IA no atendimento</li><li>Relatórios e exportação</li><li>Suporte prioritário</li></ul>
+      <a href="#">Assinar o Pro</a>
+    </div>
+  </div>
+</div>

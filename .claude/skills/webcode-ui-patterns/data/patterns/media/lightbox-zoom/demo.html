@@ -1,0 +1,92 @@
+<style>
+  .lbz { padding: 24px 20px; color: var(--wc-fg); font-size: var(--wc-font-size-sm); display: grid; gap: 12px; max-width: 560px; }
+  .lbz-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .lbz-grid button { aspect-ratio: 1; width: 100%; border: 0; border-radius: var(--wc-radius-md); cursor: zoom-in; padding: 0; overflow: hidden; }
+  .lbz-grid button:focus-visible, .lbz-dlg button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .lbz-art { display: block; width: 100%; height: 100%; }
+  .lbz-a0 { background: linear-gradient(180deg, var(--wc-accent-soft), var(--wc-accent) 70%, var(--wc-accent-solid)); }
+  .lbz-a1 { background: radial-gradient(circle at 70% 30%, var(--wc-surface) 0 12%, transparent 13%), linear-gradient(180deg, var(--wc-warning-soft), var(--wc-warning)); }
+  .lbz-a2 { background: radial-gradient(circle at 30% 35%, var(--wc-surface) 0 10%, transparent 11%), linear-gradient(180deg, var(--wc-success-soft), var(--wc-success)); }
+  .lbz-a3 { background: linear-gradient(135deg, var(--wc-danger-soft), var(--wc-danger)); }
+  .lbz-a4 { background: linear-gradient(180deg, var(--wc-sunken), var(--wc-fg-muted)); }
+  .lbz-a5 { background: conic-gradient(from 200deg, var(--wc-accent), var(--wc-success), var(--wc-warning), var(--wc-accent)); }
+  .lbz-dlg { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; border: 0; padding: 0; background: color-mix(in oklab, var(--wc-bg) 95%, transparent); backdrop-filter: blur(16px); color: var(--wc-fg); }
+  .lbz-dlg[open] { display: grid; grid-template-rows: auto 1fr auto; }
+  .lbz-dlg::backdrop { background: transparent; }
+  .lbz-top { display: flex; align-items: center; gap: 4px; padding: 8px 12px; }
+  .lbz-top p { flex: 1; margin: 0; color: var(--wc-fg-muted); font-variant-numeric: tabular-nums; }
+  .lbz-top button, .lbz-nav { width: 44px; height: 44px; border-radius: 50%; border: 0; background: transparent; color: var(--wc-fg); font: inherit; font-size: 20px; cursor: pointer; }
+  .lbz-stage { position: relative; overflow: hidden; touch-action: none; display: grid; place-items: center; cursor: zoom-in; }
+  .lbz-stage[data-z] { cursor: grab; }
+  .lbz-img { width: min(86vw, 900px); aspect-ratio: 16 / 10; border-radius: var(--wc-radius-md); will-change: transform; }
+  .lbz-nav { position: absolute; top: 50%; translate: 0 -50%; background: var(--wc-glass-bg); border: 1px solid var(--wc-glass-border); }
+  .lbz-prev { left: 12px; } .lbz-next { right: 12px; }
+  .lbz-cap { margin: 0; padding: 12px 16px 20px; text-align: center; color: var(--wc-fg-muted); }
+  .lbz-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  @media (max-width: 560px) { .lbz-nav { display: none; } }
+</style>
+<div class="lbz">
+  <ul class="lbz-grid"></ul>
+  <p style="margin:0;color:var(--wc-fg-muted)">Duplo toque/clique ou roda ampliam; arraste para mover; deslize para trocar; puxe para baixo para fechar.</p>
+  <dialog class="lbz-dlg" aria-labelledby="lbz-t">
+    <h2 id="lbz-t" class="lbz-sr">Visualizador de imagens</h2>
+    <div class="lbz-top"><p aria-live="polite"></p><button type="button" data-z="-" aria-label="Diminuir zoom">−</button><button type="button" data-z="+" aria-label="Aumentar zoom">+</button><button type="button" data-close aria-label="Fechar">×</button></div>
+    <div class="lbz-stage"><span class="lbz-img lbz-art" role="img"></span><button type="button" class="lbz-nav lbz-prev" aria-label="Imagem anterior">‹</button><button type="button" class="lbz-nav lbz-next" aria-label="Próxima imagem">›</button></div>
+    <p class="lbz-cap"></p>
+  </dialog>
+</div>
+<script>
+(() => {
+  const names = ['Serra da Mantiqueira', 'Lençóis Maranhenses', 'Chapada Diamantina', 'Pantanal ao entardecer', 'Neblina na Serra do Mar', 'Festa junina em Caruaru'];
+  const root = document.querySelector('.lbz'), grid = root.querySelector('.lbz-grid'), dlg = root.querySelector('dialog');
+  const stage = dlg.querySelector('.lbz-stage'), img = dlg.querySelector('.lbz-img'), count = dlg.querySelector('.lbz-top p'), cap = dlg.querySelector('.lbz-cap');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let i = 0, s = 1, x = 0, y = 0, opener = null;
+  names.forEach((n, k) => { const li = document.createElement('li'); li.innerHTML = `<button type="button"><span class="lbz-art lbz-a${k}" role="img" aria-label="${n}"></span></button>`; li.firstChild.onclick = (e) => open(k, e.currentTarget); grid.append(li); });
+  const apply = (anim) => {
+    const mx = Math.max(0, (img.offsetWidth * s - stage.clientWidth) / 2), my = Math.max(0, (img.offsetHeight * s - stage.clientHeight) / 2);
+    x = s === 1 ? 0 : Math.min(Math.max(x, -mx), mx); y = s === 1 ? 0 : Math.min(Math.max(y, -my), my);
+    img.style.transition = anim && !reduced ? 'transform var(--wc-motion-duration-base) var(--wc-motion-ease-out)' : 'none';
+    img.style.transform = `translate(${x}px, ${y}px) scale(${s})`; stage.toggleAttribute('data-z', s > 1);
+  };
+  const zoomAt = (n, px = 0, py = 0, anim) => { n = Math.min(Math.max(n, 1), 4); x = px - (px - x) * n / s; y = py - (py - y) * n / s; s = n; apply(anim); };
+  const show = (k) => { i = Math.min(Math.max(k, 0), names.length - 1); s = 1; img.className = `lbz-img lbz-art lbz-a${i}`; img.setAttribute('aria-label', names[i]); count.innerHTML = `<b>${i + 1}</b> de ${names.length}<span class="lbz-sr">: ${names[i]}</span>`; cap.textContent = names[i]; apply(); };
+  const open = (k, from) => { opener = from; show(k); dlg.showModal(); };
+  dlg.addEventListener('close', () => opener?.focus());
+  dlg.querySelector('[data-close]').onclick = () => dlg.close();
+  dlg.querySelector('[data-z="+"]').onclick = () => zoomAt(s * 1.5, 0, 0, true);
+  dlg.querySelector('[data-z="-"]').onclick = () => zoomAt(s / 1.5, 0, 0, true);
+  dlg.querySelector('.lbz-prev').onclick = () => show(i - 1);
+  dlg.querySelector('.lbz-next').onclick = () => show(i + 1);
+  dlg.addEventListener('keydown', (e) => { const k = { ArrowLeft: () => show(i - 1), ArrowRight: () => show(i + 1), Home: () => show(0), End: () => show(names.length - 1), '+': () => zoomAt(s * 1.5, 0, 0, true), '-': () => zoomAt(s / 1.5, 0, 0, true), '0': () => zoomAt(1, 0, 0, true) }[e.key]; if (k) { e.preventDefault(); k(); } });
+  const local = (e) => { const r = stage.getBoundingClientRect(); return [e.clientX - r.left - r.width / 2, e.clientY - r.top - r.height / 2]; };
+  stage.addEventListener('wheel', (e) => { e.preventDefault(); const [px, py] = local(e); zoomAt(s * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.002)), px, py); }, { passive: false });
+  const pts = new Map(); let g = null, lastTap = 0;
+  stage.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('button')) return; stage.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
+    if (pts.size === 2) { const [a, b] = [...pts.values()]; g = { k: 'pinch', d: Math.hypot(a[0] - b[0], a[1] - b[1]), s }; } else g = { k: 'none', sx: e.clientX, sy: e.clientY, x, y, t: e.timeStamp };
+  });
+  stage.addEventListener('pointermove', (e) => {
+    if (!pts.has(e.pointerId) || !g) return; pts.set(e.pointerId, [e.clientX, e.clientY]);
+    if (g.k === 'pinch' && pts.size === 2) { const [a, b] = [...pts.values()]; const [px, py] = local({ clientX: (a[0] + b[0]) / 2, clientY: (a[1] + b[1]) / 2 }); zoomAt(g.s * Math.hypot(a[0] - b[0], a[1] - b[1]) / g.d, px, py); return; }
+    const dx = e.clientX - g.sx, dy = e.clientY - g.sy;
+    if (g.k === 'none' && Math.hypot(dx, dy) > 8) g.k = s > 1 ? 'pan' : Math.abs(dx) > Math.abs(dy) ? 'swipe' : dy > 0 ? 'down' : 'none';
+    img.style.transition = 'none';
+    if (g.k === 'pan') { x = g.x + dx; y = g.y + dy; apply(); }
+    else if (g.k === 'swipe') img.style.transform = `translateX(${dx}px)`;
+    else if (g.k === 'down') { img.style.transform = `translateY(${Math.max(dy, 0)}px) scale(${1 - Math.min(dy / 1200, 0.2)})`; stage.style.opacity = 1 - Math.min(dy / 400, 0.6); }
+  });
+  const up = (e) => {
+    if (!pts.delete(e.pointerId) || !g) return; stage.style.opacity = '';
+    const dx = e.clientX - g.sx, dy = e.clientY - g.sy, fast = Math.abs(dx) / Math.max(e.timeStamp - g.t, 1) > 0.5;
+    if (g.k === 'swipe' && (Math.abs(dx) > stage.clientWidth * 0.2 || fast)) show(i + (dx < 0 ? 1 : -1));
+    else if (g.k === 'down' && dy > 120) dlg.close();
+    else if (g.k === 'none' && Math.hypot(dx, dy) < 10) {
+      if (e.timeStamp - lastTap < 300) { lastTap = 0; const [px, py] = local(e); s > 1 ? zoomAt(1, 0, 0, true) : zoomAt(2.5, px, py, true); } else lastTap = e.timeStamp;
+    } else if (g.k !== 'pinch') apply(true);
+    if (g.k === 'pinch' && pts.size === 0 && s < 1.05) zoomAt(1, 0, 0, true);
+    g = pts.size ? g : null;
+  };
+  stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up);
+})();
+</script>

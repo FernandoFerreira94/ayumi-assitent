@@ -1,0 +1,40 @@
+<style>
+  .bt { min-height: 100vh; display: grid; place-content: center; padding: 40px 20px; text-align: center; }
+  .bt h2 { font: var(--wc-font-weight-semibold) clamp(32px, 6vw, var(--wc-font-size-6xl)) / var(--wc-line-height-snug) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); margin: 0 auto; max-width: 16ch; text-wrap: balance; }
+  .bt-w { display: inline-block; opacity: 0; filter: blur(8px); transform: translateY(calc(8px * var(--wc-motion-distance))); transition: opacity 600ms var(--wc-motion-ease-out), filter 600ms var(--wc-motion-ease-out), transform 600ms var(--wc-motion-ease-out); transition-delay: calc(var(--i) * 60ms); }
+  .bt h2.is-in .bt-w { opacity: 1; filter: none; transform: none; }
+  .bt h2 .muted { color: var(--wc-fg-muted); }
+  @media (prefers-reduced-motion: reduce) { .bt-w { opacity: 1; filter: none; transition: none; } }
+  .bt button { margin-top: 32px; justify-self: center; font: inherit; font-size: var(--wc-font-size-sm); padding: 6px 14px; border-radius: var(--wc-radius-pill); border: 1px solid var(--wc-border-strong); background: transparent; color: var(--wc-fg-muted); cursor: pointer; }
+  .bt button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+</style>
+<section class="bt">
+  <h2 data-split>O melhor software é aquele <span class="muted">que você esquece que está usando.</span></h2>
+  <button type="button" id="bt-replay">Repetir</button>
+</section>
+<script>
+(() => {
+  const h = document.querySelector('[data-split]');
+  h.setAttribute('aria-label', h.textContent.replace(/\s+/g, ' ').trim());
+  let i = 0;
+  const split = (node) => {
+    for (const child of [...node.childNodes]) {
+      if (child.nodeType === 3) {
+        const frag = document.createDocumentFragment();
+        child.textContent.split(/(\s+)/).forEach((part) => {
+          if (!part) return;
+          if (/^\s+$/.test(part)) { frag.append(part); return; }
+          const s = document.createElement('span');
+          s.className = 'bt-w'; s.style.setProperty('--i', i++); s.textContent = part; s.setAttribute('aria-hidden', 'true');
+          frag.append(s);
+        });
+        child.replaceWith(frag);
+      } else split(child);
+    }
+  };
+  split(h);
+  const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { h.classList.add('is-in'); io.disconnect(); } }, { threshold: 0.4 });
+  io.observe(h);
+  document.getElementById('bt-replay').addEventListener('click', () => { h.classList.remove('is-in'); void h.offsetWidth; requestAnimationFrame(() => h.classList.add('is-in')); });
+})();
+</script>

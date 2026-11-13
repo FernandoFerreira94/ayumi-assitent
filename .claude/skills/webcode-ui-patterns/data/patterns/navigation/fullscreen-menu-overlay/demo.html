@@ -1,0 +1,74 @@
+<style>
+  .fm-bar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; height: 72px; padding: 0 24px; }
+  .fm-logo { font: var(--wc-font-weight-bold) var(--wc-font-size-xl) var(--wc-font-display); color: var(--wc-fg); text-decoration: none; letter-spacing: calc(var(--wc-tracking-tight) * 1em); }
+  .fm-burger { position: relative; width: 48px; height: 48px; border-radius: var(--wc-radius-pill); border: 1px solid var(--wc-border); background: var(--wc-surface); color: var(--wc-fg); cursor: pointer; }
+  .fm-burger i { position: absolute; left: 14px; right: 14px; height: 2px; border-radius: 2px; background: currentColor; transition: translate var(--wc-motion-duration-base) var(--wc-motion-ease-out), rotate var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  .fm-burger i:first-child { top: 19px; } .fm-burger i:last-child { top: 27px; }
+  .fm-burger[aria-expanded="true"] i:first-child { translate: 0 4px; rotate: 45deg; }
+  .fm-burger[aria-expanded="true"] i:last-child { translate: 0 -4px; rotate: -45deg; }
+  .fm-burger:focus-visible, .fm a:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 3px; }
+  .fm { --cx: 100%; --cy: 0; --r: 150vmax; position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: var(--wc-fg); color: var(--wc-bg); clip-path: circle(var(--r) at var(--cx) var(--cy)); transition: clip-path var(--wc-motion-duration-slower) var(--wc-motion-ease-emphasized), display var(--wc-motion-duration-slower) allow-discrete, overlay var(--wc-motion-duration-slower) allow-discrete; }
+  .fm:not([open]) { clip-path: circle(0 at var(--cx) var(--cy)); transition-duration: var(--wc-motion-duration-slow); transition-timing-function: var(--wc-motion-ease-in); }
+  @starting-style { .fm[open] { clip-path: circle(0 at var(--cx) var(--cy)); } }
+  .fm::backdrop { background: transparent; }
+  @media (prefers-reduced-motion: reduce) {
+    .fm, .fm:not([open]) { clip-path: none; transition: opacity var(--wc-motion-duration-base), display var(--wc-motion-duration-base) allow-discrete, overlay var(--wc-motion-duration-base) allow-discrete; }
+    .fm:not([open]) { opacity: 0; }
+    @starting-style { .fm[open] { opacity: 0; clip-path: none; } }
+  }
+  .fm .fm-bar .fm-logo { color: var(--wc-bg); }
+  .fm .fm-burger { background: transparent; color: var(--wc-bg); border-color: color-mix(in oklch, var(--wc-bg) 30%, transparent); }
+  .fm .fm-burger:focus-visible, .fm a:focus-visible { outline-color: var(--wc-bg); }
+  .fm-body { min-height: calc(100% - 72px); display: grid; grid-template-columns: 1.4fr 1fr; align-items: end; gap: 32px; padding: 24px 24px 40px; }
+  .fm-links { list-style: none; margin: 0; padding: 0; counter-reset: fm; }
+  .fm-links li { overflow: hidden; }
+  .fm-links a { --i: 0; display: inline-flex; align-items: baseline; gap: 14px; color: inherit; text-decoration: none; font: var(--wc-font-weight-semibold) clamp(40px, 9vw, var(--wc-font-size-8xl)) / 1.05 var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tighter) * 1em); translate: 0 0; opacity: 1; transition: translate var(--wc-motion-duration-slower) var(--wc-motion-ease-out), opacity var(--wc-motion-duration-slow), color var(--wc-motion-duration-fast); transition-delay: calc(200ms + var(--i) * var(--wc-motion-duration-stagger)); }
+  .fm-links a::before { counter-increment: fm; content: "0" counter(fm); font: var(--wc-font-size-sm) var(--wc-font-mono); opacity: .6; }
+  @starting-style { .fm[open] .fm-links a { translate: 0 calc(100% * var(--wc-motion-distance)); opacity: 0; } }
+  .fm-links:hover a { color: color-mix(in oklch, var(--wc-bg) 45%, var(--wc-fg)); }
+  .fm-links:hover a:hover, .fm-links a[aria-current] { color: var(--wc-bg); }
+  .fm-aside { display: grid; gap: 20px; font-size: var(--wc-font-size-sm); }
+  .fm-aside a { color: inherit; }
+  .fm-aside h2 { margin: 0 0 4px; font-size: var(--wc-font-size-xs); text-transform: uppercase; letter-spacing: calc(var(--wc-tracking-caps) * 1em); }
+  .fm-aside p { margin: 0; }
+  @media (max-width: 700px) { .fm-body { grid-template-columns: 1fr; align-content: space-between; } }
+  .fm-page { padding: 12vh 24px 40px; max-width: 900px; }
+  .fm-page h1 { font: var(--wc-font-weight-semibold) clamp(40px, 8vw, var(--wc-font-size-7xl)) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tighter) * 1em); margin: 0 0 16px; }
+  .fm-page p { color: var(--wc-fg-muted); max-width: 40ch; }
+</style>
+<header class="fm-bar">
+  <a class="fm-logo" href="#">Atelier Rio</a>
+  <button class="fm-burger fm-open" type="button" aria-expanded="false" aria-controls="fm" aria-label="Abrir menu"><i></i><i></i></button>
+</header>
+<main class="fm-page"><h1>Identidades que viram assunto</h1><p>Abra o menu no botão do canto: o círculo nasce dele e os links sobem em cascata.</p></main>
+<dialog class="fm" id="fm" aria-label="Menu">
+  <div class="fm-bar"><a class="fm-logo" href="#" tabindex="-1">Atelier Rio</a><button class="fm-burger fm-close" type="button" aria-expanded="true" aria-label="Fechar menu"><i></i><i></i></button></div>
+  <div class="fm-body">
+    <nav aria-label="Principal"><ul class="fm-links">
+      <li><a href="#" style="--i:0" aria-current="page">Projetos</a></li>
+      <li><a href="#" style="--i:1">Estúdio</a></li>
+      <li><a href="#" style="--i:2">Serviços</a></li>
+      <li><a href="#" style="--i:3">Diário</a></li>
+      <li><a href="#" style="--i:4">Contato</a></li>
+    </ul></nav>
+    <div class="fm-aside">
+      <div><h2>Novo projeto</h2><p><a href="#">ola@atelierrio.com.br</a></p></div>
+      <div><h2>Estúdio</h2><p>Rua do Senado, 48 · Centro<br>Rio de Janeiro, RJ</p></div>
+      <div><h2>Redes</h2><p><a href="#">Instagram</a> · <a href="#">Behance</a> · <a href="#">LinkedIn</a></p></div>
+    </div>
+  </div>
+</dialog>
+<script>
+(() => {
+  const dlg = document.getElementById('fm'), openBtn = document.querySelector('.fm-open'), closeBtn = dlg.querySelector('.fm-close');
+  openBtn.addEventListener('click', () => {
+    const r = openBtn.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    dlg.style.setProperty('--cx', cx + 'px'); dlg.style.setProperty('--cy', cy + 'px');
+    dlg.style.setProperty('--r', Math.hypot(Math.max(cx, innerWidth - cx), Math.max(cy, innerHeight - cy)) + 'px');
+    dlg.showModal(); openBtn.setAttribute('aria-expanded', 'true'); closeBtn.focus();
+  });
+  closeBtn.addEventListener('click', () => dlg.close());
+  dlg.addEventListener('close', () => { openBtn.setAttribute('aria-expanded', 'false'); openBtn.focus(); });
+  dlg.querySelectorAll('.fm-links a').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); dlg.close(); }));
+})();
+</script>

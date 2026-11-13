@@ -1,0 +1,82 @@
+<style>
+  .cp-stage { min-height: 100vh; display: grid; place-content: center; gap: 12px; justify-items: center; padding: 20px; color: var(--wc-fg-muted); }
+  .cp-trigger { display: flex; align-items: center; gap: 12px; width: min(320px, 100%); padding: 8px 8px 8px 14px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border); background: var(--wc-surface); color: var(--wc-fg-muted); font: inherit; cursor: pointer; }
+  .cp-trigger span { flex: 1; text-align: left; }
+  .cp-trigger:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  kbd { font: var(--wc-font-weight-medium) var(--wc-font-size-xs) var(--wc-font-mono); padding: 2px 6px; border-radius: var(--wc-radius-sm); background: var(--wc-sunken); border: 1px solid var(--wc-border); color: var(--wc-fg-muted); }
+  .cp { margin: 12vh auto auto; width: min(560px, calc(100% - 32px)); padding: 0; border-radius: var(--wc-radius-lg); border: 1px solid var(--wc-border); background: var(--wc-surface-raised); color: var(--wc-fg); box-shadow: var(--wc-shadow-lg); opacity: 1; scale: 1; transition: opacity var(--wc-motion-duration-fast) var(--wc-motion-ease-out), scale var(--wc-motion-duration-fast) var(--wc-motion-ease-out); overflow: hidden; }
+  @starting-style { .cp[open] { opacity: 0; scale: .97; } }
+  .cp::backdrop { background: var(--wc-scrim); }
+  .cp-search { display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--wc-border); }
+  .cp-search svg { width: 18px; color: var(--wc-fg-muted); flex: none; }
+  .cp-search input { flex: 1; min-width: 0; height: 52px; border: 0; background: transparent; color: var(--wc-fg); font: var(--wc-font-size-lg) var(--wc-font-body); outline: none; }
+  .cp-list { list-style: none; margin: 0; padding: 8px; max-height: 340px; overflow: auto; }
+  .cp-group { font: var(--wc-font-weight-medium) var(--wc-font-size-xs) var(--wc-font-body); color: var(--wc-fg-muted); padding: 10px 10px 4px; }
+  .cp-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: var(--wc-radius-md); cursor: pointer; font-size: var(--wc-font-size-md); }
+  .cp-item i { font-style: normal; width: 20px; text-align: center; color: var(--wc-fg-muted); }
+  .cp-item span { flex: 1; }
+  .cp-item[aria-selected="true"] { background: var(--wc-sunken); }
+  .cp-item[aria-selected="true"] i { color: var(--wc-accent); }
+  .cp-empty { padding: 32px; text-align: center; color: var(--wc-fg-muted); }
+  .cp-foot { display: flex; gap: 16px; padding: 10px 16px; border-top: 1px solid var(--wc-border); font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); }
+</style>
+<div class="cp-stage">
+  <button class="cp-trigger" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Buscar ou executar…</span><kbd class="cp-mod">⌘K</kbd></button>
+  <small>Ou pressione o atalho</small>
+</div>
+<dialog class="cp" aria-label="Paleta de comandos">
+  <div class="cp-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input type="text" role="combobox" aria-expanded="true" aria-controls="cp-list" aria-autocomplete="list" placeholder="O que você quer fazer?" autocomplete="off" spellcheck="false" aria-label="Buscar comando"></div>
+  <ul class="cp-list" id="cp-list" role="listbox"></ul>
+  <div class="cp-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> navegar</span><span><kbd>↵</kbd> abrir</span><span><kbd>esc</kbd> fechar</span></div>
+</dialog>
+<script>
+(() => {
+  const data = [
+    ['Ações', '＋', 'Novo pedido', 'N'], ['Ações', '＋', 'Novo cliente', ''], ['Ações', '⇩', 'Exportar relatório do mês', ''], ['Ações', '✎', 'Emitir nota fiscal', ''],
+    ['Ir para', '⌂', 'Painel', 'G P'], ['Ir para', '▤', 'Pedidos', 'G O'], ['Ir para', '◫', 'Estoque', 'G E'], ['Ir para', '$', 'Financeiro', 'G F'], ['Ir para', '⚙', 'Configurações', ''],
+  ];
+  const dlg = document.querySelector('.cp');
+  const input = dlg.querySelector('input');
+  const list = document.getElementById('cp-list');
+  const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
+  document.querySelector('.cp-mod').textContent = isMac ? '⌘K' : 'Ctrl K';
+  let items = [], active = 0;
+  const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const render = () => {
+    const q = norm(input.value.trim());
+    const found = data.filter((d) => norm(d[2]).includes(q));
+    list.innerHTML = '';
+    if (!found.length) { list.innerHTML = '<li class="cp-empty" role="presentation">Nada encontrado para “' + input.value.replace(/</g, '&lt;') + '”</li>'; input.removeAttribute('aria-activedescendant'); items = []; return; }
+    let group = '';
+    found.forEach((d, i) => {
+      if (d[0] !== group) { group = d[0]; const g = document.createElement('li'); g.className = 'cp-group'; g.role = 'presentation'; g.textContent = group; list.append(g); }
+      const li = document.createElement('li');
+      li.className = 'cp-item'; li.id = 'cp-o' + i; li.setAttribute('role', 'option');
+      li.innerHTML = `<i aria-hidden="true">${d[1]}</i><span></span>${d[3] ? `<kbd>${d[3]}</kbd>` : ''}`;
+      li.querySelector('span').textContent = d[2];
+      li.addEventListener('pointermove', () => setActive(i));
+      li.addEventListener('click', () => run(d));
+      list.append(li);
+    });
+    items = [...list.querySelectorAll('.cp-item')];
+    setActive(0);
+  };
+  const setActive = (i) => {
+    active = i;
+    items.forEach((el, j) => el.setAttribute('aria-selected', j === i));
+    if (items[i]) { input.setAttribute('aria-activedescendant', items[i].id); items[i].scrollIntoView({ block: 'nearest' }); }
+  };
+  const run = (d) => { dlg.close(); document.querySelector('.cp-stage small').textContent = 'Executado: ' + d[2]; };
+  const open = () => { input.value = ''; render(); dlg.showModal(); input.focus(); };
+  document.querySelector('.cp-trigger').addEventListener('click', open);
+  addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); dlg.open ? dlg.close() : open(); } });
+  input.addEventListener('input', render);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' && items.length) { e.preventDefault(); setActive((active + 1) % items.length); }
+    if (e.key === 'ArrowUp' && items.length) { e.preventDefault(); setActive((active - 1 + items.length) % items.length); }
+    if (e.key === 'Enter' && items[active]) { e.preventDefault(); items[active].click(); }
+  });
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+})();
+</script>

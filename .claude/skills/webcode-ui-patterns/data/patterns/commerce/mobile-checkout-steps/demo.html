@@ -1,0 +1,104 @@
+<style>
+  .mco { min-height: 100vh; display: grid; place-items: center; padding: 16px; color: var(--wc-fg); font-size: var(--wc-font-size-sm); }
+  .mco-phone { position: relative; display: flex; flex-direction: column; width: min(390px, 100%); height: min(760px, calc(100vh - 32px)); overflow: hidden; border-radius: var(--wc-radius-xl); border: 1px solid var(--wc-border); background: var(--wc-bg); box-shadow: var(--wc-shadow-lg); }
+  @media (max-width: 480px) { .mco { padding: 0; } .mco-phone { width: 100%; height: 100vh; height: 100dvh; border-radius: 0; border: 0; } }
+  .mco-head { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; padding: env(safe-area-inset-top) 4px 0; }
+  .mco-head p { margin: 0; text-align: center; font-weight: var(--wc-font-weight-semibold); }
+  .mco-back { width: 44px; height: 44px; border: 0; background: none; color: var(--wc-accent); font-size: 22px; cursor: pointer; border-radius: var(--wc-radius-sm); }
+  .mco-back:disabled { visibility: hidden; }
+  .mco-prog { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 4px 16px 0; list-style: none; margin: 0; }
+  .mco-prog li { font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); }
+  .mco-prog li::before { content: ""; display: block; height: 4px; margin-bottom: 6px; border-radius: 99px; background: var(--wc-border); transition: background var(--wc-motion-duration-base); }
+  .mco-prog li.done::before, .mco-prog li[aria-current]::before { background: var(--wc-accent-solid); }
+  .mco-prog li[aria-current] { color: var(--wc-fg); font-weight: var(--wc-font-weight-semibold); }
+  .mco-view { position: relative; flex: 1; overflow: hidden; }
+  .mco-step { position: absolute; inset: 0; overflow-y: auto; padding: 16px 16px 24px; transition: translate var(--wc-motion-spring-smooth-duration) var(--wc-motion-spring-smooth), opacity var(--wc-motion-duration-base); }
+  .mco-step[data-pos="prev"] { translate: calc(-40px * var(--wc-motion-distance)) 0; opacity: 0; visibility: hidden; }
+  .mco-step[data-pos="next"] { translate: calc(40px * var(--wc-motion-distance)) 0; opacity: 0; visibility: hidden; }
+  .mco-step h2 { margin: 0 0 12px; font: var(--wc-font-weight-bold) var(--wc-font-size-2xl) var(--wc-font-display); outline: none; }
+  .mco fieldset { border: 0; margin: 0 0 16px; padding: 0; display: grid; gap: 8px; }
+  .mco legend { margin-bottom: 8px; font-weight: var(--wc-font-weight-semibold); color: var(--wc-fg-muted); }
+  .mco-opt { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 14px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border); background: var(--wc-surface); cursor: pointer; }
+  .mco-opt:has(input:checked) { border-color: var(--wc-accent); background: var(--wc-accent-soft); }
+  .mco-opt:has(input:focus-visible) { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .mco-opt input { width: 20px; height: 20px; accent-color: var(--wc-accent-solid); flex: none; }
+  .mco-opt span { flex: 1; } .mco-opt small { display: block; color: var(--wc-fg-muted); }
+  .mco-opt b { font-variant-numeric: tabular-nums; }
+  .mco-badge { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: var(--wc-radius-pill); background: var(--wc-success-soft); color: var(--wc-success); font-size: var(--wc-font-size-xs); font-weight: var(--wc-font-weight-semibold); }
+  .mco-rev { margin: 0 0 12px; padding: 12px 14px; border-radius: var(--wc-radius-md); background: var(--wc-surface); border: 1px solid var(--wc-border); display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+  .mco-rev dl { margin: 0; } .mco-bar[hidden] { display: none; } .mco-rev dt { color: var(--wc-fg-muted); font-size: var(--wc-font-size-xs); } .mco-rev dd { margin: 2px 0 0; }
+  .mco-rev button { min-height: 44px; padding: 0 8px; border: 0; background: none; color: var(--wc-accent); font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; }
+  .mco-sum { display: grid; gap: 6px; margin: 16px 0 0; } .mco-sum div { display: flex; justify-content: space-between; } .mco-sum div:last-child { font-weight: var(--wc-font-weight-bold); font-size: var(--wc-font-size-md); padding-top: 6px; border-top: 1px solid var(--wc-border); }
+  .mco-bar { display: flex; gap: 12px; align-items: center; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid var(--wc-border); background: var(--wc-glass-bg); backdrop-filter: blur(var(--wc-blur-glass)); }
+  .mco-total { flex: 1; } .mco-total small { display: block; color: var(--wc-fg-muted); } .mco-total b { font-size: var(--wc-font-size-lg); font-variant-numeric: tabular-nums; }
+  .mco-cta { min-height: 50px; padding: 0 20px; border: 0; border-radius: var(--wc-radius-button); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; white-space: nowrap; }
+  .mco-cta[aria-busy="true"] { opacity: .7; cursor: progress; }
+  .mco-done { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 8px; padding: 24px; text-align: center; background: var(--wc-bg); animation: mco-in var(--wc-motion-spring-bouncy-duration) var(--wc-motion-spring-bouncy); }
+  .mco-done[hidden] { display: none; }
+  .mco-done i { width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; background: var(--wc-success-soft); color: var(--wc-success); font-size: 36px; font-style: normal; }
+  .mco-done h2 { margin: 8px 0 0; outline: none; } .mco-done p { margin: 0; color: var(--wc-fg-muted); }
+  @keyframes mco-in { from { scale: .9; opacity: 0; } }
+  .mco button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .mco-step { transition-duration: 1ms; } .mco-done { animation: none; } }
+</style>
+<div class="mco">
+  <div class="mco-phone">
+    <div class="mco-head"><button type="button" class="mco-back" aria-label="Etapa anterior" disabled>‹</button><p>Finalizar pedido</p><span></span></div>
+    <ol class="mco-prog" aria-label="Progresso"><li>Entrega</li><li>Pagamento</li><li>Revisão</li></ol>
+    <div class="mco-view">
+      <section class="mco-step" data-pos="cur" aria-labelledby="mco-h1"><h2 id="mco-h1" tabindex="-1">Como você quer receber?</h2>
+        <fieldset><legend>Endereço</legend><label class="mco-opt"><input type="radio" name="addr" value="Casa · Rua Harmonia, 120 · Pinheiros" checked><span>Casa<small>Rua Harmonia, 120 · Pinheiros</small></span></label><label class="mco-opt"><input type="radio" name="addr" value="Trabalho · Av. Faria Lima, 3500"><span>Trabalho<small>Av. Faria Lima, 3500 · Itaim Bibi</small></span></label></fieldset>
+        <fieldset><legend>Frete</legend><label class="mco-opt"><input type="radio" name="ship" value="0" data-l="Normal · 3 a 5 dias úteis" checked><span>Normal<small>3 a 5 dias úteis</small></span><b>Grátis</b></label><label class="mco-opt"><input type="radio" name="ship" value="1990" data-l="Expressa · amanhã até 18h"><span>Expressa<small>Amanhã até 18h</small></span><b>R$ 19,90</b></label></fieldset>
+      </section>
+      <section class="mco-step" data-pos="next" aria-labelledby="mco-h2"><h2 id="mco-h2" tabindex="-1">Como você quer pagar?</h2>
+        <fieldset><legend>Forma de pagamento</legend>
+          <label class="mco-opt"><input type="radio" name="pay" value="pix" data-l="Pix · 5% de desconto" checked><span>Pix <span class="mco-badge">5% off</span><small>Aprovação na hora</small></span></label>
+          <label class="mco-opt"><input type="radio" name="pay" value="card" data-l="Cartão final 4242 · 3x sem juros"><span>Cartão de crédito<small>Final 4242 · até 3x sem juros</small></span></label>
+          <label class="mco-opt"><input type="radio" name="pay" value="boleto" data-l="Boleto · vence em 2 dias"><span>Boleto<small>Compensa em até 2 dias úteis</small></span></label>
+        </fieldset>
+      </section>
+      <section class="mco-step" data-pos="next" aria-labelledby="mco-h3"><h2 id="mco-h3" tabindex="-1">Revise e confirme</h2>
+        <div class="mco-rev"><dl><dt>Entregar em</dt><dd data-r="addr"></dd></dl><button type="button" data-edit="0" aria-label="Alterar endereço">Alterar</button></div>
+        <div class="mco-rev"><dl><dt>Frete</dt><dd data-r="ship"></dd></dl><button type="button" data-edit="0" aria-label="Alterar frete">Alterar</button></div>
+        <div class="mco-rev"><dl><dt>Pagamento</dt><dd data-r="pay"></dd></dl><button type="button" data-edit="1" aria-label="Alterar pagamento">Alterar</button></div>
+        <div class="mco-sum"><div><span>Produtos (2)</span><span>R$ 179,90</span></div><div><span>Frete</span><span data-r="shipv"></span></div><div><span>Desconto Pix</span><span data-r="disc"></span></div><div><span>Total</span><span data-r="tot"></span></div></div>
+      </section>
+      <div class="mco-done" hidden><i aria-hidden="true">✓</i><h2 tabindex="-1">Pedido #58213 confirmado</h2><p>O código Pix vale por 30 minutos. Avisamos por WhatsApp quando sair para entrega.</p></div>
+    </div>
+    <div class="mco-bar"><div class="mco-total"><small>Total</small><b aria-live="polite"></b></div><button type="button" class="mco-cta">Continuar</button></div>
+  </div>
+</div>
+<script>
+(() => {
+  const root = document.querySelector('.mco'), steps = [...root.querySelectorAll('.mco-step')], prog = [...root.querySelectorAll('.mco-prog li')];
+  const back = root.querySelector('.mco-back'), cta = root.querySelector('.mco-cta'), total = root.querySelector('.mco-total b'), done = root.querySelector('.mco-done');
+  const NAMES = ['Entrega', 'Pagamento', 'Revisão'], SUB = 17990; let cur = 0, review = false;
+  const brl = (c) => (c / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const val = (n) => root.querySelector(`input[name="${n}"]:checked`);
+  const calc = () => { const ship = +val('ship').value, disc = val('pay').value === 'pix' ? Math.round(SUB * .05) : 0; return { ship, disc, tot: SUB + ship - disc }; };
+  const render = () => {
+    const c = calc(); total.textContent = brl(c.tot);
+    const r = (k, t) => (root.querySelector(`[data-r="${k}"]`).textContent = t);
+    r('addr', val('addr').value); r('ship', val('ship').dataset.l); r('pay', val('pay').dataset.l); r('shipv', c.ship ? brl(c.ship) : 'Grátis'); r('disc', c.disc ? `− ${brl(c.disc)}` : '—'); r('tot', brl(c.tot));
+    cta.textContent = cur === 2 ? `Pagar ${brl(c.tot)}` : review ? 'Voltar à revisão' : 'Continuar';
+  };
+  const go = (n) => {
+    cur = n;
+    steps.forEach((s, i) => { s.dataset.pos = i < n ? 'prev' : i > n ? 'next' : 'cur'; s.inert = i !== n; });
+    prog.forEach((p, i) => { p.classList.toggle('done', i < n); i === n ? p.setAttribute('aria-current', 'step') : p.removeAttribute('aria-current'); });
+    root.querySelector('.mco-prog').setAttribute('aria-label', `Etapa ${n + 1} de 3: ${NAMES[n]}`);
+    back.disabled = n === 0; if (n === 2) review = false; render();
+    steps[n].querySelector('h2').focus({ preventScroll: true });
+  };
+  root.addEventListener('change', render);
+  back.onclick = () => go(cur - 1);
+  root.addEventListener('click', (e) => { const ed = e.target.closest('[data-edit]'); if (ed) { review = true; go(+ed.dataset.edit); } });
+  cta.onclick = () => {
+    if (cta.getAttribute('aria-busy') === 'true') return;
+    if (cur < 2) return go(review ? 2 : cur + 1);
+    cta.setAttribute('aria-busy', 'true'); cta.textContent = 'Processando…';
+    setTimeout(() => { done.hidden = false; root.querySelector('.mco-bar').hidden = true; steps.forEach((s) => (s.inert = true)); back.disabled = true; done.querySelector('h2').focus(); }, 900);
+  };
+  steps.forEach((s, i) => (s.inert = i !== 0)); render();
+})();
+</script>

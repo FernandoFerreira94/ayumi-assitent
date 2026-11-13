@@ -1,0 +1,64 @@
+<style>
+  .fq { max-width: 760px; margin: 0 auto; padding: 56px 20px 64px; display: grid; gap: 24px; interpolate-size: allow-keywords; }
+  .fq h2 { margin: 0; font: var(--wc-font-weight-semibold) clamp(28px, 4.4vw, var(--wc-font-size-5xl)) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); text-wrap: balance; }
+  .fq-search { display: grid; gap: 6px; }
+  .fq-search label { font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-medium); }
+  .fq-search input { font: inherit; min-height: var(--wc-size-touch-min); padding: 0 14px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); }
+  .fq-search input:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .fq-count { font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); min-height: 1.4em; margin: 0; }
+  .fq-list { border-top: 1px solid var(--wc-border); }
+  .fq details { border-bottom: 1px solid var(--wc-border); }
+  .fq summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; padding: 14px 4px; font-weight: var(--wc-font-weight-medium); font-size: var(--wc-font-size-lg); border-radius: var(--wc-radius-sm); }
+  .fq summary::-webkit-details-marker { display: none; }
+  .fq summary:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .fq summary:hover { color: var(--wc-accent); }
+  .fq-ico { flex: none; width: 28px; height: 28px; border-radius: var(--wc-radius-pill); display: grid; place-items: center; background: var(--wc-sunken); color: var(--wc-fg-muted); transition: transform var(--wc-motion-duration-base) var(--wc-motion-ease-out), background-color var(--wc-motion-duration-fast) var(--wc-motion-ease-out); }
+  .fq details[open] .fq-ico { transform: rotate(45deg); background: var(--wc-accent-soft); color: var(--wc-accent); }
+  .fq details::details-content { block-size: 0; overflow: clip; transition: block-size var(--wc-motion-duration-base) var(--wc-motion-ease-out), content-visibility var(--wc-motion-duration-base) allow-discrete; }
+  .fq details[open]::details-content { block-size: auto; }
+  .fq-a { padding: 0 44px 18px 4px; color: var(--wc-fg-muted); line-height: var(--wc-line-height-relaxed); }
+  .fq-a p { margin: 0; }
+  .fq-a a { color: var(--wc-accent); }
+  .fq-empty { padding: 24px 4px; color: var(--wc-fg-muted); }
+  .fq-help { margin: 0; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .fq-help a { color: var(--wc-accent); font-weight: var(--wc-font-weight-medium); }
+  @media (prefers-reduced-motion: reduce) { .fq details::details-content, .fq-ico { transition: none; } }
+</style>
+<section class="fq" aria-labelledby="fq-t">
+  <h2 id="fq-t">Perguntas frequentes</h2>
+  <div class="fq-search">
+    <label for="fq-q">Buscar nas perguntas</label>
+    <input id="fq-q" type="search" placeholder="Ex.: cancelamento, nota fiscal, Pix" autocomplete="off" aria-describedby="fq-count">
+    <p class="fq-count" id="fq-count" role="status"></p>
+  </div>
+  <div class="fq-list">
+    <details name="faq" open><summary>Posso cancelar quando quiser?<span class="fq-ico" aria-hidden="true">+</span></summary><div class="fq-a"><p>Sim. O cancelamento é feito em Ajustes → Plano, sem ligação e sem multa. No plano anual, devolvemos o valor proporcional aos meses não usados.</p></div></details>
+    <details name="faq"><summary>Vocês emitem nota fiscal?<span class="fq-ico" aria-hidden="true">+</span></summary><div class="fq-a"><p>Emitimos NFS-e para toda assinatura, enviada por e-mail no dia da cobrança. Para empresas, a nota sai com o CNPJ cadastrado.</p></div></details>
+    <details name="faq"><summary>Quais formas de pagamento são aceitas?<span class="fq-ico" aria-hidden="true">+</span></summary><div class="fq-a"><p>Pix, cartão de crédito (até 12× no anual) e boleto. No Pix o plano é liberado na hora; no boleto, em até 2 dias úteis.</p></div></details>
+    <details name="faq"><summary>Meus dados ficam onde? E a LGPD?<span class="fq-ico" aria-hidden="true">+</span></summary><div class="fq-a"><p>Os dados ficam em servidores no Brasil, com backup diário e criptografia. Você pode exportar ou apagar tudo a qualquer momento. Veja a <a href="#">política de privacidade</a>.</p></div></details>
+    <details name="faq"><summary>Preciso instalar alguma coisa?<span class="fq-ico" aria-hidden="true">+</span></summary><div class="fq-a"><p>Não. Funciona no navegador do computador e do celular. Para o caixa offline, instale o app como PWA com um toque.</p></div></details>
+    <details name="faq"><summary>Vocês ajudam a migrar da minha planilha?<span class="fq-ico" aria-hidden="true">+</span></summary><div class="fq-a"><p>Sim. Importe produtos e clientes por planilha em Ajustes → Importar, ou peça a migração assistida, gratuita nos planos Profissional e Rede.</p></div></details>
+    <p class="fq-empty" hidden>Nenhuma pergunta encontrada. Tente outra palavra ou fale com a gente.</p>
+  </div>
+  <p class="fq-help">Não achou o que procurava? <a href="#">Fale com o suporte no WhatsApp</a>, de seg a sex, das 8h às 20h.</p>
+</section>
+<script>
+(() => {
+  const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const q = document.getElementById('fq-q');
+  const items = [...document.querySelectorAll('.fq details')];
+  const count = document.getElementById('fq-count');
+  const empty = document.querySelector('.fq-empty');
+  let t;
+  q.addEventListener('input', () => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      const term = norm(q.value.trim());
+      let n = 0;
+      items.forEach((d) => { const hit = !term || norm(d.textContent).includes(term); d.hidden = !hit; if (hit) n++; });
+      empty.hidden = n > 0;
+      count.textContent = term ? (n === 1 ? '1 pergunta encontrada' : `${n} perguntas encontradas`) : '';
+    }, 150);
+  });
+})();
+</script>
