@@ -42,3 +42,21 @@ test("expediente salvo e vagas listadas com texto para copiar", async ({ page, c
   expect(copied).toContain("Horários disponíveis para Gel");
   expect(copied).toMatch(/\*\w{3}, \d{2}\/\d{2}\*/);
 });
+
+test("+ Serviço em Vagas abre a folha por cima, sem sair da tela", async ({ page }) => {
+  await page.goto("/vagas");
+  // Sem serviço: o vazio já oferece criar na folha
+  const trigger = page.getByRole("button", { name: /^(\+ Serviço|Novo serviço)$/ });
+  await expect(async () => {
+    await trigger.first().click({ timeout: 1000 });
+    await expect(page.getByRole("dialog", { name: "Novo serviço" })).toBeVisible({ timeout: 1000 });
+  }).toPass();
+  const sheet = page.getByRole("dialog", { name: "Novo serviço" });
+  await sheet.getByRole("textbox", { name: "Nome", exact: true }).fill("Spa dos pés");
+  await sheet.getByRole("textbox", { name: /Preço/ }).fill("60,00");
+  await sheet.getByRole("button", { name: "Criar serviço" }).click();
+  await expect(page.getByText("Serviço criado")).toBeVisible();
+  await expect(sheet).toBeHidden();
+  await expect(page).toHaveURL(/\/vagas/);
+  await expect(page.getByRole("link", { name: "Spa dos pés" })).toBeVisible();
+});
