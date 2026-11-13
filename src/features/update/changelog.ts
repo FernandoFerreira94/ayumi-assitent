@@ -31,6 +31,17 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 /** Mais recente primeiro. */
 export const RELEASES: readonly Release[] = [
   {
+    version: "1.3.0",
+    date: "2026-11-13",
+    title: "Agenda no Calendário do iPhone",
+    items: [
+      {
+        kind: "new",
+        text: "Em Ajustes > Conexões, o Calendário do iPhone: um link que põe seus agendamentos no app Calendário e atualiza sozinho. Dá para ocultar o nome das clientes.",
+      },
+    ],
+  },
+  {
     version: "1.2.0",
     date: "2026-11-12",
     title: "Notificações com ícone e cor",
@@ -66,7 +77,10 @@ export const RELEASES: readonly Release[] = [
       { kind: "removed", text: "Saiu o bom dia motivacional de horário fixo." },
       { kind: "improved", text: "O WhatsApp não manda mensagem automática das 21h às 6h." },
       { kind: "new", text: "Meu perfil: campo para o telefone comercial." },
-      { kind: "removed", text: "Saiu o cartão “Avisos do dia”: tudo o que ele fazia continua funcionando em Notificação." },
+      {
+        kind: "removed",
+        text: "Saiu o cartão “Avisos do dia”: tudo o que ele fazia continua funcionando em Notificação.",
+      },
       { kind: "new", text: "Em Atualização do app você vê o que mudou, e o app avisa quando a versão é atualizada." },
     ],
   },

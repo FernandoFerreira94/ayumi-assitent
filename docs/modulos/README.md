@@ -13,6 +13,7 @@ Atualizado em 12/11/2026 (main em #104). Ache o módulo da task, leia a coluna "
 | Lembretes | [lembretes.md](lembretes.md) | `features/reminders`, worker | 1º/2º aviso, "não respondeu", textos editáveis | WhatsApp (porta de envio), push, agenda (status), worker |
 | Avisos do dia e push | [avisos-push.md](avisos-push.md) | `features/owner-notices`, `features/push`, worker | Push para a profissional (bom dia, folga, fim do expediente, semana, feriados) | Vagas (expediente), agenda, clima/localização, worker, VAPID |
 | Google | [google.md](google.md) | `features/google` | Login Google, espelhar agendamentos no Google Agenda, importar eventos como ocupado | Agenda, vagas/bloqueios, contatos, Ajustes > Conexões |
+| Calendário do iPhone | [calendario-iphone.md](calendario-iphone.md) | `features/calendar-feed`, rota `api/calendar/[token]` | Link assinado (webcal/ICS) só leitura com os agendamentos, para quem usa iCloud | Agenda (agendamentos/bloqueios), Google (aviso para não duplicar), Ajustes > Conexões |
 | Perfil, Ajustes e casca | [perfil-ajustes.md](perfil-ajustes.md) | `features/salon`, `features/tour`, `features/install`, `features/update`, `features/shell`, telas `perfil`, `ajustes` | Dados do salão/pessoa, mascote/tema, IA, tour, instalar PWA, atualização | Quase todos os cartões de Ajustes vêm de outros módulos |
 | Marca e UI | [marca-ui.md](marca-ui.md) | `components/*`, `app/globals.css` | Mascote/temas, toasts, nav (barra, menu, sino), componentes base | Toda tela; mascote também no push |
 | Plataforma | [plataforma.md](plataforma.md) | `db`, `lib`, `worker`, `proxy.ts`, `api/*`, `scripts` | Auth, estúdio/RLS, migrations, worker, deploy, backup | Tudo |
@@ -30,6 +31,7 @@ Gerada por varredura de `@/features/*`. "Usa" = depende de; "Usado por" = quem q
 | contacts | google | — | clients |
 | finance | appointments | — | appointments, expenses |
 | google | appointments | appointments, contacts, shell | tenants, appointments, blocks, clients |
+| calendar-feed | appointments | ajustes | tenants (calendar_token_hash, calendar_hide_names), appointments, blocks, clients, services |
 | hours | appointments, blocks, services | appointments, calendar, owner-notices | working_hours, slot_lists, blocks |
 | messaging | appointments, push, reminders | appointments, clients, notifications, reminders, shell, whatsapp, webhook, worker | messages, appointments, clients, tenants |
 | notifications | messaging | nav (sino) | messages (via messaging) |
