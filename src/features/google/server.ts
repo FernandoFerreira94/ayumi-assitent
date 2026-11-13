@@ -2,6 +2,7 @@ import "server-only";
 import { sql } from "drizzle-orm";
 import { getDb, withTenant } from "@/db/client";
 import {
+  revokeToken,
   googleCalendar,
   googleCalendarReader,
   GoogleApiError,
@@ -101,5 +102,16 @@ export async function importExternalEvents(tenantId: string, force = false): Pro
   } catch (e) {
     lastImport.delete(tenantId); // tenta de novo na próxima tela
     console.error("google_import_failed", { error: e instanceof Error ? e.message : String(e) });
+  }
+}
+
+/** Revoga no Google o acesso de uma pessoa (excluir conta). Nunca lança: a exclusão segue mesmo sem rede. */
+export async function revokeGoogleOfUser(userId: string): Promise<void> {
+  const rows = await getDb().execute<{ refresh: string | null; access: string | null }>(sql`
+    select "refreshToken" as refresh, "accessToken" as access from account
+    where "userId" = ${userId} and "providerId" = 'google'`);
+  for (const r of rows) {
+    const token = (await readToken(r.refresh).catch(() => null)) ?? (await readToken(r.access).catch(() => null));
+    if (token) await revokeToken(token).catch(() => undefined);
   }
 }

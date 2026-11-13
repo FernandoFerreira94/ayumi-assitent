@@ -4,6 +4,8 @@ import { PageShell } from "@/components/ui/PageShell";
 import { getDb } from "@/db/client";
 import { tenants } from "@/db/schema";
 import { adminFromEnv } from "@/features/messaging/evolution-admin";
+import { DeleteAccountSheet } from "@/features/salon/DeleteAccountSheet";
+import { ExportDataButton } from "@/features/salon/ExportDataButton";
 import { MascotPicker } from "@/features/salon/MascotPicker";
 import { SalonForm } from "@/features/salon/SalonForm";
 import { phoneFromWhatsapp, type Segment } from "@/features/salon/schema";
@@ -54,6 +56,8 @@ export default async function PerfilPage() {
             segments: (t?.segments ?? []) as Segment[],
           }}
         />
+        <ExportDataButton />
+        <DeleteAccountSheet />
       </div>
     </PageShell>
   );
