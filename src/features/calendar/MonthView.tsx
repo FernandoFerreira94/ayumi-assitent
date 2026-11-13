@@ -11,6 +11,7 @@ export function MonthGrid({
   closedWeekdays,
   pendingDay,
   onDay,
+  stream = false,
 }: {
   month: string;
   /** undefined = o ano ainda está carregando. */
@@ -20,18 +21,24 @@ export function MonthGrid({
   closedWeekdays: number[];
   pendingDay?: string | null;
   onDay: (day: string, el: HTMLElement) => void;
+  /** Dentro da rolagem contínua: a linha dos dias da semana fica fixa no topo (uma só) e o ano aparece se não for o atual. */
+  stream?: boolean;
 }) {
   const thisMonth = today.slice(0, 7) === month;
+  const otherYear = stream && month.slice(0, 4) !== today.slice(0, 4);
   return (
     <div>
       <h2 className={`px-1 pb-1 text-[34px] font-bold leading-tight ${thisMonth ? "text-rose" : ""}`}>
         {MONTH_NAMES[Number(month.slice(5, 7)) - 1]}
+        {otherYear ? <span className="ml-2 text-[20px] font-bold text-muted">{month.slice(0, 4)}</span> : null}
       </h2>
-      <div className="cal-wk" aria-hidden="true">
-        {WEEKDAYS.map((w, i) => (
-          <span key={i}>{w}</span>
-        ))}
-      </div>
+      {stream ? null : (
+        <div className="cal-wk" aria-hidden="true">
+          {WEEKDAYS.map((w, i) => (
+            <span key={i}>{w}</span>
+          ))}
+        </div>
+      )}
       <div className="cal-month" data-loading={days ? undefined : true}>
         {monthWeeks(month)
           .flat()

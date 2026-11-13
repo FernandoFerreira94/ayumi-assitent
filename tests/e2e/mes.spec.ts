@@ -55,3 +55,32 @@ test("Calendário: setas e deslizar trocam o mês sem recarregar a página", asy
   await expect(page.getByRole("heading", { name: "Julho" })).toBeVisible();
   expect(await page.evaluate(() => (window as unknown as { __casca?: number }).__casca)).toBe(1);
 });
+
+test("Calendário: rolar para baixo e para cima passa pelos meses, como no iPhone", async ({ page }) => {
+  await page.goto("/calendario?v=mes&m=2026-05");
+  await expect(page.getByRole("heading", { name: "Maio" })).toBeVisible();
+  await page.evaluate(() => ((window as unknown as { __casca: number }).__casca = 1));
+  const box = page.locator(".cal-scroll");
+  // já hidratou: a lista abriu rolada até maio (tem meses em cima)
+  await expect.poll(() => box.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  // para baixo: o mês que chega ao topo vira o mês da URL (e as setas/ano seguem funcionando)
+  await box.evaluate((el) => {
+    const sec = el.querySelector<HTMLElement>('[data-month="2026-08"]')!;
+    el.scrollTop = sec.offsetTop - 20;
+  });
+  await expect(page).toHaveURL(/m=2026-08/);
+  // bem para baixo: mais meses entram sob demanda (ano seguinte)
+  for (let i = 0; i < 6; i++) await box.evaluate((el) => (el.scrollTop = el.scrollHeight));
+  await expect(page.locator('[data-month="2027-03"]')).toHaveCount(1);
+  // para cima, passando do começo: meses anteriores entram em cima sem pular a tela
+  await box.evaluate((el) => {
+    const sec = el.querySelector<HTMLElement>('[data-month="2026-03"]')!;
+    el.scrollTop = sec.offsetTop - 20;
+  });
+  await expect(page).toHaveURL(/m=2026-03/);
+  await box.evaluate((el) => (el.scrollTop = 0));
+  await expect(page.locator('[data-month="2025-08"]')).toHaveCount(1);
+  // a página não recarregou e o dia continua abrindo pelo mês
+  expect(await page.evaluate(() => (window as unknown as { __casca?: number }).__casca)).toBe(1);
+  await page.screenshot({ path: "test-results/rolagem-meses.png" });
+});
