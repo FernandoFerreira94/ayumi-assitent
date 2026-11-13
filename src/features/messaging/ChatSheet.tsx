@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Drawer } from "vaul";
+import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { messageFor, type ErrorCode } from "@/lib/errors";
 import { formatTime, todayStr } from "@/lib/dates";
 import { loadConversation, sendClientMessage } from "./actions";
@@ -91,6 +92,7 @@ export function ChatSheet({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
+  const side = useSheetSide();
   const [ownOpen, setOwnOpen] = useState(false);
   const open = controlledOpen ?? ownOpen;
   const setOpen = (next: boolean) => {
@@ -175,7 +177,7 @@ export function ChatSheet({
   }
 
   return (
-    <Root open={open} onOpenChange={setOpen} repositionInputs={false}>
+    <Root direction={side} open={open} onOpenChange={setOpen} repositionInputs={false}>
       {children ? (
         <Drawer.Trigger className={triggerClassName} aria-label={triggerLabel}>
           {children}
@@ -183,12 +185,11 @@ export function ChatSheet({
       ) : null}
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
-        <Drawer.Content
-          className="fixed inset-x-0 bottom-0 z-50 mx-auto flex h-[85dvh] max-w-[520px] flex-col overflow-hidden rounded-t-3xl bg-chat-bg outline-none"
-        >
+        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto h-[85dvh] max-w-[520px] rounded-t-3xl outline-none", "z-50 flex flex-col bg-chat-bg p-0! overflow-hidden!")}>
+<SidePanelClose />
           <header className="sheet flex items-center gap-3 px-4 pb-3 pt-2">
             <span
-              className="absolute left-1/2 top-1.5 h-1 w-10 -translate-x-1/2 rounded-full bg-line"
+              className="absolute left-1/2 top-1.5 h-1 w-10 -translate-x-1/2 rounded-full bg-line md:hidden"
               aria-hidden="true"
             />
             <span

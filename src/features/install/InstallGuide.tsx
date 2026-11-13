@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Drawer } from "vaul";
+import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { notify } from "@/components/feedback/toast";
 import { Mascot } from "@/components/brand/Mascot";
 import { Icon } from "@/components/ui/Icon";
@@ -65,16 +66,18 @@ export function InstallSheet({
   onOpenChange?: (open: boolean) => void;
   children?: React.ReactNode;
 }) {
+  const side = useSheetSide();
   const { platform, canPrompt, prompt } = install;
   // Computador: não dá para saber qual celular ela usa, então mostra os dois caminhos
   const guides = platform === "other" ? (["ios", "android"] as const) : [platform];
 
   return (
-    <Drawer.Root open={open} onOpenChange={onOpenChange}>
+    <Drawer.Root direction={side} open={open} onOpenChange={onOpenChange}>
       {children}
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-        <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[85dvh] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
+        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-h-[85dvh] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
+<SidePanelClose />
           <Mascot mood="happy" size={72} className="mx-auto" />
           <Drawer.Title className="pt-2 text-center text-xl font-bold">Instalar na tela de início</Drawer.Title>
           <Drawer.Description className="pb-4 text-center text-sm font-semibold text-muted">

@@ -1,26 +1,17 @@
 import { Suspense } from "react";
-import { eq } from "drizzle-orm";
-import { getDb } from "@/db/client";
-import { tenants } from "@/db/schema";
-import { countPendencias } from "@/features/appointments/pendencias";
-import { shellStatus } from "@/features/shell/status";
-import { requireTenant } from "@/lib/tenant";
 // Default import: o bundler só garante o export default de JSON
 import pkg from "../../../package.json";
 import { AppMenu } from "./AppMenu";
+import { getMenuData } from "./menu-data";
 
 async function MenuWithData() {
-  const { tenantId, userName } = await requireTenant();
-  const [{ whatsapp, pendencias }, [tenant]] = await Promise.all([
-    shellStatus(tenantId),
-    getDb().select({ name: tenants.name, ownerName: tenants.ownerName }).from(tenants).where(eq(tenants.id, tenantId)),
-  ]);
+  const m = await getMenuData();
   return (
     <AppMenu
-      userName={tenant?.ownerName || userName}
-      studioName={tenant?.name ?? null}
-      whatsapp={whatsapp}
-      pendencias={countPendencias(pendencias)}
+      userName={m.userName}
+      studioName={m.studioName}
+      whatsapp={m.whatsapp}
+      pendencias={m.pendencias}
       version={pkg.version}
     />
   );

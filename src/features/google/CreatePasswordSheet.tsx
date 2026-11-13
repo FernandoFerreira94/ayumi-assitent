@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { Drawer } from "vaul";
+import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import { Icon } from "@/components/ui/Icon";
@@ -25,6 +26,7 @@ export function CreatePasswordSheet({
   email?: string;
   onCreated: () => void;
 }) {
+  const side = useSheetSide();
   const [show, setShow] = useState(false);
   const [state, action] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
     const res = await createPassword(prev, fd).catch(() => null);
@@ -42,10 +44,11 @@ export function CreatePasswordSheet({
   const err = state && !state.ok && state.code === "VALIDATION" ? state : null;
 
   return (
-    <Drawer.Root repositionInputs={false} open={open} onOpenChange={onOpenChange}>
+    <Drawer.Root direction={side} repositionInputs={false} open={open} onOpenChange={onOpenChange}>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-        <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
+        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
+<SidePanelClose />
           <Drawer.Title className="pb-1 text-xl font-bold">Criar senha</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
             {email ? (

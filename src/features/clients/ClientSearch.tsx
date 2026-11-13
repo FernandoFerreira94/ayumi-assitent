@@ -34,6 +34,7 @@ export function ClientSearch({ initial }: { initial: string }) {
       }}
     >
       <input
+        data-search
         name="q"
         value={value}
         onChange={(e) => {

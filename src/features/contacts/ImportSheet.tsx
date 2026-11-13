@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { Drawer } from "vaul";
+import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { notify } from "@/components/feedback/toast";
 import type { ActionResult } from "@/lib/errors";
 import { maskPhone } from "@/lib/phone";
@@ -14,6 +15,7 @@ const btn =
   "glass min-h-12 w-full rounded-2xl px-4 py-2 text-left font-bold transition-transform active:scale-[0.99] disabled:opacity-60";
 
 export function ImportSheet() {
+  const side = useSheetSide();
   const [open, setOpen] = useState(false);
   const [list, setList] = useState<Preview | null>(null);
   const [ignored, setIgnored] = useState(0);
@@ -68,7 +70,7 @@ export function ImportSheet() {
   const allOn = fresh.length > 0 && fresh.every((c) => picked.has(c.phone));
 
   return (
-    <Drawer.Root
+    <Drawer.Root direction={side}
       repositionInputs={false}
       open={open}
       onOpenChange={(o) => {
@@ -93,9 +95,8 @@ export function ImportSheet() {
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-        <Drawer.Content
-          className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[85dvh] max-w-[520px] flex-col rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none"
-        >
+        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-h-[85dvh] max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50 flex flex-col")}>
+<SidePanelClose />
           <Drawer.Title className="pb-1 text-xl font-bold">Importar clientes</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
             {list ? "Escolha quem entra na sua lista." : "Traga seus contatos sem digitar um por um."}

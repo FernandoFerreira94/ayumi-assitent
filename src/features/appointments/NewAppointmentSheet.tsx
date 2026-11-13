@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Drawer } from "vaul";
+import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { LetterPicker, type PickerOption } from "@/components/ui/LetterPicker";
 import { LoadingRegion, Skeleton } from "@/components/ui/Skeleton";
 import { Icon } from "@/components/ui/Icon";
@@ -76,6 +77,7 @@ export function NewAppointmentSheet({
   /** Avisa quando a folha fecha, para a agenda tirar o bloco provisório. */
   onClosed?: () => void;
 }) {
+  const side = useSheetSide();
   const [open, setOpen] = useState(false);
   /** null = formulário; senão, a Bolha trabalhando ou o resultado por cima de tudo. */
   const [booking, setBooking] = useState<Booking | null>(null);
@@ -194,7 +196,7 @@ export function NewAppointmentSheet({
   }, [done]);
 
   return (
-    <Drawer.Root
+    <Drawer.Root direction={side}
       repositionInputs={false}
       open={open}
       dismissible={!working}
@@ -230,9 +232,14 @@ export function NewAppointmentSheet({
           className={
             booking
               ? "booking-ov fixed inset-0 z-50 overflow-y-auto outline-none"
-              : "sheet fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] flex-col rounded-t-3xl outline-none"
+              : sheetClass(
+                  side,
+                  "fixed inset-x-0 bottom-0 mx-auto max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] rounded-t-3xl outline-none",
+                  "sheet z-50 flex flex-col",
+                )
           }
         >
+          {booking ? null : <SidePanelClose />}
           {/* Só os campos rolam; o botão Agendar fica fixo no rodapé da folha, sempre à vista
               (o aviso de fora do expediente, desconto e 2+ serviços empurravam ele para fora da tela) */}
           <div hidden={booking !== null} className="flex min-h-0 flex-1 flex-col">

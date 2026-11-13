@@ -2429,3 +2429,200 @@ html[data-kb] .tabbar {
 textarea {
   scroll-margin-block: 16px;
 }
+
+/* ── Menu lateral (tablet e desktop). Trilho de ícones até 1279 px; com nomes a partir de 1280 px. ── */
+.sidenav,
+.sidenav-placeholder {
+  display: none;
+}
+@media (min-width: 48rem) {
+  .tabbar {
+    display: none;
+  }
+  .sidenav-placeholder {
+    display: block;
+    flex: none;
+    width: 76px;
+  }
+  .sidenav {
+    position: sticky;
+    top: 0;
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: calc(76px + env(safe-area-inset-left));
+    height: 100dvh;
+    overflow-y: auto;
+    padding: max(env(safe-area-inset-top), 16px) 0 max(env(safe-area-inset-bottom), 16px) env(safe-area-inset-left);
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+  }
+  .sidenav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 12px;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--primary);
+  }
+  .sidenav-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--primary);
+  }
+  .sidenav-list {
+    display: grid;
+    gap: 4px;
+    width: 100%;
+    margin: 0;
+    padding: 0 12px;
+    list-style: none;
+  }
+  .sidenav-link,
+  .sidenav-new {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 44px;
+    padding: 0 10px;
+    border-radius: 14px;
+    font-weight: 600;
+    color: var(--fg);
+  }
+  .sidenav-link[aria-current="page"] {
+    background: color-mix(in srgb, var(--primary) 12%, transparent);
+    color: var(--primary);
+  }
+  .sidenav-link:focus-visible,
+  .sidenav-new:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+  .sidenav-new {
+    width: 44px;
+    margin-bottom: 8px;
+    color: #fff;
+    background: var(--primary);
+  }
+  .sidenav-icon {
+    width: 22px;
+    height: 22px;
+    flex: none;
+  }
+  .sidenav-count {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    display: grid;
+    place-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--primary);
+  }
+  .sidenav-kbd {
+    display: none;
+  }
+  .sidenav-sep {
+    width: calc(100% - 24px);
+    margin: 8px 12px;
+    border: 0;
+    border-top: 1px solid var(--line);
+  }
+  .sidenav-profile {
+    margin: auto 12px 0;
+  }
+  .sidenav-avatar {
+    display: grid;
+    flex: none;
+    place-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-weight: 700;
+    color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 16%, transparent);
+  }
+}
+@media (min-width: 80rem) {
+  .sidenav-placeholder {
+    width: 248px;
+  }
+  .sidenav {
+    align-items: stretch;
+    width: calc(248px + env(safe-area-inset-left));
+    padding-inline: calc(16px + env(safe-area-inset-left)) 16px;
+  }
+  .sidenav-brand {
+    padding-inline: 12px;
+  }
+  .sidenav-list {
+    padding: 0;
+  }
+  .sidenav-link,
+  .sidenav-new {
+    justify-content: flex-start;
+    padding: 0 12px;
+  }
+  .sidenav-new {
+    width: auto;
+  }
+  .sidenav-count {
+    position: static;
+  }
+  .sidenav-kbd {
+    display: inline;
+    font: inherit;
+    font-size: 12px;
+    opacity: 0.8;
+  }
+  .sidenav-sep {
+    width: 100%;
+    margin-inline: 0;
+  }
+  .sidenav-profile {
+    margin-inline: 0;
+  }
+}
+
+/* Painel lateral das folhas (tablet e desktop): borda e sombra do lado esquerdo em vez do topo. */
+@media (min-width: 48rem) {
+  .sheet[data-vaul-drawer-direction="right"] {
+    border-top: 0;
+    border-left: 1px solid var(--glass-line);
+    box-shadow:
+      var(--glass-rim),
+      -12px 0 40px rgba(40, 24, 110, 0.18);
+  }
+}
+
+/* Hover só quando há mouse: no toque o estado grudaria depois do toque. */
+@media (hover: hover) and (pointer: fine) {
+  a[href],
+  button:not(:disabled),
+  [role="button"],
+  summary,
+  label[for] {
+    cursor: pointer;
+  }
+  .sidenav-link:not([aria-current="page"]):hover {
+    background: color-mix(in srgb, var(--fg) 5%, transparent);
+  }
+  .sidenav-new:hover {
+    background: color-mix(in srgb, var(--primary) 88%, var(--fg));
+  }
+  .btn-tint:hover,
+  .btn-glass:hover {
+    filter: brightness(0.97);
+  }
+}

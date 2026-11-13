@@ -12,10 +12,31 @@ export default defineConfig({
   projects: [
     {
       name: "iphone-15",
+      // Os specs do celular continuam só aqui; os de tela larga rodam nos dois projetos abaixo
+      testIgnore: /largura\.spec\.ts/,
       use: {
         ...iphone,
         browserName: "chromium",
         // Local: PW_CHROMIUM_PATH aponta para um Chromium já instalado. No CI usa o do `playwright install`.
+        launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH || undefined },
+      },
+    },
+    {
+      name: "ipad-paisagem",
+      testMatch: /largura\.spec\.ts/,
+      use: {
+        browserName: "chromium",
+        viewport: { width: 1024, height: 768 },
+        hasTouch: true,
+        launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH || undefined },
+      },
+    },
+    {
+      name: "desktop",
+      testMatch: /largura\.spec\.ts/,
+      use: {
+        browserName: "chromium",
+        viewport: { width: 1440, height: 900 },
         launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH || undefined },
       },
     },

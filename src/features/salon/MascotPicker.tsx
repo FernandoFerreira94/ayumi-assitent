@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Drawer } from "vaul";
+import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { Mascot } from "@/components/brand/Mascot";
 import { applyMascot } from "@/components/brand/applyMascot";
 import { MASCOTS, type MascotKind } from "@/components/brand/mascots";
@@ -11,6 +12,7 @@ import { saveMascot } from "./mascot-actions";
 
 /** Meu perfil: escolher o mascote, que troca as cores do app inteiro na hora. */
 export function MascotPicker() {
+  const side = useSheetSide();
   const current = useMascotKind();
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
@@ -32,7 +34,7 @@ export function MascotPicker() {
   }
 
   return (
-    <Drawer.Root open={open} onOpenChange={setOpen}>
+    <Drawer.Root direction={side} open={open} onOpenChange={setOpen}>
       <section aria-label="Mascote e cores" className="glass grid gap-3 rounded-[1.75rem] p-5">
         <h2 className="font-bold">Mascote e cores</h2>
         <Drawer.Trigger
@@ -49,7 +51,8 @@ export function MascotPicker() {
       </section>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-        <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
+        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
+<SidePanelClose />
           <Drawer.Title className="pb-1 text-xl font-bold">Mascote e cores</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
             O app inteiro troca de cor junto. Só você vê a sua escolha.
