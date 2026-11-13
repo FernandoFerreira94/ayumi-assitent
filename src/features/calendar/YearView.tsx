@@ -44,7 +44,7 @@ export function YearGrid({
                 {monthWeeks(month)
                   .flat()
                   .map((d, k) => (
-                    <span key={k} data-today={d === today || undefined} data-has={(d && days?.[d]) || undefined}>
+                    <span key={k} data-today={d === today || undefined} data-has={(d && days?.[d]?.n) || undefined}>
                       {d ? Number(d.slice(8)) : ""}
                     </span>
                   ))}

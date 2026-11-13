@@ -62,3 +62,27 @@ test("Ajustes: o interruptor abre o passo a passo e recusa link que não é do i
   await expect(page.getByText(/não é um link de Calendário Público do iCloud/)).toBeVisible();
   await expect(sheet.getByLabel("Link do calendário")).toHaveAttribute("aria-invalid", "true");
 });
+
+test("Calendário (mês): eventos de fora aparecem cinza todos os dias e o toque abre o dia", async ({ page, context }) => {
+  const { sql, tid } = await tenantOf(await context.cookies());
+  const days = [1, 2, 3].map((n) => addDays(todayStr(), n));
+  for (const [i, d] of days.entries())
+    await sql`insert into blocks (tenant_id,starts_at,ends_at,reason,source,external_uid) values
+      (${tid},${toInstant(d, "18:00")},${toInstant(d, "19:00")},'Curso','icloud',${`curso#${i}`})`;
+  // Um evento do Google que já virou atendimento não aparece mais
+  await sql`insert into blocks (tenant_id,starts_at,ends_at,reason,source,google_event_id,converted_at) values
+    (${tid},${toInstant(days[0], "10:00")},${toInstant(days[0], "11:00")},'Convertido','google','g1',now())`;
+  await sql.end();
+
+  await page.goto(`/calendario?v=mes&m=${days[0].slice(0, 7)}`);
+  for (const d of days) {
+    const cell = page.locator(`.cal-cell[data-zoom="d${d}"]`).first();
+    await expect(cell).toHaveAttribute("aria-label", /1 evento de fora/);
+    await expect(cell.locator('.cal-pill[data-ext="icloud"]')).toHaveText("Curso");
+  }
+  await expect(page.locator(".cal-pill", { hasText: "Convertido" })).toHaveCount(0);
+
+  await page.locator(`.cal-cell[data-zoom="d${days[1]}"]`).first().click();
+  await expect(page).toHaveURL(new RegExp(`d=${days[1]}`));
+  await expect(page.getByRole("button", { name: /Evento do Calendário do iPhone · Curso/ })).toBeVisible();
+});

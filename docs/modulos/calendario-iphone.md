@@ -18,7 +18,8 @@
 ## Leitura do iCloud (direção 1)
 
 - `icloud.ts` (puro): `normalizeIcloudUrl`/`isIcloudUrl` (só https, `*.icloud.com`, `/published/`: anti-SSRF), `parseIcsEvents` com `ical.js` (RRULE, EXDATE, RECURRENCE-ID, VTIMEZONE; hora sem fuso = UTC-3). Fora: dia inteiro, cancelado, TRANSPARENT, UID `@bubbly` (o nosso link). Teto 3000 eventos.
-- `icloud-server.ts`: `fetchIcloudIcs` (redirect manual revalidando host, 10 s, 2 MB), `syncIcloud`, `importIcloudCalendar` (chamado em `DaySchedule` e Vagas logo depois do Google; no máximo a cada 2 min por estúdio; nunca lança, loga só o tipo do erro).
+- `icloud-server.ts`: `fetchIcloudIcs` (redirect manual revalidando host, 10 s, 2 MB), `syncIcloud`, `importIcloudCalendar` (chamado via `blocks/external-sync.syncExternalCalendars` em `DaySchedule`, Vagas e no layout do Calendário, junto com o Google; no máximo a cada 2 min por estúdio; nunca lança, loga só o tipo do erro).
+- Repetição: o iCloud expande RRULE/EXDATE/RECURRENCE-ID na janela (14 dias atrás a 180 à frente, uma linha por ocorrência); o Google usa `singleEvents=true` (mesma janela). Os dois aparecem cinza também no **mês** do Calendário (`calendar/data.ts`).
 - `icloud-import.ts`: `importIcloudEvents` (upsert por `external_uid`; não duplica atendimento nem evento do Google com mesmo início+fim; apaga o que sumiu na janela, exceto os convertidos), `clearIcloudEvents`.
 - `match.ts`: `guessAppointment(título, clientes, serviços)`: nome completo, ou primeiro nome se for único; palavra inteira, sem acento; serviço mais longo primeiro. Sem cliente = "outro evento". IA (Haiku) para ambíguos ficou para depois.
 - Conversão: `createAppointment` com `fromBlockId` → `blocks/core.convertExternalBlock` (marca `converted_at`, na mesma transação; se o agendamento falhar, desfaz). Bloco convertido sai de `listBlocks`/`overlapsBlock`. Vale para Google e iCloud; o detalhe pede para apagar o evento original.
