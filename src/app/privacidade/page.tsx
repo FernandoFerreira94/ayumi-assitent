@@ -188,6 +188,10 @@ export default function PrivacidadePage() {
           <li>Apagar os dados, anonimizar ou bloquear o que não for necessário.</li>
           <li>Saber com quem os dados foram compartilhados.</li>
           <li>Retirar o consentimento.</li>
+          <li>
+            A cliente que não quiser mais receber lembretes automáticos responde <strong>SAIR</strong> no WhatsApp (e{" "}
+            <strong>VOLTAR</strong> para receber de novo).
+          </li>
         </ul>
         <p>
           Peça pelo e-mail <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>. Respondemos em até 15 dias. Se a

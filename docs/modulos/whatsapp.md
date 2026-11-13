@@ -28,3 +28,4 @@
 - Erros da porta: 401/403/404 = `MessagingOfflineError` (reconectar); 400 = `MessagingRejectedError` (número recusado, não repetir; avulsa mostra `WHATSAPP_INVALID_NUMBER`); rede/5xx = `MessagingTransientError` (tentar de novo). Para log use `sendFailReason(e)`.
 - Web e worker precisam de `EVOLUTION_URL` e `EVOLUTION_API_KEY`.
 - Testes: `tests/db/whatsapp-inbound.test.ts`, `tests/e2e/mensagem.spec.ts`, `tests/unit/whatsapp-replies.test.ts`, `ai-policy.test.ts`, `evolution.test.ts`, `send-direct.test.ts`, `notifications.test.ts`.
+- SAIR/VOLTAR no webhook: ver `lembretes.md` (opt-out). Cartão da cliente mostra "Não recebe lembretes automáticos".

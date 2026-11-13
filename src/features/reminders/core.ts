@@ -46,6 +46,7 @@ export async function claimDue(tx: Tx, now: Date, hours = DEFAULT_REMINDER_HOURS
         where reminder_sent_at is null
           and status in ('pending_confirmation','confirmed')
           and starts_at > ${now.toISOString()} and starts_at <= ${until.toISOString()}
+          and client_id not in (select id from clients where opted_out_at is not null)
         for update skip locked)
       returning id, tenant_id, starts_at, client_id, service_id, price_cents)
     select c.id, c.tenant_id, c.client_id, c.starts_at, c.price_cents, cl.name as client, cl.phone_e164 as phone, s.name as service

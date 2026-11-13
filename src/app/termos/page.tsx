@@ -53,7 +53,8 @@ export default function TermosPage() {
           Nesse papel, você é a <strong>controladora</strong> dos dados das suas clientes e a WebCode é a{" "}
           <strong>operadora</strong>: tratamos esses dados só para o app funcionar para você, seguindo as suas
           instruções e a Política de privacidade, sem usar para outro fim. Você também se compromete a avisar as
-          clientes de que elas recebem mensagens automáticas do salão pelo WhatsApp.
+          clientes de que elas recebem mensagens automáticas do salão pelo WhatsApp e de que podem parar a qualquer
+          momento respondendo <strong>SAIR</strong>.
         </p>
       </LegalSection>
 

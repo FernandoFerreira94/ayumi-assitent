@@ -60,6 +60,7 @@ export async function claimNudges(tx: Tx, now: Date, hours: number, firstOn = tr
               and created_at <= starts_at - make_interval(hours => ${hours}))
           )
           and starts_at > ${iso} and starts_at <= ${until}
+          and client_id not in (select id from clients where opted_out_at is not null)
         for update skip locked)
       returning id, tenant_id, client_id, starts_at, service_id, price_cents, status)
     select c.id, c.tenant_id, c.client_id, c.starts_at, c.price_cents, cl.name as client, cl.phone_e164 as phone,

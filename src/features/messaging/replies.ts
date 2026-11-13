@@ -72,6 +72,22 @@ export function parseIntent(raw: string): Intent | null {
   return CONFIRM.test(t) ? "confirm" : null;
 }
 
+// A mensagem inteira tem que ser o pedido: "não quero sair agora" não é opt-out
+const STOP = /^(sair|parar|pare|stop|nao quero (mais )?receber( (mensagens?|lembretes?|avisos?))?|cancelar (lembretes?|avisos?|mensagens?))$/;
+const RESUME = /^(voltar|volta|quero voltar a receber( (mensagens?|lembretes?|avisos?))?)$/;
+
+/** Cliente pediu para parar ("SAIR") ou voltar ("VOLTAR") a receber mensagens automáticas. */
+export function parseOptOut(raw: string): "stop" | "resume" | null {
+  const t = plain(raw);
+  if (STOP.test(t)) return "stop";
+  if (RESUME.test(t)) return "resume";
+  return null;
+}
+
+export const OPT_OUT_TEXT =
+  "Pronto, você não recebe mais lembretes automáticos por aqui. Se mudar de ideia, é só responder VOLTAR.";
+export const OPT_IN_TEXT = "Pronto, os lembretes automáticos voltaram. Para parar, responda SAIR.";
+
 /**
  * Única resposta automática à resposta do lembrete. Confirmar agradece; cancelar ou remarcar não muda
  * nada sozinho: diz que recebeu o pedido e que a profissional continua a conversa.

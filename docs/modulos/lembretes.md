@@ -21,3 +21,4 @@
 - Não reenviar aviso de horário que já passou; remarcar/cancelar precisa invalidar aviso pendente.
 - Mudou aqui: Redeploy do **worker** também.
 - Testes: `tests/db/nudge.test.ts`, `tests/unit/reminder-text.test.ts`, `nudge.test.ts`, `booking-text.test.ts`.
+- Opt-out: cliente que responde só `SAIR`/`PARAR`/`PARE`/`STOP` ganha `clients.opted_out_at` (`replies.parseOptOut`, tratado no `inbound.ts` antes da IA) e sai da confirmação (`booking-send`) e do 1º/2º aviso (`claimDue`/`claimNudges` filtram); `VOLTAR` desfaz. Resposta automática uma vez, fora do silêncio 21h–6h. Mensagem manual da dona continua saindo.

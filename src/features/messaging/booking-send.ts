@@ -39,6 +39,7 @@ export async function sendBookingMessage(
           clientId: clients.id,
           client: clients.name,
           phone: clients.phoneE164,
+          optedOut: clients.optedOutAt,
           service: serviceLabel,
           startsAt: appointments.startsAt,
           priceCents: appointments.priceCents,
@@ -48,7 +49,8 @@ export async function sendBookingMessage(
         .innerJoin(services, eq(services.id, appointments.serviceId))
         .where(eq(appointments.id, appointmentId)),
     );
-    if (!a) return "skipped";
+    // Cliente respondeu SAIR: nada automático
+    if (!a || a.optedOut) return "skipped";
     const text = bookingText(a, now, { template: t?.template, name: t?.name, fullName: t?.fullName });
     const res = await sendDirect(port, a.phone, text);
     if (!res.ok) {

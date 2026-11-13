@@ -20,7 +20,7 @@ const RIGHT_W = BTN * 2; // Editar + Excluir
 const SNAP = 36;
 const CLOSE_EVENT = "ayumi:swipe-close";
 
-type Client = { id: string; name: string; phone: string; email: string | null };
+type Client = { id: string; name: string; phone: string; email: string | null; optedOut?: boolean };
 
 const icon = {
   viewBox: "0 0 24 24",
@@ -439,6 +439,11 @@ function CardSheet({
             {client.phone}
             {client.email ? ` · ${client.email}` : ""}
           </Drawer.Description>
+          {client.optedOut ? (
+            <p className="-mt-2 mb-4 text-sm font-semibold text-muted">
+              Não recebe lembretes automáticos (respondeu SAIR; volta se responder VOLTAR).
+            </p>
+          ) : null}
 
           {failed ? (
             <div role="alert" className="mb-3 flex items-center justify-between gap-3 rounded-2xl bg-fail-bg px-4 py-3 text-sm font-semibold text-fail">
