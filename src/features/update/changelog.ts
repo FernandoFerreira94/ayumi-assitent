@@ -31,6 +31,17 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 /** Mais recente primeiro. */
 export const RELEASES: readonly Release[] = [
   {
+    version: "1.8.1",
+    date: "2026-11-13",
+    title: "Tela volta ao normal depois do aviso de atualização",
+    items: [
+      {
+        kind: "fix",
+        text: "Depois de tocar em Entendi no aviso de app atualizado, o Painel não fica mais borrado e travado.",
+      },
+    ],
+  },
+  {
     version: "1.8.0",
     date: "2026-11-13",
     title: "Calendário mais enxuto e agendar mais fácil",
