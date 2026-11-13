@@ -38,6 +38,15 @@ d("link do calendário (Postgres real)", () => {
         values (${t},${later},${new Date(later.getTime() + 3_600_000)},'google','Reunião do Google')`;
     }
   });
+  it("link trocado ou desligado: o hash antigo deixa de achar o estúdio na hora", async () => {
+    await admin`update tenants set calendar_token_hash = 'hash-a2' where id = ${A}`;
+    expect(await feed.tenantByTokenHash("hash-a")).toBeNull();
+    expect((await feed.tenantByTokenHash("hash-a2"))?.id).toBe(A);
+    await admin`update tenants set calendar_token_hash = null where id = ${A}`;
+    expect(await feed.tenantByTokenHash("hash-a2")).toBeNull();
+    await admin`update tenants set calendar_token_hash = 'hash-a' where id = ${A}`;
+  });
+
   afterAll(async () => {
     await admin.end();
   });

@@ -36,7 +36,6 @@ describe("ics", () => {
           start: new Date("2026-11-14T12:00:00Z"),
           end: new Date("2026-11-14T13:00:00Z"),
           title: "Ana · Corte, escova",
-          updated: now,
         },
       ],
     });
@@ -60,5 +59,25 @@ describe("token", () => {
     expect(hashToken("x")).toHaveLength(64);
     expect(isTokenShape("../etc")).toBe(false);
     expect(isTokenShape("a".repeat(44))).toBe(false);
+  });
+});
+
+describe("ics: casos da revisão", () => {
+  it("tira caractere de controle e trata \\r sozinho", () =>
+    expect(escapeText("a\u0000b\u0007c\rd\te")).toBe("abc\\nd\te"));
+  it("nome do calendário sem vírgula, ponto e vírgula ou barra", () => {
+    const ics = buildIcs({ calName: "Bubbly · Studio, da Yumi; teste\\x", events: [] });
+    expect(ics).toContain("X-WR-CALNAME:Bubbly · Studio da Yumi teste x\r\n");
+  });
+  it("falta marcada no título", () =>
+    expect(eventTitle({ clientName: "Ana", service: "Corte", status: "no_show", hideNames: false })).toBe(
+      "Ana · Corte (faltou)",
+    ));
+  it("sem LAST-MODIFIED falso (era sempre a hora do pedido)", () => {
+    const ics = buildIcs({
+      calName: "x",
+      events: [{ uid: "u@bubbly", start: new Date(0), end: new Date(3_600_000), title: "t" }],
+    });
+    expect(ics).not.toContain("LAST-MODIFIED");
   });
 });
