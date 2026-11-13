@@ -32,6 +32,7 @@ export async function DaySchedule({
   withStrip,
   base = "/calendario",
   calendar = false,
+  actions = true,
 }: {
   tenantId: string;
   date: string;
@@ -39,6 +40,8 @@ export async function DaySchedule({
   /** Página que recebe o dia escolhido na faixa da semana. */
   base?: string;
   calendar?: boolean;
+  /** Fileira Bloquear/Agendar acima da linha do dia (o Painel não mostra: agenda pelo + da barra). */
+  actions?: boolean;
 }) {
   const today = todayStr();
   // Janela de semanas para a rolagem lateral da faixa; ao rolar além dela a faixa recentraliza
@@ -132,7 +135,8 @@ export async function DaySchedule({
           blocks={blocks}
           nowMin={date === today ? minuteOf(new Date()) : null}
           {...bookingOptions(clients, services)}
-          blockButton={<NewBlockSheet date={date} />}
+          week={openHours}
+          blockButton={actions ? <NewBlockSheet date={date} /> : undefined}
         />
       </div>
     </>

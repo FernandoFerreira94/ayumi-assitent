@@ -967,6 +967,10 @@ button {
 .ag-tip.bad {
   background: var(--fail);
 }
+/* Fora do expediente: pode soltar, é só aviso */
+.ag-tip.out {
+  background: var(--wait);
+}
 @media (prefers-reduced-motion: reduce) {
   .wk-d b,
   .ag-day,
@@ -1525,6 +1529,44 @@ button {
 .check-round:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+/* Balão da Bolha no Painel: surge da Bolha (à esquerda) e some sozinho */
+.speech-solid {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+.speech-solid::before {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+}
+.speech-pop {
+  transform-origin: 0 50%;
+  animation: speech-pop 0.42s var(--spring) both;
+}
+@keyframes speech-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6) translateX(-10px);
+  }
+}
+/* Rosca dos ganhos do dia: o arco cresce ao abrir */
+.earn-arc {
+  transition: stroke-dasharray 0.6s var(--ease);
+  animation: earn-arc 0.8s var(--ease) both;
+}
+@keyframes earn-arc {
+  from {
+    stroke-dasharray: 0 999;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .speech-pop,
+  .earn-arc {
+    animation: none;
+    transition: none;
+  }
 }
 
 .speech::before {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { LetterPicker } from "@/components/ui/LetterPicker";
 import { formatBRL } from "@/lib/dates";
 import { formatDuration } from "@/features/services/catalog";
@@ -19,10 +19,13 @@ export function BookingServices({
   services,
   defaultIds = [],
   discountError,
+  onMinutes,
 }: {
   services: ServiceOption[];
   defaultIds?: string[];
   discountError?: boolean;
+  /** Duração somada dos serviços escolhidos, para a folha conferir o expediente. */
+  onMinutes?: (minutes: number) => void;
 }) {
   const uid = useId();
   // Uma chave por seletor (para tirar do meio sem embaralhar) e o serviço escolhido em cada um
@@ -36,6 +39,7 @@ export function BookingServices({
   const picked = rows.map((r) => services.find((s) => s.id === r.id)).filter((s) => s !== undefined);
   const subtotal = picked.reduce((c, s) => c + s.priceCents, 0);
   const minutes = picked.reduce((m, s) => m + s.durationMin, 0);
+  useEffect(() => onMinutes?.(minutes), [minutes, onMinutes]);
   const discount = parseDiscount(kind, raw);
   const { discountCents, totalCents } = applyDiscount(subtotal, discount === "invalid" ? null : discount);
 

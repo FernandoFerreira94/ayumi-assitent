@@ -10,6 +10,7 @@ import { sendBookingMessage } from "@/features/messaging/booking-send";
 import type { SyncResult } from "@/features/google/sync";
 import { searchClients } from "@/features/clients/core";
 import { listBookable } from "@/features/services/core";
+import { getHours } from "@/features/hours/core";
 import { convertExternalBlock, listBlocks } from "@/features/blocks/core";
 import { dayRange, isDateStr, toInstant } from "@/lib/dates";
 import { editAppointment, insertAppointment, listDay, moveAppointment, setStatus } from "./core";
@@ -28,11 +29,11 @@ class RollbackWith extends Error {
 export async function loadBookingOptions(): Promise<ActionResult<BookingOptions>> {
   const { tenantId } = await requireTenant();
   try {
-    const [clients, services] = await withTenant(
+    const [clients, services, hours] = await withTenant(
       tenantId,
-      async (tx) => [await searchClients(tx, ""), await listBookable(tx)] as const,
+      async (tx) => [await searchClients(tx, ""), await listBookable(tx), await getHours(tx)] as const,
     );
-    return ok(bookingOptions(clients, services));
+    return ok({ ...bookingOptions(clients, services), week: hours });
   } catch {
     return fail("UNKNOWN");
   }

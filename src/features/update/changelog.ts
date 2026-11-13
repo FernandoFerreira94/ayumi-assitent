@@ -31,6 +31,29 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 /** Mais recente primeiro. */
 export const RELEASES: readonly Release[] = [
   {
+    version: "1.5.0",
+    date: "2026-11-13",
+    title: "Painel novo: seus ganhos do dia ao lado da Bolha",
+    items: [
+      {
+        kind: "new",
+        text: "Ao lado da Bolha, um gráfico mostra quanto você já recebeu no dia e quanto falta. Toque no olhinho para esconder os valores, como no app do banco; o aparelho lembra a escolha.",
+      },
+      {
+        kind: "layout",
+        text: "A Bolha ficou maior e fala num balão que aparece e some sozinho, trocando as informações do dia. Toque no balão para fechar ou na Bolha para ouvir a próxima.",
+      },
+      {
+        kind: "improved",
+        text: "Dá para agendar fora do expediente: o app só avisa que o horário está fora, sem impedir.",
+      },
+      {
+        kind: "removed",
+        text: "Os botões Bloquear e Agendar saíram do Painel. Agende pelo + da barra de baixo ou tocando num horário vazio; Bloquear continua no Calendário.",
+      },
+    ],
+  },
+  {
     version: "1.4.0",
     date: "2026-11-13",
     title: "A agenda do iPhone dentro do app",
