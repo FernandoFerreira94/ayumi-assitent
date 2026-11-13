@@ -1,0 +1,89 @@
+<style>
+  .dd-stage { min-height: 100vh; display: grid; place-content: center; gap: 12px; padding: 20px; text-align: center; color: var(--wc-fg-muted); }
+  .dd-open { justify-self: center; display: inline-flex; align-items: center; gap: 10px; font: inherit; font-weight: var(--wc-font-weight-semibold); padding: 12px 18px; border-radius: var(--wc-radius-pill); border: 1px solid var(--wc-border); background: var(--wc-surface); color: var(--wc-fg); cursor: pointer; }
+  .dd-open:focus-visible, .dd :focus-visible { outline: 2px solid var(--wc-focus); outline-offset: -2px; }
+  .dd { --drag: 0px; position: fixed; inset: 0 auto 0 0; width: min(380px, 88vw); height: 100%; max-height: none; margin: 0; padding: 0; border: 0; background: var(--wc-surface); color: var(--wc-fg); box-shadow: var(--wc-shadow-lg); overflow: hidden; translate: min(var(--drag), 0px) 0; transition: translate var(--wc-motion-spring-smooth-duration) var(--wc-motion-spring-smooth), display var(--wc-motion-duration-slow) allow-discrete, overlay var(--wc-motion-duration-slow) allow-discrete; }
+  .dd:not([open]) { translate: -100% 0; transition-duration: var(--wc-motion-duration-base); transition-timing-function: var(--wc-motion-ease-in); }
+  @starting-style { .dd[open] { translate: -100% 0; } }
+  .dd.is-dragging { transition: none; }
+  .dd::backdrop { background: var(--wc-scrim); transition: opacity var(--wc-motion-duration-slow), display var(--wc-motion-duration-slow) allow-discrete, overlay var(--wc-motion-duration-slow) allow-discrete; }
+  .dd:not([open])::backdrop { opacity: 0; }
+  @starting-style { .dd[open]::backdrop { opacity: 0; } }
+  .dd-level { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--wc-surface); translate: 100% 0; transition: translate var(--wc-motion-duration-slow) var(--wc-motion-ease-emphasized); }
+  .dd-level.is-current { translate: 0 0; }
+  .dd-level.is-behind { translate: calc(-30% * var(--wc-motion-distance)) 0; }
+  @media (prefers-reduced-motion: reduce) { .dd-level { transition: none; } .dd, .dd:not([open]) { transition-duration: 0s; } }
+  .dd-head { display: flex; align-items: center; gap: 8px; height: 56px; padding: 0 8px; border-bottom: 1px solid var(--wc-border); }
+  .dd-head h2 { flex: 1; margin: 0; font-size: var(--wc-font-size-md); font-weight: var(--wc-font-weight-semibold); text-align: center; outline: none; }
+  .dd-head h2:focus-visible { outline: 2px solid var(--wc-focus); }
+  .dd-back, .dd-x { min-width: 44px; height: 44px; display: inline-flex; align-items: center; gap: 2px; padding: 0 8px; border: 0; border-radius: var(--wc-radius-md); background: none; color: var(--wc-accent); font: inherit; font-size: var(--wc-font-size-sm); cursor: pointer; }
+  .dd-x { color: var(--wc-fg-muted); justify-content: center; }
+  .dd-back:hover, .dd-x:hover { background: var(--wc-sunken); }
+  .dd-spacer { min-width: 44px; }
+  .dd-list { list-style: none; margin: 0; padding: 8px; overflow: auto; flex: 1; }
+  .dd-list button, .dd-list a { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 0 12px; border: 0; border-radius: var(--wc-radius-md); background: none; color: var(--wc-fg); font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
+  .dd-list button:hover, .dd-list a:hover { background: var(--wc-sunken); }
+  .dd-list svg { color: var(--wc-fg-muted); flex: none; }
+  .dd-list .dd-all { color: var(--wc-accent); font-weight: var(--wc-font-weight-medium); }
+  .dd-foot { padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--wc-border); display: grid; gap: 4px; font-size: var(--wc-font-size-sm); }
+  .dd-foot a { color: var(--wc-fg-muted); text-decoration: none; padding: 8px 4px; }
+</style>
+<div class="dd-stage">
+  <button class="dd-open" type="button" aria-haspopup="dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Departamentos</button>
+  <p>Entre em Esporte → Corrida e volte. No toque, arraste o painel para a esquerda para fechar.</p>
+</div>
+<dialog class="dd" aria-label="Departamentos"><div class="dd-levels"></div></dialog>
+<script>
+(() => {
+  const TREE = { title: 'Departamentos', items: [
+    { t: 'Esporte', items: [{ t: 'Corrida', items: ['Tênis de corrida', 'Relógios GPS', 'Roupas', 'Hidratação'] }, { t: 'Ciclismo', items: ['Bicicletas', 'Capacetes', 'Peças'] }, { t: 'Natação', items: ['Óculos', 'Toucas', 'Sungas e maiôs'] }] },
+    { t: 'Casa', items: [{ t: 'Cozinha', items: ['Panelas', 'Utensílios', 'Eletroportáteis'] }, { t: 'Quarto', items: ['Cama', 'Organização'] }] },
+    { t: 'Tecnologia', items: [{ t: 'Celulares', items: ['iPhone', 'Android', 'Acessórios'] }, { t: 'Notebooks', items: ['Para trabalho', 'Gamer'] }] },
+    'Ofertas do dia', 'Lojas parceiras'] };
+  const dlg = document.querySelector('.dd'), wrap = dlg.querySelector('.dd-levels'), openBtn = document.querySelector('.dd-open');
+  const chev = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+  const stack = [];
+  function level(node, parentTitle) {
+    const el = document.createElement('section'); el.className = 'dd-level'; el.inert = true;
+    const id = 'dd-h' + stack.length;
+    el.setAttribute('aria-labelledby', id);
+    el.innerHTML = `<div class="dd-head">${parentTitle ? `<button class="dd-back" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>${parentTitle}</button>` : '<span class="dd-spacer"></span>'}<h2 id="${id}" tabindex="-1">${node.title}</h2><button class="dd-x" type="button" aria-label="Fechar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+      <ul class="dd-list">${parentTitle ? `<li><a class="dd-all" href="#">Ver tudo em ${node.title}</a></li>` : ''}${node.items.map((it, i) => typeof it === 'string' ? `<li><a href="#">${it}</a></li>` : `<li><button type="button" data-i="${i}">${it.t}${chev}</button></li>`).join('')}</ul>
+      ${parentTitle ? '' : '<div class="dd-foot"><a href="#">Minha conta</a><a href="#">Meus pedidos</a><a href="#">Central de ajuda</a></div>'}`;
+    el.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-i]');
+      if (b) { const it = node.items[+b.dataset.i]; push({ title: it.t, items: it.items }, node.title, b); }
+      if (e.target.closest('.dd-back')) pop();
+      if (e.target.closest('.dd-x')) dlg.close();
+    });
+    return el;
+  }
+  function push(node, parentTitle, origin) {
+    const prev = stack.at(-1);
+    const el = level(node, parentTitle); wrap.append(el); el.getBoundingClientRect();
+    if (prev) { prev.el.classList.remove('is-current'); prev.el.classList.add('is-behind'); prev.el.inert = true; }
+    el.classList.add('is-current'); el.inert = false;
+    stack.push({ el, origin });
+    if (prev) el.querySelector('h2').focus();
+  }
+  function pop() {
+    if (stack.length < 2) return;
+    const { el, origin } = stack.pop(), prev = stack.at(-1);
+    el.classList.remove('is-current'); el.inert = true;
+    const rm = () => el.remove();
+    matchMedia('(prefers-reduced-motion: reduce)').matches ? rm() : el.addEventListener('transitionend', rm, { once: true });
+    prev.el.classList.remove('is-behind'); prev.el.classList.add('is-current'); prev.el.inert = false;
+    origin?.focus();
+  }
+  openBtn.addEventListener('click', () => { wrap.innerHTML = ''; stack.length = 0; push(TREE); dlg.showModal(); stack[0].el.querySelector('.dd-list button, .dd-list a').focus(); });
+  dlg.addEventListener('close', () => openBtn.focus());
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+  dlg.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft' && stack.length > 1) { e.preventDefault(); pop(); } });
+  // arrastar para fechar
+  let x0 = null, w = 0;
+  dlg.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse' || e.target === dlg) return; x0 = e.clientX; w = dlg.offsetWidth; });
+  dlg.addEventListener('pointermove', (e) => { if (x0 === null) return; const dx = e.clientX - x0; if (dx < -6) { dlg.classList.add('is-dragging'); dlg.style.setProperty('--drag', dx + 'px'); } });
+  const end = (e) => { if (x0 === null) return; const dx = e.clientX - x0; x0 = null; dlg.classList.remove('is-dragging'); dlg.style.setProperty('--drag', '0px'); if (dx < -w * 0.3) dlg.close(); };
+  dlg.addEventListener('pointerup', end); dlg.addEventListener('pointercancel', end);
+})();
+</script>

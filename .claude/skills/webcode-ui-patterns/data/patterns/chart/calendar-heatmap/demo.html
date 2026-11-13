@@ -1,0 +1,60 @@
+<style>
+  .chm { min-height: 100vh; padding: 20px 16px; max-width: 860px; margin: 0 auto; display: grid; gap: 12px; align-content: start; color: var(--wc-fg); font-size: var(--wc-font-size-sm); font-variant-numeric: tabular-nums; }
+  .chm-card { border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface); padding: 16px; display: grid; gap: 12px; min-width: 0; }
+  .chm h3 { margin: 0; font-size: var(--wc-font-size-md); }
+  .chm-sub { margin: -6px 0 0; color: var(--wc-fg-muted); }
+  .chm-scroll { overflow-x: auto; position: relative; padding-bottom: 4px; }
+  .chm-grid { display: grid; grid-template-columns: 36px repeat(16, minmax(22px, 1fr)); gap: 3px; min-width: 440px; }
+  .chm-grid [role="columnheader"], .chm-grid [role="rowheader"] { color: var(--wc-fg-muted); font-size: 11px; display: grid; place-items: center; }
+  .chm-grid [role="rowheader"] { justify-items: start; }
+  .chm-grid [role="row"] { display: contents; }
+  .chm-c { aspect-ratio: 1; border-radius: 4px; background: var(--c); outline-offset: 1px; cursor: default; }
+  .chm-c[data-s="0"] { --c: transparent; box-shadow: inset 0 0 0 1px var(--wc-border); }
+  .chm-c[data-s="1"] { --c: color-mix(in oklab, var(--wc-accent) 14%, var(--wc-surface)); }
+  .chm-c[data-s="2"] { --c: color-mix(in oklab, var(--wc-accent) 34%, var(--wc-surface)); }
+  .chm-c[data-s="3"] { --c: color-mix(in oklab, var(--wc-accent) 56%, var(--wc-surface)); }
+  .chm-c[data-s="4"] { --c: color-mix(in oklab, var(--wc-accent) 78%, var(--wc-surface)); }
+  .chm-c[data-s="5"] { --c: var(--wc-accent); }
+  .chm-c:hover { box-shadow: 0 0 0 2px var(--wc-fg); }
+  .chm-c:focus-visible { outline: 2px solid var(--wc-focus); }
+  .chm-leg { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--wc-fg-muted); font-size: var(--wc-font-size-xs); }
+  .chm-leg .chm-c { width: 16px; height: 16px; aspect-ratio: auto; display: inline-block; }
+  .chm-leg span { display: inline-flex; align-items: center; gap: 4px; margin-right: 6px; }
+  .chm-tip { position: absolute; top: 0; left: 0; pointer-events: none; padding: 6px 10px; border-radius: var(--wc-radius-md); background: var(--wc-surface); border: 1px solid var(--wc-border); box-shadow: var(--wc-shadow-lg); font-size: var(--wc-font-size-xs); white-space: nowrap; opacity: 0; transition: opacity var(--wc-motion-duration-instant); z-index: 1; }
+  .chm-tip.is-on { opacity: 1; }
+</style>
+<div class="chm">
+  <section class="chm-card" aria-labelledby="chm-h">
+    <h3 id="chm-h">Pico de pedidos: sexta e sábado, das 19h às 21h</h3>
+    <p class="chm-sub">Pedidos por dia da semana e hora · outubro</p>
+    <div class="chm-scroll"><div class="chm-grid" role="grid" aria-labelledby="chm-h"></div><div class="chm-tip" aria-hidden="true"></div></div>
+    <div class="chm-leg" aria-label="Legenda"></div>
+  </section>
+</div>
+<script>
+(() => {
+  const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'], FULL = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'], H0 = 8, HOURS = 16;
+  const val = (d, h) => { const hr = H0 + h; if (d === 0 && hr < 10) return 0; const lunch = Math.exp(-((hr - 12.5) ** 2) / 2) * 60, dinner = Math.exp(-((hr - 20) ** 2) / 2.2) * (d >= 5 ? 150 : 90); return Math.round(lunch + dinner + 6 + ((d * 7 + h * 13) % 11)); };
+  const STEPS = [1, 25, 50, 80, 115];
+  const step = (v) => (v === 0 ? 0 : STEPS.filter((s) => v >= s).length);
+  const grid = document.querySelector('.chm-grid'), tip = document.querySelector('.chm-tip'), scroll = document.querySelector('.chm-scroll');
+  let html = '<div role="row"><span role="columnheader"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)">Dia</span></span>' + Array.from({ length: HOURS }, (_, h) => `<span role="columnheader">${(H0 + h) % 2 === 0 ? H0 + h + 'h' : ''}<span style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)">${(H0 + h) % 2 ? H0 + h + 'h' : ''}</span></span>`).join('') + '</div>';
+  DAYS.forEach((d, di) => { html += `<div role="row"><span role="rowheader">${d}</span>` + Array.from({ length: HOURS }, (_, h) => { const v = val(di, h); return `<span role="gridcell" class="chm-c" data-s="${step(v)}" tabindex="${di === 0 && h === 0 ? 0 : -1}" aria-label="${FULL[di]}, ${H0 + h}h: ${v ? v + ' pedidos' : 'sem pedidos'}" data-r="${di}" data-h="${h}"></span>`; }).join('') + '</div>'; });
+  grid.innerHTML = html;
+  document.querySelector('.chm-leg').innerHTML = '<span><i class="chm-c" data-s="0"></i>0</span>' + STEPS.map((s, i) => `<span><i class="chm-c" data-s="${i + 1}"></i>${s}${STEPS[i + 1] ? '–' + (STEPS[i + 1] - 1) : '+'}</span>`).join('') + '<span>pedidos</span>';
+  const showTip = (c) => { tip.textContent = c.getAttribute('aria-label'); const sr = scroll.getBoundingClientRect(), r = c.getBoundingClientRect(); const x = r.left - sr.left + scroll.scrollLeft + r.width / 2 - tip.offsetWidth / 2; tip.style.translate = `${Math.max(scroll.scrollLeft, Math.min(x, scroll.scrollLeft + scroll.clientWidth - tip.offsetWidth))}px ${r.top - sr.top - tip.offsetHeight - 6}px`; tip.classList.add('is-on'); };
+  grid.addEventListener('pointerover', (e) => { const c = e.target.closest('.chm-c'); c ? showTip(c) : tip.classList.remove('is-on'); });
+  grid.addEventListener('pointerleave', () => tip.classList.remove('is-on'));
+  grid.addEventListener('focusin', (e) => { const c = e.target.closest('.chm-c'); if (c) showTip(c); });
+  grid.addEventListener('focusout', () => tip.classList.remove('is-on'));
+  grid.addEventListener('keydown', (e) => {
+    const c = e.target.closest('.chm-c'); if (!c) return;
+    let r = +c.dataset.r, h = +c.dataset.h;
+    const mv = { ArrowRight: [0, 1], ArrowLeft: [0, -1], ArrowDown: [1, 0], ArrowUp: [-1, 0] }[e.key];
+    if (mv) { r = Math.max(0, Math.min(6, r + mv[0])); h = Math.max(0, Math.min(HOURS - 1, h + mv[1])); }
+    else if (e.key === 'Home') h = 0; else if (e.key === 'End') h = HOURS - 1; else return;
+    e.preventDefault();
+    const n = grid.querySelector(`[data-r="${r}"][data-h="${h}"]`); c.tabIndex = -1; n.tabIndex = 0; n.focus();
+  });
+})();
+</script>

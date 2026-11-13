@@ -1,0 +1,3146 @@
+{
+  "$comment": "GERADO por scripts/build.mjs de vocabulary/vocabulario.json — não edite.",
+  "sections": [
+    {
+      "id": "loading",
+      "title": "Carregamento",
+      "items": [
+        {
+          "term": "Spinner",
+          "pt": "Indicador giratório",
+          "what": "Anel girando enquanto espera; só para espera curta e de tamanho desconhecido.",
+          "status": "pronto",
+          "components": [
+            "spinner"
+          ],
+          "note": "Abaixo de ~1 s não mostre nada; acima de ~3 s prefira progresso determinado."
+        },
+        {
+          "term": "Skeleton screen",
+          "pt": "Esqueleto",
+          "what": "Formas do layout real antes do conteúdo.",
+          "status": "pronto",
+          "components": [
+            "skeleton"
+          ],
+          "patterns": [
+            "skeleton-shimmer"
+          ]
+        },
+        {
+          "term": "Progress bar",
+          "pt": "Barra de progresso",
+          "what": "Barra que enche até 100% com o valor real.",
+          "status": "pronto",
+          "components": [
+            "progress"
+          ],
+          "patterns": [
+            "top-progress-bar"
+          ]
+        },
+        {
+          "term": "Progress ring",
+          "pt": "Anel de progresso",
+          "what": "Círculo que enche, com o valor no centro.",
+          "status": "pronto",
+          "components": [
+            "progress",
+            "usage-meter",
+            "activity-ring"
+          ],
+          "note": "ProgressCircle (um valor), UsageMeter variant=ring (limite do plano), ActivityRing (anéis concêntricos com legenda)."
+        },
+        {
+          "term": "Progress + time left",
+          "pt": "Progresso com tempo restante",
+          "what": "\"Enviando 3 de 8\" + barra + \"Cerca de 20 s restantes\" no lugar de spinner em espera longa.",
+          "status": "pronto",
+          "components": [
+            "progress",
+            "file-upload"
+          ],
+          "note": "@webcode/eta (createEta + formatRemaining) para qualquer espera; FileUpload com multiple já mostra o resumo do lote. Receita progresso-e-espera."
+        },
+        {
+          "term": "Progress summary",
+          "pt": "Resumo de progresso",
+          "what": "Anel com % + \"1 de 5 feitas\" + o próximo passo (\"4 para hoje, próxima às 16:00\") no lugar de porcentagem solta e frase de torcida.",
+          "status": "pronto",
+          "components": [
+            "progress",
+            "card"
+          ],
+          "note": "ProgressCircle size=lg dentro de Card. Receita progresso-e-espera."
+        },
+        {
+          "term": "Lazy loading",
+          "pt": "Carregamento sob demanda",
+          "what": "Imagens carregam ao entrar na tela.",
+          "status": "pronto",
+          "components": [
+            "aspect-ratio"
+          ],
+          "note": "Nativo: loading=\"lazy\" + decoding=\"async\" e proporção reservada com AspectRatio para não pular o layout."
+        },
+        {
+          "term": "Blur-up image",
+          "pt": "Imagem que desfoca e nítida",
+          "what": "Prévia borrada e leve, depois a imagem nítida.",
+          "status": "falta",
+          "components": [
+            "aspect-ratio"
+          ],
+          "note": "Lote 4 (junto com ponto focal de imagem). Enquanto isso: fundo bg-muted + fade de opacidade ao carregar."
+        },
+        {
+          "term": "Stepper progress",
+          "pt": "Progresso por etapas",
+          "what": "Etapas que vão sendo concluídas (enviar, processar, pronto).",
+          "status": "pronto",
+          "components": [
+            "stepper",
+            "timeline"
+          ],
+          "patterns": [
+            "progress-stepper",
+            "ai-agent-steps"
+          ]
+        },
+        {
+          "term": "Infinite scroll",
+          "pt": "Rolagem infinita",
+          "what": "Mais itens ao chegar perto do fim.",
+          "status": "pronto",
+          "components": [
+            "load-more"
+          ],
+          "patterns": [
+            "load-more-infinite"
+          ],
+          "note": "Sempre com botão \"Carregar mais\" de alternativa e sem esconder o rodapé."
+        },
+        {
+          "term": "Streaming text",
+          "pt": "Texto em streaming",
+          "what": "Resposta aparece token a token.",
+          "status": "pronto",
+          "components": [
+            "chat"
+          ],
+          "patterns": [
+            "ai-streaming-response"
+          ]
+        },
+        {
+          "term": "Optimistic UI",
+          "pt": "UI otimista",
+          "what": "Mostra o resultado na hora e confirma depois, com desfazer.",
+          "status": "pronto",
+          "components": [
+            "sonner"
+          ],
+          "patterns": [
+            "undo-delete",
+            "offline-action-queue"
+          ]
+        },
+        {
+          "term": "Pull to refresh",
+          "pt": "Puxar para atualizar",
+          "what": "Arrastar a lista para baixo recarrega.",
+          "status": "pronto",
+          "components": [
+            "pull-to-refresh"
+          ],
+          "patterns": [
+            "pull-to-refresh"
+          ]
+        },
+        {
+          "term": "Loading button",
+          "pt": "Botão com carregando",
+          "what": "Salvar → girando → salvo, sem mudar de largura.",
+          "status": "pronto",
+          "components": [
+            "button"
+          ],
+          "patterns": [
+            "async-button-states"
+          ],
+          "note": "Button loading mantém a largura; o texto final repete o verbo (\"Salvar\" → \"Salvo\")."
+        }
+      ]
+    },
+    {
+      "id": "animacao",
+      "title": "Animação",
+      "items": [
+        {
+          "term": "Gooey",
+          "pt": "Gosma",
+          "what": "Bolhas que se fundem como líquido ao se aproximar (filtro SVG).",
+          "status": "pronto",
+          "components": [
+            "gooey",
+            "tab-bar"
+          ],
+          "note": "GooeyMenu (menu radial do +), GooeyPill e TabBar variant=\"gooey\" (bottom nav de PWA). Filtro só na camada das bolhas (ícone e texto nítidos por cima), área pequena e superfície sólida; sem vidro. Antes era \"evitar\" (filtro na página inteira); com a camada separada passou."
+        },
+        {
+          "term": "Slide in",
+          "pt": "Entrar pela borda",
+          "what": "Painel entra de um lado da tela.",
+          "status": "pronto",
+          "components": [
+            "sheet",
+            "drawer"
+          ],
+          "patterns": [
+            "side-sheet-detail",
+            "bottom-sheet"
+          ]
+        },
+        {
+          "term": "Spring pop",
+          "pt": "Pulo com mola",
+          "what": "Passa um pouco do tamanho e assenta (curtir, conquista).",
+          "status": "pronto",
+          "components": [
+            "motion",
+            "button"
+          ],
+          "patterns": [
+            "press-spring-button"
+          ],
+          "note": "Bounce só em fim de gesto ou celebração; useThemeSpring com reducedMotion=\"user\"."
+        },
+        {
+          "term": "Stagger",
+          "pt": "Escalonado",
+          "what": "Itens entram um depois do outro.",
+          "status": "pronto",
+          "components": [
+            "stagger",
+            "animated-list"
+          ],
+          "patterns": [
+            "scroll-reveal-stagger",
+            "list-enter-exit"
+          ]
+        },
+        {
+          "term": "Shared element",
+          "pt": "Elemento compartilhado",
+          "what": "O card vira a tela de detalhe.",
+          "status": "pronto",
+          "components": [
+            "view-transition",
+            "expandable-card",
+            "image-viewer"
+          ],
+          "patterns": [
+            "view-transition-morph"
+          ],
+          "note": "View Transitions API com view-transition-name; sem biblioteca."
+        },
+        {
+          "term": "Exit animation / Presence",
+          "pt": "Saída com reacomodação",
+          "what": "O item sai e os vizinhos fecham o espaço juntos, sem pulo.",
+          "status": "pronto",
+          "components": [
+            "presence-list",
+            "sonner"
+          ],
+          "patterns": [
+            "list-enter-exit"
+          ],
+          "note": "Par padrão: arquivar → toast com Desfazer → o item volta ao lugar."
+        },
+        {
+          "term": "Cross-fade / Content swap",
+          "pt": "Troca de estado",
+          "what": "O bloco troca de conteúdo (carregando, resultado, vazio) com fade cruzado e a altura acompanha.",
+          "status": "pronto",
+          "components": [
+            "swap",
+            "skeleton"
+          ]
+        },
+        {
+          "term": "Ripple",
+          "pt": "Onda do toque",
+          "what": "Onda que nasce no ponto tocado (Material).",
+          "status": "evitar",
+          "components": [
+            "button"
+          ],
+          "note": "O DS segue o toque do iOS: escala na pressão (springPress) e realce de fundo."
+        },
+        {
+          "term": "Path draw",
+          "pt": "Traço que se desenha",
+          "what": "A linha do SVG se desenha sozinha.",
+          "status": "pronto",
+          "components": [
+            "result",
+            "gauge-chart",
+            "activity-ring"
+          ],
+          "note": "pathLength=100 + stroke-dashoffset em CSS; desligado com movimento reduzido."
+        },
+        {
+          "term": "Marquee",
+          "pt": "Faixa rolando",
+          "what": "Conteúdo rola de lado sem parar.",
+          "status": "pronto",
+          "components": [
+            "marquee"
+          ],
+          "patterns": [
+            "logo-cloud-marquee"
+          ]
+        },
+        {
+          "term": "Tilt",
+          "pt": "Inclinação",
+          "what": "Card inclina na direção do cursor.",
+          "status": "pronto",
+          "patterns": [
+            "tilt-card"
+          ]
+        },
+        {
+          "term": "Morph",
+          "pt": "Botão que vira painel",
+          "what": "O FAB cresce (clip-path) e vira o menu de ações.",
+          "status": "pronto",
+          "components": [
+            "fab"
+          ],
+          "note": "FabMenu variant=\"morph\" (1.12.0)."
+        },
+        {
+          "term": "Lens reveal / Swipe up to enter",
+          "pt": "Lente que revela (deslize para entrar)",
+          "what": "Cúpula de vidro na base vira lente ao puxar, mostra a próxima tela ampliada com borda em arco-íris e entra ao soltar, soltando bolhas.",
+          "status": "pronto",
+          "components": [
+            "lens-reveal"
+          ],
+          "note": "Tela pronta: tela-boas-vindas. Só na 1ª abertura; toque, Enter e ↑ também entram."
+        },
+        {
+          "term": "Split doors transition",
+          "pt": "Transição em portas",
+          "what": "A tela antiga se divide ao meio e abre como portas, revelando a nova.",
+          "status": "pronto",
+          "components": [
+            "screen-transition"
+          ],
+          "note": "ScreenTransition effect=\"doors\"; cópias visuais inertes, sem remontar a tela."
+        },
+        {
+          "term": "Blinds transition",
+          "pt": "Transição em persianas",
+          "what": "A tela nova vira em 6 lâminas, uma depois da outra, de cima para baixo.",
+          "status": "pronto",
+          "components": [
+            "screen-transition"
+          ],
+          "note": "effect=\"blinds\"; direction=\"back\" vira de baixo para cima."
+        },
+        {
+          "term": "Depth stack transition",
+          "pt": "Pilha 3D",
+          "what": "A tela antiga inclina para trás e escurece enquanto a nova sobe por cima.",
+          "status": "pronto",
+          "components": [
+            "screen-transition"
+          ],
+          "note": "effect=\"depth\"; no Expo, screenInterpolator(\"depth\") do @webcode/screen-motion."
+        },
+        {
+          "term": "Blur dissolve",
+          "pt": "Desfoque cruzado",
+          "what": "A tela antiga desfoca e some enquanto a nova entra em foco.",
+          "status": "pronto",
+          "components": [
+            "screen-transition"
+          ],
+          "note": "effect=\"blur\" (padrão). Para trocar só um bloco, use swap effect=\"blur\"."
+        },
+        {
+          "term": "Liquid wipe",
+          "pt": "Varredura líquida",
+          "what": "Uma borda ondulada e brilhante varre a tela e revela a próxima.",
+          "status": "pronto",
+          "components": [
+            "screen-transition"
+          ],
+          "note": "effect=\"wipe\" com brilho da cor primária; no Expo vira cortina lateral sem onda."
+        }
+      ]
+    },
+    {
+      "id": "gestos",
+      "title": "Gestos (iOS)",
+      "items": [
+        {
+          "term": "Tap",
+          "pt": "Toque",
+          "what": "Toque simples; alvo de 44px.",
+          "status": "pronto",
+          "components": [
+            "button"
+          ]
+        },
+        {
+          "term": "Double tap",
+          "pt": "Toque duplo",
+          "what": "Dois toques (curtir, zoom).",
+          "status": "pronto",
+          "components": [
+            "image-viewer"
+          ],
+          "note": "Zoom no ImageViewer; curtir com toque duplo sempre tem o botão equivalente visível."
+        },
+        {
+          "term": "Touch and hold",
+          "pt": "Tocar e segurar",
+          "what": "Prévia + menu de contexto.",
+          "status": "pronto",
+          "components": [
+            "context-preview",
+            "context-menu"
+          ],
+          "patterns": [
+            "long-press-context-menu"
+          ]
+        },
+        {
+          "term": "Swipe",
+          "pt": "Deslizar a linha",
+          "what": "Arrastar a linha revela ações.",
+          "status": "pronto",
+          "components": [
+            "swipe-actions"
+          ],
+          "patterns": [
+            "swipe-row-actions"
+          ]
+        },
+        {
+          "term": "Drag",
+          "pt": "Arrastar para reordenar",
+          "what": "Segurar a alça e mover.",
+          "status": "pronto",
+          "components": [
+            "sortable-list",
+            "kanban"
+          ],
+          "patterns": [
+            "kanban-board"
+          ]
+        },
+        {
+          "term": "Pinch",
+          "pt": "Pinça",
+          "what": "Dois dedos para ampliar.",
+          "status": "pronto",
+          "components": [
+            "image-viewer",
+            "image-crop"
+          ],
+          "patterns": [
+            "lightbox-zoom"
+          ]
+        },
+        {
+          "term": "Pull to refresh",
+          "pt": "Puxar para atualizar",
+          "what": "Puxa a lista e solta para recarregar.",
+          "status": "pronto",
+          "components": [
+            "pull-to-refresh"
+          ],
+          "patterns": [
+            "pull-to-refresh"
+          ]
+        },
+        {
+          "term": "Edge swipe",
+          "pt": "Voltar pela borda",
+          "what": "Arrastar da borda esquerda volta uma tela.",
+          "status": "pronto",
+          "components": [
+            "stack-view"
+          ],
+          "patterns": [
+            "ios-stack-navigation"
+          ],
+          "note": "Lista que entra com paralaxe (30%) ao voltar: já é a stack-view. Efeitos de vitrine na troca: screen-transition."
+        },
+        {
+          "term": "Swipe to dismiss",
+          "pt": "Arrastar para fechar",
+          "what": "Puxar a folha para baixo fecha.",
+          "status": "pronto",
+          "components": [
+            "drawer",
+            "story-viewer"
+          ],
+          "patterns": [
+            "bottom-sheet",
+            "card-modal-sheet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "navegacao",
+      "title": "Navegação (iOS)",
+      "items": [
+        {
+          "term": "Tab bar minimize",
+          "pt": "Tab bar que encolhe",
+          "what": "Rótulos somem ao rolar para baixo e voltam ao subir.",
+          "status": "pronto",
+          "components": [
+            "tab-bar"
+          ],
+          "patterns": [
+            "ios-tab-bar"
+          ],
+          "note": "TabBar minimizeOnScroll."
+        },
+        {
+          "term": "Zoom transition",
+          "pt": "Transição de zoom",
+          "what": "Miniatura cresce até virar o detalhe.",
+          "status": "pronto",
+          "patterns": [
+            "view-transition-morph"
+          ]
+        },
+        {
+          "term": "Bottom accessory",
+          "pt": "Acessório acima da tab bar",
+          "what": "Mini player ou ação fixa logo acima da tab bar.",
+          "status": "pronto",
+          "components": [
+            "tab-bar",
+            "bottom-bar"
+          ],
+          "note": "TabBar accessory."
+        },
+        {
+          "term": "Scope bar",
+          "pt": "Filtro sob a busca",
+          "what": "Botões de escopo logo abaixo do campo de busca.",
+          "status": "pronto",
+          "components": [
+            "search-bar",
+            "toggle-group"
+          ],
+          "patterns": [
+            "segmented-control",
+            "search-header"
+          ]
+        },
+        {
+          "term": "Pull-down menu",
+          "pt": "Menu do botão",
+          "what": "Opções que caem de um botão.",
+          "status": "pronto",
+          "components": [
+            "dropdown-menu"
+          ],
+          "patterns": [
+            "dropdown-menu-button"
+          ]
+        },
+        {
+          "term": "Section index",
+          "pt": "Índice A–Z",
+          "what": "Letras na lateral para pular na lista.",
+          "status": "pronto",
+          "components": [
+            "section-index"
+          ]
+        },
+        {
+          "term": "Sheet",
+          "pt": "Folha",
+          "what": "Tarefa sobe por cima da página, com alturas (detents).",
+          "status": "pronto",
+          "components": [
+            "drawer",
+            "sheet"
+          ],
+          "patterns": [
+            "bottom-sheet",
+            "card-modal-sheet"
+          ]
+        },
+        {
+          "term": "Popover",
+          "pt": "Balão ancorado",
+          "what": "Bolha pequena presa a um botão.",
+          "status": "pronto",
+          "components": [
+            "popover"
+          ],
+          "patterns": [
+            "anchored-popover"
+          ]
+        },
+        {
+          "term": "Full-screen cover",
+          "pt": "Cobertura de tela cheia",
+          "what": "Cobre tudo e fecha com X (câmera, story, onboarding).",
+          "status": "pronto",
+          "components": [
+            "dialog",
+            "story-viewer"
+          ],
+          "note": "Dialog em tela cheia no celular (sem margens) com botão Fechar no topo."
+        },
+        {
+          "term": "Large title",
+          "pt": "Título grande",
+          "what": "Título grande que encolhe para a barra ao rolar.",
+          "status": "pronto",
+          "components": [
+            "navigation-bar"
+          ],
+          "patterns": [
+            "large-title-collapse"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "feedback-ios",
+      "title": "Feedback (iOS)",
+      "items": [
+        {
+          "term": "Dynamic Island",
+          "pt": "Ilha dinâmica",
+          "what": "A pílula preta do topo cresce para mostrar uma atividade e volta.",
+          "status": "pronto",
+          "components": [
+            "live-island"
+          ]
+        },
+        {
+          "term": "Live Activity",
+          "pt": "Atividade ao vivo",
+          "what": "Progresso de algo em andamento (entrega, corrida, timer) visível fora do app.",
+          "status": "pronto",
+          "components": [
+            "live-island",
+            "progress"
+          ],
+          "note": "No app aberto: live-island expanded com barra. Fora do app (tela bloqueada) só no nativo: ActivityKit via expo-live-activity."
+        },
+        {
+          "term": "HUD",
+          "pt": "HUD",
+          "what": "Quadrado no centro com ícone grande (Copiado, Salvo) que some sozinho.",
+          "status": "pronto",
+          "components": [
+            "hud"
+          ]
+        },
+        {
+          "term": "Action sheet",
+          "pt": "Folha de ações",
+          "what": "Lista de ações que sobe de baixo, com Cancelar separado.",
+          "status": "pronto",
+          "components": [
+            "action-sheet"
+          ]
+        },
+        {
+          "term": "Swipe actions",
+          "pt": "Ações ao deslizar",
+          "what": "Deslizar a linha revela Arquivar/Apagar.",
+          "status": "pronto",
+          "components": [
+            "swipe-actions"
+          ]
+        },
+        {
+          "term": "Haptic feedback",
+          "pt": "Resposta tátil",
+          "what": "Tique no dedo em marcos: passou do limite, ação feita, erro.",
+          "status": "pronto",
+          "components": [
+            "gesture"
+          ],
+          "note": "haptic(kind) de @webcode/gesture (vibrate no Android, switch nativo no iOS 18+); nunca é o único retorno. RN: expo-haptics."
+        },
+        {
+          "term": "Jiggle mode",
+          "pt": "Modo de edição (tremendo)",
+          "what": "Segurar faz os itens tremerem e ganharem o − para remover.",
+          "status": "pronto",
+          "components": [
+            "jiggle-mode"
+          ],
+          "note": "Tenha sempre um botão Editar; reordenar com sortable-list."
+        },
+        {
+          "term": "Symbol effect",
+          "pt": "Efeito de símbolo",
+          "what": "O ícone quica, pulsa, balança ou troca quando o estado muda.",
+          "status": "pronto",
+          "components": [
+            "symbol-effect"
+          ]
+        },
+        {
+          "term": "Shake to undo",
+          "pt": "Agitar para desfazer",
+          "what": "Chacoalhar o aparelho pergunta se quer desfazer a última ação.",
+          "status": "pronto",
+          "components": [
+            "shake-to-undo",
+            "undo-snackbar"
+          ],
+          "note": "Sempre com botão Desfazer junto (WCAG 2.5.4)."
+        }
+      ]
+    },
+    {
+      "id": "menu-inferior",
+      "title": "Menu inferior (estilos)",
+      "items": [
+        {
+          "term": "Minimal clean",
+          "pt": "Barra limpa com ponto",
+          "what": "Ícone + rótulo, ativo na cor da marca com ponto embaixo.",
+          "status": "pronto",
+          "components": [
+            "tab-bar"
+          ],
+          "note": "tab-bar variant=\"minimal\" (1.11.0)."
+        },
+        {
+          "term": "Bottom line",
+          "pt": "Barra com traço",
+          "what": "Ativo marcado por um traço sob o rótulo.",
+          "status": "pronto",
+          "components": [
+            "tab-bar"
+          ],
+          "note": "tab-bar variant=\"line\" (1.11.0)."
+        },
+        {
+          "term": "Glassmorphism tab bar",
+          "pt": "Tab bar de vidro",
+          "what": "Barra translúcida com lente sólida no ativo.",
+          "status": "pronto",
+          "components": [
+            "tab-bar",
+            "glass"
+          ],
+          "patterns": [
+            "ios-tab-bar"
+          ]
+        },
+        {
+          "term": "Expanding tab",
+          "pt": "Aba que abre o rótulo",
+          "what": "Só ícones; o ativo vira pílula com rótulo.",
+          "status": "pronto",
+          "components": [
+            "tab-bar"
+          ],
+          "note": "tab-bar variant=\"expanding\" (1.11.0)."
+        },
+        {
+          "term": "Centre FAB",
+          "pt": "Botão central",
+          "what": "Ação principal no meio da barra, acima dela.",
+          "status": "pronto",
+          "components": [
+            "tab-bar",
+            "fab"
+          ],
+          "note": "TabBarItem raised."
+        },
+        {
+          "term": "Floating dock",
+          "pt": "Dock flutuante",
+          "what": "Barra escura flutuante com pílula ativa colorida.",
+          "status": "pronto",
+          "components": [
+            "dock",
+            "tab-bar"
+          ]
+        },
+        {
+          "term": "Tab bar with separate action",
+          "pt": "Tab bar + botão separado",
+          "what": "Pílula de navegação e, ao lado, um botão redondo da ação principal (carrinho, nova mensagem).",
+          "status": "pronto",
+          "components": [
+            "tab-bar",
+            "fab"
+          ],
+          "note": "TabBarAction ao lado da barra."
+        },
+        {
+          "term": "Raised centre button",
+          "pt": "Botão central elevado",
+          "what": "Ação central maior, saindo da barra (registrar, meditar agora).",
+          "status": "pronto",
+          "components": [
+            "tab-bar",
+            "fab"
+          ],
+          "note": "TabBarItem raised."
+        },
+        {
+          "term": "Icon-only circles",
+          "pt": "Só ícones em círculos",
+          "what": "Cada item é um círculo; o ativo preenchido.",
+          "status": "pronto",
+          "components": [
+            "tab-bar",
+            "dock"
+          ],
+          "note": "TabBar variant circles."
+        },
+        {
+          "term": "Liquid glass tab bar",
+          "pt": "Tab bar de vidro líquido",
+          "what": "Pílula de vidro com o ativo numa lente translúcida.",
+          "status": "pronto",
+          "components": [
+            "tab-bar",
+            "glass"
+          ],
+          "note": "tab-bar variant=\"pill\" (padrão); glassVariant({ effect: \"liquid\" }) para a borda especular."
+        },
+        {
+          "term": "Neon lens",
+          "pt": "Lente neon",
+          "what": "Barra escura de vidro; a lente do ativo tem aro e brilho na cor da marca e uma lente fraca segue o mouse.",
+          "status": "pronto",
+          "components": [
+            "tab-bar"
+          ],
+          "note": "tab-bar variant=\"neon\" (1.45.0)."
+        },
+        {
+          "term": "Bounce tab",
+          "pt": "Aba que quica",
+          "what": "O ícone ativo sobe num círculo acima da barra e quica; ponto sob o rótulo.",
+          "status": "pronto",
+          "components": [
+            "tab-bar"
+          ],
+          "note": "tab-bar variant=\"bounce\" (1.45.0)."
+        },
+        {
+          "term": "Neon wave / curved notch",
+          "pt": "Onda neon",
+          "what": "A borda da barra forma uma onda sobre o item ativo, com contorno neon que desliza.",
+          "status": "pronto",
+          "components": [
+            "tab-bar"
+          ],
+          "note": "tab-bar variant=\"wave\" (1.45.0): vidro com máscara SVG + traço que anda com a mola."
+        },
+        {
+          "term": "Spotlight tab",
+          "pt": "Holofote",
+          "what": "Feixe de luz desce do topo da barra sobre o ativo.",
+          "status": "pronto",
+          "components": [
+            "tab-bar"
+          ],
+          "note": "tab-bar variant=\"spotlight\" (1.45.0)."
+        },
+        {
+          "term": "Floating action button tab",
+          "pt": "Botão flutuante na barra",
+          "what": "Ação central redonda que sai da barra (Criar).",
+          "status": "pronto",
+          "components": [
+            "tab-bar",
+            "fab"
+          ],
+          "note": "TabBarItem raised."
+        }
+      ]
+    },
+    {
+      "id": "layout",
+      "title": "Layout de página (web)",
+      "items": [
+        {
+          "term": "Single column",
+          "pt": "Uma coluna",
+          "what": "Leitura longa, blog, mobile.",
+          "status": "pronto",
+          "blueprints": [
+            "editorial"
+          ],
+          "note": "Largura de texto 60–75 caracteres."
+        },
+        {
+          "term": "Two column",
+          "pt": "Duas colunas",
+          "what": "Menu lateral + conteúdo (docs, painel).",
+          "status": "pronto",
+          "components": [
+            "sidebar",
+            "app-shell"
+          ],
+          "patterns": [
+            "collapsible-sidebar"
+          ],
+          "blueprints": [
+            "saas",
+            "admin"
+          ]
+        },
+        {
+          "term": "Grid layout",
+          "pt": "Grade de cards",
+          "what": "Lista de produtos e galerias que refluem.",
+          "status": "pronto",
+          "components": [
+            "card"
+          ],
+          "note": "grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr))."
+        },
+        {
+          "term": "F-pattern",
+          "pt": "Leitura em F",
+          "what": "Páginas de texto que as pessoas escaneiam.",
+          "status": "pronto",
+          "components": [
+            "table-of-contents"
+          ],
+          "blueprints": [
+            "editorial"
+          ],
+          "note": "Títulos e primeiras palavras carregam o sentido; o leitor escaneia a esquerda."
+        },
+        {
+          "term": "Z-pattern",
+          "pt": "Leitura em Z",
+          "what": "Landing com um CTA: logo → menu → mensagem → botão.",
+          "status": "pronto",
+          "patterns": [
+            "product-shot-hero"
+          ],
+          "blueprints": [
+            "landing"
+          ]
+        },
+        {
+          "term": "Split screen",
+          "pt": "Tela dividida",
+          "what": "Imagem + chamada lado a lado (login, A × B).",
+          "status": "pronto",
+          "patterns": [
+            "login-split-screen",
+            "auth-sliding-panels"
+          ]
+        },
+        {
+          "term": "Magazine",
+          "pt": "Revista",
+          "what": "Destaque grande + secundárias + listas (portais).",
+          "status": "pronto",
+          "blueprints": [
+            "editorial"
+          ]
+        },
+        {
+          "term": "Asymmetrical / Bento",
+          "pt": "Assimétrico / bento",
+          "what": "Blocos de tamanhos diferentes.",
+          "status": "pronto",
+          "patterns": [
+            "bento-grid"
+          ]
+        },
+        {
+          "term": "Holy grail",
+          "pt": "Cabeçalho, 3 colunas e rodapé",
+          "what": "App com navegação, conteúdo e painel extra.",
+          "status": "pronto",
+          "components": [
+            "app-shell",
+            "sidebar"
+          ],
+          "blueprints": [
+            "admin"
+          ]
+        },
+        {
+          "term": "Masonry",
+          "pt": "Alvenaria",
+          "what": "Mídia de alturas variadas em colunas.",
+          "status": "pronto",
+          "note": "CSS columns (column-width) sem JS; a ordem de leitura vira por coluna, então não use para lista ordenada."
+        },
+        {
+          "term": "Hero landing",
+          "pt": "Hero + recursos",
+          "what": "Faixa principal + grade de recursos.",
+          "status": "pronto",
+          "patterns": [
+            "aurora-glass-hero",
+            "product-shot-hero",
+            "editorial-type-hero"
+          ],
+          "blueprints": [
+            "landing",
+            "launch"
+          ]
+        },
+        {
+          "term": "Full-screen sections",
+          "pt": "Seções de tela cheia",
+          "what": "Uma ideia por tela, com snap.",
+          "status": "pronto",
+          "components": [
+            "carousel"
+          ],
+          "patterns": [
+            "onboarding-pages"
+          ],
+          "note": "scroll-snap-type: y mandatory só em página curta de apresentação."
+        },
+        {
+          "term": "List-detail panes",
+          "pt": "Lista + detalhe",
+          "what": "Navegação, lista, detalhe e contexto que se dobram conforme a largura.",
+          "status": "falta",
+          "components": [
+            "app-shell"
+          ],
+          "patterns": [
+            "side-sheet-detail"
+          ],
+          "note": "Lote 4: padrão com container queries (4 painéis → 2 → detalhe vira tela)."
+        },
+        {
+          "term": "Editorial serif hero",
+          "pt": "Hero editorial com serifa",
+          "what": "Título serifado enorme + linha de miniaturas com rótulo (coleções, aromas).",
+          "status": "pronto",
+          "patterns": [
+            "editorial-type-hero"
+          ],
+          "note": "Tema editorial; miniaturas com rótulo entram como variação no lote 5."
+        },
+        {
+          "term": "Headline + stat card hero",
+          "pt": "Hero com número",
+          "what": "Headline grande, card com estatística e CTA circular com seta.",
+          "status": "pronto",
+          "patterns": [
+            "stat-card-hero"
+          ],
+          "components": [
+            "stat-card"
+          ],
+          "note": "Padrão stat-card-hero."
+        },
+        {
+          "term": "Bento KPI hero",
+          "pt": "Hero em bento com KPIs",
+          "what": "Grade de blocos com números, barras e foto no lugar de ilustração.",
+          "status": "pronto",
+          "patterns": [
+            "bento-grid"
+          ],
+          "components": [
+            "stat-card",
+            "bar-chart"
+          ]
+        },
+        {
+          "term": "Bento dashboard",
+          "pt": "Painel em cards (bento)",
+          "what": "Cards de tamanhos diferentes num grid: KPIs com mini-gráfico, donut, tabela recente e um card de destaque (foto ou cor escura).",
+          "status": "pronto",
+          "components": [
+            "stat-card",
+            "donut-chart",
+            "data-table",
+            "card",
+            "sidebar"
+          ],
+          "blueprints": [
+            "saas-analytics",
+            "admin",
+            "health"
+          ],
+          "note": "Referências: carteira, pedidos, restaurante, clínica, fitness. Um destaque por tela; sidebar em vidro só sobre fundo com cor."
+        }
+      ]
+    },
+    {
+      "id": "scroll",
+      "title": "Rolagem",
+      "items": [
+        {
+          "term": "Sticky positioning",
+          "pt": "Grudado",
+          "what": "Cabeçalho que gruda e passa a vez ao próximo.",
+          "status": "pronto",
+          "patterns": [
+            "glass-sticky-header",
+            "hide-on-scroll-header"
+          ],
+          "components": [
+            "table"
+          ]
+        },
+        {
+          "term": "Scroll snap",
+          "pt": "Encaixe na rolagem",
+          "what": "Painéis que travam no lugar.",
+          "status": "pronto",
+          "components": [
+            "carousel"
+          ],
+          "patterns": [
+            "hero-carousel-autoplay"
+          ]
+        },
+        {
+          "term": "Scroll triggered",
+          "pt": "Aparece ao entrar",
+          "what": "Elemento surge ao entrar na tela.",
+          "status": "pronto",
+          "patterns": [
+            "scroll-reveal-stagger"
+          ]
+        },
+        {
+          "term": "Scroll driven",
+          "pt": "Progresso pela rolagem",
+          "what": "Barra de leitura acompanha a rolagem.",
+          "status": "pronto",
+          "components": [
+            "table-of-contents"
+          ],
+          "patterns": [
+            "top-progress-bar"
+          ],
+          "note": "animation-timeline: scroll() com fallback estático."
+        },
+        {
+          "term": "Zoom on scroll",
+          "pt": "Zoom ao rolar",
+          "what": "Imagem do topo cresce ao puxar.",
+          "status": "pronto",
+          "components": [
+            "stretchy-header"
+          ]
+        },
+        {
+          "term": "Parallax",
+          "pt": "Paralaxe",
+          "what": "Fundo anda mais devagar que o conteúdo.",
+          "status": "evitar",
+          "components": [
+            "stretchy-header"
+          ],
+          "note": "Causa enjoo e custa performance. Se for a assinatura da página, só no hero, com animation-timeline e desligado com movimento reduzido."
+        },
+        {
+          "term": "Horizontal scroll",
+          "pt": "Faixa horizontal",
+          "what": "Trilho que rola de lado.",
+          "status": "pronto",
+          "components": [
+            "carousel",
+            "scroll-area"
+          ]
+        },
+        {
+          "term": "Scrollytelling",
+          "pt": "História na rolagem",
+          "what": "Etapas trocam enquanto a cena fica parada.",
+          "status": "falta",
+          "note": "Ainda não é padrão; candidato para landing de lançamento (blueprint launch)."
+        },
+        {
+          "term": "Scroll-guided path / pinning",
+          "pt": "Caminho guiado pela rolagem",
+          "what": "Palco preso enquanto um traço se desenha e um objeto anda por ele.",
+          "status": "pronto",
+          "components": [
+            "scroll-path"
+          ],
+          "note": "SVG nativo, sem GSAP."
+        }
+      ]
+    },
+    {
+      "id": "paginacao",
+      "title": "Paginação",
+      "items": [
+        {
+          "term": "Classic",
+          "pt": "Numerada",
+          "what": "Setas + números com o atual destacado.",
+          "status": "pronto",
+          "components": [
+            "pagination"
+          ],
+          "patterns": [
+            "pagination-numbered"
+          ]
+        },
+        {
+          "term": "Pills",
+          "pt": "Pílulas com reticências",
+          "what": "1 … 8 9 em pílulas.",
+          "status": "pronto",
+          "components": [
+            "pagination"
+          ],
+          "note": "Paginator shape=\"pill\"; também bordered e track."
+        },
+        {
+          "term": "Dots",
+          "pt": "Pontos",
+          "what": "Pontos com o atual alongado (carrossel, onboarding).",
+          "status": "pronto",
+          "components": [
+            "page-control",
+            "carousel"
+          ]
+        },
+        {
+          "term": "Bordered",
+          "pt": "Com contorno",
+          "what": "Números em caixas com borda.",
+          "status": "variar",
+          "components": [
+            "pagination"
+          ],
+          "note": "Lote 2."
+        },
+        {
+          "term": "Track",
+          "pt": "Trilho",
+          "what": "Números sobre um trilho com indicador deslizante.",
+          "status": "variar",
+          "components": [
+            "pagination"
+          ],
+          "note": "Lote 2."
+        },
+        {
+          "term": "Compact",
+          "pt": "Compacta",
+          "what": "‹ 2 / 5 ›.",
+          "status": "pronto",
+          "components": [
+            "pagination"
+          ],
+          "note": "Paginator variant=\"compact\" (‹ 2 / 5 ›) ou \"progress\" (barra + contador); a numerada vira \"3 de 12\" no celular."
+        },
+        {
+          "term": "Progress",
+          "pt": "Com barra",
+          "what": "Barra de progresso + 3 / 5.",
+          "status": "variar",
+          "components": [
+            "pagination",
+            "progress"
+          ],
+          "note": "Lote 2."
+        },
+        {
+          "term": "Steps",
+          "pt": "Etapas",
+          "what": "Círculos numerados ligados por linha.",
+          "status": "pronto",
+          "components": [
+            "stepper"
+          ]
+        },
+        {
+          "term": "Load more",
+          "pt": "Carregar mais",
+          "what": "Botão no fim da lista.",
+          "status": "pronto",
+          "components": [
+            "load-more"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "app",
+      "title": "Peças de app (referências)",
+      "items": [
+        {
+          "term": "Allocation bar",
+          "pt": "Barra de alocação",
+          "what": "Uma barra dividida em fatias com legenda (carteira, orçamento, armazenamento).",
+          "status": "pronto",
+          "components": [
+            "segmented-bar"
+          ],
+          "blueprints": [
+            "fintech"
+          ]
+        },
+        {
+          "term": "Activity ring",
+          "pt": "Anel de atividade",
+          "what": "Anel(éis) de meta com valor no centro e legenda ao lado (calorias, passos).",
+          "status": "pronto",
+          "components": [
+            "activity-ring"
+          ],
+          "blueprints": [
+            "health",
+            "habits"
+          ]
+        },
+        {
+          "term": "Boarding pass / ticket",
+          "pt": "Bilhete",
+          "what": "Origem → destino com rota tracejada, horários e picote.",
+          "status": "pronto",
+          "components": [
+            "ticket-card"
+          ],
+          "blueprints": [
+            "booking",
+            "event"
+          ]
+        },
+        {
+          "term": "Week strip",
+          "pt": "Faixa da semana",
+          "what": "Dias da semana com o dia escolhido destacado e pontos de evento.",
+          "status": "pronto",
+          "components": [
+            "week-strip"
+          ],
+          "blueprints": [
+            "habits",
+            "booking",
+            "health"
+          ]
+        },
+        {
+          "term": "Avatar stack",
+          "pt": "Avatares empilhados",
+          "what": "Rostos sobrepostos com +N.",
+          "status": "pronto",
+          "components": [
+            "avatar"
+          ],
+          "note": "AvatarGroup com max."
+        },
+        {
+          "term": "Sparkline",
+          "pt": "Minigráfico",
+          "what": "Linha de tendência sem eixos dentro de um card.",
+          "status": "pronto",
+          "components": [
+            "stat-card"
+          ],
+          "note": "Sparkline exportado do stat-card."
+        },
+        {
+          "term": "Balance header",
+          "pt": "Saldo com variação",
+          "what": "Saldo grande com selo de variação e período.",
+          "status": "pronto",
+          "components": [
+            "stat-card",
+            "number-ticker"
+          ],
+          "patterns": [
+            "kpi-stat-card"
+          ]
+        },
+        {
+          "term": "Candlestick chart",
+          "pt": "Gráfico de candles",
+          "what": "Abertura, máxima, mínima e fechamento por período.",
+          "status": "pronto",
+          "components": [
+            "candlestick-chart"
+          ],
+          "note": "Alta vazada e baixa cheia, último preço no eixo, volume opcional."
+        },
+        {
+          "term": "Card deck / fanned cards",
+          "pt": "Cards em leque",
+          "what": "Cards empilhados que passam com o dedo.",
+          "status": "pronto",
+          "components": [
+            "card-stack"
+          ],
+          "note": "variant=\"stack\" ou \"fan\"; arrastar o da frente o manda para o fim."
+        },
+        {
+          "term": "Pill columns",
+          "pt": "Colunas em pílula",
+          "what": "Colunas verticais arredondadas com trilho e % dentro.",
+          "status": "pronto",
+          "components": [
+            "progress-columns"
+          ],
+          "note": "Trilho hachurado + selo de percentual; para séries com eixo use bar-chart."
+        },
+        {
+          "term": "Status timeline",
+          "pt": "Linha do status",
+          "what": "Etapas de um pedido ou consulta com a atual marcada.",
+          "status": "pronto",
+          "components": [
+            "timeline",
+            "stepper"
+          ],
+          "patterns": [
+            "order-tracking"
+          ]
+        },
+        {
+          "term": "Filter chips",
+          "pt": "Chips de filtro",
+          "what": "Todos · Clínico · Especialista · Exames.",
+          "status": "pronto",
+          "components": [
+            "toggle-group",
+            "badge"
+          ],
+          "patterns": [
+            "filter-chips"
+          ]
+        },
+        {
+          "term": "Success modal",
+          "pt": "Modal de sucesso",
+          "what": "Ilustração + \"Pagamento feito\" + fechar.",
+          "status": "pronto",
+          "components": [
+            "result",
+            "dialog"
+          ]
+        },
+        {
+          "term": "Profile menu / account switcher",
+          "pt": "Menu do perfil",
+          "what": "Usuário, atalhos com kbd, trocar de conta, tema e sair.",
+          "status": "pronto",
+          "components": [
+            "dropdown-menu",
+            "kbd",
+            "switch",
+            "avatar"
+          ]
+        },
+        {
+          "term": "Rich text toolbar",
+          "pt": "Barra de formatação",
+          "what": "Fonte, tamanho, negrito, alinhamento.",
+          "status": "pronto",
+          "components": [
+            "toolbar",
+            "toggle-group"
+          ]
+        },
+        {
+          "term": "Search with suggestions",
+          "pt": "Busca com sugestões",
+          "what": "Campo que lista resultados enquanto digita.",
+          "status": "pronto",
+          "components": [
+            "combobox",
+            "command",
+            "search-bar",
+            "search-expand"
+          ],
+          "patterns": [
+            "command-palette",
+            "mobile-search-screen"
+          ]
+        },
+        {
+          "term": "Icon rail sidebar",
+          "pt": "Menu lateral recolhível",
+          "what": "Só ícones, abre com rótulos e seções.",
+          "status": "pronto",
+          "components": [
+            "sidebar"
+          ],
+          "patterns": [
+            "collapsible-sidebar"
+          ]
+        },
+        {
+          "term": "Sliding auth panel",
+          "pt": "Login com painel deslizante",
+          "what": "Foto desliza entre Entrar e Criar conta.",
+          "status": "pronto",
+          "patterns": [
+            "auth-sliding-panels",
+            "auth-animated-tabs",
+            "login-split-screen"
+          ]
+        },
+        {
+          "term": "Password checklist",
+          "pt": "Regras da senha",
+          "what": "Lista de regras que marcam e barra de força.",
+          "status": "pronto",
+          "components": [
+            "password-strength"
+          ]
+        },
+        {
+          "term": "Expanding image panels",
+          "pt": "Acordeão de imagens",
+          "what": "Faixas de foto; a escolhida abre e mostra nome e cargo.",
+          "status": "falta",
+          "components": [
+            "accordion"
+          ],
+          "note": "Candidato (seção de equipe/portfólio)."
+        },
+        {
+          "term": "Fullscreen menu",
+          "pt": "Menu de tela cheia",
+          "what": "Menu cobre a página com links grandes.",
+          "status": "pronto",
+          "patterns": [
+            "fullscreen-menu-overlay"
+          ]
+        },
+        {
+          "term": "Focal point / object-position",
+          "pt": "Ponto focal da imagem",
+          "what": "Escolher o centro do recorte (avatar, hero, story, grade de produto).",
+          "status": "pronto",
+          "components": [
+            "aspect-ratio",
+            "avatar"
+          ],
+          "note": "AspectRatio focal={{ x, y }} (object-position)."
+        },
+        {
+          "term": "Table footer totals",
+          "pt": "Rodapé de totais",
+          "what": "tfoot com total e variação colorida.",
+          "status": "pronto",
+          "components": [
+            "table",
+            "data-table"
+          ],
+          "note": "TableFooter + coluna numérica; variação com sinal e seta, não só cor."
+        },
+        {
+          "term": "Appointment home",
+          "pt": "Início de agendamento",
+          "what": "Saudação, filtro, próxima consulta em destaque e agenda do dia.",
+          "status": "pronto",
+          "components": [
+            "tela-agendamento"
+          ],
+          "blueprints": [
+            "health"
+          ]
+        },
+        {
+          "term": "Crypto / investment wallet",
+          "pt": "Carteira de investimentos",
+          "what": "Saldo com variação, alocação, ativos com sparkline, candles e comprar/vender.",
+          "status": "pronto",
+          "components": [
+            "tela-carteira"
+          ],
+          "blueprints": [
+            "fintech"
+          ]
+        },
+        {
+          "term": "Habit tracker",
+          "pt": "Rastreador de hábitos",
+          "what": "Semana, lembrete, rotina em checklist e progresso por dia.",
+          "status": "pronto",
+          "components": [
+            "tela-habitos"
+          ],
+          "blueprints": [
+            "habits"
+          ]
+        },
+        {
+          "term": "Travel explore",
+          "pt": "Explorar viagem",
+          "what": "Destinos em pilha de cards e próxima viagem como bilhete.",
+          "status": "pronto",
+          "components": [
+            "tela-viagem"
+          ],
+          "blueprints": [
+            "booking"
+          ]
+        },
+        {
+          "term": "PIN pad / passcode",
+          "pt": "Senha do app com teclado",
+          "what": "Pontos ou caixas que enchem e teclado numérico próprio; errou, treme e limpa.",
+          "status": "pronto",
+          "components": [
+            "pin-pad"
+          ]
+        },
+        {
+          "term": "Signature pad",
+          "pt": "Assinatura na tela",
+          "what": "Área para assinar com o dedo ou caneta; exporta imagem.",
+          "status": "pronto",
+          "components": [
+            "signature-pad"
+          ]
+        },
+        {
+          "term": "Proof of delivery (POD)",
+          "pt": "Assinatura de recebimento (canhoto digital)",
+          "what": "Quem recebeu confere, assina na tela e o app guarda data, hora, local e foto como comprovante.",
+          "status": "pronto",
+          "components": [
+            "delivery-receipt",
+            "signature-pad",
+            "tela-entregas"
+          ],
+          "note": "3 apresentações: card (web), fullscreen (app do entregador) e sheet (sobre a lista). CPF sempre mascarado no comprovante."
+        },
+        {
+          "term": "Color picker / swatches",
+          "pt": "Seletor de cor e amostras",
+          "what": "Área de saturação, matiz e hex; ou só círculos de cor para escolher.",
+          "status": "pronto",
+          "components": [
+            "color-picker"
+          ]
+        },
+        {
+          "term": "Expandable card / Today card",
+          "pt": "Cartão que expande em tela",
+          "what": "Cartão grande com imagem que abre a história em tela cheia, a imagem viajando.",
+          "status": "pronto",
+          "components": [
+            "expandable-card"
+          ]
+        },
+        {
+          "term": "Theme toggle / Dark mode toggle",
+          "pt": "Alternador de tema",
+          "what": "Botão, menu ou interruptor que troca claro, escuro e sistema; pode animar a troca (círculo, cortina, dissolve).",
+          "status": "pronto",
+          "components": [
+            "theme-toggle",
+            "theme-mode"
+          ],
+          "note": "Sem next-themes: data-mode no <html>, wc-mode no localStorage e script anti-flash no <head>."
+        },
+        {
+          "term": "Contextual save bar / Unsaved changes bar",
+          "pt": "Barra de alterações não salvas",
+          "what": "Barra que aparece quando o formulário fica sujo, com Descartar e Salvar; avisa ao sair da página.",
+          "status": "pronto",
+          "components": [
+            "save-bar"
+          ],
+          "note": "Shopify Polaris, Stripe e Linear. Ctrl/⌘+S salva."
+        },
+        {
+          "term": "Inline edit / Click to edit",
+          "pt": "Edição no lugar",
+          "what": "Texto que vira campo ao clicar (título de tarefa, nome de pasta); Enter salva, Esc cancela.",
+          "status": "pronto",
+          "components": [
+            "editable-text"
+          ],
+          "note": "Em célula de tabela, use `editable` do data-table."
+        },
+        {
+          "term": "Wizard / Multi-step form / Check your answers",
+          "pt": "Formulário em etapas com revisão",
+          "what": "Cadastro dividido em etapas com indicador de progresso e uma tela final que mostra tudo com Alterar antes de enviar.",
+          "status": "pronto",
+          "components": [
+            "step-form",
+            "stepper"
+          ],
+          "note": "Revisão no estilo GOV.UK Check your answers."
+        },
+        {
+          "term": "Photo grid / Drag to select",
+          "pt": "Grade de fotos com seleção por arraste",
+          "what": "Miniaturas quadradas; no modo Selecionar, arrastar o dedo marca várias seguidas.",
+          "status": "pronto",
+          "components": [
+            "photo-grid"
+          ],
+          "note": "Fotos do iPhone e Google Fotos."
+        },
+        {
+          "term": "Camera capture / Scanner",
+          "pt": "Câmera e leitor de código",
+          "what": "Visor da câmera na página para foto de documento ou leitura de QR e código de barras.",
+          "status": "pronto",
+          "components": [
+            "camera-capture"
+          ],
+          "note": "Permissão só no toque; queda para o app de câmera."
+        },
+        {
+          "term": "Snackbar",
+          "pt": "Aviso com desfazer",
+          "what": "Faixa de uma linha embaixo com uma ação (Desfazer) que some sozinha.",
+          "status": "pronto",
+          "components": [
+            "undo-snackbar",
+            "sonner"
+          ],
+          "patterns": [
+            "undo-delete"
+          ],
+          "note": "Ação destrutiva otimista: undo-snackbar (contagem e commit no fim). Resultado comum: sonner."
+        },
+        {
+          "term": "Upload progress toast",
+          "pt": "Painel de envios",
+          "what": "Cartão no canto com cada envio/exportação, %, tempo restante e cancelar.",
+          "status": "pronto",
+          "components": [
+            "progress-toast",
+            "file-upload"
+          ]
+        },
+        {
+          "term": "Morphing toast",
+          "pt": "Toast que se desdobra",
+          "what": "Pílula que cresce em cartão com detalhe e volta antes de sair (Sileo, Dynamic Island).",
+          "status": "pronto",
+          "components": [
+            "capsule-toast",
+            "live-island"
+          ],
+          "note": "Aviso pontual: capsule-toast. Atividade contínua (pedido, timer): live-island."
+        }
+      ]
+    },
+    {
+      "id": "cor",
+      "title": "Cor (uso)",
+      "items": [
+        {
+          "term": "60/30/10 rule",
+          "pt": "Regra 60/30/10",
+          "what": "60% fundos e grandes áreas, 30% apoio (cards, seções, gráficos), 10% destaque (CTA, ativo, ícone-chave).",
+          "status": "pronto",
+          "note": "Mapa em webcode-interface-craft/references/cor.md: bg/surface = 60, surface-raised/accent-soft = 30, accent-solid = 10. Checagem na revisão (critério Consistência)."
+        },
+        {
+          "term": "Avoid pure hex",
+          "pt": "Evitar cor pura",
+          "what": "Trocar #000, #FFF e primárias saturadas por neutros com tom e escala de 4 a 6 degraus por matiz.",
+          "status": "pronto",
+          "note": "Temas já usam grafite e off-white; presets de paleta seguem a escala profunda/base/média/clara/apagada."
+        },
+        {
+          "term": "Plant-shop cart",
+          "pt": "Carrinho com cupom",
+          "what": "Itens com stepper, campo de cupom com Aplicar e resumo (subtotal, frete, total).",
+          "status": "pronto",
+          "components": [
+            "quantity-stepper",
+            "input",
+            "button",
+            "card"
+          ],
+          "patterns": [
+            "mini-cart-drawer"
+          ]
+        },
+        {
+          "term": "Attribute strip",
+          "pt": "Faixa de atributos do produto",
+          "what": "Três ou quatro atributos com ícone (altura, luz, umidade) num painel de cor, com preço e adicionar ao carrinho.",
+          "status": "pronto",
+          "components": [
+            "card",
+            "stat-card",
+            "button"
+          ]
+        },
+        {
+          "term": "Color palette presets",
+          "pt": "Paletas de referência",
+          "what": "Pares e trios de cor com nome (Midnight Navy + Vanilla Linen, Morning Paper + Silent Grove) como ponto de partida do tema.",
+          "status": "pronto",
+          "note": "Estúdio → Cores → Paletas de referência (26): destaque com AA ajustado, mistura no fundo (ou da cor-par clara), filete e séries do gráfico. Fundo creme vem do tema base custelo/editorial/omnimesa."
+        },
+        {
+          "term": "Gold hairline",
+          "pt": "Filete dourado",
+          "what": "Linha de ~1px em ouro fino separando cores ou contornando um cartão de destaque; acabamento de marca de luxo.",
+          "status": "pronto",
+          "components": [
+            "separator"
+          ],
+          "note": "Token rule (ADR 0025): Separator variant=\"rule\" ou border-rule. Paletas Ameixa e mármore, Meia-noite e pérola, Terracota e areia, Marinho e creme. Decorativo: nunca a única pista de estado nem cor de texto."
+        },
+        {
+          "term": "Marble / wood texture",
+          "pt": "Textura de mármore ou madeira",
+          "what": "Superfície com veios de mármore, fios de madeira ou trama de linho, sem foto.",
+          "status": "pronto",
+          "note": "@webcode/texture: texture(\"marmore\" | \"madeira\" | \"linho\" | \"papel\") só com gradientes CSS na cor do filete, até 14% de opacidade. Só em hero, capa e cartão de destaque."
+        },
+        {
+          "term": "Clean edtech palette",
+          "pt": "Paleta edtech limpa",
+          "what": "Fundo frio quase branco, violeta de ação, lilás de apoio, âmbar de recompensa e texto azul-noite (apps de estudo e quiz).",
+          "status": "pronto",
+          "note": "Preset Índigo e âmbar no Estúdio (base clean-saas, contraste AA nos dois modos). Âmbar só em selo/conquista com texto escuro, nunca texto sobre branco."
+        }
+      ]
+    },
+    {
+      "id": "material",
+      "title": "Material (vidro)",
+      "items": [
+        {
+          "term": "Liquid Glass",
+          "pt": "Vidro líquido",
+          "what": "Vidro com borda especular, brilho interno e sombra na base, como os controles flutuantes do iOS 26.",
+          "status": "pronto",
+          "components": [
+            "glass",
+            "button",
+            "tab-bar",
+            "toolbar"
+          ],
+          "note": "glassVariant({ effect: \"liquid\" }) em qualquer vidro; ação principal com glassTint (ADR 0022/0023)."
+        },
+        {
+          "term": "Glass container",
+          "pt": "Grupo de vidro que se funde",
+          "what": "Botões de vidro próximos viram uma cápsula só e se separam com animação, como os controles do iOS 26.",
+          "status": "pronto",
+          "components": [
+            "glass-group",
+            "native-glass"
+          ],
+          "note": "Web/PWA: glass-group (merged). Expo: GlassGroup do @webcode/native-glass (GlassContainer do expo-glass-effect no iOS 26)."
+        },
+        {
+          "term": "Native Liquid Glass",
+          "pt": "Vidro nativo do iOS 26",
+          "what": "O vidro do próprio sistema no app Expo, com fallback legível no Android e iOS antigo.",
+          "status": "pronto",
+          "components": [
+            "native-glass"
+          ],
+          "note": "expo-glass-effect via @webcode/native-glass; só em barras e botões (receita vidro-barras-botoes, ADR 0024)."
+        },
+        {
+          "term": "Glassmorphism",
+          "pt": "Vidro fosco",
+          "what": "Superfície translúcida com desfoque do fundo e borda clara.",
+          "status": "pronto",
+          "components": [
+            "glass",
+            "card",
+            "navigation-bar"
+          ],
+          "note": "glass(\"thin\"|\"regular\"|\"thick\"), contraste garantido sobre qualquer fundo (ADR 0014)."
+        },
+        {
+          "term": "Acrylic",
+          "pt": "Vidro acrílico",
+          "what": "Vidro com grão fino (Fluent), dá matéria a painéis grandes.",
+          "status": "pronto",
+          "components": [
+            "glass",
+            "sidebar",
+            "sheet"
+          ],
+          "note": "glassVariant({ effect: \"acrylic\" })."
+        },
+        {
+          "term": "Tinted glass",
+          "pt": "Vidro tingido",
+          "what": "Vidro com a cor da marca ou de status.",
+          "status": "pronto",
+          "components": [
+            "glass",
+            "badge",
+            "button",
+            "banner"
+          ],
+          "note": "Ação principal: glassTint (cor sólida). Aviso/chip: glassVariant({ status }) (matiz sutil)."
+        },
+        {
+          "term": "Specular highlight",
+          "pt": "Luz do ponteiro",
+          "what": "Brilho que nasce onde o cursor aponta.",
+          "status": "pronto",
+          "components": [
+            "glass"
+          ],
+          "note": "glassLight + useGlassLight()."
+        },
+        {
+          "term": "Scroll edge effect",
+          "pt": "Barra que antecipa",
+          "what": "Barra de vidro que já pega a cor do conteúdo que vem chegando.",
+          "status": "pronto",
+          "components": [
+            "glass",
+            "navigation-bar",
+            "app-shell",
+            "page-header"
+          ],
+          "note": "glassBleed() (ADR 0023)."
+        },
+        {
+          "term": "Clear glass",
+          "pt": "Vidro transparente",
+          "what": "Vidro quase sem fosco do iOS 26, só com refração.",
+          "status": "evitar",
+          "components": [
+            "glass"
+          ],
+          "note": "Não passa no contraste sobre fundo variado; use thin para ícone sobre foto."
+        },
+        {
+          "term": "Refraction",
+          "pt": "Refração (lente)",
+          "what": "Conteúdo atrás distorcido nas bordas do vidro.",
+          "status": "falta",
+          "components": [
+            "glass"
+          ],
+          "note": "Só no Chromium (backdrop-filter com SVG); fora até haver suporte amplo (ADR 0023)."
+        }
+      ]
+    },
+    {
+      "id": "assinatura",
+      "title": "Planos e assinatura",
+      "items": [
+        {
+          "term": "Pricing table",
+          "pt": "Tabela de preços",
+          "what": "Planos lado a lado com o recomendado destacado e o botão de assinar.",
+          "status": "pronto",
+          "components": [
+            "pricing-plans"
+          ],
+          "patterns": [
+            "pricing-tiers"
+          ],
+          "blueprints": [
+            "saas",
+            "subscription"
+          ],
+          "note": "variant columns na página; list no checkout e na troca; carousel no app."
+        },
+        {
+          "term": "Billing toggle",
+          "pt": "Mensal/anual",
+          "what": "Seletor de ciclo com o selo da economia do anual.",
+          "status": "pronto",
+          "components": [
+            "pricing-plans"
+          ],
+          "note": "BillingToggle calcula o selo pela maior economia dos planos."
+        },
+        {
+          "term": "Feature comparison table",
+          "pt": "Comparação de planos",
+          "what": "Tabela de recursos por plano com cabeçalho que gruda.",
+          "status": "pronto",
+          "components": [
+            "plan-comparison"
+          ],
+          "patterns": [
+            "plan-comparison-table"
+          ]
+        },
+        {
+          "term": "Paywall",
+          "pt": "Tela de assinatura no app",
+          "what": "Venda do plano no app: benefícios, planos grandes, botão fixo e termos.",
+          "status": "pronto",
+          "components": [
+            "pricing-plans",
+            "locked-feature",
+            "tela-planos"
+          ],
+          "patterns": [
+            "paywall-plans"
+          ]
+        },
+        {
+          "term": "Billing portal",
+          "pt": "Minha assinatura",
+          "what": "Plano atual, próxima cobrança, forma de pagamento, faturas, trocar e cancelar.",
+          "status": "pronto",
+          "components": [
+            "subscription-manager",
+            "usage-meter",
+            "tela-assinatura"
+          ]
+        },
+        {
+          "term": "Cancellation flow",
+          "pt": "Cancelamento com retenção",
+          "what": "Cancelar com motivo e uma oferta (pausar, desconto, plano menor).",
+          "status": "pronto",
+          "components": [
+            "subscription-manager"
+          ],
+          "note": "CancelSubscription: 2 cliques, motivo opcional, oferta ao lado. Nunca esconda o cancelar (CDC)."
+        },
+        {
+          "term": "Proration",
+          "pt": "Valor proporcional",
+          "what": "Quanto se paga hoje ao trocar de plano no meio do ciclo.",
+          "status": "pronto",
+          "components": [
+            "subscription-manager"
+          ],
+          "note": "PlanChangeSummary + prorate() de @webcode/billing."
+        }
+      ]
+    },
+    {
+      "id": "premium",
+      "title": "Seções de site (premium)",
+      "items": [
+        {
+          "term": "Morphing dropdown",
+          "pt": "Menu que muda de forma",
+          "what": "Um fundo de painel só que anda e muda de tamanho entre os menus do topo.",
+          "status": "pronto",
+          "components": [
+            "morph-nav"
+          ],
+          "note": "Fonte: Navbar Gallery (dropdown, mega menu). Conteúdo entra pelo lado de onde o mouse veio."
+        },
+        {
+          "term": "Hover indicator",
+          "pt": "Pílula que segue o mouse",
+          "what": "Fundo suave que desliza por baixo do item de menu sob o ponteiro.",
+          "status": "pronto",
+          "components": [
+            "morph-nav"
+          ]
+        },
+        {
+          "term": "Announcement bar",
+          "pt": "Faixa de anúncio",
+          "what": "Linha curta acima da navbar com lançamento ou promoção.",
+          "status": "pronto",
+          "components": [
+            "announcement-bar",
+            "morph-nav",
+            "banner"
+          ],
+          "patterns": [
+            "announcement-cta-header"
+          ],
+          "note": "Fonte: Navbar Gallery (navbar.gallery)."
+        },
+        {
+          "term": "Hero section",
+          "pt": "Hero (abertura)",
+          "what": "Promessa, ação principal e prova no topo da página: centrado, dividido, editorial ou palco.",
+          "status": "pronto",
+          "components": [
+            "hero-section",
+            "particle-hero"
+          ],
+          "note": "Fonte: Supahero."
+        },
+        {
+          "term": "Scroll-driven tilt",
+          "pt": "Print que endireita na rolagem",
+          "what": "Imagem do produto começa inclinada e fica reta conforme a página rola.",
+          "status": "pronto",
+          "components": [
+            "hero-section"
+          ],
+          "note": "HeroMedia com animation-timeline: view(), sem JS."
+        },
+        {
+          "term": "CTA banner",
+          "pt": "Bloco de chamada",
+          "what": "Cartão de fim de seção com uma ação e a objeção respondida.",
+          "status": "pronto",
+          "components": [
+            "cta-section"
+          ],
+          "note": "Fonte: CTA Gallery (Button, Call-to-Buy, Download, Newsletter)."
+        },
+        {
+          "term": "Newsletter signup",
+          "pt": "Inscrição na newsletter",
+          "what": "E-mail + botão com validação, sucesso e a promessa de frequência.",
+          "status": "pronto",
+          "components": [
+            "cta-section"
+          ],
+          "patterns": [
+            "footer-newsletter"
+          ]
+        },
+        {
+          "term": "App download CTA",
+          "pt": "Chamada para baixar o app",
+          "what": "Botões de loja + QR Code que abre no celular.",
+          "status": "pronto",
+          "components": [
+            "app-download",
+            "cta-section",
+            "qr-code"
+          ],
+          "patterns": [
+            "footer-app-download"
+          ],
+          "note": "Fonte: CTA Gallery (cta.gallery)."
+        },
+        {
+          "term": "Sticky CTA bar",
+          "pt": "Barra fixa de chamada",
+          "what": "Barra curta no rodapé da tela que aparece depois de rolar.",
+          "status": "pronto",
+          "components": [
+            "cta-section",
+            "bottom-bar"
+          ]
+        },
+        {
+          "term": "Big type footer",
+          "pt": "Rodapé com letra gigante",
+          "what": "O nome da marca ocupa a largura do rodapé.",
+          "status": "pronto",
+          "components": [
+            "site-footer"
+          ],
+          "patterns": [
+            "footer-big-type"
+          ],
+          "note": "Fonte: Footer Design (Large Type, Typographic)."
+        },
+        {
+          "term": "Shader background",
+          "pt": "Fundo com shader",
+          "what": "Fundo animado na GPU: redemoinho, malha de degradê, meio-tom, chama, aurora.",
+          "status": "pronto",
+          "components": [
+            "shader-background"
+          ],
+          "note": "Fonte: Scrolltide (Shaders). Um por página, com véu para o texto."
+        },
+        {
+          "term": "Mesh gradient",
+          "pt": "Degradê em malha",
+          "what": "Várias cores que se misturam suavemente a partir de pontos.",
+          "status": "pronto",
+          "components": [
+            "shader-background"
+          ],
+          "note": "preset mesh."
+        },
+        {
+          "term": "Ink / fill hover",
+          "pt": "Botão com tinta",
+          "what": "A cor enche o botão a partir do ponto onde o mouse entra.",
+          "status": "pronto",
+          "components": [
+            "ink-button"
+          ]
+        },
+        {
+          "term": "3D icon (clay)",
+          "pt": "Ícone 3D",
+          "what": "Ícone com volume, luz e sombra para recursos e vazios.",
+          "status": "pronto",
+          "components": [
+            "icon-3d"
+          ],
+          "note": "Fonte: 3dicons.co. Em CSS a partir do lucide; render 3D próprio por src (V1 do 3dicons é CC0)."
+        },
+        {
+          "term": "DESIGN.md",
+          "pt": "Estilo em um arquivo",
+          "what": "Cores, tipo, forma, componentes e regras de um tema num Markdown para agentes.",
+          "status": "pronto",
+          "note": "Fonte: Styles (styles.refero.design). Gerado por tema em site/public/design-md/<tema>.md."
+        },
+        {
+          "term": "Floating / island navbar",
+          "pt": "Navbar ilha",
+          "what": "Cápsula flutuante no topo que some ao descer e volta ao subir.",
+          "status": "pronto",
+          "components": [
+            "floating-nav"
+          ],
+          "note": "Fonte: Navbar Gallery (navbar.gallery)."
+        },
+        {
+          "term": "Scroll spy",
+          "pt": "Seção ativa",
+          "what": "Link do menu marca a seção que está na tela.",
+          "status": "pronto",
+          "components": [
+            "floating-nav"
+          ],
+          "note": "floating-nav (spy)."
+        },
+        {
+          "term": "Mega menu",
+          "pt": "Mega menu",
+          "what": "Painel largo com várias colunas de links e um destaque.",
+          "status": "pronto",
+          "components": [
+            "mega-menu"
+          ],
+          "note": "Fonte: Navbar Gallery (navbar.gallery)."
+        },
+        {
+          "term": "Directional hover",
+          "pt": "Hover direcional",
+          "what": "Painel do mega menu desliza na direção de onde o mouse veio.",
+          "status": "pronto",
+          "components": [
+            "morph-nav",
+            "mega-menu"
+          ],
+          "note": "morph-nav panel=\"mega\" + MegaMenuContent. Fonte: osmo.supply (top 5 de 2026-11)."
+        },
+        {
+          "term": "Basic navbar",
+          "pt": "Navbar básica",
+          "what": "Barra com dropdown por item e menu no celular com submenu em sanfona.",
+          "status": "pronto",
+          "components": [
+            "morph-nav"
+          ],
+          "note": "morph-nav panel=\"dropdown\" + MorphNavList. Fonte: osmo.supply (top 5 de 2026-11)."
+        },
+        {
+          "term": "Stacked drawer",
+          "pt": "Menu lateral empilhado",
+          "what": "Submenus deslizam por cima e os níveis anteriores viram tiras que voltam.",
+          "status": "pronto",
+          "components": [
+            "drawer-nav"
+          ],
+          "note": "Fonte: osmo.supply (top 5 de 2026-11)."
+        },
+        {
+          "term": "Wavy accordion",
+          "pt": "Acordeão em onda",
+          "what": "Galeria em fatias: a aberta cresce e as outras giram como fita ondulada.",
+          "status": "pronto",
+          "components": [
+            "wavy-accordion"
+          ],
+          "note": "Fonte: osmo.supply (top 5 de 2026-11)."
+        },
+        {
+          "term": "Queued scroll reveal",
+          "pt": "Revelar em fila",
+          "what": "Itens entram um a um, em fila, conforme chegam à tela.",
+          "status": "pronto",
+          "components": [
+            "stagger"
+          ],
+          "note": "stagger trigger=\"queue\". Fonte: osmo.supply (top 5 de 2026-11)."
+        },
+        {
+          "term": "Fullscreen menu",
+          "pt": "Menu em tela cheia",
+          "what": "Menu que cobre a tela com links grandes.",
+          "status": "pronto",
+          "components": [
+            "fullscreen-nav"
+          ],
+          "note": "Fonte: Navbar Gallery (navbar.gallery). Padrão HTML: fullscreen-menu-overlay."
+        },
+        {
+          "term": "Tabs navbar",
+          "pt": "Abas de navegação",
+          "what": "Abas que levam a páginas, com indicador deslizante.",
+          "status": "pronto",
+          "components": [
+            "tabs-nav"
+          ],
+          "note": "Fonte: Navbar Gallery (navbar.gallery)."
+        },
+        {
+          "term": "Reading progress",
+          "pt": "Barra de leitura",
+          "what": "Linha no topo que enche conforme a página rola.",
+          "status": "pronto",
+          "components": [
+            "scroll-progress"
+          ],
+          "note": "Fonte: Navbar Gallery."
+        },
+        {
+          "term": "Back to top",
+          "pt": "Voltar ao topo",
+          "what": "Botão que leva ao início, com anel de progresso.",
+          "status": "pronto",
+          "components": [
+            "scroll-progress"
+          ],
+          "note": "Fonte: Footer Design."
+        },
+        {
+          "term": "Video hero",
+          "pt": "Hero com vídeo",
+          "what": "Abertura com vídeo de fundo, sem som, e texto por cima.",
+          "status": "pronto",
+          "components": [
+            "hero-video"
+          ],
+          "note": "Fonte: Supahero (supahero.io)."
+        },
+        {
+          "term": "Rotating words / word flip",
+          "pt": "Palavra que gira",
+          "what": "Uma palavra do título troca sozinha entre opções.",
+          "status": "pronto",
+          "components": [
+            "rotating-text"
+          ],
+          "note": "Fonte: Supahero (supahero.io)."
+        },
+        {
+          "term": "Typewriter",
+          "pt": "Máquina de escrever",
+          "what": "Texto que digita e apaga com cursor.",
+          "status": "pronto",
+          "components": [
+            "rotating-text"
+          ],
+          "note": "effect=\"type\"."
+        },
+        {
+          "term": "Grid / dot background",
+          "pt": "Fundo de grade",
+          "what": "Grade ou pontos finos que somem nas bordas.",
+          "status": "pronto",
+          "components": [
+            "grid-pattern"
+          ],
+          "note": "Fonte: Supahero (supahero.io)."
+        },
+        {
+          "term": "Beams",
+          "pt": "Feixes de luz",
+          "what": "Linhas de luz que correm pela grade.",
+          "status": "pronto",
+          "components": [
+            "grid-pattern"
+          ]
+        },
+        {
+          "term": "Scroll zoom / expand on scroll",
+          "pt": "Zoom ao rolar",
+          "what": "Imagem que cresce até ocupar a tela conforme rola.",
+          "status": "pronto",
+          "components": [
+            "scroll-zoom"
+          ],
+          "note": "Fonte: Supahero (supahero.io)."
+        },
+        {
+          "term": "Logo cloud / logo wall",
+          "pt": "Nuvem de logos",
+          "what": "Logos de clientes como prova social.",
+          "status": "pronto",
+          "components": [
+            "logo-cloud"
+          ],
+          "note": "Fonte: Supahero (supahero.io)."
+        },
+        {
+          "term": "Device mockup",
+          "pt": "Mockup de aparelho",
+          "what": "Print do produto dentro de navegador, celular ou notebook.",
+          "status": "pronto",
+          "components": [
+            "device-frame"
+          ],
+          "note": "Fonte: Supahero (supahero.io)."
+        },
+        {
+          "term": "Magnetic button",
+          "pt": "Botão magnético",
+          "what": "Botão que é puxado na direção do mouse.",
+          "status": "pronto",
+          "components": [
+            "magnetic-button"
+          ],
+          "note": "Fonte: CTA Gallery (cta.gallery)."
+        },
+        {
+          "term": "Shimmer / shine button",
+          "pt": "Botão com brilho",
+          "what": "Um brilho atravessa o botão no hover.",
+          "status": "pronto",
+          "components": [
+            "shimmer-button"
+          ],
+          "note": "Fonte: CTA Gallery (cta.gallery)."
+        },
+        {
+          "term": "Animated gradient border",
+          "pt": "Borda viva",
+          "what": "Borda em degradê que gira devagar.",
+          "status": "pronto",
+          "components": [
+            "shimmer-button"
+          ],
+          "note": "effect=\"border\"."
+        },
+        {
+          "term": "Waitlist",
+          "pt": "Lista de espera",
+          "what": "E-mail para entrar na fila, com posição e indicação.",
+          "status": "pronto",
+          "components": [
+            "waitlist-form"
+          ],
+          "note": "Fonte: CTA Gallery (cta.gallery)."
+        },
+        {
+          "term": "Limited offer / countdown CTA",
+          "pt": "Oferta com prazo",
+          "what": "Preço com desconto e contagem até acabar.",
+          "status": "pronto",
+          "components": [
+            "offer-cta"
+          ],
+          "note": "Fonte: CTA Gallery (cta.gallery)."
+        },
+        {
+          "term": "Slide-in / exit-intent popup",
+          "pt": "Cartão que desliza",
+          "what": "Oferta no canto depois de ler parte da página, sem bloquear.",
+          "status": "pronto",
+          "components": [
+            "slide-in-cta"
+          ],
+          "note": "Fonte: CTA Gallery (cta.gallery). Modal na entrada fica na lista Evitar."
+        },
+        {
+          "term": "Buy box",
+          "pt": "Caixa de compra",
+          "what": "Preço, opções, quantidade e Comprar na página do produto.",
+          "status": "pronto",
+          "components": [
+            "buy-box"
+          ],
+          "note": "Fonte: CTA Gallery (cta.gallery)."
+        },
+        {
+          "term": "Scroll text reveal",
+          "pt": "Texto que acende ao rolar",
+          "what": "Palavras ganham cor uma a uma conforme a página desce.",
+          "status": "pronto",
+          "components": [
+            "text-scroll-reveal"
+          ],
+          "note": "Fonte: Scrolltide (scrolltide.co), recriado do zero (o produto é pago)."
+        },
+        {
+          "term": "Stacking cards",
+          "pt": "Cartões que empilham",
+          "what": "Cartões grudam no topo e se empilham ao rolar.",
+          "status": "pronto",
+          "components": [
+            "sticky-cards"
+          ],
+          "note": "Fonte: Scrolltide (scrolltide.co), recriado do zero (o produto é pago)."
+        },
+        {
+          "term": "Horizontal scroll section",
+          "pt": "Rolagem lateral presa",
+          "what": "A página desce e a faixa anda para o lado.",
+          "status": "pronto",
+          "components": [
+            "horizontal-scroll"
+          ],
+          "note": "Fonte: Scrolltide (scrolltide.co), recriado do zero (o produto é pago)."
+        },
+        {
+          "term": "Parallax",
+          "pt": "Parallax",
+          "what": "Camadas andam em velocidades diferentes ao rolar.",
+          "status": "pronto",
+          "components": [
+            "parallax"
+          ],
+          "note": "Fonte: Scrolltide (scrolltide.co), recriado do zero (o produto é pago)."
+        },
+        {
+          "term": "Text scramble / decode",
+          "pt": "Texto que decifra",
+          "what": "Letras embaralhadas que se acertam uma a uma.",
+          "status": "pronto",
+          "components": [
+            "text-scramble"
+          ],
+          "note": "Fonte: Scrolltide (scrolltide.co), recriado do zero (o produto é pago)."
+        },
+        {
+          "term": "Bento grid",
+          "pt": "Grade bento",
+          "what": "Blocos de tamanhos diferentes com os recursos do produto.",
+          "status": "pronto",
+          "components": [
+            "bento-grid"
+          ],
+          "note": "Fonte: Supahero e Styles/Refero."
+        },
+        {
+          "term": "Dither / ordered dithering",
+          "pt": "Pontilhado",
+          "what": "Imagem feita de pontos em padrão fixo, cara de impressão ou pixel.",
+          "status": "pronto",
+          "components": [
+            "shader-background"
+          ],
+          "note": "preset dither. Fonte: Scrolltide (Shaders)."
+        },
+        {
+          "term": "Metaballs / liquid",
+          "pt": "Gotas que se fundem",
+          "what": "Bolhas que se juntam como líquido.",
+          "status": "pronto",
+          "components": [
+            "shader-background"
+          ],
+          "note": "preset liquid."
+        },
+        {
+          "term": "Grain gradient",
+          "pt": "Degradê com grão",
+          "what": "Degradê suave com textura de filme.",
+          "status": "pronto",
+          "components": [
+            "shader-background"
+          ],
+          "note": "preset grain."
+        },
+        {
+          "term": "Reveal footer",
+          "pt": "Rodapé cortina",
+          "what": "A página sobe e revela o rodapé preso por trás.",
+          "status": "pronto",
+          "components": [
+            "site-footer"
+          ],
+          "note": "reveal. Fonte: Footer Design (Animated)."
+        },
+        {
+          "term": "Neon icon",
+          "pt": "Ícone neon",
+          "what": "Ícone aceso sobre bloco escuro.",
+          "status": "pronto",
+          "components": [
+            "icon-3d"
+          ],
+          "note": "material neon."
+        },
+        {
+          "term": "Before/after slider",
+          "pt": "Antes e depois",
+          "what": "Duas versões sobrepostas com divisor que se arrasta.",
+          "status": "pronto",
+          "components": [
+            "compare-slider"
+          ],
+          "note": "Abas para trocar pares: CompareShowcase. Fonte: lote de 2026-11-06 (docs/referencias/2026-11-06.md)."
+        },
+        {
+          "term": "Exploded view / axonometric",
+          "pt": "Vista explodida",
+          "what": "Camadas empilhadas em 3D, separadas, com rótulos de chamada.",
+          "status": "pronto",
+          "components": [
+            "spec-hero"
+          ],
+          "note": "ExplodedStack."
+        },
+        {
+          "term": "Technical editorial hero",
+          "pt": "Hero editorial técnico",
+          "what": "Faixa de especificações mono, título serifado com palavra em acento e figura FIG.",
+          "status": "pronto",
+          "components": [
+            "spec-hero",
+            "grid-pattern"
+          ]
+        },
+        {
+          "term": "Repository page",
+          "pt": "Página de repositório",
+          "what": "Abas com contador, lista densa de arquivos e coluna Sobre.",
+          "status": "pronto",
+          "components": [
+            "repo-overview"
+          ]
+        },
+        {
+          "term": "Detail page header / install command",
+          "pt": "Topo de página de item",
+          "what": "Trilha, selo, título, metadados, comando com Copiar e duas ações.",
+          "status": "pronto",
+          "components": [
+            "detail-hero",
+            "copy-button"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "curadoria",
+      "title": "Galerias e curadoria",
+      "items": [
+        {
+          "term": "Color search",
+          "pt": "Busca por cor",
+          "what": "Escolher até 5 cores e ver só o que tem essa paleta.",
+          "status": "pronto",
+          "components": [
+            "color-filter",
+            "inspiration-grid"
+          ],
+          "note": "Distância em OKLab (matchesColors de @webcode/curation). Designspiration e Cosmos. Fonte: carrossel de 8 sites (vamshi.work, 2026-11)."
+        },
+        {
+          "term": "Masonry moodboard",
+          "pt": "Mural de inspiração",
+          "what": "Mural de imagens de alturas variadas com Salvar no hover.",
+          "status": "pronto",
+          "components": [
+            "inspiration-grid"
+          ],
+          "note": "Designspiration, Cosmos, Pinterest. Ordem de leitura por coluna: nunca para ranking. Fonte: carrossel de 8 sites (vamshi.work, 2026-11)."
+        },
+        {
+          "term": "Save to collection",
+          "pt": "Salvar em coleção",
+          "what": "Guardar a peça numa coleção do projeto.",
+          "status": "variar",
+          "components": [
+            "inspiration-grid",
+            "popover"
+          ],
+          "note": "Salvar existe (aria-pressed); escolher a coleção = Popover com lista + busca, como a extensão do Designspiration. Fonte: carrossel de 8 sites (vamshi.work, 2026-11)."
+        },
+        {
+          "term": "Find similar",
+          "pt": "Encontrar parecidos",
+          "what": "A partir de uma imagem, trazer outras do mesmo mundo.",
+          "status": "falta",
+          "note": "Pede busca por imagem no servidor (embedding); no DS, a ação entra no menu da peça (dropdown-menu). Cosmos. Fonte: carrossel de 8 sites (vamshi.work, 2026-11)."
+        },
+        {
+          "term": "Taxonomy browse",
+          "pt": "Navegar por forma, letra e objeto",
+          "what": "Ladrilhos de categoria com símbolo e subcategorias com contagem.",
+          "status": "pronto",
+          "components": [
+            "taxonomy-browser"
+          ],
+          "note": "Logobook. Um termo pode morar em duas categorias. Fonte: carrossel de 8 sites (vamshi.work, 2026-11)."
+        },
+        {
+          "term": "A–Z index",
+          "pt": "Índice por letra",
+          "what": "Letras com um glifo por letra; letra vazia desligada.",
+          "status": "pronto",
+          "components": [
+            "taxonomy-browser",
+            "section-index"
+          ],
+          "note": "AlphabetIndex (web, grade); section-index (lista do iOS, lateral). Fonte: carrossel de 8 sites (vamshi.work, 2026-11)."
+        },
+        {
+          "term": "Shot card",
+          "pt": "Card de shot",
+          "what": "Capa 4:3 com Salvar/Curtir no hover, autor com selo PRO, curtidas e views.",
+          "status": "pronto",
+          "components": [
+            "project-card"
+          ],
+          "note": "variant=\"shot\" (Dribbble). Fonte: carrossel de 8 sites (vamshi.work, 2026-11)."
+        },
+        {
+          "term": "Case study card",
+          "pt": "Card de estudo de caso",
+          "what": "Capa grande, título embaixo, dono, selo da curadoria e métricas.",
+          "status": "pronto",
+          "components": [
+            "project-card"
+          ],
+          "note": "variant=\"case\" (Behance). Fonte: carrossel de 8 sites (vamshi.work, 2026-11)."
+        },
+        {
+          "term": "Logo tile",
+          "pt": "Ladrilho de logo",
+          "what": "Logo centrado em fundo claro com designer, data e nota em estrelas.",
+          "status": "pronto",
+          "components": [
+            "project-card"
+          ],
+          "note": "variant=\"logo\" (LogoMoose, LogoLounge). Fonte: carrossel de 8 sites (vamshi.work, 2026-11)."
+        },
+        {
+          "term": "Category header + Follow",
+          "pt": "Cabeçalho de categoria",
+          "what": "Subcategorias em fichas, título, descrição e Seguir.",
+          "status": "pronto",
+          "components": [
+            "gallery-header"
+          ],
+          "note": "variant=\"hero\" (Behance). Fonte: carrossel de 8 sites (vamshi.work, 2026-11)."
+        },
+        {
+          "term": "Sort + filter bar",
+          "pt": "Barra de ordenar e filtrar",
+          "what": "Ordenar à esquerda, categorias que rolam e Filtros com painel.",
+          "status": "pronto",
+          "components": [
+            "gallery-header",
+            "color-filter"
+          ],
+          "note": "variant=\"bar\" (Dribbble). Fonte: carrossel de 8 sites (vamshi.work, 2026-11)."
+        },
+        {
+          "term": "Site of the day",
+          "pt": "Destaque do dia",
+          "what": "Selo, data, nota, título gigante, créditos e capa larga.",
+          "status": "pronto",
+          "components": [
+            "award-hero"
+          ],
+          "note": "Awwwards. Fonte: carrossel de 8 sites (vamshi.work, 2026-11)."
+        },
+        {
+          "term": "Jury score breakdown",
+          "pt": "Notas por critério",
+          "what": "Nota por critério com peso e final ponderada.",
+          "status": "pronto",
+          "components": [
+            "award-hero"
+          ],
+          "note": "AwardScore + weightedScore (design 40, usabilidade 30, criatividade 20, conteúdo 10). Fonte: carrossel de 8 sites (vamshi.work, 2026-11)."
+        },
+        {
+          "term": "Floating collage hero",
+          "pt": "Hero com colagem flutuante",
+          "what": "Miniaturas giradas que flutuam em volta do título e da busca.",
+          "status": "pronto",
+          "components": [
+            "floating-gallery-hero"
+          ],
+          "note": "Cosmos. Fonte: carrossel de 8 sites (vamshi.work, 2026-11)."
+        },
+        {
+          "term": "Logo showcase grid",
+          "pt": "Vitrine de logos",
+          "what": "Grade de ladrilhos de logo na abertura do acervo.",
+          "status": "pronto",
+          "components": [
+            "project-card",
+            "logo-cloud"
+          ],
+          "note": "Ladrilho com dado: project-card variant=\"logo\"; faixa de clientes sem dado: logo-cloud. LogoLounge. Fonte: carrossel de 8 sites (vamshi.work, 2026-11)."
+        },
+        {
+          "term": "Hide AI images",
+          "pt": "Esconder imagens de IA",
+          "what": "Mostrar, desfocar ou esconder peças marcadas como IA.",
+          "status": "falta",
+          "note": "Cosmos (Show / Blur / Hide). Entraria como toggle-group no gallery-header + data-ai na peça. Fonte: carrossel de 8 sites (vamshi.work, 2026-11)."
+        },
+        {
+          "term": "Category pills + more",
+          "pt": "Pílulas de categoria com +N mais",
+          "what": "Fileira de categorias de escolha única; o excesso vai para um menu.",
+          "status": "pronto",
+          "components": [
+            "pill-filter"
+          ],
+          "note": "designeer.xyz, bencho.dev. A escolhida do resto entra na fileira. Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Faceted filters",
+          "pt": "Filtros por faceta",
+          "what": "Vários menus de filtro (categoria, indústria, plataforma) com várias escolhas e fichas do que está ativo.",
+          "status": "pronto",
+          "components": [
+            "facet-bar"
+          ],
+          "note": "save.design/explore. Total anunciado em role=status. Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Shuffle",
+          "pt": "Embaralhar",
+          "what": "Botão que mistura a ordem do acervo para descoberta.",
+          "status": "pronto",
+          "components": [
+            "facet-bar"
+          ],
+          "note": "save.design. Não serve para lista ordenada por relevância. Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Site directory card",
+          "pt": "Cartão de diretório de sites",
+          "what": "Print do site em moldura, domínio e seta de link externo.",
+          "status": "pronto",
+          "components": [
+            "project-card"
+          ],
+          "note": "variant=\"site\". Dark Mode Design, save.design. Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Sponsored slot",
+          "pt": "Espaço patrocinado",
+          "what": "Anúncio no meio da grade, com o mesmo cartão.",
+          "status": "pronto",
+          "components": [
+            "project-card"
+          ],
+          "note": "Sempre rotulado (sponsored=\"Patrocinado\"), nunca disfarçado. Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Stats hero + newsletter",
+          "pt": "Hero com números e newsletter",
+          "what": "Título curto, números em linha e inscrição semanal com aceite.",
+          "status": "pronto",
+          "components": [
+            "hero-section",
+            "waitlist-form"
+          ],
+          "note": "mesh3d.gallery. stats no centered + consent no WaitlistForm. Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "⌘K search",
+          "pt": "Busca com ⌘K",
+          "what": "Campo de busca no topo que abre a paleta de comandos.",
+          "status": "pronto",
+          "components": [
+            "command",
+            "kbd"
+          ],
+          "note": "save.design, bencho.dev. Atalho visível no gatilho; no celular vira lupa. Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Sponsors strip",
+          "pt": "Faixa de patrocinadores",
+          "what": "Ícones pequenos de quem apoia, logo abaixo da descrição.",
+          "status": "variar",
+          "components": [
+            "logo-cloud"
+          ],
+          "note": "designeer.xyz. Use logo-cloud em tamanho pequeno, sem marquee, com rótulo \"Patrocinadores\". Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Makers directory",
+          "pt": "Diretório de criadores",
+          "what": "Cartões de pessoas com prévia do trabalho, quantidade de entradas e link.",
+          "status": "variar",
+          "components": [
+            "project-card",
+            "avatar"
+          ],
+          "note": "mesh3d.gallery. Compor project-card case + avatar; sem componente próprio por enquanto. Fonte: kalypsodesigns, sites para designers (2026-11)."
+        }
+      ]
+    },
+    {
+      "id": "ia",
+      "title": "IA (agentes)",
+      "items": [
+        {
+          "term": "Bot avatar",
+          "pt": "Avatar de bot (mascote)",
+          "what": "Personagem simples e vivo que representa um agente de IA: olha, pisca, pensa, trabalha e dorme.",
+          "status": "pronto",
+          "components": [
+            "bot-avatar"
+          ],
+          "note": "16 formas, 7 estados, pelúcia/plástico/liso/chapado, chapéu, óculos, fone e gravata. Expo: native-bot-avatar. Método de mascote: get_logo_method section mascot."
+        },
+        {
+          "term": "Agent roster",
+          "pt": "Lista de agentes",
+          "what": "Lista de bots com o mascote, o nome e o que cada um faz agora.",
+          "status": "pronto",
+          "components": [
+            "bot-avatar",
+            "badge"
+          ],
+          "note": "Tela pronta: tela-agentes. Avatar decorative quando o status está escrito ao lado."
+        },
+        {
+          "term": "Thinking orb",
+          "pt": "Orb pensando",
+          "what": "Figura de pontos em 3D que gira enquanto a IA trabalha (esfera, grade, anel, enxame, constelação).",
+          "status": "pronto",
+          "components": [
+            "thinking-orb"
+          ],
+          "note": "ThinkingIndicator junta a orb e o rótulo com brilho (Resolvendo…, Buscando…)."
+        },
+        {
+          "term": "Shimmer text",
+          "pt": "Texto com brilho",
+          "what": "Um brilho passa pelas letras do status (Pensando…).",
+          "status": "pronto",
+          "components": [
+            "thinking-orb"
+          ],
+          "note": "Parte do ThinkingIndicator; sem brilho com movimento reduzido."
+        },
+        {
+          "term": "AI glow border",
+          "pt": "Borda aurora da IA",
+          "what": "Feixe colorido com halo que percorre a borda do campo de IA, do botão Parar ou da busca.",
+          "status": "pronto",
+          "components": [
+            "border-beam",
+            "chat",
+            "search-bar"
+          ],
+          "note": "BorderBeam variant=\"aurora\"; PromptInput beam=\"busy\"|\"focus\" e SearchBar beam."
+        },
+        {
+          "term": "Gooey bottom nav",
+          "pt": "Bottom nav líquida",
+          "what": "Barra inferior em que a gota do item ativo sobe da barra e escorre até o próximo.",
+          "status": "pronto",
+          "components": [
+            "tab-bar"
+          ],
+          "note": "TabBar variant=\"gooey\" (PWA). Sem vidro."
+        },
+        {
+          "term": "Radial gooey menu",
+          "pt": "Menu radial líquido",
+          "what": "O + solta as ações em arco e as bolhas se fundem no caminho.",
+          "status": "pronto",
+          "components": [
+            "gooey"
+          ],
+          "note": "GooeyMenu effect morph | move | bend | melt; layout ring | up | side."
+        }
+      ]
+    },
+    {
+      "id": "interacoes",
+      "title": "Micro-interações por gesto",
+      "items": [
+        {
+          "term": "Press · Dynamic island",
+          "pt": "Pressionar · ilha dinâmica",
+          "what": "Pílula que cresce em painel ao tocar.",
+          "status": "pronto",
+          "components": [
+            "live-island"
+          ],
+          "note": "bencho.dev agrupa blocos por gesto: Hover, Press, Drag, Slide, Swipe, Type, Select, Loading. Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Press · Pay button",
+          "pt": "Pressionar · botão de pagar",
+          "what": "Botão que mostra carregando e confirmação no mesmo lugar.",
+          "status": "variar",
+          "components": [
+            "button"
+          ],
+          "note": "button com loading; confirmação = ícone de ✓ no lugar do texto. Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Press · Flap board",
+          "pt": "Pressionar · letreiro de aeroporto",
+          "what": "Texto que troca letra a letra como painel split-flap.",
+          "status": "variar",
+          "components": [
+            "text-scramble"
+          ],
+          "note": "text-scramble com caracteres limitados ao alfabeto. Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Hover · Tilt card",
+          "pt": "Passar o mouse · cartão que inclina",
+          "what": "Cartão que inclina em 3D seguindo o ponteiro.",
+          "status": "variar",
+          "components": [
+            "spotlight-card"
+          ],
+          "note": "spotlight-card tem a luz; inclinação com rotateX/Y limitada a 6°, só com movimento permitido. Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Hover · Metaballs",
+          "pt": "Passar o mouse · gotas que se fundem",
+          "what": "Formas que se fundem perto do ponteiro.",
+          "status": "pronto",
+          "components": [
+            "gooey"
+          ],
+          "note": "Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Hover · Image trail",
+          "pt": "Passar o mouse · rastro de imagens",
+          "what": "Imagens que surgem atrás do ponteiro.",
+          "status": "falta",
+          "components": [],
+          "note": "Decorativo e pesado; só em portfólio, nunca em app. Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Drag · Signature pad",
+          "pt": "Arrastar · assinatura",
+          "what": "Desenhar com o dedo ou mouse.",
+          "status": "pronto",
+          "components": [
+            "signature-pad"
+          ],
+          "note": "Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Drag · Page peel",
+          "pt": "Arrastar · canto da página",
+          "what": "Puxar o canto para revelar o que está por baixo.",
+          "status": "falta",
+          "components": [],
+          "note": "Sem caso de uso em produto; não priorizado. Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Slide · Time scrubber",
+          "pt": "Deslizar · régua de tempo",
+          "what": "Arrastar numa régua para escolher um momento.",
+          "status": "variar",
+          "components": [
+            "slider"
+          ],
+          "note": "slider com marcas de hora e valor em tooltip. Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Swipe · Swipe deck",
+          "pt": "Varrer · baralho",
+          "what": "Cartões empilhados que saem para os lados.",
+          "status": "pronto",
+          "components": [
+            "card-stack"
+          ],
+          "note": "Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Swipe · Date reel",
+          "pt": "Varrer · rolo de data",
+          "what": "Rodas de dia, mês e ano.",
+          "status": "pronto",
+          "components": [
+            "wheel-picker"
+          ],
+          "note": "Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Type · Command bar",
+          "pt": "Digitar · barra de comandos",
+          "what": "Paleta ⌘K com busca e ações.",
+          "status": "pronto",
+          "components": [
+            "command"
+          ],
+          "note": "Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Type · Password strength",
+          "pt": "Digitar · força da senha",
+          "what": "Medidor que reage ao que é digitado.",
+          "status": "pronto",
+          "components": [
+            "password-strength"
+          ],
+          "note": "Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Type · AI chat input",
+          "pt": "Digitar · campo de chat com IA",
+          "what": "Campo que cresce, anexos e enviar.",
+          "status": "pronto",
+          "components": [
+            "chat"
+          ],
+          "note": "Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Select · Magnetic select",
+          "pt": "Escolher · seleção magnética",
+          "what": "Opção que atrai o indicador.",
+          "status": "variar",
+          "components": [
+            "magnetic-button",
+            "toggle-group"
+          ],
+          "note": "Indicador deslizante do toggle-group + atração do magnetic-button. Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Loading · Thinking loader",
+          "pt": "Carregando · pensando",
+          "what": "Indicador de que a IA está pensando.",
+          "status": "pronto",
+          "components": [
+            "thinking-orb"
+          ],
+          "note": "Fonte: kalypsodesigns, sites para designers (2026-11)."
+        },
+        {
+          "term": "Loading · Skeleton morph",
+          "pt": "Carregando · esqueleto que vira conteúdo",
+          "what": "Esqueleto que se transforma no conteúdo.",
+          "status": "variar",
+          "components": [
+            "skeleton",
+            "swap"
+          ],
+          "note": "skeleton + swap para a troca. Fonte: kalypsodesigns, sites para designers (2026-11)."
+        }
+      ]
+    }
+  ]
+}

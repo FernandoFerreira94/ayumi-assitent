@@ -1,0 +1,43 @@
+<style>
+  .ah { position: relative; overflow: hidden; isolation: isolate; padding: 96px 24px 72px; text-align: center; min-height: 100vh; display: grid; place-content: center; }
+  .ah-sky { position: absolute; inset: -20%; z-index: -1; filter: blur(80px) saturate(140%); opacity: .55; }
+  .ah-blob { position: absolute; width: 46vmax; aspect-ratio: 1; border-radius: 50%; will-change: transform; animation: ah-drift 22s var(--wc-motion-ease-in-out) infinite alternate; }
+  .ah-blob:nth-child(1) { background: var(--wc-gradient-1); top: 0; left: 5%; }
+  .ah-blob:nth-child(2) { background: var(--wc-gradient-2); top: 10%; right: 0; animation-duration: 26s; animation-delay: -6s; }
+  .ah-blob:nth-child(3) { background: var(--wc-gradient-3); bottom: 0; left: 30%; animation-duration: 30s; animation-delay: -12s; }
+  @keyframes ah-drift { to { transform: translate3d(calc(8vmax * var(--wc-motion-distance)), calc(-6vmax * var(--wc-motion-distance)), 0) scale(1.15); } }
+  @media (prefers-reduced-motion: reduce) { .ah-blob { animation: none; } }
+  .ah-badge { justify-self: center; display: inline-flex; gap: 8px; align-items: center; padding: 6px 14px 6px 6px; border-radius: var(--wc-radius-pill); background: var(--wc-glass-bg); border: 1px solid var(--wc-glass-border); backdrop-filter: blur(var(--wc-blur-glass)) saturate(180%); -webkit-backdrop-filter: blur(var(--wc-blur-glass)) saturate(180%); font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .ah-badge b { background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); border-radius: var(--wc-radius-pill); padding: 2px 8px; font-weight: 600; font-size: var(--wc-font-size-xs); }
+  .ah h1 { font: var(--wc-font-weight-bold) clamp(40px, 7vw, var(--wc-font-size-7xl)) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tighter) * 1em); margin: 24px auto 16px; max-width: 14ch; text-wrap: balance; }
+  .ah h1 em { font-style: normal; background: linear-gradient(100deg, var(--wc-gradient-2), var(--wc-gradient-3) 60%, var(--wc-gradient-4)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .ah p { color: var(--wc-fg-muted); font-size: var(--wc-font-size-xl); max-width: 46ch; margin: 0 auto 32px; text-wrap: pretty; }
+  .ah-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .ah-btn { height: var(--wc-size-control-lg); padding: 0 24px; border-radius: var(--wc-radius-pill); font: var(--wc-font-weight-semibold) var(--wc-font-size-md) var(--wc-font-body); border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; text-decoration: none; transition: transform var(--wc-motion-duration-fast) var(--wc-motion-ease-out), background-color var(--wc-motion-duration-fast); }
+  .ah-btn:active { transform: scale(.97); }
+  .ah-btn:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 3px; }
+  .ah-btn.solid { background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); }
+  .ah-btn.solid:hover { background: var(--wc-accent-hover); }
+  .ah-btn.glass { background: var(--wc-glass-bg); border-color: var(--wc-glass-border); color: var(--wc-fg); backdrop-filter: blur(var(--wc-blur-glass)); -webkit-backdrop-filter: blur(var(--wc-blur-glass)); }
+  .ah-card { margin: 56px auto 0; display: grid; grid-template-columns: repeat(3, 1fr); max-width: 560px; border-radius: var(--wc-radius-xl); background: var(--wc-glass-bg); border: 1px solid var(--wc-glass-border); box-shadow: var(--wc-shadow-lg), inset 0 1px 0 var(--wc-glass-highlight); backdrop-filter: blur(var(--wc-blur-glass)) saturate(180%); -webkit-backdrop-filter: blur(var(--wc-blur-glass)) saturate(180%); }
+  .ah-card div { padding: 20px 12px; }
+  .ah-card div + div { border-left: 1px solid var(--wc-glass-border); }
+  .ah-card strong { display: block; font: var(--wc-font-weight-semibold) var(--wc-font-size-3xl) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); font-variant-numeric: tabular-nums; }
+  .ah-card span { font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  @media (max-width: 520px) { .ah-badge { text-align: left; } .ah-card div { padding: 16px 6px; } .ah-card strong { font-size: var(--wc-font-size-xl); } .ah-card span { font-size: var(--wc-font-size-xs); } }
+</style>
+<section class="ah">
+  <div class="ah-sky" aria-hidden="true"><span class="ah-blob"></span><span class="ah-blob"></span><span class="ah-blob"></span></div>
+  <span class="ah-badge"><b>Novo</b> Agentes que trabalham enquanto você dorme</span>
+  <h1>Seu backoffice, agora <em>no piloto automático</em></h1>
+  <p>Pedidos, estoque e financeiro conectados. A IA resolve o repetitivo e avisa só quando precisa de você.</p>
+  <div class="ah-ctas">
+    <a class="ah-btn solid" href="#">Começar grátis</a>
+    <a class="ah-btn glass" href="#">Ver demonstração</a>
+  </div>
+  <div class="ah-card" role="list">
+    <div role="listitem"><strong>-38%</strong><span>tempo operacional</span></div>
+    <div role="listitem"><strong>2,4 mil</strong><span>empresas ativas</span></div>
+    <div role="listitem"><strong>99,98%</strong><span>uptime em 2026</span></div>
+  </div>
+</section>

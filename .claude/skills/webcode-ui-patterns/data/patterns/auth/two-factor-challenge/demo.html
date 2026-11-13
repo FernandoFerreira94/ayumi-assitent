@@ -1,0 +1,119 @@
+<style>
+  .tf-stage { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+  .tf { width: min(420px, 100%); display: grid; gap: 16px; }
+  .tf-ic { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--wc-accent-soft); color: var(--wc-accent); }
+  .tf h1 { margin: 0; font: var(--wc-font-weight-semibold) var(--wc-font-size-2xl) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); outline: none; }
+  .tf-desc { margin: -8px 0 0; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .tf-desc b { color: var(--wc-fg); }
+  .tf-code { display: grid; grid-template-columns: repeat(3, 1fr) 12px repeat(3, 1fr); gap: 8px; align-items: center; border: 0; padding: 0; margin: 0; }
+  .tf-code legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .tf-code > span { height: 2px; background: var(--wc-border-strong); border-radius: 1px; }
+  .tf-code input { width: 100%; min-width: 0; aspect-ratio: 5 / 6; text-align: center; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: var(--wc-font-weight-semibold) var(--wc-font-size-2xl) var(--wc-font-mono); caret-color: var(--wc-accent); transition: border-color var(--wc-motion-duration-fast), background-color var(--wc-motion-duration-fast); }
+  .tf-code input:focus { outline: 2px solid var(--wc-focus); outline-offset: 1px; }
+  .tf-code input:not(:placeholder-shown) { background: var(--wc-sunken); }
+  .tf-code[data-invalid] input { border-color: var(--wc-danger); }
+  .tf-code.is-shake { animation: tf-shake 360ms var(--wc-motion-ease-out); }
+  @keyframes tf-shake { 20%, 60% { translate: calc(-6px * var(--wc-motion-distance)) 0; } 40%, 80% { translate: calc(6px * var(--wc-motion-distance)) 0; } }
+  .tf-backup[hidden], .tf-code[hidden], .tf-resend[hidden] { display: none; }
+  .tf-backup { display: grid; gap: 6px; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-medium); }
+  .tf-backup input { height: var(--wc-size-control-lg); padding: 0 14px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: var(--wc-font-size-lg) var(--wc-font-mono); letter-spacing: .12em; text-transform: lowercase; }
+  .tf-backup input:focus { outline: 2px solid var(--wc-focus); outline-offset: 1px; }
+  .tf-err { margin: -6px 0 0; font-size: var(--wc-font-size-sm); color: var(--wc-danger); }
+  .tf-err:empty { display: none; }
+  .tf-trust { display: flex; gap: 10px; align-items: center; font-size: var(--wc-font-size-sm); }
+  .tf-trust input { width: 18px; height: 18px; accent-color: var(--wc-accent-solid); }
+  .tf-submit { height: var(--wc-size-control-lg); border: 0; border-radius: var(--wc-radius-button); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; }
+  .tf-submit:hover { background: var(--wc-accent-hover); }
+  .tf-submit[aria-busy="true"] { cursor: progress; opacity: .85; }
+  .tf-row { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .tf-link { font: inherit; font-size: var(--wc-font-size-sm); padding: 6px 0; border: 0; background: none; color: var(--wc-accent); font-weight: var(--wc-font-weight-medium); cursor: pointer; }
+  .tf-link:disabled { color: var(--wc-fg-muted); cursor: default; }
+  .tf-methods { border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); padding: 6px; margin: 0; display: grid; gap: 4px; }
+  .tf-methods[hidden] { display: none; }
+  .tf-methods legend { font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-semibold); padding: 0 6px; }
+  .tf-methods label { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: var(--wc-radius-md); cursor: pointer; font-size: var(--wc-font-size-sm); }
+  .tf-methods label:hover { background: var(--wc-sunken); }
+  .tf-methods label:has(:checked) { background: var(--wc-accent-soft); }
+  .tf-methods input { accent-color: var(--wc-accent-solid); width: 18px; height: 18px; }
+  .tf-methods small { display: block; color: var(--wc-fg-muted); }
+  .tf :focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .tf-ok { color: var(--wc-success); font-weight: var(--wc-font-weight-semibold); }
+</style>
+<main class="tf-stage">
+  <form class="tf" novalidate>
+    <span class="tf-ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+    <h1 tabindex="-1">Verificação em duas etapas</h1>
+    <p class="tf-desc" id="tf-desc">Digite o código de 6 dígitos do seu <b>app autenticador</b>.</p>
+    <fieldset class="tf-code" aria-describedby="tf-desc tf-err">
+      <legend>Código de 6 dígitos</legend>
+      <input inputmode="numeric" autocomplete="one-time-code" maxlength="1" placeholder=" " aria-label="Dígito 1 de 6"><input inputmode="numeric" maxlength="1" placeholder=" " aria-label="Dígito 2 de 6"><input inputmode="numeric" maxlength="1" placeholder=" " aria-label="Dígito 3 de 6"><span aria-hidden="true"></span><input inputmode="numeric" maxlength="1" placeholder=" " aria-label="Dígito 4 de 6"><input inputmode="numeric" maxlength="1" placeholder=" " aria-label="Dígito 5 de 6"><input inputmode="numeric" maxlength="1" placeholder=" " aria-label="Dígito 6 de 6">
+    </fieldset>
+    <label class="tf-backup" hidden>Código de backup<input name="backup" autocomplete="off" placeholder="xxxx-xxxx" maxlength="9" aria-describedby="tf-err"></label>
+    <p class="tf-err" id="tf-err" role="alert"></p>
+    <label class="tf-trust"><input type="checkbox" checked> Confiar neste dispositivo por 30 dias</label>
+    <button class="tf-submit" type="submit">Verificar</button>
+    <div class="tf-row">
+      <button class="tf-link tf-other" type="button" aria-expanded="false" aria-controls="tf-methods">Usar outro método</button>
+      <button class="tf-link tf-resend" type="button" hidden disabled>Reenviar SMS em 30s</button>
+    </div>
+    <fieldset class="tf-methods" id="tf-methods" hidden>
+      <legend>Como você quer verificar?</legend>
+      <label><input type="radio" name="m" value="app" checked><span>App autenticador<small>Google Authenticator, 1Password, Authy</small></span></label>
+      <label><input type="radio" name="m" value="sms"><span>SMS<small>Para (11) •••••-4321</small></span></label>
+      <label><input type="radio" name="m" value="backup"><span>Código de backup<small>Um dos 10 códigos que você salvou</small></span></label>
+    </fieldset>
+  </form>
+</main>
+<script>
+(() => {
+  const form = document.querySelector('.tf'), group = form.querySelector('.tf-code'), boxes = [...group.querySelectorAll('input')];
+  const err = document.getElementById('tf-err'), submit = form.querySelector('.tf-submit'), desc = document.getElementById('tf-desc');
+  const backup = form.querySelector('.tf-backup'), resend = form.querySelector('.tf-resend'), other = form.querySelector('.tf-other'), methods = document.getElementById('tf-methods');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  let method = 'app', timer, busy = false;
+  const code = () => boxes.map((b) => b.value).join('');
+  function fill(from, digits) { digits.split('').forEach((d, k) => { if (boxes[from + k]) boxes[from + k].value = d; }); const nxt = Math.min(from + digits.length, 5); boxes[nxt].focus(); if (code().length === 6) verify(); }
+  boxes.forEach((b, i) => {
+    b.addEventListener('input', () => { const d = b.value.replace(/\D/g, ''); b.value = ''; if (d) fill(i, d.slice(0, 6 - i)); clearErr(); });
+    b.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !b.value && i > 0) { e.preventDefault(); boxes[i - 1].value = ''; boxes[i - 1].focus(); }
+      else if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); boxes[i - 1].focus(); }
+      else if (e.key === 'ArrowRight' && i < 5) { e.preventDefault(); boxes[i + 1].focus(); }
+    });
+    b.addEventListener('paste', (e) => { e.preventDefault(); const d = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6); if (d) fill(0, d); });
+    b.addEventListener('focus', () => b.select());
+  });
+  function clearErr() { err.textContent = ''; group.removeAttribute("data-invalid"); backup.querySelector('input').removeAttribute('aria-invalid'); }
+  function fail(msg) {
+    err.textContent = msg;
+    if (method === 'backup') { const i = backup.querySelector('input'); i.setAttribute('aria-invalid', 'true'); i.select(); return; }
+    group.setAttribute("data-invalid", "");
+    if (!reduce.matches) { group.classList.remove('is-shake'); group.offsetWidth; group.classList.add('is-shake'); }
+    boxes.forEach((b) => (b.value = '')); boxes[0].focus();
+  }
+  function verify() {
+    if (busy) return;
+    const val = method === 'backup' ? backup.querySelector('input').value.trim().toLowerCase() : code();
+    if (method === 'backup' ? !/^[a-z0-9]{4}-?[a-z0-9]{4}$/.test(val) : val.length < 6) return fail(method === 'backup' ? 'Use o formato xxxx-xxxx.' : 'Digite os 6 dígitos.');
+    busy = true; submit.setAttribute('aria-busy', 'true'); submit.textContent = 'Verificando…'; boxes.forEach((b) => (b.readOnly = true));
+    setTimeout(() => {
+      busy = false; submit.removeAttribute('aria-busy'); submit.textContent = 'Verificar'; boxes.forEach((b) => (b.readOnly = false));
+      const ok = method === 'backup' ? val.replace('-', '') === 'abcd1234' : val === '123456';
+      if (!ok) return fail(method === 'backup' ? 'Código de backup inválido ou já usado.' : 'Código incorreto. Confira o app e tente de novo.');
+      err.innerHTML = ''; desc.innerHTML = '<span class="tf-ok">Verificado.</span> Entrando…';
+    }, 700);
+  }
+  form.addEventListener('submit', (e) => { e.preventDefault(); verify(); });
+  other.addEventListener('click', () => { const o = methods.hidden; methods.hidden = !o; other.setAttribute('aria-expanded', String(o)); if (o) methods.querySelector(':checked').focus(); });
+  function countdown() { let s = 30; resend.disabled = true; clearInterval(timer); resend.textContent = `Reenviar SMS em ${s}s`; timer = setInterval(() => { s--; resend.textContent = s > 0 ? `Reenviar SMS em ${s}s` : 'Reenviar SMS'; if (s <= 0) { clearInterval(timer); resend.disabled = false; } }, 1000); }
+  resend.addEventListener('click', () => { err.textContent = ''; desc.innerHTML = 'Enviamos um novo código por SMS para <b>(11) •••••-4321</b>.'; countdown(); });
+  methods.addEventListener('change', (e) => {
+    method = e.target.value; clearErr(); clearInterval(timer);
+    group.hidden = method === 'backup'; backup.hidden = method !== 'backup'; resend.hidden = method !== 'sms';
+    desc.innerHTML = { app: 'Digite o código de 6 dígitos do seu <b>app autenticador</b>.', sms: 'Enviamos um código por SMS para <b>(11) •••••-4321</b>.', backup: 'Digite um dos <b>códigos de backup</b> que você salvou ao ativar a verificação.' }[method];
+    if (method === 'sms') countdown();
+    boxes.forEach((b) => (b.value = ''));
+  });
+  methods.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); methods.hidden = true; other.setAttribute('aria-expanded', 'false'); (method === 'backup' ? backup.querySelector('input') : boxes[0]).focus(); } });
+})();
+</script>

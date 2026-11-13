@@ -1,0 +1,186 @@
+<style>
+  .pt { min-height: 100vh; padding: 16px; display: grid; align-content: start; gap: 16px; }
+  .pt-app { display: grid; gap: 14px; padding: 16px; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-xl); background: var(--wc-surface); }
+  .pt-top { display: flex; align-items: center; gap: 8px; }
+  .pt-top h1 { margin: 0 auto 0 0; font: var(--wc-font-weight-semibold) var(--wc-font-size-lg) var(--wc-font-display); }
+  .pt-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pt-search { flex: 1 1 200px; min-height: var(--wc-size-touch-min); padding: 0 12px; border: 1px solid var(--wc-border-strong); border-radius: var(--wc-radius-md); background: var(--wc-bg); color: var(--wc-fg); font: inherit; }
+  .pt-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--wc-size-touch-min); padding: 0 14px; border: 1px solid transparent; border-radius: var(--wc-radius-md); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font: inherit; font-weight: var(--wc-font-weight-medium); cursor: pointer; }
+  .pt-btn.is-ghost { background: transparent; color: var(--wc-fg); }
+  .pt-btn.is-ghost:hover { background: var(--wc-sunken); }
+  .pt-btn.is-outline { background: var(--wc-surface); color: var(--wc-fg); border-color: var(--wc-border-strong); }
+  .pt-btn.is-icon { width: var(--wc-size-touch-min); padding: 0; }
+  .pt :focus-visible, .pt-card :focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .pt-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .pt-kpi { display: grid; gap: 4px; padding: 12px; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); }
+  .pt-kpi span { font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); }
+  .pt-kpi b { font-variant-numeric: tabular-nums; }
+  .pt-note { margin: 0; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+
+  .pt-block { position: fixed; inset: 0; z-index: 50; }
+  .pt-block.is-full { background: var(--wc-scrim); animation: pt-fade var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  .pt-hole { position: fixed; z-index: 50; pointer-events: none; border-radius: var(--wc-radius-lg); outline: 2px solid var(--wc-focus); box-shadow: 0 0 0 100vmax var(--wc-scrim); }
+  .pt-hole.is-moving { transition: top var(--wc-motion-duration-slow) var(--wc-motion-ease-out), left var(--wc-motion-duration-slow) var(--wc-motion-ease-out), width var(--wc-motion-duration-slow) var(--wc-motion-ease-out), height var(--wc-motion-duration-slow) var(--wc-motion-ease-out); }
+  .pt-card { position: fixed; z-index: 51; width: min(352px, calc(100vw - 24px)); display: grid; gap: 12px; padding: 16px; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-xl); background: var(--wc-surface-raised); color: var(--wc-fg); box-shadow: var(--wc-shadow-lg); }
+  .pt-card.is-center { top: 50%; left: 50%; translate: -50% -50%; }
+  .pt-card .pt-body { display: grid; gap: 4px; padding-right: 32px; animation: pt-in var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  .pt-card h2 { margin: 0; font-size: var(--wc-font-size-md); font-weight: var(--wc-font-weight-semibold); }
+  .pt-card p { margin: 0; font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .pt-x { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border: 0; border-radius: var(--wc-radius-sm); background: transparent; color: var(--wc-fg-muted); font: inherit; font-size: 18px; cursor: pointer; }
+  .pt-x:hover { background: var(--wc-sunken); }
+  .pt-foot { display: flex; align-items: center; gap: 8px; }
+  .pt-dots { display: flex; gap: 4px; }
+  .pt-dots i { width: 6px; height: 6px; border-radius: var(--wc-radius-pill); background: var(--wc-border-strong); transition: width var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  .pt-dots i.is-on { width: 16px; background: var(--wc-accent-solid); }
+  .pt-card [hidden], .pt-hole[hidden] { display: none; }
+  .pt-count { white-space: nowrap; margin-right: auto; font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); font-variant-numeric: tabular-nums; }
+  .pt-foot .pt-btn { min-height: 36px; padding: 0 12px; }
+  @media (max-width: 639px) {
+    .pt-card, .pt-card.is-center { left: 12px; right: 12px; width: auto; translate: none; top: auto; bottom: max(12px, env(safe-area-inset-bottom)); }
+    .pt-card.is-top { top: max(12px, env(safe-area-inset-top)); bottom: auto; }
+  }
+  @keyframes pt-in { from { opacity: 0; scale: .97; } }
+  @keyframes pt-fade { from { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .pt-hole.is-moving, .pt-dots i { transition: none; }
+    .pt-card .pt-body { animation: none; }
+  }
+</style>
+<div class="pt">
+  <div class="pt-row">
+    <button class="pt-btn is-outline" type="button" data-start>Simular primeiro acesso</button>
+  </div>
+  <div class="pt-app">
+    <div class="pt-top">
+      <h1>Painel Loja</h1>
+      <button class="pt-btn is-ghost is-icon" type="button" aria-label="Ver tour de novo" data-tour="ajuda" data-reopen>?</button>
+    </div>
+    <div class="pt-row">
+      <input class="pt-search" type="search" aria-label="Buscar pedidos" placeholder="Cliente, CPF ou nº do pedido" data-tour="busca">
+      <button class="pt-btn" type="button" data-tour="novo">+ Novo pedido</button>
+    </div>
+    <div class="pt-kpis" data-tour="kpis">
+      <div class="pt-kpi"><span>Vendas hoje</span><b>R$ 4.820</b></div>
+      <div class="pt-kpi"><span>Ticket médio</span><b>R$ 96</b></div>
+      <div class="pt-kpi"><span>Atrasados</span><b>3</b></div>
+    </div>
+    <p class="pt-note" role="status" data-status>Tour ainda não visto.</p>
+  </div>
+</div>
+<script>
+(() => {
+  const KEY = 'wc-tour:demo:v1:anon';
+  const steps = [
+    { title: 'Bem-vindo ao Painel Loja', text: 'Em 4 passos você vê onde ficam pedidos, busca e ajuda. Leva menos de um minuto.' },
+    { target: 'novo', title: 'Crie o primeiro pedido', text: 'Um pedido de teste já mostra o fluxo inteiro, do pagamento à entrega.' },
+    { target: 'busca', title: 'Ache qualquer coisa', text: 'Busque por cliente, CPF ou número do pedido.' },
+    { target: 'kpis', side: 'top', title: 'Seu dia em números', text: 'Vendas, ticket médio e atrasados atualizam sozinhos.' },
+    { target: 'ajuda', side: 'left', title: 'Reveja quando quiser', text: 'O tour fica aqui. Não abre de novo sozinho.' },
+  ];
+  const status = document.querySelector('[data-status]');
+  const store = { get: () => { try { return localStorage.getItem(KEY); } catch { return null; } }, set: (v) => { try { localStorage.setItem(KEY, v); } catch {} } };
+  const showStatus = () => { const s = store.get(); status.textContent = s ? `Tour ${s === 'completed' ? 'concluído' : 'pulado'}: não abre mais sozinho.` : 'Tour ainda não visto.'; };
+  let i = 0, ui = null, back = null, frame = 0, moveTimer = 0;
+
+  const build = () => {
+    const block = document.createElement('div'); block.className = 'pt-block';
+    const hole = document.createElement('div'); hole.className = 'pt-hole'; hole.setAttribute('aria-hidden', 'true');
+    const card = document.createElement('div');
+    card.className = 'pt-card'; card.setAttribute('role', 'dialog'); card.setAttribute('aria-modal', 'true');
+    card.setAttribute('aria-labelledby', 'pt-title'); card.setAttribute('aria-describedby', 'pt-text');
+    card.innerHTML = `<div class="pt-body" aria-live="polite"><h2 id="pt-title"></h2><p id="pt-text"></p></div>
+      <button class="pt-x" type="button" aria-label="Fechar tour" data-skip>×</button>
+      <div class="pt-foot"><span class="pt-dots" aria-hidden="true">${steps.map(() => '<i></i>').join('')}</span><span class="pt-count"></span>
+      <button class="pt-btn is-ghost" type="button" data-skip data-skip-text>Pular</button>
+      <button class="pt-btn is-outline" type="button" data-prev>Voltar</button>
+      <button class="pt-btn" type="button" data-next></button></div>`;
+    document.body.append(block, hole, card);
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('[data-skip]')) close('skipped');
+      else if (e.target.closest('[data-prev]')) go(i - 1);
+      else if (e.target.closest('[data-next]')) i === steps.length - 1 ? close('completed') : go(i + 1);
+    });
+    card.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab') return;
+      const f = [...card.querySelectorAll('button')].filter((b) => !b.hidden);
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f.at(-1).focus(); }
+      else if (!e.shiftKey && document.activeElement === f.at(-1)) { e.preventDefault(); f[0].focus(); }
+    });
+    return { block, hole, card };
+  };
+
+  const onKey = (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); close('skipped'); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); i === steps.length - 1 ? close('completed') : go(i + 1); }
+    else if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); go(i - 1); }
+  };
+
+  const place = () => {
+    const s = steps[i];
+    const el = s.target && document.querySelector(`[data-tour="${s.target}"]`);
+    const { block, hole, card } = ui;
+    const narrow = innerWidth < 640;
+    card.classList.remove('is-center', 'is-top');
+    card.style.top = card.style.left = '';
+    if (!el) { hole.hidden = true; block.classList.add('is-full'); card.classList.add('is-center'); return; }
+    block.classList.remove('is-full'); hole.hidden = false;
+    const r = el.getBoundingClientRect(), pad = 6;
+    Object.assign(hole.style, { top: `${r.top - pad}px`, left: `${r.left - pad}px`, width: `${r.width + pad * 2}px`, height: `${r.height + pad * 2}px` });
+    if (narrow) { if (r.top + r.height / 2 > innerHeight / 2) card.classList.add('is-top'); return; }
+    const w = card.offsetWidth, h = card.offsetHeight, gap = 12 + pad, g = 12;
+    const fits = { bottom: r.bottom + gap + h <= innerHeight - g, top: r.top - gap - h >= g, left: r.left - gap - w >= g, right: r.right + gap + w <= innerWidth - g };
+    const opp = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' };
+    const pref = s.side || 'bottom';
+    const side = [pref, opp[pref], 'bottom', 'top', 'right', 'left'].find((k) => fits[k]) || 'bottom';
+    const cx = Math.min(Math.max(r.left + r.width / 2 - w / 2, g), innerWidth - g - w);
+    const cy = Math.min(Math.max(r.top + r.height / 2 - h / 2, g), innerHeight - g - h);
+    const pos = { top: [r.top - gap - h, cx], bottom: [Math.min(r.bottom + gap, innerHeight - g - h), cx], left: [cy, r.left - gap - w], right: [cy, r.right + gap] }[side];
+    card.style.top = `${pos[0]}px`; card.style.left = `${pos[1]}px`;
+  };
+  const follow = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(place); };
+
+  const go = (n) => {
+    i = n;
+    const s = steps[i], { card, hole } = ui;
+    card.querySelector('#pt-title').textContent = s.title;
+    card.querySelector('#pt-text').textContent = s.text;
+    const body = card.querySelector('.pt-body'); body.style.animation = 'none'; void body.offsetWidth; body.style.animation = '';
+    card.querySelectorAll('.pt-dots i').forEach((d, k) => d.classList.toggle('is-on', k === i));
+    card.querySelector('.pt-count').textContent = `${i + 1} de ${steps.length}`;
+    card.querySelector('[data-prev]').hidden = i === 0;
+    card.querySelector('[data-skip-text]').hidden = i !== 0;
+    const next = card.querySelector('[data-next]'); next.textContent = i === steps.length - 1 ? 'Concluir' : 'Próximo';
+    hole.classList.add('is-moving'); clearTimeout(moveTimer); moveTimer = setTimeout(() => hole.classList.remove('is-moving'), 700);
+    const el = s.target && document.querySelector(`[data-tour="${s.target}"]`);
+    if (el) { const r = el.getBoundingClientRect(); if (r.top < 0 || r.bottom > innerHeight) el.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }
+    place();
+    if (!card.contains(document.activeElement) || document.activeElement.hidden) next.focus({ preventScroll: true });
+  };
+
+  const open = () => {
+    if (ui) return;
+    back = document.activeElement;
+    ui = build();
+    document.addEventListener('keydown', onKey);
+    addEventListener('scroll', follow, { capture: true, passive: true });
+    addEventListener('resize', follow);
+    go(0);
+  };
+  const close = (result) => {
+    if (!ui) return;
+    store.set(result);
+    Object.values(ui).forEach((n) => n.remove()); ui = null;
+    document.removeEventListener('keydown', onKey);
+    removeEventListener('scroll', follow, { capture: true });
+    removeEventListener('resize', follow);
+    showStatus();
+    back?.focus?.({ preventScroll: true });
+  };
+
+  document.querySelector('[data-start]').addEventListener('click', () => { try { localStorage.removeItem(KEY); } catch {} showStatus(); open(); });
+  document.querySelector('[data-reopen]').addEventListener('click', open);
+  showStatus();
+  // Primeiro acesso: abre sozinho uma vez, depois que a página assentou.
+  if (!store.get()) setTimeout(open, 600);
+})();
+</script>

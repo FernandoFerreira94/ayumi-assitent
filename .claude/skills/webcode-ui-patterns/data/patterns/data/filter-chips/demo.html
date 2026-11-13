@@ -1,0 +1,75 @@
+<style>
+  .fc { min-height: 100vh; padding: 20px; display: grid; gap: 12px; align-content: start; max-width: 760px; }
+  .fc-top { display: flex; flex-wrap: wrap; gap: 8px; }
+  .fc-search { flex: 1 1 220px; min-height: var(--wc-size-touch-min); padding: 0 12px; font: inherit; font-size: max(16px, 1em); border: 1px solid var(--wc-border-strong); border-radius: var(--wc-radius-md); background: var(--wc-bg); color: var(--wc-fg); }
+  .fc select { min-height: var(--wc-size-touch-min); padding: 0 10px; font: inherit; border: 1px solid var(--wc-border-strong); border-radius: var(--wc-radius-md); background: var(--wc-surface); color: var(--wc-fg); }
+  .fc-search:focus-visible, .fc select:focus-visible, .fc button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .fc-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 32px; }
+  .fc-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 6px 0 12px; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-pill); background: var(--wc-accent-soft); color: var(--wc-fg); font: inherit; font-size: var(--wc-font-size-sm); cursor: pointer; animation: fc-in var(--wc-motion-duration-fast) var(--wc-motion-ease-out); }
+  .fc-chip b { font-weight: var(--wc-font-weight-medium); color: var(--wc-accent); }
+  .fc-chip i { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-style: normal; }
+  .fc-chip:hover i { background: var(--wc-sunken); }
+  @keyframes fc-in { from { opacity: 0; scale: .96; } }
+  @media (prefers-reduced-motion: reduce) { .fc-chip { animation: none; } }
+  .fc-clear { border: 0; background: none; color: var(--wc-accent); font: inherit; font-size: var(--wc-font-size-sm); cursor: pointer; padding: 6px; }
+  .fc-count { font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); margin: 0; }
+  .fc-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface); }
+  .fc-list li { display: flex; justify-content: space-between; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--wc-border); }
+  .fc-list li:first-child { border-top: 0; }
+  .fc-list small { color: var(--wc-fg-muted); }
+  .fc-empty { padding: 24px 16px; text-align: center; color: var(--wc-fg-muted); }
+  .fc-empty button { margin-top: 8px; }
+</style>
+<div class="fc">
+  <div class="fc-top">
+    <label style="display:contents"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)">Buscar pedidos</span><input class="fc-search" type="search" placeholder="Buscar por cliente ou nº" autocomplete="off"></label>
+    <select aria-label="Status" data-f="status"><option value="">Status</option><option>Pago</option><option>Pendente</option><option>Atrasado</option></select>
+    <select aria-label="Canal" data-f="canal"><option value="">Canal</option><option>Loja</option><option>WhatsApp</option><option>Marketplace</option></select>
+  </div>
+  <div class="fc-chips" aria-label="Filtros ativos" role="group"></div>
+  <p class="fc-count" role="status"></p>
+  <ul class="fc-list"></ul>
+</div>
+<script>
+(() => {
+  const data = [
+    ['1043', 'Ana Ribeiro', 'Pago', 'Loja'], ['1044', 'Mercado Bom Preço', 'Pendente', 'WhatsApp'], ['1045', 'Carlos Menezes', 'Atrasado', 'Marketplace'], ['1046', 'Studio Lume', 'Pago', 'WhatsApp'],
+    ['1047', 'Padaria Estrela', 'Pago', 'Loja'], ['1048', 'Clínica Vida', 'Pendente', 'Loja'], ['1049', 'Café Aroma', 'Atrasado', 'WhatsApp'], ['1050', 'Loja Verde', 'Pago', 'Marketplace'],
+  ].map(([id, cliente, status, canal]) => ({ id, cliente, status, canal }));
+  const LABEL = { q: 'Busca', status: 'Status', canal: 'Canal' };
+  const root = document.querySelector('.fc');
+  const search = root.querySelector('.fc-search');
+  const selects = [...root.querySelectorAll('select')];
+  const chips = root.querySelector('.fc-chips');
+  const list = root.querySelector('.fc-list');
+  const count = root.querySelector('.fc-count');
+  const state = { q: '', status: '', canal: '' };
+  try { const p = new URLSearchParams(location.hash.slice(1)); for (const k in state) state[k] = p.get(k) ?? ''; } catch {}
+  const toUrl = () => { const p = new URLSearchParams(Object.entries(state).filter(([, v]) => v)); try { history.replaceState(null, '', '#' + p); } catch {} };
+  const render = (focusAfter) => {
+    search.value = state.q; selects.forEach((s) => (s.value = state[s.dataset.f]));
+    const active = Object.entries(state).filter(([, v]) => v);
+    chips.innerHTML = active.map(([k, v]) => `<button type="button" class="fc-chip" data-k="${k}" aria-label="Remover filtro ${LABEL[k]}: ${v}">${LABEL[k]}: <b>${v}</b><i aria-hidden="true">×</i></button>`).join('') + (active.length > 1 ? '<button type="button" class="fc-clear">Limpar tudo</button>' : '');
+    const q = state.q.toLowerCase();
+    const rows = data.filter((d) => (!q || d.cliente.toLowerCase().includes(q) || d.id.includes(q)) && (!state.status || d.status === state.status) && (!state.canal || d.canal === state.canal));
+    count.textContent = rows.length === 1 ? '1 pedido' : `${rows.length} pedidos`;
+    list.innerHTML = rows.length ? rows.map((d) => `<li><span>#${d.id} · ${d.cliente}</span><small>${d.status} · ${d.canal}</small></li>`).join('')
+      : `<li class="fc-empty">Nenhum pedido com ${active.map(([k, v]) => `${LABEL[k].toLowerCase()} "${v}"`).join(' e ')}.<br><button type="button" class="fc-clear" data-last>Remover o último filtro</button></li>`;
+    toUrl();
+    if (focusAfter) (chips.querySelectorAll('.fc-chip')[focusAfter.index] ?? chips.querySelector('.fc-chip') ?? search).focus();
+  };
+  let t;
+  search.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { state.q = search.value.trim(); render(); }, 250); });
+  selects.forEach((s) => s.addEventListener('change', () => { state[s.dataset.f] = s.value; render(); }));
+  root.addEventListener('click', (e) => {
+    const chip = e.target.closest('.fc-chip');
+    if (chip) { const index = [...chips.querySelectorAll('.fc-chip')].indexOf(chip); state[chip.dataset.k] = ''; render({ index }); return; }
+    const clear = e.target.closest('.fc-clear');
+    if (!clear) return;
+    if (clear.hasAttribute('data-last')) { const k = Object.keys(state).reverse().find((k) => state[k]); if (k) state[k] = ''; }
+    else for (const k in state) state[k] = '';
+    render({ index: 0 });
+  });
+  render();
+})();
+</script>

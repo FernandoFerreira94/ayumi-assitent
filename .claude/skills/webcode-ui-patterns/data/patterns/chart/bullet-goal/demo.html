@@ -1,0 +1,55 @@
+<style>
+  .bgl { min-height: 100vh; padding: 20px 16px; max-width: 640px; margin: 0 auto; display: grid; gap: 12px; align-content: start; color: var(--wc-fg); font-size: var(--wc-font-size-sm); font-variant-numeric: tabular-nums; }
+  .bgl-card { border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface); padding: 16px; display: grid; gap: 18px; }
+  .bgl h3 { margin: 0; font-size: var(--wc-font-size-md); }
+  .bgl-sub { margin: -12px 0 0; color: var(--wc-fg-muted); }
+  .bgl ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
+  .bgl li { display: grid; gap: 6px; }
+  .bgl-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px; align-items: baseline; }
+  .bgl-top b { font-weight: var(--wc-font-weight-semibold); }
+  .bgl-top span { color: var(--wc-fg-muted); }
+  .bgl-st { display: inline-flex; align-items: center; gap: 4px; font-size: var(--wc-font-size-xs); padding: 2px 8px; border-radius: var(--wc-radius-pill); color: var(--wc-fg); }
+  .bgl-st[data-s="ok"] { background: var(--wc-success-soft); } .bgl-st[data-s="ok"] svg { color: var(--wc-success); }
+  .bgl-st[data-s="warn"] { background: var(--wc-warning-soft); } .bgl-st[data-s="warn"] svg { color: var(--wc-warning); }
+  .bgl-st[data-s="bad"] { background: var(--wc-danger-soft); } .bgl-st[data-s="bad"] svg { color: var(--wc-danger); }
+  .bgl-bar { position: relative; height: 20px; border-radius: 4px; overflow: visible; background: linear-gradient(90deg, color-mix(in oklab, var(--wc-fg-muted) 26%, var(--wc-surface)) 0 var(--r1), color-mix(in oklab, var(--wc-fg-muted) 16%, var(--wc-surface)) var(--r1) var(--r2), color-mix(in oklab, var(--wc-fg-muted) 8%, var(--wc-surface)) var(--r2)); }
+  .bgl-v, .bgl-p { position: absolute; left: 0; top: 6px; height: 8px; border-radius: 0 4px 4px 0; }
+  .bgl-v { width: var(--v); background: var(--wc-accent); transform-origin: left; animation: bgl-in var(--wc-motion-duration-slow) var(--wc-motion-ease-out) both; }
+  @keyframes bgl-in { from { transform: scaleX(0); } }
+  .bgl-p { width: var(--p); background: transparent; border: 1.5px dashed var(--wc-accent); border-left: 0; box-sizing: border-box; opacity: .7; }
+  .bgl-m { position: absolute; top: -3px; bottom: -3px; left: var(--m); width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--wc-fg); }
+  .bgl-scale { display: flex; justify-content: space-between; color: var(--wc-fg-muted); font-size: var(--wc-font-size-xs); }
+  .bgl-leg { display: flex; flex-wrap: wrap; gap: 14px; color: var(--wc-fg-muted); font-size: var(--wc-font-size-xs); }
+  .bgl-leg span { display: inline-flex; align-items: center; gap: 6px; }
+  .bgl-leg i { display: inline-block; }
+  .bgl-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  @media (prefers-reduced-motion: reduce) { .bgl-v { animation: none; } }
+</style>
+<div class="bgl">
+  <section class="bgl-card" aria-labelledby="bgl-h">
+    <h3 id="bgl-h">Metas de outubro</h3>
+    <p class="bgl-sub">Dia 20 de 31. Status pelo ritmo projetado até o fim do mês.</p>
+    <div class="bgl-leg" aria-hidden="true"><span><i style="width:16px;height:8px;border-radius:2px;background:var(--wc-accent)"></i>Realizado</span><span><i style="width:16px;height:8px;border:1.5px dashed var(--wc-accent);border-left:0;box-sizing:border-box"></i>Projeção</span><span><i style="width:3px;height:14px;border-radius:2px;background:var(--wc-fg)"></i>Meta</span></div>
+    <ul></ul>
+  </section>
+</div>
+<script>
+(() => {
+  const DAY = 20, DAYS = 31;
+  const M = [
+    { n: 'Receita', v: 71000, t: 100000, f: (x) => `R$ ${Math.round(x / 1000)} mil`, inv: false },
+    { n: 'Novos clientes', v: 52, t: 90, f: (x) => `${Math.round(x)}`, inv: false },
+    { n: 'Chamados resolvidos em 24h', v: 88, t: 90, f: (x) => `${Math.round(x)}%`, inv: false, rate: true },
+    { n: 'Custo com frete', v: 9800, t: 14000, f: (x) => `R$ ${(x / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`, inv: true },
+  ];
+  const ICON = { ok: '<path d="m5 12 5 5 9-10"/>', warn: '<path d="M12 8v5M12 17h.01"/>', bad: '<path d="m7 7 10 10M17 7 7 17"/>' };
+  const LBL = { ok: 'No ritmo', warn: 'Atenção', bad: 'Fora da meta' };
+  document.querySelector('.bgl ul').innerHTML = M.map((m) => {
+    const proj = m.rate ? m.v : m.v / DAY * DAYS, max = Math.max(m.t, proj) * 1.15, r = proj / m.t;
+    const s = m.inv ? (r <= 1 ? 'ok' : r <= 1.1 ? 'warn' : 'bad') : (r >= 1 ? 'ok' : r >= .9 ? 'warn' : 'bad');
+    const pc = (x) => (x / max * 100).toFixed(1) + '%';
+    const desc = `${m.n}: ${m.f(m.v)} de ${m.f(m.t)} (${Math.round(m.v / m.t * 100)}%)${m.rate ? '' : `, projeção ${m.f(proj)} (${Math.round(r * 100)}% da meta)`}. ${LBL[s]}.`;
+    return `<li><span class="bgl-sr">${desc}</span><div class="bgl-top" aria-hidden="true"><b>${m.n}</b><span>${m.f(m.v)} de ${m.f(m.t)}${m.rate ? '' : ` · proj. ${m.f(proj)}`}</span><span class="bgl-st" data-s="${s}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true">${ICON[s]}</svg>${LBL[s]}</span></div><div class="bgl-bar" aria-hidden="true" style="--v:${pc(m.v)};--p:${pc(proj)};--m:${pc(m.t)};--r1:${pc(m.t * .6)};--r2:${pc(m.t * .9)}">${m.rate ? '' : '<span class="bgl-p"></span>'}<span class="bgl-v"></span><span class="bgl-m"></span></div><div class="bgl-scale" aria-hidden="true"><span>0</span><span>${m.f(max)}</span></div></li>`;
+  }).join('');
+})();
+</script>

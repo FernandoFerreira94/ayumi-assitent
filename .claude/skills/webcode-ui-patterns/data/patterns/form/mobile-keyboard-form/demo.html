@@ -1,0 +1,61 @@
+<style>
+  .mkf { min-height: 100vh; max-width: 480px; margin: 0 auto; color: var(--wc-fg); font-size: var(--wc-font-size-sm); }
+  .mkf form { padding: 20px 16px 120px; display: grid; gap: 18px; }
+  .mkf h3 { margin: 0; font: var(--wc-font-weight-bold) var(--wc-font-size-2xl) var(--wc-font-display); }
+  .mkf-sub { margin: -10px 0 0; color: var(--wc-fg-muted); }
+  .mkf-f { display: grid; gap: 6px; scroll-margin: 96px 0 140px; }
+  .mkf-f { min-width: 0; }
+  .mkf-f label { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 8px; font-weight: var(--wc-font-weight-medium); }
+  .mkf-kb { font-size: var(--wc-font-size-xs); font-weight: var(--wc-font-weight-regular); color: var(--wc-fg-muted); }
+  .mkf-f input { width: 100%; min-width: 0; box-sizing: border-box; min-height: 48px; padding: 0 14px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: inherit; font-size: 16px; }
+  .mkf-f input:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 1px; }
+  .mkf-f input[aria-invalid="true"] { border-color: var(--wc-danger); }
+  .mkf-err { margin: 0; color: var(--wc-danger); font-size: var(--wc-font-size-xs); }
+  .mkf-err:empty { display: none; }
+  .mkf-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+  .mkf-bar { position: fixed; left: 0; right: 0; bottom: 0; translate: 0 calc(-1 * var(--kb, 0px)); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--wc-glass-bg); backdrop-filter: blur(var(--wc-blur-glass)); border-top: 1px solid var(--wc-border); }
+  .mkf-bar > div { max-width: 448px; margin: 0 auto; display: flex; gap: 12px; align-items: center; }
+  .mkf-bar p { flex: 1; margin: 0; color: var(--wc-fg-muted); font-size: var(--wc-font-size-xs); }
+  .mkf-bar button { min-height: 48px; padding: 0 24px; border: 0; border-radius: var(--wc-radius-button); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; }
+  .mkf-bar button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .mkf-ok { padding: 12px 14px; border-radius: var(--wc-radius-md); background: var(--wc-success-soft); color: var(--wc-success); }
+  .mkf-ok:empty { display: none; }
+</style>
+<div class="mkf">
+  <form novalidate>
+    <h3>Seus dados de entrega</h3>
+    <p class="mkf-sub">Cada campo abre o teclado certo. Em cinza, qual teclado aparece.</p>
+    <div class="mkf-f"><label for="mkf-n">Nome completo <span class="mkf-kb">texto · Próximo</span></label><input id="mkf-n" name="n" autocomplete="name" autocapitalize="words" enterkeyhint="next" required aria-describedby="mkf-n-e"><p class="mkf-err" id="mkf-n-e"></p></div>
+    <div class="mkf-f"><label for="mkf-t">Celular <span class="mkf-kb">telefone</span></label><input id="mkf-t" name="t" type="tel" inputmode="tel" autocomplete="tel-national" enterkeyhint="next" placeholder="(11) 91234-5678" required aria-describedby="mkf-t-e"><p class="mkf-err" id="mkf-t-e"></p></div>
+    <div class="mkf-f"><label for="mkf-e">E-mail <span class="mkf-kb">e-mail · @ e .com</span></label><input id="mkf-e" name="e" type="email" autocomplete="email" autocapitalize="off" spellcheck="false" enterkeyhint="next" required aria-describedby="mkf-e-e"><p class="mkf-err" id="mkf-e-e"></p></div>
+    <div class="mkf-row">
+      <div class="mkf-f"><label for="mkf-c">CEP <span class="mkf-kb">numérico</span></label><input id="mkf-c" name="c" inputmode="numeric" autocomplete="postal-code" maxlength="9" enterkeyhint="next" placeholder="00000-000" required aria-describedby="mkf-c-e"><p class="mkf-err" id="mkf-c-e"></p></div>
+      <div class="mkf-f"><label for="mkf-num">Número <span class="mkf-kb">numérico</span></label><input id="mkf-num" name="num" inputmode="numeric" autocomplete="address-line2" enterkeyhint="next"></div>
+    </div>
+    <div class="mkf-f"><label for="mkf-tr">Troco para <span class="mkf-kb">decimal · Enviar</span></label><input id="mkf-tr" name="tr" inputmode="decimal" enterkeyhint="send" placeholder="R$ 0,00" aria-describedby="mkf-tr-h"><p class="mkf-err" id="mkf-tr-h" style="color:var(--wc-fg-muted)">Opcional, se for pagar em dinheiro.</p></div>
+    <p class="mkf-ok" role="status"></p>
+  </form>
+  <div class="mkf-bar"><div><p>Total <b>R$ 68,40</b><br>Entrega em 35–45 min</p><button type="button" class="mkf-send">Confirmar pedido</button></div></div>
+</div>
+<script>
+(() => {
+  const root = document.querySelector('.mkf'), form = root.querySelector('form'), bar = root.querySelector('.mkf-bar'), ok = root.querySelector('.mkf-ok');
+  const fields = [...form.querySelectorAll('input')];
+  const fmt = { t: (d) => d.slice(0, 11).replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d{1,4})$/, '$1-$2'), c: (d) => d.slice(0, 8).replace(/^(\d{5})(\d)/, '$1-$2'), tr: (d) => d ? (Number(d.slice(0, 7)) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '' };
+  const rule = { n: (v) => v.trim().split(/\s+/).length < 2 && 'Digite nome e sobrenome.', t: (v) => v.replace(/\D/g, '').length < 10 && 'Celular com DDD, ex.: (11) 91234-5678.', e: (v) => !/^\S+@\S+\.\S+$/.test(v) && 'E-mail no formato nome@dominio.com.', c: (v) => v.replace(/\D/g, '').length !== 8 && 'CEP tem 8 números.' };
+  const check = (i) => { const r = rule[i.name]; if (!r) return true; const m = r(i.value) || ''; i.setAttribute('aria-invalid', String(!!m)); document.getElementById(`${i.id}-e`).textContent = m; return !m; };
+  form.addEventListener('input', (e) => { const i = e.target, f = fmt[i.name]; if (f) i.value = f(i.value.replace(/\D/g, '')); if (i.getAttribute('aria-invalid') === 'true') check(i); });
+  form.addEventListener('focusout', (e) => { if (e.target.value) check(e.target); });
+  form.addEventListener('keydown', (e) => { if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') return; e.preventDefault(); const n = fields[fields.indexOf(e.target) + 1]; n ? n.focus() : submit(); });
+  form.addEventListener('focusin', (e) => { if (matchMedia('(pointer: coarse)').matches) setTimeout(() => e.target.closest('.mkf-f')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 250); });
+  const submit = () => {
+    const bad = fields.filter((i) => !check(i));
+    if (bad.length) { ok.textContent = ''; bad[0].focus(); return; }
+    ok.textContent = 'Pedido confirmado. Você recebe o status por SMS.';
+  };
+  root.querySelector('.mkf-send').onclick = submit;
+  // Barra acima do teclado: altura do teclado = parte da janela coberta pelo visualViewport.
+  const vv = window.visualViewport; let raf;
+  if (vv) { const sync = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => bar.style.setProperty('--kb', `${Math.max(0, innerHeight - vv.height - vv.offsetTop)}px`)); }; vv.addEventListener('resize', sync); vv.addEventListener('scroll', sync); }
+})();
+</script>

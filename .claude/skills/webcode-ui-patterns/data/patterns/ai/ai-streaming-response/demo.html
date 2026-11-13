@@ -1,0 +1,89 @@
+<style>
+  .asr { min-height: 100vh; display: grid; grid-template-rows: 1fr auto; color: var(--wc-fg); font-size: var(--wc-font-size-md); }
+  .asr-scroll { overflow-y: auto; max-height: 100vh; padding: 24px 16px 8px; }
+  .asr-col { max-width: 70ch; margin: 0 auto; display: grid; gap: 16px; }
+  .asr-q { justify-self: end; max-width: 85%; padding: 10px 14px; border-radius: var(--wc-radius-lg); background: var(--wc-accent-soft); margin: 0; }
+  .asr-a { display: grid; gap: 10px; line-height: var(--wc-line-height-relaxed, 1.6); }
+  .asr-think { display: flex; align-items: center; gap: 8px; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .asr-think i { width: 8px; height: 8px; border-radius: 50%; background: var(--wc-accent); animation: asr-p 1s ease-in-out infinite; }
+  @keyframes asr-p { 50% { opacity: .25; } }
+  .asr-text p { margin: 0 0 .8em; }
+  .asr-a[aria-busy="true"] .asr-text > :last-child::after { content: ""; display: inline-block; width: .5em; height: 1em; margin-left: 2px; vertical-align: -2px; background: var(--wc-accent); animation: asr-p .9s steps(2) infinite; }
+  @media (prefers-reduced-motion: reduce) { .asr-think i, .asr-a[aria-busy="true"] .asr-text > :last-child::after { animation: none; } }
+  .asr-label { font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); }
+  .asr-src { display: flex; flex-wrap: wrap; gap: 6px; }
+  .asr-src a { font-size: var(--wc-font-size-xs); padding: 4px 10px; border-radius: var(--wc-radius-pill); background: var(--wc-sunken); color: var(--wc-fg); text-decoration: none; }
+  .asr-acts { display: flex; gap: 4px; flex-wrap: wrap; }
+  .asr button, .asr a { font: inherit; }
+  .asr-acts button { min-height: 36px; padding: 0 10px; border-radius: var(--wc-radius-sm); border: 1px solid transparent; background: none; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); cursor: pointer; }
+  .asr-acts button:hover { background: var(--wc-sunken); color: var(--wc-fg); }
+  .asr-acts button[aria-pressed="true"] { color: var(--wc-accent); }
+  .asr-bar { position: sticky; bottom: 0; padding: 12px 16px; background: var(--wc-bg); border-top: 1px solid var(--wc-border); display: flex; justify-content: center; gap: 8px; }
+  .asr-bar button { min-height: 44px; padding: 0 18px; border-radius: var(--wc-radius-pill); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font-weight: var(--wc-font-weight-semibold); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+  .asr-bar .asr-stop::before { content: ""; width: 10px; height: 10px; border-radius: 2px; background: currentColor; }
+  .asr-bar [hidden], .asr [hidden] { display: none; }
+  .asr button:focus-visible, .asr a:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .asr-note { color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); font-style: italic; }
+  .asr-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+</style>
+<div class="asr">
+  <div class="asr-scroll">
+    <div class="asr-col">
+      <p class="asr-q">Resuma as vendas de outubro por canal e diga o que chama atenção.</p>
+      <div class="asr-a" aria-busy="false" aria-live="off">
+        <span class="asr-label">Gerado por IA · confira os números</span>
+        <div class="asr-think" hidden><i aria-hidden="true"></i><span>Lendo 312 pedidos de outubro…</span></div>
+        <div class="asr-text"></div>
+        <div class="asr-src" hidden><a href="#p1">[1] Pedidos de outubro</a><a href="#p2">[2] Metas do trimestre</a></div>
+        <div class="asr-acts" hidden>
+          <button type="button" data-a="copy">Copiar</button>
+          <button type="button" data-a="regen">Regenerar</button>
+          <button type="button" data-a="up" aria-pressed="false" aria-label="Resposta útil">👍</button>
+          <button type="button" data-a="down" aria-pressed="false" aria-label="Resposta não útil">👎</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="asr-bar">
+    <button type="button" class="asr-stop">Parar</button>
+    <button type="button" class="asr-end" hidden>Ir para o fim ↓</button>
+  </div>
+  <p class="asr-sr" role="status" id="asr-live"></p>
+</div>
+<script>
+(() => {
+  const root = document.querySelector('.asr'), sc = root.querySelector('.asr-scroll'), a = root.querySelector('.asr-a'), think = a.querySelector('.asr-think'), text = a.querySelector('.asr-text'), src = a.querySelector('.asr-src'), acts = a.querySelector('.asr-acts'), stop = root.querySelector('.asr-stop'), end = root.querySelector('.asr-end'), live = document.getElementById('asr-live');
+  const ANSWER = 'Outubro fechou com R$ 184.320 em 312 pedidos, 14% acima de setembro [1].\n\nO site trouxe 58% da receita, o WhatsApp 27% e a loja física 15%. O ticket médio do WhatsApp (R$ 742) é o maior dos três, puxado por pedidos de clientes recorrentes.\n\nChama atenção: a loja física caiu 9% enquanto os outros canais cresceram, e 41 pedidos do site ficaram mais de 3 dias em "aguardando pagamento", quase todos via boleto. Vale testar lembrete por WhatsApp no dia seguinte.\n\nA meta do trimestre está em 71% com dois meses pela frente [2].';
+  let timer, pos = 0, follow = true, buf = '';
+  const atEnd = () => sc.scrollHeight - sc.scrollTop - sc.clientHeight < 24;
+  sc.addEventListener('scroll', () => { follow = atEnd(); end.hidden = follow || a.getAttribute('aria-busy') !== 'true'; });
+  const paint = () => { text.innerHTML = buf.split('\n\n').map((p) => `<p>${p.replace(/\[(\d)\]/g, '<sup><a href="#p$1">[$1]</a></sup>')}</p>`).join(''); if (follow) sc.scrollTop = sc.scrollHeight; };
+  const finish = (stopped) => {
+    clearInterval(timer); a.setAttribute('aria-busy', 'false'); stop.hidden = true; end.hidden = true; think.hidden = true;
+    if (stopped) { text.insertAdjacentHTML('beforeend', '<p class="asr-note">Resposta interrompida.</p>'); live.textContent = 'Resposta interrompida'; }
+    else { src.hidden = false; live.textContent = 'Resposta pronta'; }
+    acts.hidden = false;
+  };
+  const start = () => {
+    pos = 0; buf = ''; text.innerHTML = ''; src.hidden = true; acts.hidden = true; stop.hidden = false; follow = true;
+    a.setAttribute('aria-busy', 'true'); think.hidden = false; live.textContent = 'Gerando resposta';
+    setTimeout(() => {
+      think.hidden = true;
+      timer = setInterval(() => {
+        const step = 3 + Math.floor(Math.random() * 6); buf = ANSWER.slice(0, pos += step);
+        requestAnimationFrame(paint);
+        if (pos >= ANSWER.length) finish(false);
+      }, 40);
+    }, 700);
+  };
+  stop.addEventListener('click', () => { if (a.getAttribute('aria-busy') === 'true') { finish(true); acts.querySelector('button').focus(); } });
+  end.addEventListener('click', () => { follow = true; sc.scrollTop = sc.scrollHeight; end.hidden = true; });
+  acts.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.a === 'copy') { navigator.clipboard?.writeText(ANSWER).catch(() => {}); b.textContent = 'Copiado'; setTimeout(() => (b.textContent = 'Copiar'), 1500); live.textContent = 'Copiado'; }
+    if (b.dataset.a === 'regen') { start(); stop.focus(); }
+    if (b.dataset.a === 'up' || b.dataset.a === 'down') { acts.querySelectorAll('[aria-pressed]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); live.textContent = 'Obrigado pelo retorno'; }
+  });
+  start();
+})();
+</script>

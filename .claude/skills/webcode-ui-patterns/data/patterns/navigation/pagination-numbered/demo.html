@@ -1,0 +1,36 @@
+<style>
+  .pgn { padding: 24px 20px; color: var(--wc-fg); font-size: var(--wc-font-size-sm); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; max-width: 720px; }
+  .pgn p { margin: 0; color: var(--wc-fg-muted); font-variant-numeric: tabular-nums; }
+  .pgn p b { color: var(--wc-fg); }
+  .pgn ul { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 4px; }
+  .pgn button { min-width: 40px; height: 40px; padding: 0 10px; border-radius: var(--wc-radius-md); border: 1px solid transparent; background: none; color: var(--wc-fg); font: inherit; cursor: pointer; font-variant-numeric: tabular-nums; }
+  .pgn button:hover:not(:disabled) { background: var(--wc-sunken); }
+  .pgn button[aria-current] { border-color: var(--wc-focus); font-weight: var(--wc-font-weight-semibold); }
+  .pgn button:disabled { opacity: .5; cursor: default; }
+  .pgn button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .pgn .pgn-gap { width: 40px; text-align: center; color: var(--wc-fg-muted); }
+  .pgn .pgn-mob { display: none; padding: 0 8px; color: var(--wc-fg-muted); }
+  @media (max-width: 560px) { .pgn { justify-content: center; } .pgn .pgn-num { display: none; } .pgn .pgn-mob { display: block; } }
+  @media (pointer: coarse) { .pgn button { min-width: 44px; height: 44px; } }
+</style>
+<div class="pgn"><p aria-live="polite"></p><nav aria-label="Paginação"><ul></ul></nav></div>
+<script>
+(() => {
+  const total = 1240, size = 50, count = Math.ceil(total / size), root = document.querySelector('.pgn'), ul = root.querySelector('ul'), sum = root.querySelector('p');
+  let page = 3;
+  const fmt = (n) => n.toLocaleString('pt-BR');
+  const range = (p, n, s = 1) => { const slots = s * 2 + 5, run = (a, l) => Array.from({ length: l }, (_, k) => a + k); if (n <= slots) return run(1, n); if (p <= s + 3) return [...run(1, slots - 2), 0, n]; if (p >= n - s - 2) return [1, 0, ...run(n - slots + 3, slots - 2)]; return [1, 0, ...run(p - s, s * 2 + 1), 0, n]; };
+  const render = (focusLabel) => {
+    sum.innerHTML = `<b>${fmt((page - 1) * size + 1)}–${fmt(Math.min(page * size, total))}</b> de ${fmt(total)} pedidos`;
+    const btn = (label, p, extra = '') => `<li><button type="button" data-p="${p}" ${extra}>${label}</button></li>`;
+    ul.innerHTML = btn('‹ <span class="pgn-num">Anterior</span>', page - 1, `aria-label="Ir para a página anterior" ${page === 1 ? 'disabled' : ''}`)
+      + `<li class="pgn-mob"><b>${page}</b> de ${count}</li>`
+      + range(page, count).map((p) => p === 0 ? '<li class="pgn-num pgn-gap" aria-hidden="true">…</li>' : `<li class="pgn-num"><button type="button" data-p="${p}" aria-label="Página ${p}" ${p === page ? 'aria-current="page"' : ''}>${fmt(p)}</button></li>`).join('')
+      + btn('<span class="pgn-num">Próxima</span> ›', page + 1, `aria-label="Ir para a próxima página" ${page === count ? 'disabled' : ''}`);
+    // Mantém o foco no mesmo controle (ou na página atual, se a seta desabilitou).
+    if (focusLabel) (ul.querySelector(`[aria-label="${focusLabel}"]:not(:disabled)`) ?? ul.querySelector('[aria-current]'))?.focus();
+  };
+  ul.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; page = +b.dataset.p; render(/anterior|próxima/.test(b.getAttribute('aria-label')) ? b.getAttribute('aria-label') : `Página ${page}`); });
+  render();
+})();
+</script>

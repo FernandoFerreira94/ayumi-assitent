@@ -1,0 +1,64 @@
+<style>
+  .pgl { min-height: 100vh; padding: 20px 16px; display: grid; gap: 10px; align-content: start; max-width: 560px; margin: 0 auto; color: var(--wc-fg); font-size: var(--wc-font-size-sm); }
+  .pgl-main { position: relative; }
+  .pgl-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; border-radius: var(--wc-radius-lg); scrollbar-width: none; overscroll-behavior-x: contain; }
+  .pgl-track::-webkit-scrollbar { display: none; }
+  .pgl-track:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .pgl-slide { flex: 0 0 100%; scroll-snap-align: center; aspect-ratio: 1; display: grid; place-items: center; border: 0; padding: 0; cursor: zoom-in; font: inherit; color: var(--wc-fg-muted); }
+  .pgl-art { width: 46%; aspect-ratio: 1; border-radius: 30% 30% 22% 22%; background: var(--wc-surface); box-shadow: var(--wc-shadow-lg); display: grid; place-items: center; font-size: var(--wc-font-size-xs); }
+  .pgl-slide:nth-child(1) { background: linear-gradient(160deg, var(--wc-accent-soft), var(--wc-sunken)); }
+  .pgl-slide:nth-child(2) { background: linear-gradient(160deg, var(--wc-sunken), var(--wc-accent-soft)); }
+  .pgl-slide:nth-child(3) { background: linear-gradient(200deg, var(--wc-success-soft), var(--wc-sunken)); }
+  .pgl-slide:nth-child(4) { background: linear-gradient(120deg, var(--wc-warning-soft), var(--wc-sunken)); }
+  .pgl-slide:nth-child(5) { background: linear-gradient(90deg, var(--wc-sunken), var(--wc-surface-raised)); }
+  .pgl-arrow { position: absolute; top: 50%; translate: 0 -50%; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--wc-glass-border); background: var(--wc-glass-bg); backdrop-filter: blur(12px); color: var(--wc-fg); cursor: pointer; display: grid; place-items: center; font-size: 18px; transition: opacity var(--wc-motion-duration-fast); }
+  .pgl-arrow[disabled] { opacity: 0; pointer-events: none; }
+  .pgl-prev { left: 10px; } .pgl-next { right: 10px; }
+  .pgl-count { position: absolute; right: 10px; bottom: 10px; padding: 4px 10px; border-radius: var(--wc-radius-pill); background: var(--wc-glass-bg); backdrop-filter: blur(12px); font-size: var(--wc-font-size-xs); font-variant-numeric: tabular-nums; }
+  .pgl-thumbs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+  .pgl-thumbs button { aspect-ratio: 1; border-radius: var(--wc-radius-md); border: 2px solid transparent; padding: 0; cursor: pointer; overflow: hidden; transition: border-color var(--wc-motion-duration-fast); }
+  .pgl-thumbs button[aria-current="true"] { border-color: var(--wc-accent); }
+  .pgl button:focus-visible, .pgl-zoom button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  @media (hover: none) { .pgl-arrow { display: none; } }
+  .pgl-zoom { width: min(92vw, 820px); max-height: 92vh; padding: 0; border: 0; border-radius: var(--wc-radius-xl); background: var(--wc-surface); color: var(--wc-fg); opacity: 0; scale: .97; transition: opacity var(--wc-motion-duration-base) var(--wc-motion-ease-out), scale var(--wc-motion-duration-base) var(--wc-motion-ease-out), overlay var(--wc-motion-duration-base) allow-discrete, display var(--wc-motion-duration-base) allow-discrete; }
+  .pgl-zoom[open] { opacity: 1; scale: 1; }
+  @starting-style { .pgl-zoom[open] { opacity: 0; scale: .97; } }
+  .pgl-zoom::backdrop { background: var(--wc-scrim); }
+  .pgl-zoom-img { aspect-ratio: 1; max-height: 86vh; margin: 0 auto; display: grid; place-items: center; }
+  .pgl-zoom-img .pgl-art { width: 50%; font-size: var(--wc-font-size-sm); }
+  .pgl-zoom header { display: flex; justify-content: space-between; align-items: center; padding: 8px 8px 0 16px; }
+  .pgl-zoom header button { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--wc-sunken); color: var(--wc-fg); font-size: 20px; cursor: pointer; }
+  @media (prefers-reduced-motion: reduce) { .pgl-track { scroll-behavior: auto; } }
+</style>
+<div class="pgl" role="region" aria-roledescription="galeria" aria-label="Fotos da Cafeteira Pro">
+  <div class="pgl-main">
+    <div class="pgl-track" tabindex="0" aria-label="Use as setas para trocar a foto"></div>
+    <button type="button" class="pgl-arrow pgl-prev" aria-label="Foto anterior">‹</button>
+    <button type="button" class="pgl-arrow pgl-next" aria-label="Próxima foto">›</button>
+    <span class="pgl-count" aria-live="polite"></span>
+  </div>
+  <div class="pgl-thumbs"></div>
+</div>
+<dialog class="pgl-zoom" aria-labelledby="pgl-zt"><header><b id="pgl-zt"></b><button type="button" aria-label="Fechar zoom">×</button></header><div class="pgl-zoom-img"></div></dialog>
+<script>
+(() => {
+  const N = ['Frente', 'Lateral', 'Painel', 'Bico vaporizador', 'Na cozinha'];
+  const root = document.querySelector('.pgl'), track = root.querySelector('.pgl-track'), thumbs = root.querySelector('.pgl-thumbs'), count = root.querySelector('.pgl-count'), prev = root.querySelector('.pgl-prev'), next = root.querySelector('.pgl-next'), dlg = document.querySelector('.pgl-zoom');
+  track.innerHTML = N.map((n, i) => `<button type="button" class="pgl-slide" aria-roledescription="slide" aria-label="Foto ${i + 1} de ${N.length}: ${n}. Abrir zoom"><span class="pgl-art">${n}</span></button>`).join('');
+  thumbs.innerHTML = N.map((n, i) => `<button type="button" aria-label="Ver foto ${i + 1}: ${n}" class="pgl-slide" style="cursor:pointer"></button>`).join('');
+  const slides = [...track.children], tb = [...thumbs.children];
+  let cur = 0, opener;
+  const go = (i) => { i = Math.max(0, Math.min(N.length - 1, i)); slides[i].scrollIntoView({ block: 'nearest', inline: 'center' }); };
+  const mark = (i) => { cur = i; count.textContent = `${i + 1} de ${N.length}`; tb.forEach((b, k) => b.setAttribute('aria-current', String(k === i))); prev.disabled = i === 0; next.disabled = i === N.length - 1; };
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.intersectionRatio > .6) mark(slides.indexOf(e.target)); }), { root: track, threshold: [.6] });
+  slides.forEach((s) => io.observe(s));
+  prev.onclick = () => go(cur - 1); next.onclick = () => go(cur + 1);
+  tb.forEach((b, i) => (b.onclick = () => go(i)));
+  track.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') { e.preventDefault(); go(cur + 1); } if (e.key === 'ArrowLeft') { e.preventDefault(); go(cur - 1); } });
+  slides.forEach((s, i) => (s.onclick = () => { opener = s; dlg.querySelector('#pgl-zt').textContent = `${N[i]} · ${i + 1} de ${N.length}`; dlg.querySelector('.pgl-zoom-img').innerHTML = `<span class="pgl-art">${N[i]}</span>`; dlg.querySelector('.pgl-zoom-img').style.background = getComputedStyle(s).backgroundImage; dlg.showModal(); dlg.querySelector('header button').focus(); }));
+  dlg.querySelector('header button').onclick = () => dlg.close();
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+  dlg.addEventListener('close', () => opener?.focus());
+  mark(0);
+})();
+</script>

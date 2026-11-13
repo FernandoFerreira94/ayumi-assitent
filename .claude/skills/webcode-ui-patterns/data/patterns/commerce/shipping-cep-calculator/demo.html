@@ -1,0 +1,73 @@
+<style>
+  .scc { min-height: 100vh; padding: 24px 16px; display: grid; gap: 14px; align-content: start; max-width: 520px; color: var(--wc-fg); font-size: var(--wc-font-size-sm); font-variant-numeric: tabular-nums; }
+  .scc h3 { margin: 0; font-size: var(--wc-font-size-md); }
+  .scc-row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+  .scc label { display: grid; gap: 6px; }
+  .scc input[type="text"] { width: 12ch; min-height: 44px; padding: 0 12px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: inherit; font-size: var(--wc-font-size-md); letter-spacing: .04em; }
+  .scc input[aria-invalid="true"] { border-color: var(--wc-danger); }
+  .scc input:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 1px; }
+  .scc a { color: var(--wc-accent); }
+  .scc-msg { margin: 0; min-height: 1.4em; color: var(--wc-fg-muted); }
+  .scc-msg.err { color: var(--wc-danger); }
+  .scc fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .scc legend { padding: 0; margin-bottom: 8px; color: var(--wc-fg-muted); }
+  .scc-opt { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-md); background: var(--wc-surface); cursor: pointer; transition: border-color var(--wc-motion-duration-fast), background-color var(--wc-motion-duration-fast); animation: scc-in var(--wc-motion-duration-base) var(--wc-motion-ease-out) both; }
+  .scc-opt:nth-child(3) { animation-delay: 40ms; } .scc-opt:nth-child(4) { animation-delay: 80ms; }
+  @keyframes scc-in { from { opacity: 0; translate: 0 calc(4px * var(--wc-motion-distance)); } }
+  .scc-opt:has(:checked) { border-color: var(--wc-accent); background: var(--wc-accent-soft); }
+  .scc-opt:has(:focus-visible) { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .scc-opt input { width: 18px; height: 18px; margin: 0; accent-color: var(--wc-accent-solid); }
+  .scc-opt small { grid-column: 2; color: var(--wc-fg-muted); }
+  .scc-opt .p { grid-row: 1 / span 2; grid-column: 3; font-weight: var(--wc-font-weight-semibold); text-align: right; }
+  .scc-tag { margin-left: 6px; font-size: var(--wc-font-size-xs); padding: 1px 6px; border-radius: var(--wc-radius-pill); background: var(--wc-sunken); color: var(--wc-fg-muted); font-weight: normal; white-space: nowrap; }
+  .scc-load { display: grid; gap: 8px; }
+  .scc-load span { height: 58px; border-radius: var(--wc-radius-md); background: var(--wc-sunken); animation: scc-p 1.2s ease-in-out infinite; }
+  @keyframes scc-p { 50% { opacity: .5; } }
+  .scc button { min-height: 40px; padding: 0 14px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: inherit; cursor: pointer; }
+  .scc button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .scc-opt, .scc-load span { animation: none; } }
+</style>
+<div class="scc">
+  <h3>Entrega</h3>
+  <div class="scc-row">
+    <label>CEP <input type="text" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000" aria-describedby="scc-msg"></label>
+    <a href="https://buscacepinter.correios.com.br/" target="_blank" rel="noopener" style="align-self:end;padding-bottom:12px">Não sei meu CEP</a>
+  </div>
+  <p class="scc-msg" id="scc-msg">Tente 01310-100, 69000-000 (sem cobertura) ou 99999-999 (erro).</p>
+  <div class="scc-out" role="status"></div>
+</div>
+<script>
+(() => {
+  const root = document.querySelector('.scc'), inp = root.querySelector('input'), msg = root.querySelector('.scc-msg'), out = root.querySelector('.scc-out');
+  const fmt = (v) => v === 0 ? 'Grátis' : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const HOL = ['11-02', '11-15', '11-20', '12-25'];
+  const addBiz = (n) => { const d = new Date(); while (n > 0) { d.setDate(d.getDate() + 1); const k = String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); if (d.getDay() % 6 && !HOL.includes(k)) n--; } return d.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' }); };
+  let ctrl;
+  const quote = (cep, signal) => new Promise((res, rej) => { const t = setTimeout(() => { if (cep === '99999999') rej(new Error('svc')); else if (cep.startsWith('69')) res([]); else res([{ n: 'Retirar na loja', s: 'Av. Paulista, 1000 · pronto em 2h', d: 0, p: 0 }, { n: 'Econômica', d: 6, p: 19.9 }, { n: 'Expressa', d: 2, p: 34.5 }]); }, 700); signal.addEventListener('abort', () => { clearTimeout(t); rej(new DOMException('', 'AbortError')); }); });
+  const run = async (cep) => {
+    ctrl?.abort(); ctrl = new AbortController();
+    msg.className = 'scc-msg'; msg.textContent = 'Calculando…'; inp.removeAttribute('aria-invalid');
+    out.innerHTML = '<div class="scc-load" aria-hidden="true"><span></span><span></span></div>';
+    try {
+      const opts = await quote(cep, ctrl.signal);
+      const label = cep.replace(/(\d{5})(\d{3})/, '$1-$2');
+      try { localStorage.setItem('wc-cep', cep); } catch {}
+      if (!opts.length) { msg.textContent = ''; out.innerHTML = `<p style="margin:0">Ainda não entregamos em ${label}. <button type="button">Avise quando entregarmos</button></p>`; return; }
+      const sorted = [...opts].sort((a, b) => a.d - b.d), cheapest = opts.filter((o) => o.p > 0).sort((a, b) => a.p - b.p)[0];
+      msg.textContent = `${opts.length} opções para ${label}.`;
+      out.innerHTML = `<fieldset><legend class="scc-sr" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)">Opções de entrega para ${label}</legend>${sorted.map((o, i) => `<label class="scc-opt"><input type="radio" name="scc-o" ${i === 1 || (opts.length === 1 && i === 0) ? 'checked' : ''}><b>${o.n}${o === cheapest ? '<span class="scc-tag">mais barata</span>' : ''}${o.d === Math.min(...opts.filter((x) => x.d > 0).map((x) => x.d)) ? '<span class="scc-tag">mais rápida</span>' : ''}</b><small>${o.s ?? 'Chega até ' + addBiz(o.d)}</small><span class="p">${fmt(o.p)}</span></label>`).join('')}</fieldset>`;
+    } catch (e) {
+      if (e.name === 'AbortError') return;
+      msg.className = 'scc-msg err'; msg.textContent = 'Não conseguimos calcular agora.'; out.innerHTML = '<button type="button" class="scc-retry">Tentar de novo</button>';
+      out.querySelector('.scc-retry').onclick = () => run(cep);
+    }
+  };
+  inp.addEventListener('input', () => {
+    const d = inp.value.replace(/\D/g, '').slice(0, 8);
+    inp.value = d.length > 5 ? d.slice(0, 5) + '-' + d.slice(5) : d;
+    if (d.length === 8) run(d); else { ctrl?.abort(); out.innerHTML = ''; msg.className = 'scc-msg'; msg.textContent = ''; }
+  });
+  inp.addEventListener('blur', () => { const d = inp.value.replace(/\D/g, ''); if (d.length && d.length < 8) { inp.setAttribute('aria-invalid', 'true'); msg.className = 'scc-msg err'; msg.textContent = 'O CEP tem 8 números.'; } });
+  try { const saved = localStorage.getItem('wc-cep'); if (saved) { inp.value = saved.replace(/(\d{5})(\d{3})/, '$1-$2'); run(saved); } } catch {}
+})();
+</script>

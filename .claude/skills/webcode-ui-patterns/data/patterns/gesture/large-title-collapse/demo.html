@@ -1,0 +1,39 @@
+<style>
+  .ltc { height: 100vh; overflow-y: auto; color: var(--wc-fg); font-size: var(--wc-font-size-sm); scroll-timeline: --ltc block; }
+  .ltc-bar { position: sticky; top: 0; z-index: 2; height: 52px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 8px; background: transparent; border-bottom: 1px solid transparent; }
+  .ltc-bar::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--wc-glass-bg); backdrop-filter: blur(16px) saturate(1.6); border-bottom: 1px solid var(--wc-glass-border); opacity: 0; transition: opacity var(--wc-motion-duration-fast); }
+  .ltc-small { grid-column: 2; font-weight: var(--wc-font-weight-semibold); font-size: var(--wc-font-size-md); opacity: 0; translate: 0 calc(6px * var(--wc-motion-distance)); transition: opacity var(--wc-motion-duration-fast), translate var(--wc-motion-duration-fast) var(--wc-motion-ease-out); white-space: nowrap; }
+  .ltc-bar button { justify-self: end; grid-column: 3; width: 44px; height: 44px; border-radius: 50%; border: 0; background: none; color: var(--wc-accent); font-size: 24px; cursor: pointer; }
+  .ltc-bar button:focus-visible, .ltc input:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .ltc.is-collapsed .ltc-bar::before { opacity: 1; }
+  .ltc.is-collapsed .ltc-small { opacity: 1; translate: 0 0; }
+  .ltc-head { padding: 0 16px 8px; }
+  .ltc h1 { margin: 0; font-size: 34px; line-height: 1.15; letter-spacing: -.02em; font-weight: var(--wc-font-weight-bold, 700); transform-origin: left bottom; }
+  .ltc-search { margin-top: 10px; }
+  .ltc input { width: 100%; box-sizing: border-box; min-height: 40px; padding: 0 12px 0 34px; border-radius: var(--wc-radius-md); border: 0; background: var(--wc-sunken); color: var(--wc-fg); font: inherit; background-image: radial-gradient(circle at 17px 50%, transparent 0 5px, var(--wc-fg-subtle) 5.5px 7px, transparent 7.5px); }
+  .ltc ul { list-style: none; margin: 0; padding: 0; }
+  .ltc li { display: flex; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--wc-border); }
+  .ltc li span { color: var(--wc-fg-muted); font-variant-numeric: tabular-nums; }
+  @supports (animation-timeline: scroll()) {
+    .ltc h1 { animation: ltc-shrink linear both; animation-timeline: --ltc; animation-range: 0 60px; }
+    @keyframes ltc-shrink { to { scale: .82; opacity: .2; } }
+  }
+  @media (prefers-reduced-motion: reduce) { .ltc h1 { animation: none !important; } .ltc-small, .ltc-bar::before { transition: none; } }
+</style>
+<div class="ltc">
+  <div class="ltc-bar"><span class="ltc-small" aria-hidden="true">Consultas</span><button type="button" aria-label="Nova consulta">+</button></div>
+  <div class="ltc-head">
+    <h1>Consultas</h1>
+    <div class="ltc-search"><label style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)" for="ltc-q">Buscar consultas</label><input id="ltc-q" type="search" placeholder="Buscar"></div>
+  </div>
+  <ul></ul>
+</div>
+<script>
+(() => {
+  const root = document.querySelector('.ltc');
+  const P = ['Dra. Helena Souza · Cardiologia', 'Dr. Paulo Nunes · Dermatologia', 'Dra. Marina Alves · Pediatria', 'Dr. Rafael Lima · Ortopedia', 'Dra. Júlia Prado · Oftalmologia'];
+  root.querySelector('ul').innerHTML = Array.from({ length: 22 }, (_, i) => `<li><b>${P[i % P.length]}</b><span>${String(3 + (i % 25)).padStart(2, '0')}/11 · ${8 + (i % 9)}h</span></li>`).join('');
+  const h1 = root.querySelector('h1');
+  new IntersectionObserver(([e]) => root.classList.toggle('is-collapsed', !e.isIntersecting && e.boundingClientRect.top < 60), { root, rootMargin: '-52px 0px 0px 0px' }).observe(h1);
+})();
+</script>

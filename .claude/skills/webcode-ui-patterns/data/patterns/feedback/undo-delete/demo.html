@@ -1,0 +1,68 @@
+<style>
+  .ud { min-height: 100vh; padding: 20px; max-width: 520px; }
+  .ud h2 { margin: 0 0 12px; font: var(--wc-font-weight-semibold) var(--wc-font-size-xl) var(--wc-font-display); outline: none; }
+  .ud ul { list-style: none; margin: 0; padding: 0; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface); }
+  .ud li { display: grid; grid-template-rows: 1fr; transition: grid-template-rows var(--wc-motion-duration-base) var(--wc-motion-ease-in-out), opacity var(--wc-motion-duration-fast); }
+  .ud li.is-out { grid-template-rows: 0fr; opacity: 0; }
+  .ud li.is-in { animation: ud-in var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  @keyframes ud-in { from { grid-template-rows: 0fr; opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .ud li { transition: none; } .ud li.is-in { animation: none; } }
+  .ud-row { overflow: hidden; display: flex; align-items: center; gap: 12px; padding: 0 8px 0 16px; min-height: 0; }
+  .ud li + li .ud-row { border-top: 1px solid var(--wc-border); }
+  .ud-row span { flex: 1; padding: 14px 0; }
+  .ud-del { width: var(--wc-size-touch-min); height: var(--wc-size-touch-min); border: 0; border-radius: var(--wc-radius-md); background: none; color: var(--wc-fg-muted); cursor: pointer; font-size: 18px; }
+  .ud-del:hover { background: var(--wc-danger-soft); color: var(--wc-danger); }
+  .ud-del:focus-visible, .ud-toast button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .ud-toast { position: fixed; left: 50%; bottom: max(16px, env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 12px; max-width: calc(100vw - 24px); padding: 10px 10px 10px 16px; border-radius: var(--wc-radius-lg); background: var(--wc-fg); color: var(--wc-bg); box-shadow: var(--wc-shadow-lg); translate: -50% 0; transition: translate var(--wc-motion-spring-snappy-duration) var(--wc-motion-spring-snappy), opacity var(--wc-motion-duration-fast); }
+  .ud-toast[data-hidden="true"] { translate: -50% calc(120% * var(--wc-motion-distance)); opacity: 0; pointer-events: none; }
+  .ud-toast button { min-height: 32px; padding: 0 12px; border: 0; border-radius: var(--wc-radius-sm); background: color-mix(in oklab, var(--wc-bg) 18%, transparent); color: inherit; font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; }
+  .ud-bar { position: absolute; left: 12px; right: 12px; bottom: 4px; height: 2px; border-radius: 2px; background: color-mix(in oklab, var(--wc-bg) 40%, transparent); transform-origin: left; }
+  .ud-log { margin-top: 12px; font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+</style>
+<div class="ud">
+  <h2 id="ud-title" tabindex="-1">Tarefas de hoje</h2>
+  <ul aria-labelledby="ud-title"></ul>
+  <p class="ud-log" aria-hidden="true"></p>
+  <div class="ud-toast" role="status" data-hidden="true"><span></span><button type="button">Desfazer</button><i class="ud-bar"></i></div>
+</div>
+<script>
+(() => {
+  let items = ['Enviar proposta para a Acme', 'Conferir conciliação de outubro', 'Responder 3 tickets atrasados', 'Revisar contrato da Studio Lume', 'Ligar para Mercado Bom Preço'];
+  const ul = document.querySelector('.ud ul');
+  const toast = document.querySelector('.ud-toast');
+  const bar = toast.querySelector('.ud-bar');
+  const log = document.querySelector('.ud-log');
+  const MS = 6000;
+  let pending = null, timer, left = MS, started = 0;
+  const li = (t) => `<li><div class="ud-row"><span>${t}</span><button class="ud-del" type="button" aria-label="Excluir tarefa ${t}">🗑</button></div></li>`;
+  ul.innerHTML = items.map(li).join('');
+  const commit = () => { if (!pending) return; log.textContent = `Servidor: "${pending.text}" excluída de vez.`; pending = null; toast.dataset.hidden = 'true'; };
+  const run = () => { started = performance.now(); bar.animate([{ scale: `${left / MS} 1` }, { scale: '0 1' }], { duration: left, fill: 'forwards' }); timer = setTimeout(commit, left); };
+  const pause = () => { if (!pending) return; clearTimeout(timer); left -= performance.now() - started; bar.getAnimations().forEach((a) => a.pause()); };
+  toast.addEventListener('pointerenter', pause); toast.addEventListener('focusin', pause);
+  toast.addEventListener('pointerleave', () => pending && !toast.contains(document.activeElement) && run());
+  toast.addEventListener('focusout', (e) => pending && !toast.contains(e.relatedTarget) && run());
+  const remove = (row) => {
+    commit(); clearTimeout(timer);
+    const lis = [...ul.children]; const i = lis.indexOf(row);
+    pending = { text: row.querySelector('span').textContent, index: i };
+    const next = lis[i + 1] ?? lis[i - 1];
+    row.classList.add('is-out');
+    setTimeout(() => row.remove(), 220);
+    (next?.querySelector('.ud-del') ?? document.getElementById('ud-title')).focus();
+    toast.querySelector('span').textContent = `Tarefa excluída`;
+    toast.dataset.hidden = 'false'; left = MS; run();
+  };
+  const undo = () => {
+    if (!pending) return; clearTimeout(timer);
+    const ref = ul.children[pending.index];
+    const tmp = document.createElement('template'); tmp.innerHTML = li(pending.text); const node = tmp.content.firstChild;
+    node.classList.add('is-in'); ul.insertBefore(node, ref ?? null);
+    node.querySelector('.ud-del').focus();
+    log.textContent = `"${pending.text}" restaurada.`; pending = null; toast.dataset.hidden = 'true';
+  };
+  ul.addEventListener('click', (e) => { const b = e.target.closest('.ud-del'); if (b) remove(b.closest('li')); });
+  toast.querySelector('button').addEventListener('click', undo);
+  document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && pending) { e.preventDefault(); undo(); } });
+})();
+</script>

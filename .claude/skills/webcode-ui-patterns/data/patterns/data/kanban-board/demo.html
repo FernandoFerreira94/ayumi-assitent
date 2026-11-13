@@ -1,0 +1,162 @@
+<style>
+  .kb { padding: 24px 20px; display: grid; gap: 16px; }
+  .kb-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .kb-top h2 { margin: 0; font: var(--wc-font-weight-semibold) var(--wc-font-size-2xl) var(--wc-font-display); }
+  .kb-top p { margin: 0; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .kb-cols { display: grid; grid-template-columns: repeat(4, minmax(240px, 1fr)); gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
+  .kb-col { scroll-snap-align: start; display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: var(--wc-radius-lg); background: var(--wc-sunken); min-height: 320px; }
+  .kb-col.is-over { box-shadow: inset 0 0 0 2px var(--wc-accent); }
+  .kb-col h3 { margin: 0; padding: 4px 6px; display: flex; align-items: baseline; gap: 8px; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-semibold); }
+  .kb-col h3 .kb-n { font-weight: var(--wc-font-weight-medium); color: var(--wc-fg-muted); }
+  .kb-col h3 .kb-sum { margin-left: auto; font-weight: var(--wc-font-weight-medium); color: var(--wc-fg-muted); font-variant-numeric: tabular-nums; }
+  .kb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .kb-card { position: relative; display: grid; gap: 8px; padding: 12px; border-radius: var(--wc-radius-md); background: var(--wc-surface); border: 1px solid var(--wc-border); box-shadow: var(--wc-shadow); cursor: grab; touch-action: none; user-select: none; transition: transform var(--wc-motion-duration-fast) var(--wc-motion-ease-out), opacity var(--wc-motion-duration-fast); }
+  .kb-card:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .kb-card.is-src { opacity: .35; }
+  .kb-card.is-flash { animation: kb-flash var(--wc-motion-duration-slow) var(--wc-motion-ease-out); }
+  @keyframes kb-flash { from { box-shadow: 0 0 0 3px var(--wc-accent); } }
+  .kb-card b { font-weight: var(--wc-font-weight-semibold); padding-right: 36px; }
+  .kb-meta { display: flex; align-items: center; gap: 8px; font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); }
+  .kb-meta strong { color: var(--wc-fg); font-weight: var(--wc-font-weight-semibold); font-variant-numeric: tabular-nums; font-size: var(--wc-font-size-sm); }
+  .kb-av { margin-left: auto; width: 24px; height: 24px; border-radius: var(--wc-radius-pill); display: grid; place-items: center; background: var(--wc-accent-soft); color: var(--wc-fg); font-size: 10px; font-weight: var(--wc-font-weight-semibold); }
+  .kb-late { color: var(--wc-danger); font-weight: var(--wc-font-weight-medium); }
+  .kb-move { position: absolute; top: 6px; right: 6px; width: 32px; height: 32px; border-radius: var(--wc-radius-sm); border: 0; background: transparent; color: var(--wc-fg-muted); cursor: pointer; display: grid; place-items: center; }
+  .kb-move:hover { background: var(--wc-sunken); color: var(--wc-fg); }
+  .kb-move:focus-visible, .kb-menu button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 1px; }
+  .kb-menu { position: absolute; top: 40px; right: 6px; z-index: 5; min-width: 180px; padding: 6px; border-radius: var(--wc-radius-md); background: var(--wc-surface-raised); border: 1px solid var(--wc-border); box-shadow: var(--wc-shadow-lg); display: grid; }
+  .kb-menu[hidden] { display: none; }
+  .kb-menu p { margin: 0; padding: 4px 8px; font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); }
+  .kb-menu button { font: inherit; font-size: var(--wc-font-size-sm); text-align: left; min-height: 36px; padding: 0 8px; border: 0; border-radius: var(--wc-radius-sm); background: transparent; color: var(--wc-fg); cursor: pointer; }
+  .kb-menu button:hover { background: var(--wc-sunken); }
+  .kb-menu button[aria-current] { color: var(--wc-fg-muted); }
+  .kb-ghost { position: fixed; left: 0; top: 0; z-index: 50; pointer-events: none; width: var(--w); transform: translate(var(--x), var(--y)) rotate(calc(2deg * var(--wc-motion-distance))); box-shadow: var(--wc-shadow-lg); cursor: grabbing; }
+  .kb-drop { height: 3px; border-radius: 2px; background: var(--wc-accent); }
+  .kb-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+</style>
+<section class="kb" aria-labelledby="kb-t">
+  <div class="kb-top"><h2 id="kb-t">Funil de vendas</h2><p id="kb-help">Arraste os cards, use ←/→ com o card focado ou o botão ⋯ para mover.</p></div>
+  <div class="kb-cols"></div>
+  <p class="kb-sr" aria-live="polite" id="kb-live"></p>
+</section>
+<script>
+(() => {
+  const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+  const cols = [
+    { id: 'lead', name: 'Novo contato' }, { id: 'meet', name: 'Reunião' },
+    { id: 'prop', name: 'Proposta' }, { id: 'won', name: 'Fechado' },
+  ];
+  const cards = {
+    c1: { t: 'Café Aroma', v: 4800, who: 'RA', due: 'hoje', col: 'lead' },
+    c2: { t: 'Clínica Vida', v: 12600, who: 'CN', due: '28/10', col: 'lead' },
+    c3: { t: 'Mercado Bom Preço', v: 23900, who: 'DS', due: 'atrasado', col: 'meet' },
+    c4: { t: 'Studio Lume', v: 7200, who: 'BM', due: '30/10', col: 'prop' },
+    c5: { t: 'Padaria Estrela', v: 3600, who: 'LV', due: '02/11', col: 'prop' },
+    c6: { t: 'Auto Peças Sul', v: 18400, who: 'PM', due: '—', col: 'won' },
+  };
+  const order = { lead: ['c1', 'c2'], meet: ['c3'], prop: ['c4', 'c5'], won: ['c6'] };
+  const wrap = document.querySelector('.kb-cols');
+  const live = document.getElementById('kb-live');
+  wrap.innerHTML = cols.map((c) => `<section class="kb-col" data-col="${c.id}" aria-labelledby="kb-h-${c.id}"><h3 id="kb-h-${c.id}">${c.name} <span class="kb-n"></span><span class="kb-sum"></span></h3><ul class="kb-list"></ul></section>`).join('');
+  const cardEl = (id) => {
+    const d = cards[id];
+    const li = document.createElement('li');
+    li.className = 'kb-card'; li.tabIndex = 0; li.dataset.id = id;
+    li.setAttribute('aria-describedby', 'kb-help');
+    li.innerHTML = `<b>${d.t}</b><div class="kb-meta"><strong>${brl.format(d.v)}</strong><span class="${d.due === 'atrasado' ? 'kb-late' : ''}">${d.due === '—' ? '' : 'Prazo: ' + d.due}</span><span class="kb-av" aria-hidden="true">${d.who}</span></div>
+      <button class="kb-move" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Mover ${d.t}"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+      <div class="kb-menu" hidden><p>Mover para</p>${cols.map((c) => `<button type="button" data-to="${c.id}">${c.name}</button>`).join('')}</div>`;
+    return li;
+  };
+  const render = (focusId) => {
+    for (const c of cols) {
+      const col = wrap.querySelector(`[data-col="${c.id}"]`);
+      const list = col.querySelector('.kb-list');
+      list.replaceChildren(...order[c.id].map(cardEl));
+      col.querySelector('.kb-n').textContent = order[c.id].length;
+      col.querySelector('.kb-sum').textContent = brl.format(order[c.id].reduce((s, id) => s + cards[id].v, 0));
+    }
+    if (focusId) { const el = wrap.querySelector(`[data-id="${focusId}"]`); el.focus(); el.classList.add('is-flash'); }
+  };
+  const move = (id, to, index) => {
+    const from = cards[id].col;
+    order[from] = order[from].filter((x) => x !== id);
+    const list = order[to];
+    list.splice(index ?? list.length, 0, id);
+    cards[id].col = to;
+    render(id);
+    const name = cols.find((c) => c.id === to).name;
+    live.textContent = `${cards[id].t} movido para ${name}, posição ${list.indexOf(id) + 1} de ${list.length}.`;
+  };
+  // teclado
+  wrap.addEventListener('keydown', (e) => {
+    const card = e.target.closest('.kb-card');
+    if (!card || e.target !== card) return;
+    const id = card.dataset.id; const ci = cols.findIndex((c) => c.id === cards[id].col);
+    if (e.key === 'ArrowRight' && ci < cols.length - 1) { e.preventDefault(); move(id, cols[ci + 1].id, 0); }
+    if (e.key === 'ArrowLeft' && ci > 0) { e.preventDefault(); move(id, cols[ci - 1].id, 0); }
+    if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      e.preventDefault(); const list = order[cards[id].col]; const i = list.indexOf(id); const j = i + (e.key === 'ArrowUp' ? -1 : 1);
+      if (j >= 0 && j < list.length) move(id, cards[id].col, j);
+    }
+  });
+  // menu Mover
+  const closeMenus = () => wrap.querySelectorAll('.kb-menu').forEach((m) => { m.hidden = true; m.previousElementSibling.setAttribute('aria-expanded', 'false'); });
+  wrap.addEventListener('click', (e) => {
+    const btn = e.target.closest('.kb-move');
+    if (btn) {
+      const menu = btn.nextElementSibling; const open = menu.hidden; closeMenus();
+      if (open) {
+        menu.hidden = false; btn.setAttribute('aria-expanded', 'true');
+        const cur = cards[btn.closest('.kb-card').dataset.id].col;
+        menu.querySelectorAll('button').forEach((b) => b.toggleAttribute('aria-current', b.dataset.to === cur));
+        menu.querySelector('button:not([aria-current])').focus();
+      }
+      return;
+    }
+    const to = e.target.closest('.kb-menu button');
+    if (to) { move(to.closest('.kb-card').dataset.id, to.dataset.to); return; }
+    if (!e.target.closest('.kb-menu')) closeMenus();
+  });
+  wrap.addEventListener('keydown', (e) => { if (e.key === 'Escape') { const m = e.target.closest('.kb-card')?.querySelector('.kb-menu:not([hidden])'); if (m) { closeMenus(); m.previousElementSibling.focus(); } } });
+  // arrastar com ponteiro
+  let drag = null;
+  wrap.addEventListener('pointerdown', (e) => {
+    const card = e.target.closest('.kb-card');
+    if (!card || e.target.closest('button, .kb-menu') || e.button !== 0) return;
+    const r = card.getBoundingClientRect();
+    drag = { id: card.dataset.id, card, sx: e.clientX, sy: e.clientY, dx: e.clientX - r.left, dy: e.clientY - r.top, w: r.width, on: false };
+    card.setPointerCapture(e.pointerId);
+  });
+  wrap.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    if (!drag.on) {
+      if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 4) return;
+      drag.on = true; closeMenus();
+      drag.ghost = drag.card.cloneNode(true); drag.ghost.classList.add('kb-ghost'); drag.ghost.removeAttribute('tabindex');
+      drag.ghost.style.setProperty('--w', drag.w + 'px'); document.body.append(drag.ghost);
+      drag.card.classList.add('is-src'); drag.marker = document.createElement('li'); drag.marker.className = 'kb-drop'; drag.marker.setAttribute('aria-hidden', 'true');
+    }
+    drag.ghost.style.setProperty('--x', e.clientX - drag.dx + 'px'); drag.ghost.style.setProperty('--y', e.clientY - drag.dy + 'px');
+    const col = document.elementsFromPoint(e.clientX, e.clientY).find((el) => el.classList?.contains('kb-col'));
+    wrap.querySelectorAll('.kb-col').forEach((c) => c.classList.toggle('is-over', c === col));
+    if (!col) { drag.marker.remove(); drag.to = null; return; }
+    const items = [...col.querySelectorAll('.kb-card:not(.is-src)')];
+    let idx = items.findIndex((it) => { const b = it.getBoundingClientRect(); return e.clientY < b.top + b.height / 2; });
+    if (idx === -1) idx = items.length;
+    const list = col.querySelector('.kb-list');
+    list.insertBefore(drag.marker, items[idx] ?? null);
+    drag.to = col.dataset.col; drag.index = idx;
+  });
+  const end = () => {
+    if (!drag) return;
+    const d = drag; drag = null;
+    if (!d.on) return;
+    d.ghost.remove(); d.marker.remove(); d.card.classList.remove('is-src');
+    wrap.querySelectorAll('.kb-col').forEach((c) => c.classList.remove('is-over'));
+    if (d.to) move(d.id, d.to, d.index);
+  };
+  wrap.addEventListener('pointerup', end);
+  wrap.addEventListener('pointercancel', end);
+  render();
+})();
+</script>

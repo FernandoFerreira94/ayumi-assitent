@@ -1,0 +1,78 @@
+<style>
+  .ah-bar { display: grid; grid-template-rows: 1fr; background: var(--wc-fg); color: var(--wc-bg); transition: grid-template-rows var(--wc-motion-duration-slow) var(--wc-motion-ease-in-out); }
+  .ah-bar.is-closing { grid-template-rows: 0fr; }
+  .ah-bar > div { overflow: hidden; }
+  .ah-bar-in { max-width: 1120px; margin: 0 auto; padding: 9px 52px 9px 20px; position: relative; text-align: center; font-size: var(--wc-font-size-sm); }
+  .ah-bar a { color: inherit; font-weight: var(--wc-font-weight-semibold); text-underline-offset: 3px; }
+  .ah-bar .ah-new { display: inline-block; margin-right: 8px; padding: 1px 8px; border-radius: var(--wc-radius-pill); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font-size: var(--wc-font-size-xs); font-weight: var(--wc-font-weight-bold); }
+  .ah-close { position: absolute; right: 8px; top: 50%; translate: 0 -50%; width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: var(--wc-radius-pill); background: transparent; color: inherit; cursor: pointer; }
+  .ah-close:hover { background: color-mix(in oklch, currentColor 14%, transparent); }
+  .ah-bar :focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+  .ah { position: sticky; top: 0; z-index: 10; background: var(--wc-glass-bg); border-bottom: 1px solid var(--wc-glass-border); backdrop-filter: blur(var(--wc-blur-glass)) saturate(180%); -webkit-backdrop-filter: blur(var(--wc-blur-glass)) saturate(180%); }
+  .ah-in { max-width: 1120px; margin: 0 auto; height: 64px; padding-inline: 20px; display: flex; align-items: center; gap: 28px; }
+  .ah-logo { display: flex; align-items: center; gap: 8px; color: var(--wc-fg); text-decoration: none; font: var(--wc-font-weight-bold) var(--wc-font-size-lg) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); }
+  .ah-logo i { width: 24px; height: 24px; border-radius: 7px; background: linear-gradient(135deg, var(--wc-gradient-1), var(--wc-gradient-3)); }
+  .ah-nav { display: flex; gap: 2px; }
+  .ah-nav a { color: var(--wc-fg-muted); text-decoration: none; font-size: var(--wc-font-size-sm); padding: 7px 11px; border-radius: var(--wc-radius-sm); transition: color var(--wc-motion-duration-fast), background-color var(--wc-motion-duration-fast); }
+  .ah-nav a:hover { color: var(--wc-fg); background: var(--wc-sunken); }
+  .ah-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .ah-login { color: var(--wc-fg); text-decoration: none; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-medium); padding: 8px 12px; border-radius: var(--wc-radius-button); }
+  .ah-login:hover { background: var(--wc-sunken); }
+  .ah-cta { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-semibold); padding: 9px 16px; border-radius: var(--wc-radius-button); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); transition: background-color var(--wc-motion-duration-fast); }
+  .ah-cta:hover { background: var(--wc-accent-hover); }
+  .ah-cta span { transition: translate var(--wc-motion-duration-fast) var(--wc-motion-ease-out); }
+  .ah-cta:hover span { translate: calc(3px * var(--wc-motion-distance)) 0; }
+  .ah-menu { display: none; font: inherit; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-medium); height: 38px; padding: 0 12px; border-radius: var(--wc-radius-button); border: 1px solid var(--wc-border); background: var(--wc-surface); color: var(--wc-fg); cursor: pointer; }
+  .ah a:focus-visible, .ah button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .ah-panel { border-top: 1px solid var(--wc-border); padding: 8px 12px 16px; display: grid; gap: 2px; }
+  .ah-panel[hidden] { display: none; }
+  .ah-panel a { padding: 12px; border-radius: var(--wc-radius-md); color: var(--wc-fg); text-decoration: none; font-size: var(--wc-font-size-lg); }
+  .ah-panel a:hover { background: var(--wc-sunken); }
+  @media (min-width: 821px) { .ah-panel { display: none !important; } }
+  @media (max-width: 820px) { .ah-nav, .ah-login { display: none; } .ah-menu { display: inline-block; } }
+  .ah-hero { max-width: 760px; margin: 0 auto; padding: 72px 20px 480px; text-align: center; }
+  .ah-hero h1 { font: var(--wc-font-weight-semibold) clamp(32px, 6vw, var(--wc-font-size-6xl)) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tighter) * 1em); margin: 0 0 16px; }
+  .ah-hero p { color: var(--wc-fg-muted); font-size: var(--wc-font-size-lg); margin: 0 0 20px; }
+  .ah-reset { font: inherit; font-size: var(--wc-font-size-sm); background: none; border: 0; color: var(--wc-accent); cursor: pointer; text-decoration: underline; }
+</style>
+<script>try { if (localStorage.getItem('wc-announce-agentes-v2')) document.documentElement.dataset.ahDismissed = ''; } catch {}</script>
+<section class="ah-bar" aria-label="Anúncio">
+  <div><div class="ah-bar-in"><span class="ah-new">Novo</span>Agentes 2.0: automatize o atendimento no WhatsApp. <a href="#">Ver lançamento →</a>
+    <button class="ah-close" type="button" aria-label="Fechar anúncio"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></div>
+</section>
+<header class="ah">
+  <div class="ah-in">
+    <a class="ah-logo" href="#"><i aria-hidden="true"></i>Fluxo</a>
+    <nav class="ah-nav" aria-label="Principal"><a href="#">Produto</a><a href="#">Soluções</a><a href="#">Preços</a><a href="#">Clientes</a><a href="#">Docs</a></nav>
+    <div class="ah-actions">
+      <a class="ah-login" href="#">Entrar</a>
+      <a class="ah-cta" href="#">Começar grátis <span aria-hidden="true">→</span></a>
+      <button class="ah-menu" type="button" aria-expanded="false" aria-controls="ah-panel">Menu</button>
+    </div>
+  </div>
+  <nav class="ah-panel" id="ah-panel" aria-label="Principal (mobile)" hidden><a href="#">Produto</a><a href="#">Soluções</a><a href="#">Preços</a><a href="#">Clientes</a><a href="#">Docs</a><a href="#">Entrar</a></nav>
+</header>
+<main class="ah-hero">
+  <h1>Atendimento que se resolve sozinho</h1>
+  <p>Feche o anúncio: ele recolhe suavemente e não volta na próxima visita.</p>
+  <button class="ah-reset" type="button">Mostrar o anúncio de novo</button>
+</main>
+<script>
+(() => {
+  const KEY = 'wc-announce-agentes-v2';
+  const bar = document.querySelector('.ah-bar');
+  if (document.documentElement.hasAttribute('data-ah-dismissed')) bar.hidden = true;
+  bar.querySelector('.ah-close').addEventListener('click', () => {
+    try { localStorage.setItem(KEY, '1'); } catch {}
+    const done = () => { bar.hidden = true; document.querySelector('.ah-logo').focus(); };
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return done();
+    bar.classList.add('is-closing');
+    bar.addEventListener('transitionend', done, { once: true });
+  });
+  document.querySelector('.ah-reset').addEventListener('click', () => { try { localStorage.removeItem(KEY); } catch {} bar.classList.remove('is-closing'); bar.hidden = false; });
+  const btn = document.querySelector('.ah-menu'), panel = document.getElementById('ah-panel');
+  const set = (open, focus) => { panel.hidden = !open; btn.setAttribute('aria-expanded', String(open)); btn.textContent = open ? 'Fechar' : 'Menu'; if (!open && focus) btn.focus(); };
+  btn.addEventListener('click', () => set(panel.hidden));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) set(false, true); });
+})();
+</script>

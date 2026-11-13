@@ -1,0 +1,59 @@
+<style>
+  .ut { min-height: 100vh; padding: 20px; max-width: 720px; }
+  .ut h2 { margin: 0 0 12px; font: var(--wc-font-weight-semibold) var(--wc-font-size-xl) var(--wc-font-display); }
+  .ut-list { position: relative; display: flex; gap: 4px; border-bottom: 1px solid var(--wc-border); overflow-x: auto; scrollbar-width: none; }
+  .ut-tab { flex: none; min-height: var(--wc-size-touch-min); padding: 0 14px; border: 0; background: none; color: var(--wc-fg-muted); font: inherit; font-weight: var(--wc-font-weight-medium); cursor: pointer; border-radius: var(--wc-radius-sm) var(--wc-radius-sm) 0 0; }
+  .ut-tab:hover { color: var(--wc-fg); }
+  .ut-tab[aria-selected="true"] { color: var(--wc-fg); }
+  .ut-tab:focus-visible, .ut-panel:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: -2px; }
+  .ut-ind { position: absolute; left: 0; bottom: 0; width: 100px; height: 2px; background: var(--wc-accent); transform-origin: left; transition: translate var(--wc-motion-spring-smooth-duration) var(--wc-motion-spring-smooth), scale var(--wc-motion-spring-smooth-duration) var(--wc-motion-spring-smooth); }
+  @media (prefers-reduced-motion: reduce) { .ut-ind { transition: none; } }
+  .ut-panel { padding: 20px 4px; border-radius: var(--wc-radius-sm); }
+  .ut-panel[hidden] { display: none; }
+  .ut-panel dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 0; }
+  .ut-panel dt { color: var(--wc-fg-muted); }
+  .ut-panel dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .ut-url { margin-top: 8px; font: var(--wc-font-size-sm) var(--wc-font-mono); color: var(--wc-fg-muted); }
+</style>
+<div class="ut">
+  <h2>Acme Indústria Ltda</h2>
+  <div class="ut-list" role="tablist" aria-label="Seções do cliente"><span class="ut-ind" aria-hidden="true"></span></div>
+  <div class="ut-panels"></div>
+  <p class="ut-url" aria-hidden="true"></p>
+</div>
+<script>
+(() => {
+  const TABS = [
+    ['geral', 'Visão geral', '<dl><dt>CNPJ</dt><dd>11.222.333/0001-81</dd><dt>Plano</dt><dd>Empresarial</dd><dt>Cliente desde</dt><dd>03/2022</dd></dl>'],
+    ['faturas', 'Faturas', '<dl><dt>Em aberto</dt><dd>R$ 12.400,00</dd><dt>Próximo vencimento</dt><dd>10/11/2026</dd><dt>Pagas em 2026</dt><dd>9</dd></dl>'],
+    ['contatos', 'Contatos', '<dl><dt>Financeiro</dt><dd>Marina Souza</dd><dt>Compras</dt><dd>Rafael Lima</dd></dl>'],
+    ['atividade', 'Atividade', '<dl><dt>Hoje</dt><dd>Fatura #2231 enviada</dd><dt>Ontem</dt><dd>Contrato renovado</dd></dl>'],
+  ];
+  const list = document.querySelector('.ut-list');
+  const panels = document.querySelector('.ut-panels');
+  const ind = list.querySelector('.ut-ind');
+  const url = document.querySelector('.ut-url');
+  list.insertAdjacentHTML('afterbegin', TABS.map(([id, label]) => `<button class="ut-tab" role="tab" id="ut-t-${id}" aria-controls="ut-p-${id}" aria-selected="false" tabindex="-1" data-id="${id}">${label}</button>`).join(''));
+  panels.innerHTML = TABS.map(([id, , body]) => `<div class="ut-panel" role="tabpanel" id="ut-p-${id}" aria-labelledby="ut-t-${id}" tabindex="0" hidden>${body}</div>`).join('');
+  const tabs = [...list.querySelectorAll('[role=tab]')];
+  const fromHash = () => { try { return new URLSearchParams(location.hash.slice(1)).get('aba'); } catch { return null; } };
+  const select = (id, { focus = false, push = true } = {}) => {
+    const t = tabs.find((x) => x.dataset.id === id) ?? tabs[0];
+    tabs.forEach((x) => { const on = x === t; x.setAttribute('aria-selected', String(on)); x.tabIndex = on ? 0 : -1; document.getElementById(x.getAttribute('aria-controls')).hidden = !on; });
+    ind.style.translate = `${t.offsetLeft}px 0`; ind.style.scale = `${t.offsetWidth / 100} 1`;
+    if (focus) t.focus();
+    if (push) { try { history.replaceState(null, '', '#aba=' + t.dataset.id); } catch {} }
+    url.textContent = '…' + (location.hash || '#aba=' + t.dataset.id);
+  };
+  list.addEventListener('click', (e) => { const t = e.target.closest('[role=tab]'); if (t) select(t.dataset.id); });
+  list.addEventListener('keydown', (e) => {
+    const i = tabs.indexOf(document.activeElement); if (i < 0) return;
+    const n = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+    if (n === undefined) return;
+    e.preventDefault(); select(tabs[(n + tabs.length) % tabs.length].dataset.id, { focus: true });
+  });
+  addEventListener('hashchange', () => select(fromHash(), { push: false }));
+  addEventListener('resize', () => select(tabs.find((t) => t.getAttribute('aria-selected') === 'true').dataset.id, { push: false }));
+  select(fromHash(), { push: false });
+})();
+</script>

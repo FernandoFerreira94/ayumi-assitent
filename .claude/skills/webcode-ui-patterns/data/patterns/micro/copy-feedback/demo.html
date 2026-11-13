@@ -1,0 +1,39 @@
+<style>
+  .cf-stage { min-height: 100vh; display: grid; grid-template-columns: min(440px, 100%); place-content: center; gap: 16px; padding: 20px; }
+  .cf-label { font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .cf { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 14px; border-radius: var(--wc-radius-md); background: var(--wc-surface); border: 1px solid var(--wc-border); max-width: 440px; }
+  .cf code { flex: 1; min-width: 0; font: var(--wc-font-size-sm) var(--wc-font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cf button { display: grid; place-items: center; width: 36px; height: 36px; flex: none; border-radius: var(--wc-radius-sm); border: 0; background: transparent; color: var(--wc-fg-muted); cursor: pointer; transition: background-color var(--wc-motion-duration-fast), transform var(--wc-motion-duration-instant); }
+  .cf button:hover { background: var(--wc-sunken); color: var(--wc-fg); }
+  .cf button:active { transform: scale(.92); }
+  .cf button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .cf svg { grid-area: 1 / 1; width: 18px; height: 18px; transition: opacity var(--wc-motion-duration-fast) var(--wc-motion-ease-out), transform var(--wc-motion-duration-base) var(--wc-motion-spring-snappy), filter var(--wc-motion-duration-fast); }
+  .cf .ok { opacity: 0; transform: scale(.5); filter: blur(2px); color: var(--wc-success); }
+  .cf [data-copied] .ok { opacity: 1; transform: none; filter: none; }
+  .cf [data-copied] .copy { opacity: 0; transform: scale(.5); filter: blur(2px); }
+  .cf-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+<div class="cf-stage">
+  <span class="cf-label" id="cf-l1">Pix copia e cola</span>
+  <div class="cf"><code id="cf-v1">00020126580014BR.GOV.BCB.PIX0136a1b2c3d4-e5f6-7890-abcd-ef1234567890520400005303986540589.905802BR</code><button type="button" aria-label="Copiar código Pix" data-target="cf-v1"><svg class="copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg><svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg></button></div>
+  <span class="cf-label">Chave de API</span>
+  <div class="cf"><code id="cf-v2">wc_live_7Hk2pQ9sXv4mN8rT</code><button type="button" aria-label="Copiar chave de API" data-target="cf-v2"><svg class="copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg><svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg></button></div>
+  <p class="cf-sr" aria-live="polite" id="cf-live"></p>
+</div>
+<script>
+(() => {
+  const live = document.getElementById('cf-live');
+  document.querySelectorAll('.cf button').forEach((b) => {
+    let t = 0;
+    const label = b.getAttribute('aria-label');
+    b.addEventListener('click', async () => {
+      const el = document.getElementById(b.dataset.target);
+      try { await navigator.clipboard.writeText(el.textContent); }
+      catch { const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+      b.dataset.copied = ''; b.setAttribute('aria-label', 'Copiado'); live.textContent = 'Copiado';
+      clearTimeout(t);
+      t = setTimeout(() => { delete b.dataset.copied; b.setAttribute('aria-label', label); live.textContent = ''; }, 1500);
+    });
+  });
+})();
+</script>

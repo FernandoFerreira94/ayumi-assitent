@@ -1,0 +1,54 @@
+<style>
+  .le { max-width: 460px; margin: 0 auto; padding: 48px 20px; }
+  .le h2 { font: var(--wc-font-weight-semibold) var(--wc-font-size-xl) var(--wc-font-display); margin: 0 0 12px; }
+  .le form { display: flex; gap: 8px; margin-bottom: 12px; }
+  .le input { flex: 1; min-width: 0; height: var(--wc-size-control-md); padding: 0 12px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: inherit; }
+  .le input:focus-visible, .le button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .le form button { height: var(--wc-size-control-md); padding: 0 16px; border-radius: var(--wc-radius-md); border: 0; background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font: inherit; font-weight: var(--wc-font-weight-medium); cursor: pointer; }
+  .le ul { list-style: none; margin: 0; padding: 0; }
+  .le li { display: grid; grid-template-rows: 1fr; opacity: 1; transform: none; transition: opacity var(--wc-motion-duration-base) var(--wc-motion-ease-out), transform var(--wc-motion-duration-base) var(--wc-motion-ease-out), grid-template-rows var(--wc-motion-duration-fast) var(--wc-motion-ease-in); }
+  @starting-style { .le li { opacity: 0; transform: translateY(calc(-6px * var(--wc-motion-distance))) scale(.98); } }
+  .le li.is-leaving { grid-template-rows: 0fr; opacity: 0; transform: scale(.98); transition-duration: var(--wc-motion-duration-fast); }
+  .le-row { overflow: hidden; min-height: 0; }
+  .le-in { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 6px; border-radius: var(--wc-radius-md); background: var(--wc-surface); border: 1px solid var(--wc-border); }
+  .le-in span { flex: 1; }
+  .le-in button { width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--wc-radius-sm); border: 0; background: transparent; color: var(--wc-fg-muted); cursor: pointer; font-size: 18px; }
+  .le-in button:hover { background: var(--wc-danger-soft); color: var(--wc-danger); }
+  .le-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+<div class="le">
+  <h2>Checklist de lançamento</h2>
+  <form><label class="le-sr" for="le-input">Nova tarefa</label><input id="le-input" placeholder="Nova tarefa" autocomplete="off"><button>Adicionar</button></form>
+  <ul></ul>
+  <p class="le-sr" aria-live="polite"></p>
+</div>
+<script>
+(() => {
+  const ul = document.querySelector('.le ul');
+  const live = document.querySelector('.le [aria-live]');
+  const add = (text) => {
+    const li = document.createElement('li');
+    li.innerHTML = '<div class="le-row"><div class="le-in"><span></span><button type="button" aria-label="Remover">×</button></div></div>';
+    li.querySelector('span').textContent = text;
+    li.querySelector('button').setAttribute('aria-label', 'Remover ' + text);
+    ul.append(li);
+  };
+  ['Revisar textos da home', 'Configurar domínio e SSL', 'Testar checkout no iPhone'].forEach(add);
+  document.querySelector('.le form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = document.getElementById('le-input');
+    if (!input.value.trim()) return;
+    add(input.value.trim()); live.textContent = 'Tarefa adicionada'; input.value = '';
+  });
+  ul.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const li = btn.closest('li');
+    const next = li.nextElementSibling || li.previousElementSibling;
+    li.classList.add('is-leaving');
+    const finish = () => { li.remove(); live.textContent = 'Tarefa removida'; (next?.querySelector('button') || document.getElementById('le-input')).focus(); };
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) finish();
+    else li.addEventListener('transitionend', (ev) => { if (ev.propertyName === 'grid-template-rows') finish(); }, { once: true });
+  });
+})();
+</script>

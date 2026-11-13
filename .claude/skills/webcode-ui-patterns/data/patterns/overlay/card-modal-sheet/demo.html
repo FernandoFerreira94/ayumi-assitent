@@ -1,0 +1,108 @@
+<style>
+  .cms { min-height: 100vh; display: grid; place-items: center; padding: 16px; color: var(--wc-fg); font-size: var(--wc-font-size-sm); }
+  .cms-phone { position: relative; width: min(390px, 100%); height: min(760px, calc(100vh - 32px)); overflow: hidden; border-radius: var(--wc-radius-xl); border: 1px solid var(--wc-border); background: var(--wc-color-black); box-shadow: var(--wc-shadow-lg); }
+  @media (max-width: 480px) { .cms { padding: 0; } .cms-phone { width: 100%; height: 100vh; height: 100dvh; border-radius: 0; border: 0; } }
+  .cms-page { position: absolute; inset: 0; background: var(--wc-bg); transform-origin: 50% 0; transition: scale var(--wc-motion-spring-smooth-duration) var(--wc-motion-spring-smooth), border-radius var(--wc-motion-duration-base), translate var(--wc-motion-spring-smooth-duration) var(--wc-motion-spring-smooth), opacity var(--wc-motion-duration-base); overflow: hidden; }
+  .cms-phone.is-open .cms-page { scale: calc(1 - .07 * var(--p, 1)); translate: 0 calc(24px * var(--p, 1)); border-radius: var(--wc-radius-xl); opacity: calc(1 - .25 * var(--p, 1)); }
+  .cms-phone.is-drag .cms-page, .cms-phone.is-drag .cms-card { transition: none; }
+  .cms-top { padding: 20px 16px 8px; display: flex; justify-content: space-between; align-items: end; }
+  .cms-top h1 { margin: 0; font: var(--wc-font-weight-bold) var(--wc-font-size-3xl) / 1.1 var(--wc-font-display); letter-spacing: var(--wc-tracking-tight); }
+  .cms-add { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font-size: 24px; cursor: pointer; }
+  .cms-list { list-style: none; margin: 8px 16px; padding: 0; border-radius: var(--wc-radius-lg); background: var(--wc-surface); border: 1px solid var(--wc-border); }
+  .cms-list li { display: flex; justify-content: space-between; gap: 8px; padding: 14px 16px; }
+  .cms-list li + li { border-top: 1px solid var(--wc-border); }
+  .cms-list b { font-variant-numeric: tabular-nums; }
+  .cms-list .out { color: var(--wc-danger); } .cms-list .in { color: var(--wc-success); }
+  .cms-card { position: absolute; inset: calc(12px + env(safe-area-inset-top)) 0 0; display: flex; flex-direction: column; border-radius: var(--wc-radius-xl) var(--wc-radius-xl) 0 0; background: var(--wc-surface-raised); box-shadow: var(--wc-shadow-lg); translate: 0 calc(100% + 24px); visibility: hidden; transition: translate var(--wc-motion-spring-smooth-duration) var(--wc-motion-spring-smooth), visibility 0s var(--wc-motion-spring-smooth-duration); }
+  .cms-phone.is-open .cms-card { translate: 0 var(--dy, 0px); visibility: visible; transition: translate var(--wc-motion-spring-smooth-duration) var(--wc-motion-spring-smooth); }
+  .cms-head { position: relative; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 14px 8px 8px; touch-action: none; cursor: grab; }
+  .cms-head::before { content: ""; position: absolute; top: 6px; left: 50%; width: 36px; height: 5px; translate: -50% 0; border-radius: 99px; background: var(--wc-border-strong); }
+  .cms-head h2 { margin: 0; font-size: var(--wc-font-size-md); font-weight: var(--wc-font-weight-semibold); }
+  .cms-head button { min-height: 44px; padding: 0 10px; border: 0; background: none; color: var(--wc-accent); font: inherit; font-size: var(--wc-font-size-md); cursor: pointer; border-radius: var(--wc-radius-sm); }
+  .cms-head .save { justify-self: end; font-weight: var(--wc-font-weight-semibold); }
+  .cms-head .save:disabled { color: var(--wc-fg-muted); cursor: default; }
+  .cms-head .cancel { justify-self: start; }
+  .cms-form { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 8px 16px calc(24px + env(safe-area-inset-bottom)); display: grid; align-content: start; gap: 16px; }
+  .cms-amount { text-align: center; padding: 12px 0; }
+  .cms-amount label { display: block; color: var(--wc-fg-muted); margin-bottom: 4px; }
+  .cms-amount input { width: 100%; border: 0; background: none; color: var(--wc-fg); text-align: center; font: var(--wc-font-weight-bold) var(--wc-font-size-4xl) var(--wc-font-display); font-variant-numeric: tabular-nums; }
+  .cms-field { display: grid; gap: 6px; }
+  .cms-field span { color: var(--wc-fg-muted); font-weight: var(--wc-font-weight-medium); }
+  .cms-field input, .cms-field select { min-height: 48px; padding: 0 12px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: inherit; font-size: var(--wc-font-size-md); }
+  .cms-alert { position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; padding: 24px; background: var(--wc-scrim); }
+  .cms-alert[hidden] { display: none; }
+  .cms-alert > div { width: min(280px, 100%); border-radius: var(--wc-radius-lg); background: var(--wc-surface-raised); box-shadow: var(--wc-shadow-lg); text-align: center; overflow: hidden; }
+  .cms-alert h3 { margin: 18px 16px 4px; font-size: var(--wc-font-size-md); }
+  .cms-alert p { margin: 0 16px 16px; color: var(--wc-fg-muted); }
+  .cms-alert button { display: block; width: 100%; min-height: 46px; border: 0; border-top: 1px solid var(--wc-border); background: none; color: var(--wc-accent); font: inherit; font-size: var(--wc-font-size-md); cursor: pointer; }
+  .cms-alert .danger { color: var(--wc-danger); font-weight: var(--wc-font-weight-semibold); }
+  .cms-toast { position: absolute; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); translate: -50% 0; padding: 10px 16px; border-radius: var(--wc-radius-pill); background: var(--wc-fg); color: var(--wc-bg); white-space: nowrap; }
+  .cms-toast:empty { display: none; }
+  .cms button:focus-visible, .cms input:focus-visible, .cms select:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .cms-page, .cms-card, .cms-phone.is-open .cms-card { transition-duration: 1ms; } }
+</style>
+<div class="cms">
+  <div class="cms-phone">
+    <div class="cms-page">
+      <div class="cms-top"><h1>Extrato</h1><button type="button" class="cms-add" aria-label="Novo lançamento" aria-haspopup="dialog">+</button></div>
+      <ul class="cms-list">
+        <li><span>Pix recebido · Ana Lima</span><b class="in">+ R$ 250,00</b></li>
+        <li><span>Mercado Bom Preço</span><b class="out">− R$ 187,40</b></li>
+        <li><span>Conta de luz</span><b class="out">− R$ 142,90</b></li>
+        <li><span>Salário</span><b class="in">+ R$ 4.800,00</b></li>
+      </ul>
+    </div>
+    <div class="cms-card" role="dialog" aria-modal="true" aria-labelledby="cms-t">
+      <div class="cms-head"><button type="button" class="cancel">Cancelar</button><h2 id="cms-t">Novo lançamento</h2><button type="button" class="save" disabled>Salvar</button></div>
+      <form class="cms-form" novalidate>
+        <div class="cms-amount"><label for="cms-v">Valor</label><input id="cms-v" inputmode="decimal" enterkeyhint="next" placeholder="R$ 0,00" autocomplete="off"></div>
+        <label class="cms-field"><span>Descrição</span><input name="d" enterkeyhint="next" placeholder="Ex.: Farmácia"></label>
+        <label class="cms-field"><span>Categoria</span><select name="c"><option>Alimentação</option><option>Saúde</option><option>Transporte</option><option>Moradia</option></select></label>
+        <label class="cms-field"><span>Data</span><input name="dt" type="date" value="2026-10-27"></label>
+      </form>
+      <div class="cms-alert" role="alertdialog" aria-modal="true" aria-labelledby="cms-at" aria-describedby="cms-ad" hidden><div><h3 id="cms-at">Descartar lançamento?</h3><p id="cms-ad">O valor e a descrição digitados serão perdidos.</p><button type="button" class="danger" data-a="discard">Descartar</button><button type="button" data-a="keep">Continuar editando</button></div></div>
+    </div>
+    <div class="cms-toast" role="status"></div>
+  </div>
+</div>
+<script>
+(() => {
+  const phone = document.querySelector('.cms-phone'), page = phone.querySelector('.cms-page'), card = phone.querySelector('.cms-card'), head = card.querySelector('.cms-head');
+  const form = card.querySelector('form'), val = card.querySelector('#cms-v'), save = card.querySelector('.save'), alert = card.querySelector('.cms-alert'), toast = phone.querySelector('.cms-toast');
+  const opener = phone.querySelector('.cms-add');
+  const brl = (d) => d ? (Number(d) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '';
+  let dirty = false;
+  card.inert = true;
+  const open = () => { phone.classList.add('is-open'); page.inert = true; card.inert = false; toast.textContent = ''; setTimeout(() => val.focus(), 60); };
+  const close = (msg) => {
+    phone.classList.remove('is-open'); page.inert = false; card.inert = true; alert.hidden = true;
+    form.reset(); val.value = ''; dirty = false; save.disabled = true; opener.focus();
+    if (msg) setTimeout(() => (toast.textContent = msg), 300);
+  };
+  const tryClose = () => { if (!dirty) return close(); alert.hidden = false; alert.querySelector('[data-a="keep"]').focus(); };
+  opener.onclick = open;
+  card.querySelector('.cancel').onclick = tryClose;
+  save.onclick = () => close(`Lançamento de ${val.value} salvo`);
+  val.addEventListener('input', () => { const d = val.value.replace(/\D/g, '').slice(0, 9).replace(/^0+/, ''); val.value = brl(d); });
+  form.addEventListener('input', () => { dirty = !!(val.value || form.d.value); save.disabled = !val.value; });
+  form.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); const f = [...form.elements]; f[f.indexOf(e.target) + 1]?.focus(); } });
+  alert.onclick = (e) => { const a = e.target.closest('[data-a]')?.dataset.a; if (a === 'discard') close(); if (a === 'keep') { alert.hidden = true; val.focus(); } };
+  phone.addEventListener('keydown', (e) => { if (e.key !== 'Escape' || !phone.classList.contains('is-open')) return; e.preventDefault(); if (!alert.hidden) { alert.hidden = true; val.focus(); } else tryClose(); });
+  head.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('button') || e.button > 0) return;
+    const y0 = e.clientY, h = card.offsetHeight; let dy = 0, t = performance.now(), v = 0;
+    head.setPointerCapture(e.pointerId); phone.classList.add('is-drag');
+    const move = (ev) => {
+      const raw = ev.clientY - y0, now = performance.now();
+      const ny = raw < 0 ? -Math.sqrt(-raw) * 2 : raw; v = (ny - dy) / Math.max(1, now - t); t = now; dy = ny;
+      card.style.setProperty('--dy', `${dy}px`); phone.style.setProperty('--p', Math.max(0, 1 - Math.max(0, dy) / h));
+    };
+    const up = () => {
+      head.removeEventListener('pointermove', move); head.removeEventListener('pointerup', up); head.removeEventListener('pointercancel', up);
+      phone.classList.remove('is-drag'); card.style.removeProperty('--dy'); phone.style.removeProperty('--p');
+      if (dy > h * .25 || v > .6) tryClose();
+    };
+    head.addEventListener('pointermove', move); head.addEventListener('pointerup', up); head.addEventListener('pointercancel', up);
+  });
+})();
+</script>

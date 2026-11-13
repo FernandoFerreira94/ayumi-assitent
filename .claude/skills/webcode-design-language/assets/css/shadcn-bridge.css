@@ -1,0 +1,37 @@
+/* GERADO por scripts/build.mjs — não edite. Importe DEPOIS do CSS do tema e no lugar das variáveis padrão do shadcn. */
+:root, [data-wc-theme] {
+  --background: var(--wc-bg);
+  --foreground: var(--wc-fg);
+  --card: var(--wc-surface);
+  --card-foreground: var(--wc-fg);
+  --popover: var(--wc-surface-raised);
+  --popover-foreground: var(--wc-fg);
+  --primary: var(--wc-accent-solid);
+  --primary-foreground: var(--wc-accent-solid-fg);
+  --secondary: var(--wc-sunken);
+  --secondary-foreground: var(--wc-fg);
+  --muted: var(--wc-sunken);
+  --muted-foreground: var(--wc-fg-muted);
+  --accent: var(--wc-accent-soft);
+  --accent-foreground: var(--wc-accent);
+  --destructive: var(--wc-danger);
+  --destructive-solid: var(--wc-danger-solid);
+  --destructive-solid-foreground: var(--wc-danger-solid-fg);
+  --border: var(--wc-border);
+  --input: var(--wc-border-strong);
+  --ring: var(--wc-focus);
+  --radius: var(--wc-radius-md);
+  --chart-1: var(--wc-chart-1);
+  --chart-2: var(--wc-chart-2);
+  --chart-3: var(--wc-chart-3);
+  --chart-4: var(--wc-chart-4);
+  --chart-5: var(--wc-chart-5);
+  --sidebar: var(--wc-surface);
+  --sidebar-foreground: var(--wc-fg);
+  --sidebar-primary: var(--wc-accent-solid);
+  --sidebar-primary-foreground: var(--wc-accent-solid-fg);
+  --sidebar-accent: var(--wc-sunken);
+  --sidebar-accent-foreground: var(--wc-fg);
+  --sidebar-border: var(--wc-border);
+  --sidebar-ring: var(--wc-focus);
+}

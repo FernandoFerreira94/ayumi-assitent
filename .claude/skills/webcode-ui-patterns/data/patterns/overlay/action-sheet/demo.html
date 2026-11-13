@@ -1,0 +1,46 @@
+<style>
+  .acs { min-height: 100vh; display: grid; place-content: center; justify-items: center; gap: 12px; padding: 20px; color: var(--wc-fg); font-size: var(--wc-font-size-sm); }
+  .acs-photo { width: 120px; height: 120px; border-radius: var(--wc-radius-lg); border: 0; display: grid; place-items: center; background: var(--wc-accent-soft); color: var(--wc-accent); font-size: var(--wc-font-size-xs); cursor: pointer; text-align: center; padding: 8px; }
+  .acs-photo.has { background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); }
+  .acs-st { min-height: 1.5em; color: var(--wc-fg-muted); margin: 0; }
+  .acs-d { margin: auto auto 0; width: min(420px, 100%); max-width: 100%; padding: 0 8px calc(8px + env(safe-area-inset-bottom)); border: 0; background: none; color: var(--wc-fg); translate: 0 0; opacity: 1; transition: translate var(--wc-motion-duration-slow) var(--wc-motion-ease-out), opacity var(--wc-motion-duration-base), display var(--wc-motion-duration-slow) allow-discrete, overlay var(--wc-motion-duration-slow) allow-discrete; }
+  .acs-d:not([open]) { translate: 0 calc(100% * var(--wc-motion-distance)); opacity: 0; transition-timing-function: var(--wc-motion-ease-in); }
+  @starting-style { .acs-d[open] { translate: 0 calc(100% * var(--wc-motion-distance)); opacity: 0; } }
+  .acs-d::backdrop { background: var(--wc-scrim); transition: opacity var(--wc-motion-duration-slow), display var(--wc-motion-duration-slow) allow-discrete, overlay var(--wc-motion-duration-slow) allow-discrete; }
+  .acs-d:not([open])::backdrop { opacity: 0; }
+  @starting-style { .acs-d[open]::backdrop { opacity: 0; } }
+  .acs-g { border-radius: var(--wc-radius-lg); background: var(--wc-glass-bg); backdrop-filter: blur(var(--wc-blur-glass)); border: 1px solid var(--wc-glass-border); overflow: hidden; margin-bottom: 8px; }
+  .acs-g header { padding: 14px 16px; text-align: center; border-bottom: 1px solid var(--wc-border); }
+  .acs-g h2 { margin: 0; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-semibold); color: var(--wc-fg-muted); }
+  .acs-g p { margin: 2px 0 0; font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); }
+  .acs-g button { display: block; width: 100%; min-height: 56px; border: 0; background: none; color: var(--wc-accent); font: inherit; font-size: var(--wc-font-size-lg); cursor: pointer; }
+  .acs-g button + button { border-top: 1px solid var(--wc-border); }
+  .acs-g button:active { background: var(--wc-sunken); }
+  .acs-g .danger { color: var(--wc-danger); }
+  .acs-g.cancel button { font-weight: var(--wc-font-weight-semibold); background: var(--wc-surface-raised); }
+  .acs button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: -3px; }
+</style>
+<div class="acs">
+  <button type="button" class="acs-photo" aria-haspopup="dialog">Adicionar foto do comprovante</button>
+  <p class="acs-st" role="status"></p>
+</div>
+<dialog class="acs-d" aria-labelledby="acs-t" aria-describedby="acs-m">
+  <form method="dialog">
+    <div class="acs-g"><header><h2 id="acs-t">Foto do comprovante</h2><p id="acs-m">Usada para conferir a entrega da OS #2041.</p></header>
+      <button value="camera">Tirar foto</button><button value="gallery">Escolher da galeria</button><button value="remove" class="danger" hidden>Remover foto</button></div>
+    <div class="acs-g cancel"><button value="cancel">Cancelar</button></div>
+  </form>
+</dialog>
+<script>
+(() => {
+  const btn = document.querySelector('.acs-photo'), d = document.querySelector('.acs-d'), st = document.querySelector('.acs-st'), rm = d.querySelector('[value="remove"]');
+  btn.onclick = () => { rm.hidden = !btn.classList.contains('has'); d.showModal(); };
+  d.addEventListener('click', (e) => { if (e.target === d) d.close('cancel'); });
+  d.addEventListener('close', () => {
+    const v = d.returnValue; d.returnValue = '';
+    if (v === 'camera' || v === 'gallery') { btn.classList.add('has'); btn.textContent = 'Foto anexada · toque para trocar'; st.textContent = v === 'camera' ? 'Foto tirada e anexada.' : 'Foto da galeria anexada.'; }
+    if (v === 'remove') { btn.classList.remove('has'); btn.textContent = 'Adicionar foto do comprovante'; st.textContent = 'Foto removida.'; }
+    btn.focus();
+  });
+})();
+</script>

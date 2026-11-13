@@ -1,0 +1,63 @@
+<style>
+  ::view-transition-group(*) { animation-duration: var(--wc-motion-duration-slow); animation-timing-function: var(--wc-motion-ease-emphasized); }
+  .vt { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+  .vt h1 { font: var(--wc-font-weight-semibold) var(--wc-font-size-3xl) var(--wc-font-display); margin: 0 0 20px; letter-spacing: calc(var(--wc-tracking-tight) * 1em); }
+  .vt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+  .vt-card { all: unset; cursor: pointer; display: grid; gap: 10px; border-radius: var(--wc-radius-lg); }
+  .vt-card:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 4px; }
+  .vt-img { aspect-ratio: 4/3; border-radius: var(--wc-radius-lg); background: var(--g); }
+  .vt-card strong { font: var(--wc-font-weight-semibold) var(--wc-font-size-lg) var(--wc-font-display); }
+  .vt-card small { color: var(--wc-fg-muted); }
+  .vt-detail .vt-img { aspect-ratio: 16/7; border-radius: var(--wc-radius-xl); }
+  .vt-detail h2 { font: var(--wc-font-weight-bold) var(--wc-font-size-4xl) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); margin: 20px 0 8px; outline: none; }
+  .vt-detail p { color: var(--wc-fg-muted); max-width: 60ch; }
+  .vt-back { font: inherit; font-weight: var(--wc-font-weight-medium); padding: 6px 12px; border-radius: var(--wc-radius-pill); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); cursor: pointer; margin-bottom: 16px; }
+  .vt-back:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .vt-price { font: var(--wc-font-weight-semibold) var(--wc-font-size-2xl) var(--wc-font-display); font-variant-numeric: tabular-nums; }
+</style>
+<div class="vt" id="vt-root"></div>
+<script>
+(() => {
+  const items = [
+    { id: 'serra', name: 'Casa na Serra', place: 'Campos do Jordão, SP', price: 'R$ 2,1 mi', g: 'linear-gradient(135deg, var(--wc-gradient-1), var(--wc-gradient-2))' },
+    { id: 'mar', name: 'Loft Beira-Mar', place: 'Florianópolis, SC', price: 'R$ 980 mil', g: 'linear-gradient(135deg, var(--wc-gradient-2), var(--wc-gradient-3))' },
+    { id: 'centro', name: 'Studio Centro', place: 'Belo Horizonte, MG', price: 'R$ 460 mil', g: 'linear-gradient(135deg, var(--wc-gradient-3), var(--wc-gradient-4))' },
+  ];
+  const root = document.getElementById('vt-root');
+  let lastId = null;
+  const list = () => {
+    root.innerHTML = '<h1>Imóveis em destaque</h1><div class="vt-grid">' + items.map((it) =>
+      `<button class="vt-card" data-id="${it.id}"><span class="vt-img" style="--g:${it.g}"></span><strong>${it.name}</strong><small>${it.place} · ${it.price}</small></button>`).join('') + '</div>';
+    if (lastId) {
+      const card = root.querySelector(`[data-id="${lastId}"]`);
+      card.querySelector('.vt-img').style.viewTransitionName = 'hero';
+      card.querySelector('strong').style.viewTransitionName = 'title';
+      card.focus();
+    }
+  };
+  const detail = (it) => {
+    root.innerHTML = `<div class="vt-detail"><button class="vt-back">← Voltar</button><div class="vt-img" style="--g:${it.g};view-transition-name:hero"></div><h2 tabindex="-1" style="view-transition-name:title">${it.name}</h2><p class="vt-price">${it.price}</p><p>${it.place}. 3 quartos, 2 vagas, vista livre e acabamento entregue. Agende uma visita com o corretor responsável.</p></div>`;
+    root.querySelector('h2').focus();
+  };
+  const go = (render, prep) => {
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!document.startViewTransition || reduce) return render();
+    prep?.();
+    document.startViewTransition(render);
+  };
+  root.addEventListener('click', (e) => {
+    const card = e.target.closest('.vt-card');
+    if (card) {
+      const it = items.find((x) => x.id === card.dataset.id);
+      lastId = it.id;
+      root.querySelectorAll('.vt-card *').forEach((el) => (el.style.viewTransitionName = ''));
+      go(() => detail(it), () => {
+        card.querySelector('.vt-img').style.viewTransitionName = 'hero';
+        card.querySelector('strong').style.viewTransitionName = 'title';
+      });
+    }
+    if (e.target.closest('.vt-back')) go(list);
+  });
+  list();
+})();
+</script>

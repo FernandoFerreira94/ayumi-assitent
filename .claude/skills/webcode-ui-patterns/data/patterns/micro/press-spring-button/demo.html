@@ -1,0 +1,48 @@
+<style>
+  .pb-stage { min-height: 100vh; display: grid; place-content: center; gap: 20px; justify-items: center; padding: 20px; }
+  .pb-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .pb { position: relative; display: inline-grid; place-items: center; min-height: var(--wc-size-control-lg); padding: 0 22px; border-radius: var(--wc-radius-md); border: 1px solid transparent; font: var(--wc-font-weight-semibold) var(--wc-font-size-md) var(--wc-font-body); cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; transition: transform var(--wc-motion-spring-snappy-duration) var(--wc-motion-spring-snappy), background-color var(--wc-motion-duration-fast), opacity var(--wc-motion-duration-fast); }
+  .pb:active:not(:disabled) { transform: scale(.97); transition-duration: var(--wc-motion-duration-instant); transition-timing-function: var(--wc-motion-ease-out); }
+  .pb:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .pb > * { grid-area: 1 / 1; transition: opacity var(--wc-motion-duration-fast) var(--wc-motion-ease-out), filter var(--wc-motion-duration-fast), transform var(--wc-motion-duration-base) var(--wc-motion-spring-snappy); }
+  .pb-primary { background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); }
+  .pb-primary:hover:not(:disabled) { background: var(--wc-accent-hover); }
+  .pb-secondary { background: var(--wc-surface); color: var(--wc-fg); border-color: var(--wc-border-strong); }
+  .pb-secondary:hover:not(:disabled) { background: var(--wc-sunken); }
+  .pb-ghost { background: transparent; color: var(--wc-accent); }
+  .pb-ghost:hover:not(:disabled) { background: var(--wc-accent-soft); }
+  .pb:disabled { cursor: not-allowed; }
+  .pb[data-state="idle"]:disabled { opacity: .5; }
+  .pb-spin, .pb-ok { opacity: 0; filter: blur(4px); transform: scale(.6); }
+  .pb-spin { width: 18px; height: 18px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; }
+  /* Só gira enquanto carrega (com opacity 0 a animação continuaria rodando). */
+  .pb[data-state="loading"] .pb-spin { animation: pb-rot .7s linear infinite; }
+  @keyframes pb-rot { to { rotate: 360deg; } }
+  .pb[data-state="loading"] .pb-label, .pb[data-state="success"] .pb-label { opacity: 0; filter: blur(4px); transform: scale(.9); }
+  .pb[data-state="loading"] .pb-spin { opacity: 1; filter: none; transform: none; }
+  .pb[data-state="success"] .pb-ok { opacity: 1; filter: none; transform: none; }
+  .pb-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+<div class="pb-stage">
+  <div class="pb-row">
+    <button class="pb pb-primary" data-state="idle" id="pb-save"><span class="pb-label">Salvar alterações</span><span class="pb-spin" aria-hidden="true"></span><span class="pb-ok" aria-hidden="true">✓ Salvo</span></button>
+    <button class="pb pb-secondary" data-state="idle"><span class="pb-label">Cancelar</span></button>
+    <button class="pb pb-ghost" data-state="idle"><span class="pb-label">Ver histórico</span></button>
+  </div>
+  <div class="pb-row"><button class="pb pb-primary" data-state="idle" disabled><span class="pb-label">Desabilitado</span></button></div>
+  <p class="pb-sr" aria-live="polite" id="pb-live"></p>
+</div>
+<script>
+(() => {
+  const btn = document.getElementById('pb-save');
+  const live = document.getElementById('pb-live');
+  btn.addEventListener('click', () => {
+    if (btn.dataset.state !== 'idle') return;
+    btn.dataset.state = 'loading'; btn.disabled = true; btn.setAttribute('aria-busy', 'true'); live.textContent = 'Salvando';
+    setTimeout(() => {
+      btn.dataset.state = 'success'; btn.removeAttribute('aria-busy'); live.textContent = 'Alterações salvas';
+      setTimeout(() => { btn.dataset.state = 'idle'; btn.disabled = false; }, 1600);
+    }, 1400);
+  });
+})();
+</script>

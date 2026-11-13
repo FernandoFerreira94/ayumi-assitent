@@ -1,0 +1,59 @@
+<style>
+  .bs-stage { min-height: 100vh; display: grid; place-content: center; padding: 20px; }
+  .bs-open { font: inherit; font-weight: var(--wc-font-weight-semibold); padding: 12px 20px; border-radius: var(--wc-radius-pill); border: 0; background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); cursor: pointer; }
+  .bs-open:focus-visible, .bs button:focus-visible, .bs label:focus-within { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .bs { --drag: 0px; margin: auto auto 0; width: min(560px, 100%); max-width: 100%; max-height: 85vh; padding: 8px 20px calc(24px + env(safe-area-inset-bottom)); border: 0; border-radius: var(--wc-radius-xl) var(--wc-radius-xl) 0 0; background: var(--wc-surface-raised); color: var(--wc-fg); box-shadow: var(--wc-shadow-lg); translate: 0 var(--drag); transition: translate var(--wc-motion-spring-smooth-duration) var(--wc-motion-spring-smooth), display var(--wc-motion-duration-slow) allow-discrete, overlay var(--wc-motion-duration-slow) allow-discrete; }
+  .bs:not([open]) { translate: 0 100%; transition-duration: var(--wc-motion-duration-base); transition-timing-function: var(--wc-motion-ease-in); }
+  @starting-style { .bs[open] { translate: 0 100%; } }
+  .bs.is-dragging { transition: none; }
+  .bs::backdrop { background: var(--wc-scrim); opacity: 1; transition: opacity var(--wc-motion-duration-slow), display var(--wc-motion-duration-slow) allow-discrete, overlay var(--wc-motion-duration-slow) allow-discrete; }
+  .bs:not([open])::backdrop { opacity: 0; }
+  @starting-style { .bs[open]::backdrop { opacity: 0; } }
+  .bs-handle { display: block; width: 100%; height: 28px; border: 0; background: transparent; cursor: grab; touch-action: none; position: relative; }
+  .bs-handle::after { content: ""; position: absolute; left: 50%; top: 10px; width: 40px; height: 5px; translate: -50% 0; border-radius: 99px; background: var(--wc-border-strong); }
+  .bs h2 { font: var(--wc-font-weight-semibold) var(--wc-font-size-xl) var(--wc-font-display); margin: 4px 0 16px; }
+  .bs-opts { display: grid; gap: 8px; margin-bottom: 20px; }
+  .bs-opts label { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border); cursor: pointer; }
+  .bs-opts label:has(input:checked) { border-color: var(--wc-accent); background: var(--wc-accent-soft); }
+  .bs-opts input { accent-color: var(--wc-accent-solid); width: 18px; height: 18px; }
+  .bs-opts span { flex: 1; }
+  .bs-opts small { display: block; color: var(--wc-fg-muted); }
+  .bs-opts b { font-variant-numeric: tabular-nums; }
+  .bs-confirm { width: 100%; height: var(--wc-size-control-lg); border-radius: var(--wc-radius-md); border: 0; background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; }
+</style>
+<div class="bs-stage"><button class="bs-open" type="button">Escolher entrega</button></div>
+<dialog class="bs" aria-labelledby="bs-title">
+  <button class="bs-handle" type="button" aria-label="Fechar"></button>
+  <h2 id="bs-title">Como você quer receber?</h2>
+  <form method="dialog">
+    <div class="bs-opts">
+      <label><input type="radio" name="bs-ship" checked><span>Expressa<small>Hoje até 22h</small></span><b>R$ 14,90</b></label>
+      <label><input type="radio" name="bs-ship"><span>Normal<small>Amanhã</small></span><b>Grátis</b></label>
+      <label><input type="radio" name="bs-ship"><span>Retirar na loja<small>Pinheiros · pronto em 1h</small></span><b>Grátis</b></label>
+    </div>
+    <button class="bs-confirm">Confirmar</button>
+  </form>
+</dialog>
+<script>
+(() => {
+  const dlg = document.querySelector('.bs');
+  const handle = dlg.querySelector('.bs-handle');
+  document.querySelector('.bs-open').addEventListener('click', () => dlg.showModal());
+  handle.addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) { const r = dlg.getBoundingClientRect(); if (e.clientY < r.top) dlg.close(); } });
+  let y0 = 0, t0 = 0, dy = 0;
+  handle.addEventListener('pointerdown', (e) => { y0 = e.clientY; t0 = performance.now(); dy = 0; handle.setPointerCapture(e.pointerId); dlg.classList.add('is-dragging'); });
+  handle.addEventListener('pointermove', (e) => {
+    if (!dlg.classList.contains('is-dragging')) return;
+    dy = e.clientY - y0;
+    dlg.style.setProperty('--drag', (dy > 0 ? dy : dy / 6) + 'px');
+  });
+  handle.addEventListener('pointerup', () => {
+    const v = dy / (performance.now() - t0);
+    dlg.classList.remove('is-dragging');
+    dlg.style.setProperty('--drag', '0px');
+    if (dy > 120 || v > 0.6) dlg.close();
+  });
+  dlg.addEventListener('close', () => dlg.style.setProperty('--drag', '0px'));
+})();
+</script>

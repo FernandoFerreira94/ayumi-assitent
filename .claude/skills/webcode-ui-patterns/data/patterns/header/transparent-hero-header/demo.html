@@ -1,0 +1,52 @@
+<style>
+  .th-skip { position: absolute; left: 12px; top: -48px; padding: 8px 12px; background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); border-radius: var(--wc-radius-sm); z-index: 30; }
+  .th-skip:focus { top: 12px; }
+  .th { position: fixed; inset: 0 0 auto; z-index: 20; color: var(--wc-color-white); border-bottom: 1px solid transparent; transition: background-color var(--wc-motion-duration-base) var(--wc-motion-ease-out), color var(--wc-motion-duration-base), border-color var(--wc-motion-duration-base); }
+  .th::before { content: ""; position: absolute; inset: 0 0 -40px; z-index: -1; pointer-events: none; background: linear-gradient(color-mix(in oklch, var(--wc-color-black) 55%, transparent), transparent); transition: opacity var(--wc-motion-duration-base); }
+  .th[data-solid="true"] { background: var(--wc-surface); color: var(--wc-fg); border-bottom-color: var(--wc-border); }
+  .th[data-solid="true"]::before { opacity: 0; }
+  .th-in { max-width: 1180px; margin: 0 auto; height: 68px; padding-inline: 20px; display: flex; align-items: center; gap: 28px; }
+  .th-logo { display: flex; align-items: center; gap: 8px; color: inherit; text-decoration: none; font: var(--wc-font-weight-semibold) var(--wc-font-size-lg) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); }
+  .th nav { display: flex; gap: 22px; margin-left: auto; }
+  .th nav a { color: inherit; text-decoration: none; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-medium); opacity: .88; }
+  .th nav a:hover { opacity: 1; text-decoration: underline; text-underline-offset: 6px; }
+  .th-cta { font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-semibold); text-decoration: none; padding: 9px 16px; border-radius: var(--wc-radius-pill); color: var(--wc-color-white); background: color-mix(in oklch, var(--wc-color-white) 18%, transparent); border: 1px solid color-mix(in oklch, var(--wc-color-white) 40%, transparent); backdrop-filter: blur(var(--wc-blur-glass)); -webkit-backdrop-filter: blur(var(--wc-blur-glass)); transition: background-color var(--wc-motion-duration-base), color var(--wc-motion-duration-base), border-color var(--wc-motion-duration-base); }
+  .th[data-solid="true"] .th-cta { background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); border-color: transparent; }
+  .th a:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+  .th[data-solid="true"] a:focus-visible { outline-color: var(--wc-focus); }
+  @media (max-width: 720px) { .th nav { display: none; } .th-cta { margin-left: auto; } }
+  .th-hero { position: relative; min-height: 92vh; display: grid; align-content: end; padding: 120px 20px 64px; color: var(--wc-color-white); background:
+      linear-gradient(to top, color-mix(in oklch, var(--wc-color-black) 70%, transparent), transparent 60%),
+      radial-gradient(80% 60% at 70% 30%, var(--wc-gradient-2), transparent 70%),
+      radial-gradient(60% 70% at 20% 70%, var(--wc-gradient-1), transparent 70%),
+      linear-gradient(160deg, var(--wc-gradient-3), var(--wc-gradient-4)); }
+  .th-hero > div { max-width: 1180px; width: 100%; margin: 0 auto; }
+  .th-hero small { font-size: var(--wc-font-size-xs); letter-spacing: calc(var(--wc-tracking-caps) * 1em); text-transform: uppercase; opacity: .9; }
+  .th-hero h1 { font: var(--wc-font-weight-semibold) clamp(36px, 7vw, var(--wc-font-size-7xl)) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tighter) * 1em); margin: 8px 0 12px; max-width: 14ch; }
+  .th-hero p { max-width: 46ch; margin: 0; font-size: var(--wc-font-size-lg); opacity: .92; }
+  .th-sentinel { height: 1px; margin-top: -1px; }
+  .th-body { max-width: 760px; margin: 0 auto; padding: 48px 20px 480px; color: var(--wc-fg-muted); }
+  .th-body h2 { color: var(--wc-fg); font: var(--wc-font-weight-semibold) var(--wc-font-size-2xl) var(--wc-font-display); }
+</style>
+<a class="th-skip" href="#th-main">Pular para o conteúdo</a>
+<header class="th" data-solid="false">
+  <div class="th-in">
+    <a class="th-logo" href="#"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20 10 7l4 7 3-4 4 10Z" fill="currentColor"/></svg>Serra Alta</a>
+    <nav aria-label="Principal"><a href="#">Chalés</a><a href="#">Experiências</a><a href="#">Gastronomia</a><a href="#">Como chegar</a></nav>
+    <a class="th-cta" href="#">Reservar</a>
+  </div>
+</header>
+<main id="th-main">
+  <section class="th-hero" aria-labelledby="th-title">
+    <div><small>Campos do Jordão · SP</small><h1 id="th-title">Chalés entre as araucárias</h1><p>Lareira acesa, café colhido na fazenda e trilhas que começam na sua porta.</p></div>
+  </section>
+  <div class="th-sentinel" aria-hidden="true"></div>
+  <div class="th-body"><h2>Role e veja o header ficar sólido</h2><p>Quando a imagem sai de cena, o header troca o texto claro e o degradê de proteção por superfície e cores do tema, sem mudar de altura.</p></div>
+</main>
+<script>
+(() => {
+  const h = document.querySelector('.th');
+  const s = document.querySelector('.th-sentinel');
+  new IntersectionObserver(([e]) => { h.dataset.solid = String(!e.isIntersecting && e.boundingClientRect.top < h.offsetHeight); }, { rootMargin: '-68px 0px 0px 0px' }).observe(s);
+})();
+</script>

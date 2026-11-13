@@ -1,0 +1,57 @@
+<style>
+  .hs { position: sticky; top: 0; z-index: 10; background: var(--wc-surface); border-bottom: 1px solid var(--wc-border); transition: translate var(--wc-motion-duration-base) var(--wc-motion-ease-out), box-shadow var(--wc-motion-duration-base); }
+  .hs.is-hidden:not(:focus-within) { translate: 0 -100%; transition-timing-function: var(--wc-motion-ease-in); }
+  .hs.is-scrolled { box-shadow: var(--wc-shadow); }
+  @media (prefers-reduced-motion: reduce) { .hs { transition: none; } }
+  .hs-in { max-width: 1080px; margin: 0 auto; height: 60px; padding-inline: 20px; display: flex; align-items: center; gap: 20px; }
+  .hs-logo { font: var(--wc-font-weight-bold) var(--wc-font-size-lg) var(--wc-font-display); color: var(--wc-fg); text-decoration: none; letter-spacing: calc(var(--wc-tracking-tight) * 1em); }
+  .hs nav { display: flex; gap: 4px; }
+  .hs nav a { color: var(--wc-fg-muted); text-decoration: none; font-size: var(--wc-font-size-sm); padding: 6px 10px; border-radius: var(--wc-radius-sm); }
+  .hs nav a:hover, .hs nav a[aria-current] { color: var(--wc-fg); background: var(--wc-sunken); }
+  .hs-sub { margin-left: auto; font: inherit; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-semibold); padding: 8px 14px; border-radius: var(--wc-radius-button); border: 0; background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); cursor: pointer; }
+  .hs a:focus-visible, .hs button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .hs-read { position: absolute; left: 0; bottom: -1px; height: 2px; width: 100%; background: var(--wc-accent); transform-origin: 0 50%; scale: var(--p, 0) 1; }
+  @media (max-width: 640px) { .hs nav { display: none; } }
+  .hs-article { max-width: 680px; margin: 0 auto; padding: 40px 20px 120px; }
+  .hs-article small { color: var(--wc-accent); font-weight: var(--wc-font-weight-semibold); text-transform: uppercase; letter-spacing: calc(var(--wc-tracking-caps) * 1em); font-size: var(--wc-font-size-xs); }
+  .hs-article h1 { font: var(--wc-font-weight-semibold) clamp(30px, 5vw, var(--wc-font-size-5xl)) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); margin: 8px 0 16px; }
+  .hs-article p { color: var(--wc-fg-muted); line-height: var(--wc-line-height-relaxed); margin: 0 0 20px; }
+  .hs-hint { position: fixed; right: 16px; bottom: 16px; font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); background: var(--wc-surface-raised); border: 1px solid var(--wc-border); padding: 6px 10px; border-radius: var(--wc-radius-pill); }
+</style>
+<header class="hs">
+  <div class="hs-in">
+    <a class="hs-logo" href="#">Caderno</a>
+    <nav aria-label="Principal"><a href="#" aria-current="page">Reportagens</a><a href="#">Opinião</a><a href="#">Tecnologia</a><a href="#">Podcasts</a></nav>
+    <button class="hs-sub" type="button">Assinar</button>
+  </div>
+  <span class="hs-read" aria-hidden="true"></span>
+</header>
+<main class="hs-article">
+  <small>Tecnologia</small>
+  <h1>Por que as melhores interfaces desaparecem enquanto você lê</h1>
+  <p>Role para baixo: o header sai do caminho. Role um pouco para cima: ele volta na hora, sem precisar voltar ao topo. A barra fina embaixo dele mostra quanto do texto você já leu.</p>
+  <p>Interfaces de leitura disputam espaço com o conteúdo. No celular, um header de 60px ocupa quase 8% da tela. Recolher a navegação enquanto a pessoa avança e devolver no primeiro sinal de intenção é um acordo justo.</p>
+  <p>O truque está no limiar. Sem ele, o trackpad dispara dezenas de eventos minúsculos em direções alternadas e o header treme. Com 8px de tolerância, só gestos intencionais mudam o estado.</p>
+  <p>Outra regra: o header nunca some com o foco dentro dele. Quem navega pelo teclado precisa encontrar os links sempre que apertar Tab.</p>
+  <p>Também vale manter o header visível no topo da página, onde ele não atrapalha nada e ajuda a orientar quem acabou de chegar.</p>
+  <p>Por fim, a sombra só aparece depois que o conteúdo começa a passar por baixo. No topo, uma borda discreta já basta.</p>
+  <p>Fim do exemplo. Role para cima para ver o header voltar.</p>
+</main>
+<span class="hs-hint" aria-hidden="true">Role para baixo e para cima</span>
+<script>
+(() => {
+  const h = document.querySelector('.hs');
+  let last = scrollY, ticking = false;
+  const update = () => {
+    const y = scrollY, dy = y - last;
+    h.classList.toggle('is-scrolled', y > 4);
+    if (y < h.offsetHeight) h.classList.remove('is-hidden');
+    else if (Math.abs(dy) > 8) { h.classList.toggle('is-hidden', dy > 0); last = y; }
+    const max = document.documentElement.scrollHeight - innerHeight;
+    h.style.setProperty('--p', max > 0 ? (y / max).toFixed(3) : 0);
+    if (y < h.offsetHeight) last = y;
+    ticking = false;
+  };
+  addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+})();
+</script>

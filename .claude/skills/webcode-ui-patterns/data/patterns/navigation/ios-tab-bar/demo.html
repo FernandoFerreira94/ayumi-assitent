@@ -1,0 +1,57 @@
+<style>
+  .tb-screen { min-height: 100vh; display: grid; grid-template-rows: 1fr auto; max-width: 480px; margin: 0 auto; }
+  .tb-content { padding: 32px 20px; }
+  .tb-content h1 { font: var(--wc-font-weight-bold) var(--wc-font-size-4xl) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); margin: 8px 0; }
+  .tb-content p { color: var(--wc-fg-muted); margin: 0; }
+  .tb { position: sticky; bottom: 0; margin: 0 16px calc(16px + env(safe-area-inset-bottom)); padding: 6px; display: grid; grid-template-columns: repeat(4, 1fr); border-radius: var(--wc-radius-pill); background: var(--wc-glass-bg); border: 1px solid var(--wc-glass-border); box-shadow: var(--wc-shadow-lg); backdrop-filter: blur(var(--wc-blur-glass)) saturate(180%); -webkit-backdrop-filter: blur(var(--wc-blur-glass)) saturate(180%); isolation: isolate; }
+  .tb-ind { position: absolute; z-index: -1; top: 6px; bottom: 6px; left: 0; width: var(--w, 0px); border-radius: var(--wc-radius-pill); background: var(--wc-accent-soft); transform: translateX(var(--x, 0px)); transition: transform var(--wc-motion-spring-snappy-duration) var(--wc-motion-spring-snappy), width var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  .tb-ind.no-anim { transition: none; }
+  .tb button { all: unset; cursor: pointer; display: grid; justify-items: center; gap: 2px; padding: 8px 0 6px; min-height: var(--wc-size-touch-min); border-radius: var(--wc-radius-pill); color: var(--wc-fg-muted); font: var(--wc-font-weight-medium) 11px var(--wc-font-body); -webkit-tap-highlight-color: transparent; transition: color var(--wc-motion-duration-fast); }
+  .tb button[aria-selected="true"] { color: var(--wc-accent); }
+  .tb button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: -2px; }
+  .tb svg { width: 24px; height: 24px; transition: transform var(--wc-motion-duration-instant) var(--wc-motion-ease-out); }
+  .tb button:active svg { transform: scale(.88); }
+</style>
+<div class="tb-screen">
+  <div class="tb-content" id="tb-panel" role="tabpanel" aria-labelledby="tb-t0">
+    <small style="color:var(--wc-fg-muted)">Terça, 27 de outubro</small>
+    <h1 id="tb-title">Início</h1>
+    <p>Toque nas abas ou use as setas do teclado.</p>
+  </div>
+  <div class="tb" role="tablist" aria-label="Seções do app">
+    <span class="tb-ind no-anim" aria-hidden="true"></span>
+    <button role="tab" id="tb-t0" aria-selected="true" aria-controls="tb-panel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Início</button>
+    <button role="tab" id="tb-t1" aria-selected="false" aria-controls="tb-panel" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Buscar</button>
+    <button role="tab" id="tb-t2" aria-selected="false" aria-controls="tb-panel" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>Alertas</button>
+    <button role="tab" id="tb-t3" aria-selected="false" aria-controls="tb-panel" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Perfil</button>
+  </div>
+</div>
+<script>
+(() => {
+  const bar = document.querySelector('.tb');
+  const ind = bar.querySelector('.tb-ind');
+  const tabs = [...bar.querySelectorAll('[role="tab"]')];
+  const title = document.getElementById('tb-title');
+  const move = (tab) => {
+    ind.style.setProperty('--x', tab.offsetLeft + 'px');
+    ind.style.setProperty('--w', tab.offsetWidth + 'px');
+  };
+  const select = (tab, focus) => {
+    tabs.forEach((t) => { const on = t === tab; t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1; });
+    document.getElementById('tb-panel').setAttribute('aria-labelledby', tab.id);
+    title.textContent = tab.textContent.trim();
+    move(tab);
+    if (focus) tab.focus();
+  };
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => select(t));
+    t.addEventListener('keydown', (e) => {
+      const d = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+      if (d) { e.preventDefault(); select(tabs[(i + d + tabs.length) % tabs.length], true); }
+    });
+  });
+  move(tabs[0]);
+  requestAnimationFrame(() => requestAnimationFrame(() => ind.classList.remove('no-anim')));
+  addEventListener('resize', () => move(tabs.find((t) => t.getAttribute('aria-selected') === 'true')));
+})();
+</script>

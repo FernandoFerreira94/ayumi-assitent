@@ -1,0 +1,87 @@
+<style>
+  .ice { min-height: 100vh; padding: 20px; }
+  .ice h2 { margin: 0 0 4px; font: var(--wc-font-weight-semibold) var(--wc-font-size-xl) var(--wc-font-display); }
+  .ice p.ice-hint { margin: 0 0 12px; font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .ice kbd { font-family: var(--wc-font-mono); font-size: .9em; padding: 0 5px; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-sm); background: var(--wc-surface); }
+  .ice table { width: 100%; max-width: 640px; border-collapse: collapse; font-size: var(--wc-font-size-sm); background: var(--wc-surface); border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); overflow: hidden; }
+  .ice th, .ice td { height: 44px; padding: 0 12px; border-top: 1px solid var(--wc-border); text-align: left; }
+  .ice thead th { color: var(--wc-fg-muted); font-weight: var(--wc-font-weight-medium); background: var(--wc-sunken); border-top: 0; }
+  .ice .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .ice-btn { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 88px; min-height: 32px; padding: 0 8px; border: 1px solid transparent; border-radius: var(--wc-radius-sm); background: none; color: var(--wc-fg); font: inherit; font-variant-numeric: tabular-nums; cursor: text; }
+  .ice-btn::before { content: "✎"; opacity: 0; color: var(--wc-fg-muted); transition: opacity var(--wc-motion-duration-fast); }
+  .ice-btn:hover, .ice-btn:focus-visible { border-color: var(--wc-control-border); }
+  .ice-btn:hover::before, .ice-btn:focus-visible::before { opacity: 1; }
+  .ice-btn:focus-visible, .ice input:focus-visible, .ice-toast button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 1px; }
+  .ice input { width: 88px; min-height: 32px; padding: 0 8px; font: inherit; font-size: max(16px, 1em); text-align: right; font-variant-numeric: tabular-nums; border: 1px solid var(--wc-accent); border-radius: var(--wc-radius-sm); background: var(--wc-bg); color: var(--wc-fg); }
+  .ice input[aria-invalid="true"] { border-color: var(--wc-danger); }
+  .ice-err { display: block; font-size: var(--wc-font-size-xs); color: var(--wc-danger); }
+  .ice-flash { animation: ice-flash var(--wc-motion-duration-slow) var(--wc-motion-ease-out); }
+  @keyframes ice-flash { from { background: var(--wc-accent-soft); } }
+  @media (prefers-reduced-motion: reduce) { .ice-flash { animation: none; } }
+  .ice-toast { position: fixed; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 12px; max-width: calc(100vw - 32px); padding: 10px 10px 10px 16px; border-radius: var(--wc-radius-lg); background: var(--wc-surface-raised); color: var(--wc-fg); border: 1px solid var(--wc-border); box-shadow: var(--wc-shadow-lg); transition: translate var(--wc-motion-duration-base) var(--wc-motion-ease-out), opacity var(--wc-motion-duration-fast); }
+  .ice-toast[data-hidden="true"] { translate: 0 calc(16px * var(--wc-motion-distance)); opacity: 0; pointer-events: none; }
+  .ice-toast button { min-height: 32px; padding: 0 10px; border: 0; border-radius: var(--wc-radius-sm); background: var(--wc-sunken); color: var(--wc-accent); font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; }
+</style>
+<div class="ice">
+  <h2>Itens do pedido #1044</h2>
+  <p class="ice-hint">Clique na quantidade (ou <kbd>Enter</kbd>/<kbd>F2</kbd>). <kbd>Enter</kbd> salva, <kbd>Esc</kbd> cancela, <kbd>Tab</kbd> vai para a próxima.</p>
+  <table>
+    <thead><tr><th scope="col">Produto</th><th scope="col" class="num">Qtd.</th><th scope="col" class="num">Total (R$)</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <div class="ice-toast" role="status" data-hidden="true"><span></span><button type="button">Desfazer</button></div>
+</div>
+<script>
+(() => {
+  const items = [['Caneta azul', 120, 1.9], ['Caderno A4', 40, 14.5], ['Grampeador', 6, 32], ['Papel sulfite (cx)', 10, 189.9]].map(([nome, qtd, preco]) => ({ nome, qtd, preco }));
+  const money = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 });
+  const tbody = document.querySelector('.ice tbody');
+  const toast = document.querySelector('.ice-toast');
+  let undo = null, tt;
+  const cellBtn = (i) => `<button type="button" class="ice-btn" data-i="${i}" aria-label="Editar quantidade de ${items[i].nome}: ${items[i].qtd}">${items[i].qtd}</button>`;
+  const row = (i) => `<tr data-r="${i}"><th scope="row">${items[i].nome}</th><td class="num" data-cell>${cellBtn(i)}</td><td class="num" data-total>${money.format(items[i].qtd * items[i].preco)}</td></tr>`;
+  tbody.innerHTML = items.map((_, i) => row(i)).join('');
+  const refresh = (i, flash) => {
+    const tr = tbody.querySelector(`[data-r="${i}"]`);
+    tr.querySelector('[data-cell]').innerHTML = cellBtn(i);
+    tr.querySelector('[data-total]').textContent = money.format(items[i].qtd * items[i].preco);
+    if (flash) { tr.classList.remove('ice-flash'); void tr.offsetWidth; tr.classList.add('ice-flash'); }
+    return tr.querySelector('.ice-btn');
+  };
+  const showToast = (msg, fn) => {
+    undo = fn; toast.querySelector('span').textContent = msg; toast.dataset.hidden = 'false';
+    clearTimeout(tt); tt = setTimeout(() => { toast.dataset.hidden = 'true'; undo = null; }, 6000);
+  };
+  const edit = (i) => {
+    const td = tbody.querySelector(`[data-r="${i}"] [data-cell]`);
+    td.innerHTML = `<input inputmode="numeric" value="${items[i].qtd}" aria-label="Quantidade de ${items[i].nome}" aria-describedby="ice-e${i}"><span class="ice-err" id="ice-e${i}"></span>`;
+    const input = td.querySelector('input');
+    input.focus(); input.select();
+    let done = false;
+    const finish = (save, next) => {
+      if (done) return;
+      if (save) {
+        const v = Number(input.value.replace(/\D/g, ''));
+        if (!input.value.trim() || !Number.isInteger(v) || v < 1 || v > 9999) { input.setAttribute('aria-invalid', 'true'); td.querySelector('.ice-err').textContent = 'Use de 1 a 9.999'; input.focus(); return; }
+        done = true;
+        const old = items[i].qtd;
+        if (v !== old) {
+          items[i].qtd = v;
+          showToast(`Quantidade de ${items[i].nome}: ${old} → ${v}`, () => { items[i].qtd = old; refresh(i, true).focus(); toast.dataset.hidden = 'true'; });
+        }
+        const btn = refresh(i, v !== old);
+        if (next !== undefined) { const nb = tbody.querySelector(`[data-i="${next}"]`); nb ? edit(next) : btn.focus(); } else btn.focus();
+      } else { done = true; refresh(i).focus(); }
+    };
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+      else if (e.key === 'Tab' && !e.shiftKey && i < items.length - 1) { e.preventDefault(); finish(true, i + 1); }
+    });
+    input.addEventListener('blur', () => setTimeout(() => { if (!done && document.activeElement !== input) finish(true); }, 0));
+  };
+  tbody.addEventListener('click', (e) => { const b = e.target.closest('.ice-btn'); if (b) edit(+b.dataset.i); });
+  tbody.addEventListener('keydown', (e) => { const b = e.target.closest('.ice-btn'); if (b && e.key === 'F2') { e.preventDefault(); edit(+b.dataset.i); } });
+  toast.querySelector('button').addEventListener('click', () => undo?.());
+})();
+</script>

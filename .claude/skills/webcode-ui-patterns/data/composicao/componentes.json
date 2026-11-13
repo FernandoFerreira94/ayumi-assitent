@@ -1,0 +1,3541 @@
+{
+  "$comment": "Ficha de composição por componente (manual em composicao/README.md). role: papel numa composição · pairs: com quem combina (nomes do registry, validados no build) · inside: onde costuma morar · motion: movimento recomendado · avoid: anti-padrões. As receitas que usam o componente são calculadas no build. Cobertura sobe por lotes, por família.",
+  "components": {
+    "button": {
+      "role": "Comando. Uma primária por contêiner visível; o resto é secondary, ghost, link ou vai para o menu …",
+      "pairs": [
+        "card",
+        "item",
+        "popconfirm",
+        "tooltip",
+        "dropdown-menu",
+        "sonner",
+        "page-header"
+      ],
+      "inside": "rodapé de card, item-actions da linha, page-header-actions, sheet-footer",
+      "motion": "pressão com escala curta (já embutida); loading sem pular largura com aria-busy",
+      "avoid": [
+        "duas primárias lado a lado",
+        "ícone sem aria-label",
+        "rótulo genérico (OK, Enviar) em vez de verbo + objeto",
+        "desabilitado sem motivo (use tooltip)",
+        "vidro tingido fora de foto/mapa/vídeo",
+        "dois vidros tingidos na tela"
+      ]
+    },
+    "card": {
+      "role": "Superfície que agrupa um assunto e as ações dele (no rodapé ou no card-action).",
+      "pairs": [
+        "accordion",
+        "item",
+        "button",
+        "badge",
+        "skeleton",
+        "empty",
+        "line-chart"
+      ],
+      "inside": "grade da página, coluna de dashboard; nunca dentro de outro card default",
+      "motion": "variant interactive quando o card inteiro é clicável (sobe 2px, base); nada no default",
+      "avoid": [
+        "card dentro de card",
+        "um card por linha de lista",
+        "elevated em todos os cards",
+        "botão primário no header e no rodapé ao mesmo tempo"
+      ]
+    },
+    "accordion": {
+      "role": "Divide um contêiner em seções recolhíveis; o trigger mostra o resumo do estado da seção.",
+      "pairs": [
+        "card",
+        "item",
+        "switch",
+        "button",
+        "badge"
+      ],
+      "inside": "card-content sem padding lateral, sheet-body, FAQ",
+      "motion": "altura animada do componente; sem mola",
+      "avoid": [
+        "accordion dentro de accordion",
+        "esconder o campo obrigatório de um formulário",
+        "mais de 8 seções (use tabs na URL)"
+      ]
+    },
+    "item": {
+      "role": "Linha de conteúdo: mídia + título/descrição + ações à direita.",
+      "pairs": [
+        "switch",
+        "button",
+        "badge",
+        "dropdown-menu",
+        "avatar",
+        "accordion"
+      ],
+      "inside": "card-content, accordion-content, popover, sheet-body",
+      "motion": "ações secundárias reveladas no hover/foco (opacity, fast); sempre visíveis em pointer coarse",
+      "avoid": [
+        "variant outline em cada linha dentro de card (vira card dentro de card)",
+        "mais de 2 ações visíveis por linha",
+        "única ação escondida no hover"
+      ]
+    },
+    "switch": {
+      "role": "Liga/desliga que aplica na hora; sempre com rótulo visível ou aria-label.",
+      "pairs": [
+        "item",
+        "list-group",
+        "tooltip",
+        "sonner"
+      ],
+      "inside": "item-actions, accessory do list-row",
+      "motion": "deslize do polegar do componente",
+      "avoid": [
+        "switch que só vale depois de Salvar sem indicar pendência",
+        "switch para escolha entre 2 opções nomeadas (use toggle-group)",
+        "disabled sem explicar o motivo"
+      ]
+    },
+    "badge": {
+      "role": "Status ou contagem curta junto do que descreve; sempre com texto.",
+      "pairs": [
+        "item",
+        "card",
+        "swipe-actions",
+        "data-table",
+        "tab-bar"
+      ],
+      "inside": "card-action, linha de lista, célula de tabela",
+      "motion": "nenhum",
+      "avoid": [
+        "status só por cor",
+        "badge clicável no lugar de botão",
+        "mais de 2 badges por linha"
+      ]
+    },
+    "popconfirm": {
+      "role": "Confirmação leve presa ao gatilho, para ação pequena que não dá para desfazer.",
+      "pairs": [
+        "button",
+        "dropdown-menu",
+        "item"
+      ],
+      "inside": "item-actions, menu da linha",
+      "motion": "entrada do popover",
+      "avoid": [
+        "confirmar ação reversível (execute e ofereça Desfazer)",
+        "texto sem o nome do que será afetado",
+        "usar para exclusão grande e irreversível (use alert-dialog)"
+      ]
+    },
+    "tooltip": {
+      "role": "Rótulo curto de ícone ou motivo de um controle desabilitado.",
+      "pairs": [
+        "button",
+        "switch",
+        "toolbar"
+      ],
+      "inside": "em volta do gatilho",
+      "motion": "fade rápido com atraso de abertura",
+      "avoid": [
+        "informação essencial só no tooltip",
+        "tooltip em texto que já está visível",
+        "conteúdo interativo (use popover)"
+      ]
+    },
+    "sonner": {
+      "role": "Resultado de uma ação, com a mesma palavra do botão e, se der, Desfazer.",
+      "pairs": [
+        "button",
+        "swipe-actions",
+        "switch",
+        "data-table"
+      ],
+      "inside": "Toaster na raiz do app",
+      "motion": "pilha com entrada do componente; some sozinho em ~5 s; o item removido sai pela presence-list",
+      "avoid": [
+        "toast para erro de campo (use a mensagem no field)",
+        "toast sem ação quando dá para desfazer",
+        "mais de 3 toasts ao mesmo tempo"
+      ]
+    },
+    "skeleton": {
+      "role": "Forma real do conteúdo enquanto carrega (acima de ~1 s).",
+      "pairs": [
+        "card",
+        "stat-card",
+        "data-table",
+        "item"
+      ],
+      "inside": "no lugar exato do conteúdo",
+      "motion": "pulso só com motion-safe; troca para o conteúdo com swap (altura acompanha)",
+      "avoid": [
+        "skeleton com forma diferente do conteúdo",
+        "skeleton para espera menor que 1 s",
+        "spinner de página inteira quando dá para mostrar a moldura"
+      ]
+    },
+    "dropdown-menu": {
+      "role": "Menu … com as ações raras ou destrutivas de um contexto.",
+      "pairs": [
+        "button",
+        "item",
+        "popconfirm",
+        "page-header",
+        "data-table"
+      ],
+      "inside": "fim da linha, page-header-actions, card-action",
+      "motion": "entrada do popover",
+      "avoid": [
+        "esconder a ação principal no menu",
+        "menu com 1 item",
+        "destrutiva misturada sem separador"
+      ]
+    },
+    "navigation-bar": {
+      "role": "Topo de tela iOS: título grande que recolhe, ação de criar no trailing e busca/filtro como children.",
+      "pairs": [
+        "search-bar",
+        "toggle-group",
+        "button",
+        "tab-bar",
+        "pull-to-refresh"
+      ],
+      "inside": "topo de cada tela da pilha",
+      "motion": "título grande recolhe ao rolar (do componente)",
+      "avoid": [
+        "vidro dentro da barra (badge/toggle glass)",
+        "mais de 2 botões no trailing",
+        "título grande em tela de detalhe empilhada"
+      ]
+    },
+    "search-bar": {
+      "role": "Busca iOS com Cancelar, colada ao título.",
+      "pairs": [
+        "navigation-bar",
+        "toggle-group",
+        "empty"
+      ],
+      "inside": "children da navigation-bar",
+      "motion": "Cancelar entra deslizando no foco",
+      "avoid": [
+        "busca no meio da lista",
+        "busca sem estado vazio de resultado"
+      ]
+    },
+    "toggle-group": {
+      "role": "Escolha entre 2 a 4 opções lado a lado (segmentado): filtro, período, visualização.",
+      "pairs": [
+        "page-header",
+        "navigation-bar",
+        "search-bar",
+        "stat-card"
+      ],
+      "inside": "page-header-actions, abaixo da busca, topo de card de gráfico",
+      "motion": "indicador desliza entre as opções (segmented)",
+      "avoid": [
+        "mais de 4 opções (use select)",
+        "um seletor igual em cada card",
+        "toggle-group para navegação entre páginas (use tabs)"
+      ]
+    },
+    "swipe-actions": {
+      "role": "Ações de uma linha por gesto, com botões reais para teclado e leitor de tela.",
+      "pairs": [
+        "sonner",
+        "badge",
+        "pull-to-refresh",
+        "navigation-bar"
+      ],
+      "inside": "li de lista mobile",
+      "motion": "mola do gesto; linha removida recolhe a altura",
+      "avoid": [
+        "mais de 3 ações de um lado",
+        "confirmar em modal antes de excluir",
+        "gesto como única forma de agir"
+      ]
+    },
+    "pull-to-refresh": {
+      "role": "Atualizar a lista puxando o topo.",
+      "pairs": [
+        "swipe-actions",
+        "navigation-bar",
+        "skeleton",
+        "sonner"
+      ],
+      "inside": "em volta da lista rolável",
+      "motion": "mola do gesto; respeita movimento reduzido",
+      "avoid": [
+        "dentro de modal ou drawer",
+        "trocar a lista por skeleton ao atualizar (mantenha a antiga)"
+      ]
+    },
+    "tab-bar": {
+      "role": "Navegação principal do app mobile, 3 a 5 destinos, em vidro.",
+      "pairs": [
+        "navigation-bar",
+        "badge",
+        "swipe-actions"
+      ],
+      "inside": "rodapé fixo da casca do app",
+      "motion": "minimiza ao rolar (minimizeOnScroll)",
+      "avoid": [
+        "tab-bar e bottom-bar de ação na mesma tela",
+        "mais de 5 destinos",
+        "ação de criar como aba comum (use TabBarAction)"
+      ]
+    },
+    "empty": {
+      "role": "Estado vazio com a ação que resolve, no lugar do conteúdo.",
+      "pairs": [
+        "button",
+        "card",
+        "data-table",
+        "search-bar"
+      ],
+      "inside": "card do conteúdo, área da lista",
+      "motion": "nenhum",
+      "avoid": [
+        "vazio sem ação",
+        "ilustração grande em tela de uso diário",
+        "o mesmo texto para primeira vez e sem resultado"
+      ]
+    },
+    "page-header": {
+      "role": "Topo da página web: título, contexto e as ações que valem para a página inteira.",
+      "pairs": [
+        "toggle-group",
+        "button",
+        "dropdown-menu",
+        "breadcrumb",
+        "stat-card"
+      ],
+      "inside": "topo do conteúdo, abaixo da topbar",
+      "motion": "nenhum",
+      "avoid": [
+        "ação de um card no header da página",
+        "mais de 1 primária",
+        "descrição de mais de uma linha"
+      ]
+    },
+    "stat-card": {
+      "role": "Um indicador: valor, variação com sentido (goodWhen), tendência e link para o detalhe.",
+      "pairs": [
+        "page-header",
+        "toggle-group",
+        "popover",
+        "sheet",
+        "skeleton"
+      ],
+      "inside": "grade de 2 a 4 colunas, coluna lateral (compact)",
+      "motion": "hover interactive quando tem href; grade entra uma vez com stagger; sem contagem animada",
+      "avoid": [
+        "seletor de período por card",
+        "variação só por cor",
+        "número abreviado sem exactValue",
+        "mais de 6 na mesma grade"
+      ]
+    },
+    "popover": {
+      "role": "Conteúdo curto e interativo preso a um gatilho (explicação, filtro rápido).",
+      "pairs": [
+        "button",
+        "stat-card",
+        "item"
+      ],
+      "inside": "ao lado do gatilho",
+      "motion": "entrada do componente",
+      "avoid": [
+        "formulário longo (use sheet ou dialog)",
+        "popover dentro de popover"
+      ]
+    },
+    "sheet": {
+      "role": "Detalhe ao lado da lista ou do painel, sem perder o contexto; estado na URL.",
+      "pairs": [
+        "data-table",
+        "line-chart",
+        "stat-card",
+        "button"
+      ],
+      "inside": "acima da página (Portal)",
+      "motion": "deslize do componente; o fundo não se move",
+      "avoid": [
+        "sheet dentro de sheet",
+        "tarefa curta de 1 campo (use popover)",
+        "fechar perdendo o que foi digitado"
+      ]
+    },
+    "line-chart": {
+      "role": "Evolução de 1 a 3 séries no tempo.",
+      "pairs": [
+        "card",
+        "stat-card",
+        "toggle-group",
+        "empty",
+        "sheet"
+      ],
+      "inside": "card do gráfico, sheet-body",
+      "motion": "desenho inicial curto; troca de período sem animação longa",
+      "avoid": [
+        "mais de 3 séries",
+        "eixo sem formato pt-BR",
+        "gráfico sem estado vazio"
+      ]
+    },
+    "data-table": {
+      "role": "As linhas que formam um número ou uma lista operacional com ordenação, filtro e ações em massa.",
+      "pairs": [
+        "sheet",
+        "page-header",
+        "dropdown-menu",
+        "badge",
+        "empty",
+        "skeleton"
+      ],
+      "inside": "conteúdo principal, sheet-body",
+      "motion": "nenhum além do hover de linha",
+      "avoid": [
+        "tabela em tela de celular sem variante de cards",
+        "ações de linha só no hover",
+        "paginação e rolagem infinita juntas"
+      ]
+    },
+    "number-ticker": {
+      "role": "Contagem animada de um número de destaque na primeira carga.",
+      "pairs": [
+        "card",
+        "page-header"
+      ],
+      "inside": "hero do painel ou landing",
+      "motion": "uma vez, curta; mostra o valor final com movimento reduzido",
+      "avoid": [
+        "em todos os cards",
+        "a cada troca de filtro",
+        "em número que a pessoa precisa ler na hora"
+      ]
+    },
+    "sidebar": {
+      "role": "Navegação lateral do app web com grupos, badge de contagem e conta no rodapé.",
+      "pairs": [
+        "app-shell",
+        "badge",
+        "tooltip",
+        "dropdown-menu",
+        "avatar"
+      ],
+      "inside": "casca do app (SidebarProvider), à esquerda do conteúdo",
+      "motion": "recolher para ícones com a transição do componente; Sheet no celular",
+      "avoid": [
+        "mais de 8 áreas no primeiro nível",
+        "ação de página dentro da sidebar",
+        "ícone recolhido sem tooltip"
+      ]
+    },
+    "app-shell": {
+      "role": "Casca pronta de app web: sidebar que recolhe, topbar e menu no celular.",
+      "pairs": [
+        "sidebar",
+        "page-header",
+        "breadcrumb",
+        "command",
+        "avatar"
+      ],
+      "inside": "raiz do layout autenticado",
+      "motion": "a do sidebar; topbar em vidro sobre o conteúdo que rola",
+      "avoid": [
+        "montar outra casca por página",
+        "topbar com ações de uma página só",
+        "vidro também no conteúdo"
+      ]
+    },
+    "menubar": {
+      "role": "Menus de app desktop (Arquivo, Editar, Exibir) com atalhos.",
+      "pairs": [
+        "kbd",
+        "dropdown-menu",
+        "toolbar"
+      ],
+      "inside": "topo de editor ou app desktop",
+      "motion": "abertura do menu, sem atraso entre menus vizinhos",
+      "avoid": [
+        "em site ou app mobile",
+        "menu com uma ação só",
+        "atalho sem Kbd"
+      ]
+    },
+    "bottom-bar": {
+      "role": "Ação grudada no rodapé do celular (Comprar, Salvar) com resumo à esquerda.",
+      "pairs": [
+        "button",
+        "price-tag",
+        "quantity-stepper",
+        "keyboard-toolbar"
+      ],
+      "inside": "rodapé de tela de detalhe, checkout ou formulário mobile",
+      "motion": "sobe com o teclado (keyboard=lift); vidro só sobre mídia",
+      "avoid": [
+        "junto com tab-bar",
+        "duas primárias",
+        "esconder o total do que será pago"
+      ]
+    },
+    "keyboard-toolbar": {
+      "role": "Barra acima do teclado: campo anterior/próximo, OK e atalhos de texto.",
+      "pairs": [
+        "input",
+        "textarea",
+        "bottom-bar"
+      ],
+      "inside": "formulário longo no celular",
+      "motion": "sobe com o teclado, sem animação própria",
+      "avoid": [
+        "no desktop",
+        "atalho que fecha o teclado",
+        "mais de 4 atalhos"
+      ]
+    },
+    "toolbar": {
+      "role": "Ferramentas de editor ou lista com um Tab e setas; grupos de alternância.",
+      "pairs": [
+        "toggle-group",
+        "button",
+        "tooltip",
+        "separator",
+        "dropdown-menu"
+      ],
+      "inside": "topo de editor, acima de tabela, flutuante sobre canvas",
+      "motion": "variante flutuante entra com fade; sem mola",
+      "avoid": [
+        "ícone sem tooltip",
+        "mais de 3 grupos sem separador",
+        "ação primária de página dentro dela"
+      ]
+    },
+    "dock": {
+      "role": "Atalhos no desktop com ampliação perto do ponteiro, em vidro.",
+      "pairs": [
+        "tooltip",
+        "badge",
+        "kbd"
+      ],
+      "inside": "rodapé flutuante de app desktop ou portfólio",
+      "motion": "ampliação contínua; desligada com movimento reduzido",
+      "avoid": [
+        "no celular",
+        "como navegação principal de app de gestão",
+        "mais de 9 itens"
+      ]
+    },
+    "select": {
+      "role": "Escolha única numa lista curta na web, com o visual do input.",
+      "pairs": [
+        "field",
+        "label",
+        "form-validation"
+      ],
+      "inside": "field de formulário, filtros de page-header",
+      "motion": "abertura do popover",
+      "avoid": [
+        "mais de 15 opções (use combobox)",
+        "2 a 4 opções (use toggle-group ou radio-group)",
+        "no celular para lista curta (use native-select)"
+      ]
+    },
+    "native-select": {
+      "role": "Select do sistema no celular: roda no iPhone, folha no Android.",
+      "pairs": [
+        "field",
+        "label"
+      ],
+      "inside": "formulário mobile",
+      "motion": "nativo do sistema",
+      "avoid": [
+        "no desktop quando o visual importa",
+        "listas com busca"
+      ]
+    },
+    "combobox": {
+      "role": "Muitas opções com busca sem acento, única ou múltipla com chips.",
+      "pairs": [
+        "field",
+        "popover",
+        "command",
+        "badge"
+      ],
+      "inside": "formulário, filtro de tabela",
+      "motion": "abertura do popover; chips entram sem mola",
+      "avoid": [
+        "menos de 8 opções",
+        "múltipla sem mostrar quantas foram escolhidas",
+        "busca sem estado vazio"
+      ]
+    },
+    "cascader": {
+      "role": "Escolha em níveis (Estado → Cidade → Bairro) com colunas ou drill-down.",
+      "pairs": [
+        "field",
+        "input-cep"
+      ],
+      "inside": "formulário de endereço, categoria de produto",
+      "motion": "colunas deslizando; drill-down no celular",
+      "avoid": [
+        "níveis que não dependem um do outro",
+        "mais de 4 níveis",
+        "pedir Estado/Cidade quando o CEP resolve"
+      ]
+    },
+    "select-list": {
+      "role": "iOS: a linha mostra o valor e abre as opções como tela na pilha.",
+      "pairs": [
+        "list-group",
+        "stack-view",
+        "search-bar"
+      ],
+      "inside": "list-group inset de ajustes",
+      "motion": "push da pilha",
+      "avoid": [
+        "na web desktop",
+        "opções curtas que cabem num toggle-group"
+      ]
+    },
+    "wheel-picker": {
+      "role": "iOS: roda com scroll-snap para valores curtos (hora, quantidade).",
+      "pairs": [
+        "drawer",
+        "date-time-field",
+        "list-group"
+      ],
+      "inside": "drawer ou linha expandida de lista",
+      "motion": "inércia do scroll-snap com tique",
+      "avoid": [
+        "lista longa com texto",
+        "no desktop sem alternativa de teclado"
+      ]
+    },
+    "radio-group": {
+      "role": "Até 5 opções exclusivas visíveis de uma vez, com descrição.",
+      "pairs": [
+        "field",
+        "label",
+        "card"
+      ],
+      "inside": "field de formulário, card de plano",
+      "motion": "marcação do componente",
+      "avoid": [
+        "mais de 5 opções",
+        "opção sem rótulo clicável",
+        "uma opção só"
+      ]
+    },
+    "input-date": {
+      "role": "Digitar data dd/mm/aaaa com máscara e valor ISO.",
+      "pairs": [
+        "field",
+        "label",
+        "date-picker"
+      ],
+      "inside": "formulário (nascimento, vencimento)",
+      "motion": "nenhum",
+      "avoid": [
+        "calendário para data de nascimento",
+        "formato diferente de dd/mm/aaaa"
+      ]
+    },
+    "input-phone": {
+      "role": "Digitar telefone BR com DDD; valor em dígitos e E.164.",
+      "pairs": [
+        "field",
+        "label",
+        "input-cep"
+      ],
+      "inside": "cadastro, checkout, contato",
+      "motion": "nenhum",
+      "avoid": [
+        "três campos separados (DDD, prefixo, número)",
+        "validar só no envio",
+        "pedir +55 ao usuário"
+      ]
+    },
+    "date-picker": {
+      "role": "Escolher data ou intervalo no popover, com atalhos de período.",
+      "pairs": [
+        "field",
+        "popover",
+        "calendar",
+        "toggle-group"
+      ],
+      "inside": "filtro de page-header, formulário web",
+      "motion": "abertura do popover; troca de mês do calendar",
+      "avoid": [
+        "digitar data distante (use input-date)",
+        "intervalo sem atalhos (7 dias, mês)"
+      ]
+    },
+    "calendar": {
+      "role": "Calendário inline quando ele é o conteúdo da tela.",
+      "pairs": [
+        "card",
+        "date-picker",
+        "badge"
+      ],
+      "inside": "card de agenda, sheet de reserva",
+      "motion": "troca de mês animada curta",
+      "avoid": [
+        "inline em formulário comum",
+        "marcar estado só por cor"
+      ]
+    },
+    "date-time-field": {
+      "role": "iOS: pílulas de data e hora que abrem na própria lista.",
+      "pairs": [
+        "list-group",
+        "wheel-picker",
+        "calendar"
+      ],
+      "inside": "list-group inset",
+      "motion": "expansão da linha com mola curta",
+      "avoid": [
+        "na web desktop",
+        "abrir modal para escolher hora"
+      ]
+    },
+    "week-strip": {
+      "role": "Escolher o dia da semana corrente (agenda, hábitos).",
+      "pairs": [
+        "calendar",
+        "list-group",
+        "activity-ring"
+      ],
+      "inside": "topo de tela de agenda ou hábitos",
+      "motion": "arrastar troca de semana; seleção com indicador",
+      "avoid": [
+        "como seletor de data distante",
+        "dia com registro só por cor"
+      ]
+    },
+    "dialog": {
+      "role": "Tarefa curta em modal na web; vira folha no celular (mobile=\"sheet\").",
+      "pairs": [
+        "button",
+        "field",
+        "form-validation",
+        "dialog-stack"
+      ],
+      "inside": "acima da página (Portal)",
+      "motion": "escala .96 + fade, duração do tema",
+      "avoid": [
+        "formulário longo (use sheet ou página)",
+        "dialog dentro de dialog",
+        "fechar perdendo o que foi digitado"
+      ]
+    },
+    "alert-dialog": {
+      "role": "Confirmação que interrompe, para ação grande e irreversível.",
+      "pairs": [
+        "button",
+        "dropdown-menu"
+      ],
+      "inside": "acima da página, aberto por ação destrutiva",
+      "motion": "do dialog, sem mola",
+      "avoid": [
+        "confirmar ação reversível",
+        "texto sem o nome do que some",
+        "botão Confirmar genérico"
+      ]
+    },
+    "drawer": {
+      "role": "Gaveta arrastável no celular para ações e filtros, com detents.",
+      "pairs": [
+        "button",
+        "field",
+        "wheel-picker",
+        "list-group"
+      ],
+      "inside": "rodapé da tela mobile",
+      "motion": "mola do arraste; detents",
+      "avoid": [
+        "no desktop",
+        "drawer dentro de drawer",
+        "conteúdo que precisa de tela cheia"
+      ]
+    },
+    "action-sheet": {
+      "role": "iOS: lista de ações com destrutiva em vermelho e Cancelar separado.",
+      "pairs": [
+        "button",
+        "context-preview"
+      ],
+      "inside": "aberta por botão … ou toque longo",
+      "motion": "sobe com mola; vidro",
+      "avoid": [
+        "mais de 6 ações",
+        "ação principal escondida nela",
+        "no desktop (use dropdown-menu)"
+      ]
+    },
+    "dialog-stack": {
+      "role": "Fluxo em etapas empilhadas; Esc volta uma etapa.",
+      "pairs": [
+        "dialog",
+        "stepper",
+        "button",
+        "field"
+      ],
+      "inside": "acima da página",
+      "motion": "etapa anterior recua atrás da nova",
+      "avoid": [
+        "mais de 4 etapas (use página com stepper)",
+        "etapa sem voltar"
+      ]
+    },
+    "context-preview": {
+      "role": "iOS: segurar abre a prévia grande com menu de ações.",
+      "pairs": [
+        "action-sheet",
+        "product-card",
+        "card"
+      ],
+      "inside": "linha ou card de mídia/produto",
+      "motion": "prévia cresce com mola sobre fundo desfocado",
+      "avoid": [
+        "única forma de agir",
+        "em lista de texto simples"
+      ]
+    },
+    "share-sheet": {
+      "role": "Compartilhar: folha nativa no celular, própria onde não existe.",
+      "pairs": [
+        "button",
+        "copy-button",
+        "sonner"
+      ],
+      "inside": "aberta por botão Compartilhar",
+      "motion": "a da folha",
+      "avoid": [
+        "botões de rede social soltos na página",
+        "sem Copiar link"
+      ]
+    },
+    "alert": {
+      "role": "Mensagem em linha com status e ação, perto do que ela explica.",
+      "pairs": [
+        "card",
+        "field",
+        "button",
+        "form-validation"
+      ],
+      "inside": "topo do card ou do formulário afetado",
+      "motion": "nenhum",
+      "avoid": [
+        "alert de sucesso que nunca some (use sonner)",
+        "vários alerts empilhados",
+        "status só por cor"
+      ]
+    },
+    "banner": {
+      "role": "Faixa fechável no topo da página ou seção para aviso de sistema.",
+      "pairs": [
+        "button",
+        "app-shell"
+      ],
+      "inside": "topo da página, acima do page-header",
+      "motion": "recolhe a altura ao fechar",
+      "avoid": [
+        "mais de um banner",
+        "banner para resultado de ação (use sonner)",
+        "fechar sem lembrar a escolha"
+      ]
+    },
+    "hud": {
+      "role": "iOS: aviso central rápido (Copiado, Salvo) que some sozinho.",
+      "pairs": [
+        "copy-button",
+        "sonner"
+      ],
+      "inside": "HudHost na raiz",
+      "motion": "escala + fade curtos",
+      "avoid": [
+        "mensagem com ação ou Desfazer (use sonner)",
+        "erro que precisa de leitura"
+      ]
+    },
+    "notification-banner": {
+      "role": "Notificação in-app que desce do topo e some sozinha.",
+      "pairs": [
+        "avatar",
+        "button",
+        "chat"
+      ],
+      "inside": "host na raiz do app mobile",
+      "motion": "desce com mola; arrastar para cima dispensa",
+      "avoid": [
+        "resultado da ação da própria tela (use sonner)",
+        "mais de uma ao mesmo tempo"
+      ]
+    },
+    "result": {
+      "role": "Tela de desfecho (sucesso, erro, 403, 404) com o próximo passo.",
+      "pairs": [
+        "button",
+        "card",
+        "empty"
+      ],
+      "inside": "conteúdo inteiro da página ou do dialog",
+      "motion": "check desenhado uma vez",
+      "avoid": [
+        "sem ação de saída",
+        "para erro de campo",
+        "ilustração no lugar do texto"
+      ]
+    },
+    "table": {
+      "role": "Tabela simples com densidade do tema, cabeçalho fixo e números à direita.",
+      "pairs": [
+        "card",
+        "badge",
+        "dropdown-menu",
+        "pagination",
+        "checkbox"
+      ],
+      "inside": "card ou conteúdo principal",
+      "motion": "hover de linha apenas",
+      "avoid": [
+        "dados que precisam ordenar/filtrar (use data-table)",
+        "celular sem alternativa em lista",
+        "zebra e grade ao mesmo tempo"
+      ]
+    },
+    "list-group": {
+      "role": "Lista agrupada do iOS (Ajustes) com ícone, valor, seta ou switch.",
+      "pairs": [
+        "switch",
+        "select-list",
+        "date-time-field",
+        "stack-view",
+        "badge"
+      ],
+      "inside": "tela de ajustes ou detalhe mobile",
+      "motion": "toque da linha; push da pilha",
+      "avoid": [
+        "na web desktop densa",
+        "card dentro da linha",
+        "mais de 8 linhas por grupo sem título"
+      ]
+    },
+    "timeline": {
+      "role": "Linha do tempo (rastreio, atividade) com status em ícone e texto.",
+      "pairs": [
+        "card",
+        "badge",
+        "relative-time",
+        "avatar"
+      ],
+      "inside": "card de detalhe, sheet de histórico",
+      "motion": "nenhum ou entrada em sequência curta na primeira vez",
+      "avoid": [
+        "status só por cor",
+        "mais de 10 itens sem recolher",
+        "ordem invertida sem dizer"
+      ]
+    },
+    "description-list": {
+      "role": "Chave → valor em tela de detalhe, com copiar.",
+      "pairs": [
+        "card",
+        "copy-button",
+        "badge",
+        "sheet"
+      ],
+      "inside": "card de detalhe, sheet-body",
+      "motion": "nenhum",
+      "avoid": [
+        "formulário disfarçado de lista",
+        "rótulos longos",
+        "valor vazio sem traço"
+      ]
+    },
+    "tree-view": {
+      "role": "Árvore com teclado e seleção, para hierarquia real.",
+      "pairs": [
+        "checkbox",
+        "scroll-area",
+        "sidebar",
+        "resizable"
+      ],
+      "inside": "painel lateral, explorador de arquivos",
+      "motion": "expansão curta",
+      "avoid": [
+        "hierarquia de 2 níveis (use accordion)",
+        "mais de 5 níveis visíveis"
+      ]
+    },
+    "transfer-list": {
+      "role": "Mover itens entre duas listas com busca.",
+      "pairs": [
+        "field",
+        "checkbox",
+        "card"
+      ],
+      "inside": "formulário de permissões ou atribuição",
+      "motion": "anúncio do que foi movido; sem animação longa",
+      "avoid": [
+        "menos de 10 itens (use checkbox)",
+        "no celular sem alternativa"
+      ]
+    },
+    "card-acao-lateral": {
+      "role": "Card de lista com ação nas bordas: puxar executa a próxima ação com Desfazer.",
+      "pairs": [
+        "sonner",
+        "badge",
+        "timeline"
+      ],
+      "inside": "lista de ordens de serviço, tarefas",
+      "motion": "mola do arraste; alternativa por toque e teclado",
+      "avoid": [
+        "mais de uma ação por lado",
+        "sem Desfazer",
+        "em lista de leitura"
+      ]
+    },
+    "sortable-list": {
+      "role": "Lista reordenável por alça e teclado (Motion opcional).",
+      "pairs": [
+        "card",
+        "item",
+        "sonner"
+      ],
+      "inside": "card de configuração de ordem, playlist",
+      "motion": "mola do tema ao soltar; saída animada",
+      "avoid": [
+        "reordenar sem alça visível",
+        "lista longa sem rolagem automática",
+        "quando a ordem não importa"
+      ]
+    },
+    "kanban": {
+      "role": "Quadro com arraste entre colunas, limite WIP e teclado (Motion opcional).",
+      "pairs": [
+        "card",
+        "badge",
+        "avatar",
+        "sheet",
+        "filter-counters"
+      ],
+      "inside": "conteúdo principal de app de tarefas",
+      "motion": "mola ao soltar; coluna destaca ao receber",
+      "avoid": [
+        "mais de 7 colunas",
+        "card com formulário inteiro (abra em sheet)",
+        "sem alternativa ao arraste"
+      ]
+    },
+    "carousel": {
+      "role": "Carrossel com scroll-snap e indicadores, autoplay pausável.",
+      "pairs": [
+        "card",
+        "product-card",
+        "page-control",
+        "aspect-ratio"
+      ],
+      "inside": "seção de landing, vitrine",
+      "motion": "scroll-snap nativo; autoplay pausa no hover/foco",
+      "avoid": [
+        "conteúdo essencial escondido nos slides",
+        "autoplay sem Pausar",
+        "mais de 8 slides"
+      ]
+    },
+    "card-stack": {
+      "role": "Pilha ou leque de cards: o da frente vai para o fim ao arrastar.",
+      "pairs": [
+        "card",
+        "ticket-card",
+        "button"
+      ],
+      "inside": "destaque de onboarding, cartões, bilhetes",
+      "motion": "mola do arraste; cards de trás inert",
+      "avoid": [
+        "como lista de dados",
+        "mais de 5 cards"
+      ]
+    },
+    "image-viewer": {
+      "role": "Lightbox com zoom, deslizar e miniaturas.",
+      "pairs": [
+        "aspect-ratio",
+        "product-card",
+        "carousel"
+      ],
+      "inside": "acima da página, aberto da miniatura",
+      "motion": "cresce da miniatura; pinça e duplo toque",
+      "avoid": [
+        "imagem decorativa",
+        "sem fechar por Esc e gesto"
+      ]
+    },
+    "product-card": {
+      "role": "Card de vitrine mobile: fotos, preço em pílula, favoritar e CTA.",
+      "pairs": [
+        "price-tag",
+        "badge",
+        "page-control",
+        "quantity-stepper",
+        "bottom-bar"
+      ],
+      "inside": "grade de vitrine, carrossel",
+      "motion": "pressão do card; fotos por scroll-snap",
+      "avoid": [
+        "mais de 3 tags",
+        "dois CTAs",
+        "preço sem Pix/parcelas quando existir"
+      ]
+    },
+    "story-viewer": {
+      "role": "Stories com barras de progresso, toque para avançar e Pausar visível.",
+      "pairs": [
+        "avatar",
+        "button"
+      ],
+      "inside": "tela cheia mobile",
+      "motion": "barras lineares; arrastar para baixo fecha",
+      "avoid": [
+        "conteúdo obrigatório só em story",
+        "sem Pausar"
+      ]
+    },
+    "video-player": {
+      "role": "Player com controles próprios, capítulos, legendas e teclado.",
+      "pairs": [
+        "aspect-ratio",
+        "card",
+        "dialog"
+      ],
+      "inside": "conteúdo de aula, landing de produto",
+      "motion": "controles somem durante a reprodução",
+      "avoid": [
+        "autoplay com som",
+        "sem legendas"
+      ]
+    },
+    "command": {
+      "role": "Paleta de comandos com busca sem acento e atalhos.",
+      "pairs": [
+        "kbd",
+        "dialog",
+        "app-shell",
+        "combobox"
+      ],
+      "inside": "dialog global (⌘K); material=glass embutido sobre conteúdo rico",
+      "motion": "abertura do dialog",
+      "avoid": [
+        "única forma de navegar",
+        "resultado sem grupo nem atalho"
+      ]
+    },
+    "search-expand": {
+      "role": "Lupa que expande em pílula com sugestões.",
+      "pairs": [
+        "navigation-menu",
+        "input-group",
+        "kbd"
+      ],
+      "inside": "header de site, topbar compacta",
+      "motion": "expansão com a duração do tema; reduzido = sem expansão",
+      "avoid": [
+        "busca é a ação principal (deixe aberta)",
+        "sem sugestões nem vazio"
+      ]
+    },
+    "input-group": {
+      "role": "Campo com adornos: ícone, texto, botão ou Kbd.",
+      "pairs": [
+        "input",
+        "button",
+        "kbd",
+        "copy-button"
+      ],
+      "inside": "busca de lista, campo com unidade (R$, %)",
+      "motion": "estados do input no grupo",
+      "avoid": [
+        "mais de um botão no grupo",
+        "ícone decorativo sem função"
+      ]
+    },
+    "section-index": {
+      "role": "Índice A–Z para pular numa lista longa no celular.",
+      "pairs": [
+        "list-group",
+        "search-bar"
+      ],
+      "inside": "borda direita da lista de contatos",
+      "motion": "balão da letra com tique",
+      "avoid": [
+        "lista curta",
+        "lista que não é alfabética"
+      ]
+    },
+    "mentions": {
+      "role": "Textarea com sugestões por @ e #.",
+      "pairs": [
+        "textarea",
+        "avatar",
+        "chat"
+      ],
+      "inside": "comentários, chat interno",
+      "motion": "lista na altura do cursor",
+      "avoid": [
+        "sugestões sem foto/nome",
+        "sem busca sem acento"
+      ]
+    },
+    "price-tag": {
+      "role": "Preço BR com Pix em destaque, desconto e parcelas com total.",
+      "pairs": [
+        "product-card",
+        "bottom-bar",
+        "card",
+        "badge"
+      ],
+      "inside": "card de produto, bottom-bar de checkout",
+      "motion": "nenhum",
+      "avoid": [
+        "parcelas sem total",
+        "esconder juros",
+        "preço \"de\" sem acessibilidade"
+      ]
+    },
+    "ticket-card": {
+      "role": "Bilhete (embarque, ingresso) com picote e canhoto.",
+      "pairs": [
+        "qr-code",
+        "card-stack",
+        "badge"
+      ],
+      "inside": "carteira, detalhe da reserva",
+      "motion": "nenhum ou entrada curta",
+      "avoid": [
+        "como card genérico",
+        "dados de embarque fora do canhoto"
+      ]
+    },
+    "border-beam": {
+      "role": "Feixe de luz na borda: destaque raro de um card ou botão.",
+      "pairs": [
+        "card",
+        "button",
+        "badge"
+      ],
+      "inside": "card do plano recomendado, CTA de landing",
+      "motion": "loop lento; parado com movimento reduzido",
+      "avoid": [
+        "mais de um por tela",
+        "em app de uso diário",
+        "em controle de formulário"
+      ]
+    },
+    "spotlight-card": {
+      "role": "Card com luz que segue o cursor (landing, portfólio).",
+      "pairs": [
+        "card",
+        "button"
+      ],
+      "inside": "grade de recursos de landing",
+      "motion": "luz segue o ponteiro; nada no toque",
+      "avoid": [
+        "em dashboard",
+        "informação que só aparece com a luz"
+      ]
+    },
+    "shadow-card": {
+      "role": "Card com sombra de expressão (camadas, flutuante, brutalista).",
+      "pairs": [
+        "card",
+        "button",
+        "badge"
+      ],
+      "inside": "landing, portfólio, destaque de seção",
+      "motion": "elevação no hover quando interativo",
+      "avoid": [
+        "sombra de expressão em app denso",
+        "misturar estilos de sombra na mesma tela"
+      ]
+    },
+    "pagination": {
+      "role": "Navegar páginas com resumo \"1–50 de 1.240\".",
+      "pairs": [
+        "data-table",
+        "table",
+        "select"
+      ],
+      "inside": "rodapé da tabela ou da grade",
+      "motion": "nenhum",
+      "avoid": [
+        "junto com rolagem infinita",
+        "sem resumo do total"
+      ]
+    },
+    "load-more": {
+      "role": "Carregar mais ou rolagem infinita com anúncio e fallback.",
+      "pairs": [
+        "skeleton",
+        "card",
+        "animated-list"
+      ],
+      "inside": "fim de feed ou grade",
+      "motion": "itens novos entram com fade curto",
+      "avoid": [
+        "rolagem infinita com footer importante",
+        "sem anunciar quantos chegaram"
+      ]
+    },
+    "collapsible": {
+      "role": "Mostrar/esconder um bloco com altura animada.",
+      "pairs": [
+        "button",
+        "card",
+        "accordion"
+      ],
+      "inside": "dentro de card ou formulário (Opções avançadas)",
+      "motion": "altura animada; sem animação no reduzido",
+      "avoid": [
+        "esconder campo obrigatório",
+        "várias seções (use accordion)"
+      ]
+    },
+    "spoiler": {
+      "role": "\"Mostrar mais\" para texto longo, só quando precisa.",
+      "pairs": [
+        "card",
+        "description-list"
+      ],
+      "inside": "descrição de produto, comentário longo",
+      "motion": "altura animada curta",
+      "avoid": [
+        "esconder preço ou condição",
+        "cortar no meio da primeira linha"
+      ]
+    },
+    "usage-meter": {
+      "role": "Uso de limite do plano com aviso aos 80%.",
+      "pairs": [
+        "card",
+        "button",
+        "locked-feature",
+        "sidebar"
+      ],
+      "inside": "rodapé da sidebar, card de plano",
+      "motion": "barra cresce uma vez",
+      "avoid": [
+        "sem ação ao chegar no limite",
+        "perigo só por cor"
+      ]
+    },
+    "gauge-chart": {
+      "role": "Medidor com faixas nomeadas e meta.",
+      "pairs": [
+        "card",
+        "stat-card"
+      ],
+      "inside": "card de indicador com meta",
+      "motion": "arco desenha uma vez",
+      "avoid": [
+        "número sem meta",
+        "vários gauges lado a lado"
+      ]
+    },
+    "segmented-bar": {
+      "role": "Barra de alocação proporcional com legenda em texto.",
+      "pairs": [
+        "card",
+        "stat-card",
+        "description-list"
+      ],
+      "inside": "card de orçamento, armazenamento",
+      "motion": "fatias crescem uma vez",
+      "avoid": [
+        "mais de 6 fatias",
+        "legenda só por cor"
+      ]
+    },
+    "activity-ring": {
+      "role": "Anéis de meta concêntricos (hábitos, saúde).",
+      "pairs": [
+        "card",
+        "week-strip",
+        "stat-card"
+      ],
+      "inside": "card de resumo do dia",
+      "motion": "anéis enchem uma vez",
+      "avoid": [
+        "mais de 3 anéis",
+        "em painel financeiro"
+      ]
+    },
+    "progress-columns": {
+      "role": "Colunas de progresso por dia ou categoria.",
+      "pairs": [
+        "card",
+        "week-strip"
+      ],
+      "inside": "card de resumo semanal",
+      "motion": "colunas sobem uma vez",
+      "avoid": [
+        "mais de 12 colunas",
+        "sem rótulo de valor"
+      ]
+    },
+    "stepper": {
+      "role": "Indicador de etapas de wizard ou checkout.",
+      "pairs": [
+        "dialog-stack",
+        "card",
+        "button",
+        "form-validation"
+      ],
+      "inside": "topo do fluxo em etapas",
+      "motion": "✓ na concluída; sem mola",
+      "avoid": [
+        "mais de 6 etapas",
+        "etapas não clicáveis para voltar"
+      ]
+    },
+    "progress": {
+      "role": "Barra de progresso determinada ou indeterminada.",
+      "pairs": [
+        "file-upload",
+        "card",
+        "sonner"
+      ],
+      "inside": "dentro do item que progride",
+      "motion": "barra contínua; indeterminado só quando necessário",
+      "avoid": [
+        "progresso inventado",
+        "barra global para tarefa de um item"
+      ]
+    },
+    "countdown": {
+      "role": "Contagem regressiva (oferta, código, evento).",
+      "pairs": [
+        "card",
+        "banner",
+        "button"
+      ],
+      "inside": "banner de oferta, tela de código",
+      "motion": "troca de dígito curta",
+      "avoid": [
+        "prazo falso",
+        "contagem em segundos sem necessidade"
+      ]
+    },
+    "spinner": {
+      "role": "Espera curta de tamanho desconhecido, com rótulo.",
+      "pairs": [
+        "button",
+        "card"
+      ],
+      "inside": "dentro do botão (loading) ou do bloco que carrega",
+      "motion": "giro contínuo (exceção do verify)",
+      "avoid": [
+        "abaixo de ~1 s",
+        "página inteira quando dá para mostrar skeleton"
+      ]
+    },
+    "input": {
+      "role": "Campo de texto com os estados do tema.",
+      "pairs": [
+        "field",
+        "label",
+        "input-group",
+        "form-validation"
+      ],
+      "inside": "field de formulário",
+      "motion": "nenhum",
+      "avoid": [
+        "placeholder no lugar do rótulo",
+        "largura que não indica o tamanho esperado"
+      ]
+    },
+    "textarea": {
+      "role": "Texto longo que cresce com o conteúdo.",
+      "pairs": [
+        "field",
+        "label",
+        "mentions"
+      ],
+      "inside": "field de formulário, comentário",
+      "motion": "cresce sem pular",
+      "avoid": [
+        "altura fixa com rolagem interna curta",
+        "sem contador quando há limite"
+      ]
+    },
+    "label": {
+      "role": "Rótulo de controle, sempre visível.",
+      "pairs": [
+        "field",
+        "input",
+        "checkbox",
+        "switch"
+      ],
+      "inside": "acima do campo ou ao lado do controle",
+      "motion": "nenhum",
+      "avoid": [
+        "rótulo só como placeholder",
+        "rótulo que não foca o campo"
+      ]
+    },
+    "separator": {
+      "role": "Divisória entre grupos quando o espaço não basta.",
+      "pairs": [
+        "item",
+        "toolbar",
+        "dropdown-menu",
+        "card"
+      ],
+      "inside": "entre grupos de itens",
+      "motion": "nenhum",
+      "avoid": [
+        "separar tudo (use espaçamento)",
+        "separador e borda juntos"
+      ]
+    },
+    "field": {
+      "role": "Monta rótulo, descrição, erro e grupos de um campo.",
+      "pairs": [
+        "input",
+        "select",
+        "label",
+        "form-validation",
+        "checkbox"
+      ],
+      "inside": "formulário, card de configurações",
+      "motion": "erro entra sem tremida",
+      "avoid": [
+        "erro só por cor",
+        "descrição longa no lugar de ajuda contextual"
+      ]
+    },
+    "checkbox": {
+      "role": "Marcação múltipla ou aceite, com indeterminado.",
+      "pairs": [
+        "field",
+        "label",
+        "table",
+        "tree-view"
+      ],
+      "inside": "lista de opções, cabeçalho de tabela",
+      "motion": "marcação do componente",
+      "avoid": [
+        "opção exclusiva (use radio-group)",
+        "ação imediata (use switch)"
+      ]
+    },
+    "tabs": {
+      "role": "Alternar vistas da mesma tela, estado na URL.",
+      "pairs": [
+        "card",
+        "page-header",
+        "data-table"
+      ],
+      "inside": "abaixo do page-header, topo de card",
+      "motion": "indicador desliza",
+      "avoid": [
+        "navegar entre páginas diferentes",
+        "mais de 6 abas",
+        "abas dentro de abas"
+      ]
+    },
+    "hover-card": {
+      "role": "Prévia rica ao passar o mouse (pessoa, link).",
+      "pairs": [
+        "avatar",
+        "card",
+        "button"
+      ],
+      "inside": "nome de usuário, link de item",
+      "motion": "atraso de abertura; fade",
+      "avoid": [
+        "informação essencial (não abre no toque)",
+        "ação crítica dentro dela"
+      ]
+    },
+    "tour": {
+      "role": "Tour guiado de primeiro acesso, uma vez por versão.",
+      "pairs": [
+        "button",
+        "popover",
+        "whats-new"
+      ],
+      "inside": "TourProvider na raiz; gatilho no menu de ajuda",
+      "motion": "spotlight move entre alvos; reduzido = sem deslize",
+      "avoid": [
+        "mais de 6 passos",
+        "tour em toda visita",
+        "explicar o óbvio"
+      ]
+    },
+    "input-document": {
+      "role": "CPF ou CNPJ num campo só, com máscara e validação.",
+      "pairs": [
+        "field",
+        "label",
+        "form-validation"
+      ],
+      "inside": "cadastro, checkout",
+      "motion": "nenhum",
+      "avoid": [
+        "dois campos para CPF e CNPJ",
+        "validar a cada tecla"
+      ]
+    },
+    "input-cep": {
+      "role": "CEP que preenche o endereço no 8º dígito.",
+      "pairs": [
+        "field",
+        "cascader",
+        "input"
+      ],
+      "inside": "início do bloco de endereço",
+      "motion": "campos preenchidos sem pular",
+      "avoid": [
+        "pedir rua antes do CEP",
+        "bloquear edição do endereço preenchido"
+      ]
+    },
+    "input-currency": {
+      "role": "Valor em reais digitado pelos centavos.",
+      "pairs": [
+        "field",
+        "amount-pad",
+        "price-tag"
+      ],
+      "inside": "formulário de valor, filtro de preço",
+      "motion": "nenhum",
+      "avoid": [
+        "guardar em float",
+        "campo sem R$ visível"
+      ]
+    },
+    "file-upload": {
+      "role": "Envio com arrastar/colar, prévia, progresso e tentar de novo.",
+      "pairs": [
+        "field",
+        "progress",
+        "image-crop",
+        "button"
+      ],
+      "inside": "formulário, card de anexos",
+      "motion": "progresso por arquivo",
+      "avoid": [
+        "sem dizer tipos e tamanho aceitos",
+        "erro sem tentar de novo"
+      ]
+    },
+    "filter-counters": {
+      "role": "Contadores que filtram a lista por status.",
+      "pairs": [
+        "data-table",
+        "kanban",
+        "badge",
+        "page-header"
+      ],
+      "inside": "acima da lista ou tabela",
+      "motion": "troca de seleção curta",
+      "avoid": [
+        "contador que não filtra",
+        "mais de 6 contadores"
+      ]
+    },
+    "permission-matrix": {
+      "role": "Matriz papel × permissão com selo de alterado.",
+      "pairs": [
+        "checkbox",
+        "card",
+        "button",
+        "badge"
+      ],
+      "inside": "tela de papéis do admin",
+      "motion": "nenhum",
+      "avoid": [
+        "salvar sem mostrar o que mudou",
+        "matriz no celular sem a lista por pessoa"
+      ]
+    },
+    "theme-toggle": {
+      "role": "Troca claro, escuro e sistema; o menu do shadcn ou uma das três variações com efeito.",
+      "pairs": [
+        "button",
+        "dropdown-menu",
+        "toggle-group",
+        "appearance-preferences"
+      ],
+      "inside": "topo (ThemeToggle/ThemeReveal), configurações (ThemeSegmented), menu do usuário (ThemeSwitch)",
+      "motion": "Toggle sem efeito; Reveal círculo, Switch cortina, Segmented dissolve; movimento reduzido troca na hora",
+      "avoid": [
+        "duas variações no mesmo topo",
+        "interruptor quando Sistema precisa estar visível (use o segmentado ou o menu)",
+        "esquecer o themeModeScript no head (flash no carregamento)"
+      ]
+    },
+    "appearance-preferences": {
+      "role": "Preferências de texto, fundo e cor com checagem de contraste.",
+      "pairs": [
+        "card",
+        "toggle-group",
+        "slider"
+      ],
+      "inside": "card de configurações de aparência",
+      "motion": "prévia ao vivo",
+      "avoid": [
+        "opção que quebra o contraste",
+        "aplicar só depois de recarregar"
+      ]
+    },
+    "locked-feature": {
+      "role": "Recurso fora do plano com CTA só para quem contrata.",
+      "pairs": [
+        "card",
+        "button",
+        "usage-meter",
+        "badge"
+      ],
+      "inside": "no lugar do recurso, linha de menu",
+      "motion": "véu com fade",
+      "avoid": [
+        "esconder o recurso sem explicar",
+        "CTA para quem não pode contratar"
+      ]
+    },
+    "chart-core": {
+      "role": "Peças comuns dos gráficos (legenda, tooltip, tabela acessível).",
+      "pairs": [
+        "line-chart",
+        "bar-chart",
+        "donut-chart"
+      ],
+      "inside": "dentro dos gráficos",
+      "motion": "nenhum",
+      "avoid": [
+        "usar sozinho como gráfico"
+      ]
+    },
+    "bar-chart": {
+      "role": "Comparar categorias ou compor totais (cascata, empilhadas).",
+      "pairs": [
+        "card",
+        "toggle-group",
+        "stat-card",
+        "empty"
+      ],
+      "inside": "card de gráfico, sheet de detalhe",
+      "motion": "barras crescem uma vez",
+      "avoid": [
+        "mais de 12 barras sem rolagem",
+        "empilhada com mais de 4 séries"
+      ]
+    },
+    "donut-chart": {
+      "role": "Parte do todo com até 5 fatias e total no centro.",
+      "pairs": [
+        "card",
+        "segmented-bar"
+      ],
+      "inside": "card de composição",
+      "motion": "fatias desenham uma vez",
+      "avoid": [
+        "mais de 5 fatias",
+        "comparar tamanhos parecidos (use barras)"
+      ]
+    },
+    "radar-chart": {
+      "role": "Comparar até 3 perfis em 3 a 10 critérios.",
+      "pairs": [
+        "card",
+        "table"
+      ],
+      "inside": "card de avaliação",
+      "motion": "desenho inicial curto",
+      "avoid": [
+        "dado temporal",
+        "mais de 3 séries"
+      ]
+    },
+    "candlestick-chart": {
+      "role": "Preço OHLC com volume (fintech).",
+      "pairs": [
+        "card",
+        "toggle-group",
+        "stat-card"
+      ],
+      "inside": "card de ativo",
+      "motion": "nenhum ao trocar período",
+      "avoid": [
+        "fora de contexto financeiro",
+        "cor de alta/baixa sem forma"
+      ]
+    },
+    "scatter-chart": {
+      "role": "Relação entre duas medidas, com tendência.",
+      "pairs": [
+        "card",
+        "table"
+      ],
+      "inside": "card de análise",
+      "motion": "pontos entram uma vez",
+      "avoid": [
+        "mais de 500 pontos sem agregação",
+        "eixos sem unidade"
+      ]
+    },
+    "heatmap-chart": {
+      "role": "Intensidade em linhas × colunas (hora × dia).",
+      "pairs": [
+        "card",
+        "toggle-group"
+      ],
+      "inside": "card de padrão de uso",
+      "motion": "nenhum",
+      "avoid": [
+        "mais de um matiz",
+        "célula sem valor no tooltip"
+      ]
+    },
+    "form-validation": {
+      "role": "Validação nativa pt-BR com resumo de erros.",
+      "pairs": [
+        "field",
+        "alert",
+        "button",
+        "stepper"
+      ],
+      "inside": "formulário",
+      "motion": "foco vai ao resumo; sem tremida",
+      "avoid": [
+        "validar a cada tecla",
+        "erro genérico sem como resolver"
+      ]
+    },
+    "breadcrumb": {
+      "role": "Trilha de onde a pessoa está, recolhida no celular.",
+      "pairs": [
+        "page-header",
+        "app-shell"
+      ],
+      "inside": "topo do page-header",
+      "motion": "nenhum",
+      "avoid": [
+        "em app de um nível",
+        "último item como link"
+      ]
+    },
+    "input-otp": {
+      "role": "Código de verificação com colar e SMS.",
+      "pairs": [
+        "field",
+        "button",
+        "countdown"
+      ],
+      "inside": "tela de verificação",
+      "motion": "foco avança sozinho",
+      "avoid": [
+        "submeter sem o último dígito",
+        "reenviar sem prazo visível"
+      ]
+    },
+    "slider": {
+      "role": "Valor contínuo ou intervalo com rótulos.",
+      "pairs": [
+        "field",
+        "input",
+        "label"
+      ],
+      "inside": "filtro de preço, ajuste de volume",
+      "motion": "polegar do iOS",
+      "avoid": [
+        "valor exato importante sem campo",
+        "passo fino demais no toque"
+      ]
+    },
+    "toggle": {
+      "role": "Botão liga/desliga de uma ferramenta (negrito, favoritar).",
+      "pairs": [
+        "toolbar",
+        "toggle-group",
+        "tooltip"
+      ],
+      "inside": "toolbar, ação de card",
+      "motion": "acento suave",
+      "avoid": [
+        "ajuste de configuração (use switch)",
+        "sem aria-pressed"
+      ]
+    },
+    "kbd": {
+      "role": "Tecla de atalho visível.",
+      "pairs": [
+        "tooltip",
+        "command",
+        "dropdown-menu"
+      ],
+      "inside": "tooltip, item de menu, dica de busca",
+      "motion": "nenhum",
+      "avoid": [
+        "atalho que não existe",
+        "em app só de toque"
+      ]
+    },
+    "button-group": {
+      "role": "Ações irmãs coladas (Anterior/Próximo, Mês/Semana).",
+      "pairs": [
+        "button",
+        "dropdown-menu",
+        "toolbar"
+      ],
+      "inside": "toolbar, page-header-actions",
+      "motion": "nenhum",
+      "avoid": [
+        "duas primárias coladas",
+        "mais de 4 botões"
+      ]
+    },
+    "avatar": {
+      "role": "Pessoa ou conta, com iniciais e status.",
+      "pairs": [
+        "item",
+        "hover-card",
+        "dropdown-menu",
+        "timeline"
+      ],
+      "inside": "linha de lista, topbar, comentário",
+      "motion": "fade da imagem",
+      "avoid": [
+        "status só por cor",
+        "avatar sem nome por perto"
+      ]
+    },
+    "scroll-area": {
+      "role": "Área rolável com barra fina e foco por teclado.",
+      "pairs": [
+        "sidebar",
+        "popover",
+        "sheet",
+        "tree-view"
+      ],
+      "inside": "painel lateral, lista em popover",
+      "motion": "nenhum",
+      "avoid": [
+        "página inteira",
+        "rolagem dentro de rolagem"
+      ]
+    },
+    "marquee": {
+      "role": "Faixa contínua de logos ou depoimentos com Pausar.",
+      "pairs": [
+        "card",
+        "avatar"
+      ],
+      "inside": "seção de landing",
+      "motion": "loop contínuo; parado no reduzido",
+      "avoid": [
+        "em app",
+        "conteúdo que precisa ser lido inteiro"
+      ]
+    },
+    "particle-hero": {
+      "role": "Hero com partículas que mudam de forma por slide.",
+      "pairs": [
+        "button",
+        "text-effect"
+      ],
+      "inside": "topo de landing",
+      "motion": "canvas; pausa e reduzido",
+      "avoid": [
+        "mais de um efeito assinatura na página",
+        "texto sobre partículas sem contraste"
+      ]
+    },
+    "animated-list": {
+      "role": "Lista cujos itens entram em sequência; item novo anima.",
+      "pairs": [
+        "item",
+        "card",
+        "sonner"
+      ],
+      "inside": "feed de atividade, notificações",
+      "motion": "mola do tema na entrada",
+      "avoid": [
+        "animar a lista inteira a cada filtro",
+        "listas longas"
+      ]
+    },
+    "copy-button": {
+      "role": "Copiar com troca de ícone e anúncio.",
+      "pairs": [
+        "input-group",
+        "code-block",
+        "description-list",
+        "hud"
+      ],
+      "inside": "ao lado do valor copiado",
+      "motion": "troca de ícone curta",
+      "avoid": [
+        "copiar sem confirmação",
+        "longe do valor"
+      ]
+    },
+    "navigation-menu": {
+      "role": "Menu de site com painel animado.",
+      "pairs": [
+        "search-expand",
+        "button"
+      ],
+      "inside": "header de site",
+      "motion": "painel muda de tamanho e desliza",
+      "avoid": [
+        "em app de gestão (use sidebar)",
+        "mais de 6 itens no topo"
+      ]
+    },
+    "context-menu": {
+      "role": "Clique direito ou toque longo com ações do item.",
+      "pairs": [
+        "dropdown-menu",
+        "kbd",
+        "table"
+      ],
+      "inside": "linha de tabela, card, arquivo",
+      "motion": "do dropdown-menu",
+      "avoid": [
+        "única forma de agir",
+        "menu diferente do botão …"
+      ]
+    },
+    "shadow-text": {
+      "role": "Sombra de texto expressiva para títulos de landing.",
+      "pairs": [
+        "text-effect",
+        "card"
+      ],
+      "inside": "título de hero ou seção",
+      "motion": "nenhum",
+      "avoid": [
+        "em texto corrido",
+        "sombra que baixa o contraste"
+      ]
+    },
+    "progressive-blur": {
+      "role": "Desfoque na borda de área que rola sob barra em vidro.",
+      "pairs": [
+        "navigation-bar",
+        "tab-bar",
+        "scroll-area"
+      ],
+      "inside": "borda superior/inferior de lista mobile",
+      "motion": "derivado do blur do tema",
+      "avoid": [
+        "sem barra por cima",
+        "em conteúdo estático"
+      ]
+    },
+    "live-island": {
+      "role": "Atividade ao vivo em pílula (timer, entrega, chamada).",
+      "pairs": [
+        "countdown",
+        "progress",
+        "avatar"
+      ],
+      "inside": "topo do app mobile",
+      "motion": "muda de forma com mola",
+      "avoid": [
+        "aviso comum (use notification-banner)",
+        "sempre visível sem atividade"
+      ]
+    },
+    "stack-view": {
+      "role": "Pilha de navegação iOS com voltar pela borda.",
+      "pairs": [
+        "navigation-bar",
+        "list-group",
+        "select-list"
+      ],
+      "inside": "conteúdo de cada aba",
+      "motion": "push/pop com paralaxe",
+      "avoid": [
+        "na web desktop",
+        "pilha com mais de 4 níveis"
+      ]
+    },
+    "quantity-stepper": {
+      "role": "Quantidade com + e −; lixeira no mínimo.",
+      "pairs": [
+        "product-card",
+        "bottom-bar",
+        "price-tag"
+      ],
+      "inside": "linha do carrinho, card de produto",
+      "motion": "número rola; segurar repete",
+      "avoid": [
+        "quantidade grande (use input)",
+        "sem limite máximo"
+      ]
+    },
+    "page-control": {
+      "role": "Pontos de página de carrossel mobile.",
+      "pairs": [
+        "carousel",
+        "product-card",
+        "whats-new"
+      ],
+      "inside": "abaixo da mídia",
+      "motion": "pílula do atual desliza",
+      "avoid": [
+        "mais de 10 páginas sem recolher",
+        "como navegação de app"
+      ]
+    },
+    "whats-new": {
+      "role": "Tela Novidades uma vez por versão.",
+      "pairs": [
+        "button",
+        "tour"
+      ],
+      "inside": "abertura do app após atualizar",
+      "motion": "itens em cascata",
+      "avoid": [
+        "mais de 4 novidades",
+        "toda abertura"
+      ]
+    },
+    "install-prompt": {
+      "role": "Convite para instalar o PWA, no momento certo.",
+      "pairs": [
+        "button",
+        "banner",
+        "sonner"
+      ],
+      "inside": "depois de uma ação de valor, menu da conta",
+      "motion": "entrada curta",
+      "avoid": [
+        "na primeira visita",
+        "repetir depois de recusado"
+      ]
+    },
+    "stretchy-header": {
+      "role": "Cabeçalho com imagem que estica e vira barra em vidro.",
+      "pairs": [
+        "navigation-bar",
+        "aspect-ratio",
+        "button"
+      ],
+      "inside": "topo de detalhe com foto (restaurante, perfil)",
+      "motion": "elástico ao puxar; parallax",
+      "avoid": [
+        "sem imagem forte",
+        "em lista operacional"
+      ]
+    },
+    "amount-pad": {
+      "role": "Valor grande com teclado numérico próprio (Pix).",
+      "pairs": [
+        "input-currency",
+        "bottom-bar",
+        "button"
+      ],
+      "inside": "tela de valor de transferência",
+      "motion": "tremida no limite",
+      "avoid": [
+        "no desktop sem teclado físico",
+        "em formulário comum"
+      ]
+    },
+    "pin-pad": {
+      "role": "Senha do app em tela dedicada com teclado próprio; dígitos nunca visíveis.",
+      "pairs": [
+        "input-otp",
+        "alert-dialog",
+        "sonner"
+      ],
+      "inside": "tela de bloqueio, confirmação de transação",
+      "motion": "tremida no erro",
+      "avoid": [
+        "código recebido por SMS (use input-otp)",
+        "mostrar os dígitos digitados"
+      ]
+    },
+    "signature-pad": {
+      "role": "Assinatura desenhada (ou digitada) para aceite e comprovante.",
+      "pairs": [
+        "field",
+        "button",
+        "bottom-bar"
+      ],
+      "inside": "contrato, aceite, vistoria (canhoto de entrega completo: delivery-receipt)",
+      "motion": "nenhum",
+      "avoid": [
+        "sem alternativa Digitar em fluxo obrigatório",
+        "área menor que 120px de altura"
+      ]
+    },
+    "delivery-receipt": {
+      "role": "Canhoto digital: provar que alguém recebeu o produto (conferir, quem recebeu, assinatura, foto e comprovante).",
+      "pairs": [
+        "list-group",
+        "drawer",
+        "signature-pad",
+        "camera-capture",
+        "share-sheet"
+      ],
+      "inside": "app do entregador, balcão de retirada, almoxarifado, ordem de serviço",
+      "motion": "ressalva desliza curta; ✓ do comprovante com escala; nada se move durante a assinatura",
+      "avoid": [
+        "CPF inteiro no comprovante",
+        "pedir localização ao abrir a tela",
+        "Confirmar desabilitado sem dizer o que falta"
+      ]
+    },
+    "color-picker": {
+      "role": "Escolher cor livre (hex) com contraste à vista; amostras para paleta fixa.",
+      "pairs": [
+        "field",
+        "popover",
+        "toggle-group"
+      ],
+      "inside": "editor de tema, etiquetas, personalização",
+      "motion": "nenhum",
+      "avoid": [
+        "picker livre quando a paleta é fixa (use ColorSwatches)",
+        "cor sem conferir contraste com o fundo"
+      ]
+    },
+    "rating": {
+      "role": "Avaliar com estrelas e rótulo; leitura com fração.",
+      "pairs": [
+        "card",
+        "textarea",
+        "field"
+      ],
+      "inside": "pós-compra, card de produto (leitura)",
+      "motion": "mola curta ao escolher",
+      "avoid": [
+        "sem rótulo do valor",
+        "obrigar comentário para avaliar"
+      ]
+    },
+    "tags-input": {
+      "role": "Etiquetas com Enter, vírgula e colar.",
+      "pairs": [
+        "field",
+        "badge",
+        "combobox"
+      ],
+      "inside": "formulário de filtro ou cadastro",
+      "motion": "duplicada pisca",
+      "avoid": [
+        "opções fixas conhecidas (use combobox)",
+        "sem limite"
+      ]
+    },
+    "chat": {
+      "role": "Conversa que gruda no fim, com digitando e Parar.",
+      "pairs": [
+        "mentions",
+        "avatar",
+        "code-block",
+        "copy-button"
+      ],
+      "inside": "tela de suporte ou IA, sheet lateral",
+      "motion": "mensagem entra curta; streaming",
+      "avoid": [
+        "rolar para o fim enquanto a pessoa lê acima",
+        "sem Parar na resposta da IA"
+      ]
+    },
+    "text-effect": {
+      "role": "Entrada de texto por palavra ou letra, ou rotação de palavra.",
+      "pairs": [
+        "particle-hero",
+        "shadow-text",
+        "button"
+      ],
+      "inside": "título de hero",
+      "motion": "uma vez; reduzido mostra o texto direto",
+      "avoid": [
+        "em texto de app",
+        "mais de um efeito por página"
+      ]
+    },
+    "fab": {
+      "role": "Ação flutuante principal no celular, com speed dial.",
+      "pairs": [
+        "tab-bar",
+        "button",
+        "tooltip"
+      ],
+      "inside": "canto inferior da lista mobile",
+      "motion": "recolhe ao rolar; cascata no speed dial",
+      "avoid": [
+        "junto com bottom-bar",
+        "mais de 5 ações no speed dial",
+        "no desktop"
+      ]
+    },
+    "aspect-ratio": {
+      "role": "Caixa de proporção fixa para mídia.",
+      "pairs": [
+        "carousel",
+        "image-viewer",
+        "video-player",
+        "product-card"
+      ],
+      "inside": "card de mídia, hero",
+      "motion": "fundo enquanto carrega",
+      "avoid": [
+        "texto dentro",
+        "proporções diferentes na mesma grade"
+      ]
+    },
+    "resizable": {
+      "role": "Painéis redimensionáveis com teclado.",
+      "pairs": [
+        "tree-view",
+        "sidebar",
+        "code-block",
+        "data-table"
+      ],
+      "inside": "editor, lista + detalhe no desktop",
+      "motion": "nenhum ao arrastar",
+      "avoid": [
+        "no celular",
+        "sem lembrar o tamanho"
+      ]
+    },
+    "code-block": {
+      "role": "Código com copiar, destaques e abas de gerenciador.",
+      "pairs": [
+        "copy-button",
+        "tabs",
+        "chat"
+      ],
+      "inside": "docs, resposta de IA, tela de instalação",
+      "motion": "nenhum",
+      "avoid": [
+        "código sem copiar",
+        "blocos longos sem recolher"
+      ]
+    },
+    "relative-time": {
+      "role": "\"há 5 minutos\" com a data completa no title.",
+      "pairs": [
+        "timeline",
+        "item",
+        "avatar"
+      ],
+      "inside": "linha de atividade, comentário",
+      "motion": "atualiza no ritmo certo",
+      "avoid": [
+        "datas de documento (use absoluta)",
+        "sem <time>"
+      ]
+    },
+    "password-strength": {
+      "role": "Força da senha com checklist de regras.",
+      "pairs": [
+        "field",
+        "input",
+        "form-validation"
+      ],
+      "inside": "abaixo do campo de senha no cadastro",
+      "motion": "barra cresce",
+      "avoid": [
+        "no login",
+        "regras escondidas"
+      ]
+    },
+    "highlight": {
+      "role": "Marca o termo buscado no resultado.",
+      "pairs": [
+        "command",
+        "data-table",
+        "search-bar"
+      ],
+      "inside": "texto do resultado de busca",
+      "motion": "nenhum",
+      "avoid": [
+        "destaque fora de busca",
+        "cor que baixa o contraste"
+      ]
+    },
+    "table-of-contents": {
+      "role": "Sumário com scrollspy para página longa.",
+      "pairs": [
+        "scroll-area",
+        "code-block"
+      ],
+      "inside": "coluna lateral de docs ou artigo",
+      "motion": "indicador desliza",
+      "avoid": [
+        "página curta",
+        "no celular sem recolher"
+      ]
+    },
+    "qr-code": {
+      "role": "QR em SVG com fundo claro fixo, para Pix e ingressos.",
+      "pairs": [
+        "copy-button",
+        "ticket-card",
+        "countdown",
+        "card"
+      ],
+      "inside": "card de pagamento Pix, bilhete",
+      "motion": "nenhum",
+      "avoid": [
+        "sem o código copia-e-cola junto",
+        "sem estado expirado"
+      ]
+    },
+    "watermark": {
+      "role": "Marca d'água repetida para documento ou prévia.",
+      "pairs": [
+        "card",
+        "image-viewer"
+      ],
+      "inside": "fundo de prévia de documento",
+      "motion": "nenhum",
+      "avoid": [
+        "sobre texto que precisa ser lido",
+        "como decoração"
+      ]
+    },
+    "image-crop": {
+      "role": "Recortar imagem (avatar, capa) com teclado.",
+      "pairs": [
+        "file-upload",
+        "dialog",
+        "avatar"
+      ],
+      "inside": "dialog depois do upload",
+      "motion": "zoom contínuo",
+      "avoid": [
+        "recorte obrigatório sem pular",
+        "máscara diferente do resultado"
+      ]
+    },
+    "virtual-list": {
+      "role": "Lista longa (milhares de linhas) sem travar a rolagem.",
+      "pairs": [
+        "item",
+        "search-bar",
+        "skeleton"
+      ],
+      "inside": "extrato, contatos, log de eventos",
+      "motion": "nenhum",
+      "avoid": [
+        "lista com menos de 200 linhas",
+        "tabela com ordenar/filtrar (use data-table virtual)"
+      ]
+    },
+    "bottom-toolbar": {
+      "role": "Ações da tela atual no rodapé do iPhone, em vidro.",
+      "pairs": [
+        "navigation-bar",
+        "list-group",
+        "action-sheet"
+      ],
+      "inside": "caixa de entrada, editor, detalhe de item",
+      "motion": "pressão com escala",
+      "avoid": [
+        "usar como navegação entre telas (use tab-bar)",
+        "mais de 5 botões"
+      ]
+    },
+    "expandable-card": {
+      "role": "Destaque editorial que abre em tela cheia com a imagem viajando.",
+      "pairs": [
+        "carousel",
+        "navigation-bar",
+        "button"
+      ],
+      "inside": "aba Hoje, guias, destaques de produto",
+      "motion": "viagem da imagem (View Transitions)",
+      "avoid": [
+        "usar como card de lista densa",
+        "mais de um cartão com o mesmo id"
+      ]
+    },
+    "stagger": {
+      "role": "Entrada em ordem de um conjunto que já está na tela (KPIs, grade de cards, lista), uma vez.",
+      "pairs": [
+        "stat-card",
+        "card",
+        "item",
+        "product-card",
+        "swap"
+      ],
+      "inside": "grade de dashboard, ItemGroup (asChild), seção de landing (trigger view)",
+      "motion": "mola do tema, 40ms entre filhos; encadeie conjuntos com delay (KPIs → lista)",
+      "avoid": [
+        "reanimar a cada render ou filtro pequeno",
+        "stagger em tabela longa (max)",
+        "dois conjuntos entrando ao mesmo tempo sem delay"
+      ]
+    },
+    "presence-list": {
+      "role": "Lista em que itens saem e voltam e os vizinhos se reacomodam sem pulo.",
+      "pairs": [
+        "item",
+        "sonner",
+        "button",
+        "swipe-actions",
+        "card"
+      ],
+      "inside": "card-content, carrinho, caixa de entrada, lista de tarefas",
+      "motion": "sai com fade + desliza (fast), altura recolhe (base); Desfazer devolve com a entrada inversa",
+      "avoid": [
+        "remover sem Desfazer quando é reversível",
+        "usar para reordenar (use sortable-list)",
+        "listas com centenas de itens (use virtual-list)"
+      ]
+    },
+    "screen-transition": {
+      "role": "Troca a tela inteira com efeito de vitrine (portas, persianas, pilha 3D, desfoque, varredura líquida).",
+      "pairs": [
+        "tab-bar",
+        "navigation-bar",
+        "progress",
+        "stack-view"
+      ],
+      "inside": "área de conteúdo do app (abaixo da barra fixa), passos de quiz/onboarding, lista → detalhe",
+      "motion": "token slower com curva emphasized; back espelha a direção; reduzido = fade",
+      "avoid": [
+        "efeito de vitrine em toda navegação comum (use um por app, guarde para momentos-chave)",
+        "envolver barra de abas ou cabeçalho fixo (só o conteúdo troca)",
+        "portas/persianas em tela com vídeo ou canvas (a cópia é estática)"
+      ]
+    },
+    "swap": {
+      "role": "Troca o estado de um bloco (carregando, resultado, vazio, passo) mantendo a página estável.",
+      "pairs": [
+        "skeleton",
+        "empty",
+        "stagger",
+        "toggle-group",
+        "stepper"
+      ],
+      "inside": "card-content abaixo de filtro, corpo de wizard, painel de resultado",
+      "motion": "fade cruzado + altura base; slide com direção em passos",
+      "avoid": [
+        "swap em volta da página inteira",
+        "trocar a cada tecla digitada sem debounce",
+        "esconder erro dentro de transição"
+      ]
+    },
+    "save-bar": {
+      "role": "Avisa que há alterações não salvas e oferece Descartar e Salvar no mesmo lugar, em telas de configuração e edição longa.",
+      "pairs": [
+        "field",
+        "form-validation",
+        "sonner",
+        "alert-dialog"
+      ],
+      "inside": "página de configurações, editor, painel lateral (sticky)",
+      "motion": "sobe com a mola; erro treme",
+      "avoid": [
+        "salvar automático e save-bar na mesma tela",
+        "botão Salvar fixo sempre visível junto da barra",
+        "esconder Descartar"
+      ]
+    },
+    "editable-text": {
+      "role": "Renomeia ou ajusta um texto curto no próprio lugar, sem abrir formulário.",
+      "pairs": [
+        "page-header",
+        "list-group",
+        "kanban",
+        "sonner"
+      ],
+      "inside": "título de página ou card, item de lista, cabeçalho de tarefa",
+      "motion": "nenhum (troca sem pulo de layout)",
+      "avoid": [
+        "formulário com vários campos (use field)",
+        "célula de tabela (use editable do data-table)",
+        "texto longo com formatação"
+      ]
+    },
+    "step-form": {
+      "role": "Divide um cadastro ou pedido longo em etapas curtas e mostra tudo numa revisão antes de enviar.",
+      "pairs": [
+        "field",
+        "input",
+        "native-select",
+        "radio-group",
+        "sonner"
+      ],
+      "inside": "página dedicada, card central, sheet de tela cheia no celular",
+      "motion": "nenhum além da barra do stepper",
+      "avoid": [
+        "etapa com um campo só",
+        "esconder o Voltar",
+        "enviar sem revisão em fluxo com dinheiro ou contrato"
+      ]
+    },
+    "photo-grid": {
+      "role": "Mostra muitas fotos ou vídeos como miniaturas e permite escolher várias para uma ação em lote.",
+      "pairs": [
+        "image-viewer",
+        "bottom-toolbar",
+        "share-sheet",
+        "action-sheet"
+      ],
+      "inside": "tela de galeria, anexos de pedido, álbum",
+      "motion": "miniatura marcada encolhe de leve",
+      "avoid": [
+        "seleção sem contagem visível",
+        "ações em lote fora da barra inferior",
+        "fotos sem alt"
+      ]
+    },
+    "camera-capture": {
+      "role": "Tira a foto de um documento ou comprovante, ou lê um QR/código de barras, sem sair da página.",
+      "pairs": [
+        "file-upload",
+        "drawer",
+        "dialog",
+        "sonner"
+      ],
+      "inside": "etapa de envio de documento, sheet de tela cheia, checkout com boleto",
+      "motion": "obturador encolhe ao tocar",
+      "avoid": [
+        "pedir a câmera ao carregar a página",
+        "sem saída para o app de câmera",
+        "manter a câmera ligada fora da tela"
+      ]
+    },
+    "lens-reveal": {
+      "role": "Abertura de marca: a cúpula vira lente que revela a próxima tela (login) e entra ao soltar.",
+      "pairs": [
+        "button",
+        "stagger",
+        "text-effect"
+      ],
+      "inside": "tela cheia de boas-vindas, antes do login",
+      "motion": "lente segue o dedo, mola ao soltar, bolhas uma vez",
+      "avoid": [
+        "em app de uso diário (só 1ª abertura)",
+        "sem toque/Enter como alternativa",
+        "conteúdo com id fixo dentro (é clonado na lente)"
+      ]
+    },
+    "undo-snackbar": {
+      "role": "Confirma ação destrutiva otimista com Desfazer e contagem; grava só no fim.",
+      "pairs": [
+        "swipe-actions",
+        "list-group",
+        "item",
+        "data-table"
+      ],
+      "inside": "host na raiz do app, embaixo",
+      "motion": "sobe com mola rápida; anel desce em linha; sai em 200 ms",
+      "avoid": [
+        "pedir confirmação antes E mostrar desfazer",
+        "mais de uma ação no aviso",
+        "usar para erro (use alert ou capsule-toast)"
+      ]
+    },
+    "progress-toast": {
+      "role": "Acompanha tarefas longas em segundo plano com %, tempo restante e desfecho.",
+      "pairs": [
+        "file-upload",
+        "button",
+        "data-table"
+      ],
+      "inside": "host na raiz do app, canto inferior direito",
+      "motion": "sobe com mola suave; lista recolhe por altura; barra avança sem pulo",
+      "avoid": [
+        "spinner sem % em espera acima de 10 s",
+        "anunciar cada porcentagem",
+        "sumir com erro na tela"
+      ]
+    },
+    "capsule-toast": {
+      "role": "Aviso curto e expressivo que se desdobra em detalhe; um por vez.",
+      "pairs": [
+        "button",
+        "field",
+        "qr-code"
+      ],
+      "inside": "host na raiz do app, no topo",
+      "motion": "pílula entra com mola, cartão desdobra por altura e recolhe antes de sair; reduzido = só opacidade",
+      "avoid": [
+        "fila de vários avisos (use sonner)",
+        "texto longo no título",
+        "ação destrutiva sem desfazer (use undo-snackbar)"
+      ]
+    },
+    "pricing-plans": {
+      "role": "Escolher ou vender plano: colunas na página de preços, lista no checkout, carrossel no app.",
+      "pairs": [
+        "plan-comparison",
+        "radio-group",
+        "bottom-bar",
+        "accordion"
+      ],
+      "inside": "seção de preços, dialog/drawer de troca, paywall",
+      "motion": "número sobe ao trocar o ciclo; carrossel com ímã; reduzido = troca seca",
+      "avoid": [
+        "mais de 4 planos",
+        "anual sem o total do ano",
+        "destacar mais de um plano"
+      ]
+    },
+    "plan-comparison": {
+      "role": "Compara recursos entre planos em tabela com cabeçalho que gruda.",
+      "pairs": [
+        "pricing-plans",
+        "accordion",
+        "button"
+      ],
+      "inside": "abaixo dos cards de plano, página de preços",
+      "motion": "grupo recolhe com seta; sem animação nas células",
+      "avoid": [
+        "20 linhas de ✓ abertas",
+        "✓ só como ícone sem texto",
+        "rolagem lateral com 4 colunas no celular"
+      ]
+    },
+    "subscription-manager": {
+      "role": "Minha assinatura: plano atual, cobrança, cancelar em 2 cliques e prévia da troca.",
+      "pairs": [
+        "usage-meter",
+        "pricing-plans",
+        "list-group",
+        "table"
+      ],
+      "inside": "página de cobrança ou ajustes do app",
+      "motion": "oferta de retenção entra suave ao escolher o motivo",
+      "avoid": [
+        "esconder o cancelar",
+        "oferta como etapa obrigatória",
+        "trocar de plano sem mostrar o valor de hoje"
+      ]
+    },
+    "morph-nav": {
+      "role": "Topo de site de marketing: links, menus com painel que muda de forma e ações.",
+      "pairs": [
+        "button",
+        "hero-section",
+        "icon-3d"
+      ],
+      "inside": "landing, site institucional, SaaS público",
+      "motion": "pílula segue o mouse; painel desliza do lado de onde veio; reduzido só aparece",
+      "avoid": [
+        "dentro de app logado (use sidebar ou app-shell)",
+        "mais de 6 itens no topo",
+        "painel só com 1 link"
+      ]
+    },
+    "hero-section": {
+      "role": "Abertura de página: promessa, ação principal e prova.",
+      "pairs": [
+        "morph-nav",
+        "button",
+        "shader-background",
+        "avatar"
+      ],
+      "inside": "topo de landing, lançamento, portfólio",
+      "motion": "título por palavra uma vez; print endireita na rolagem",
+      "avoid": [
+        "dois botões primários",
+        "carrossel no hero",
+        "shader e partículas juntos"
+      ]
+    },
+    "cta-section": {
+      "role": "Pedir a ação no fim de seção ou página (testar, assinar, baixar).",
+      "pairs": [
+        "button",
+        "input",
+        "qr-code",
+        "icon-3d"
+      ],
+      "inside": "fim de landing, artigo, página de preço",
+      "motion": "nenhum; seta do botão anda no hover",
+      "avoid": [
+        "mais de uma ação principal",
+        "newsletter sem dizer a frequência",
+        "modal na entrada da página"
+      ]
+    },
+    "site-footer": {
+      "role": "Rodapé de site: mapa de links, contato, legal e marca.",
+      "pairs": [
+        "cta-section",
+        "input"
+      ],
+      "inside": "fim de site público",
+      "motion": "nome gigante sobe com a rolagem, uma vez",
+      "avoid": [
+        "dois rodapés contentinfo na página",
+        "link sem destino",
+        "nome gigante como único lugar da marca"
+      ]
+    },
+    "shader-background": {
+      "role": "Fundo vivo de assinatura (hero, CTA, cartão de destaque).",
+      "pairs": [
+        "hero-section",
+        "cta-section"
+      ],
+      "inside": "hero de landing, lançamento, tela de boas-vindas",
+      "motion": "loop lento; pausa, fora da tela para; reduzido = quadro parado",
+      "avoid": [
+        "texto sem overlay ou cartão por trás",
+        "mais de um por página",
+        "em dashboard ou formulário"
+      ]
+    },
+    "ink-button": {
+      "role": "Botão de marketing com preenchimento que segue o ponteiro.",
+      "pairs": [
+        "hero-section",
+        "cta-section"
+      ],
+      "inside": "hero, CTA, portfólio",
+      "motion": "tinta cresce do ponto de entrada; reduzido só aparece",
+      "avoid": [
+        "em formulário e tabela",
+        "vários lado a lado",
+        "como única pista de foco"
+      ]
+    },
+    "icon-3d": {
+      "role": "Ícone ilustrativo com volume para recursos, vazios e onboarding.",
+      "pairs": [
+        "cta-section",
+        "card",
+        "empty"
+      ],
+      "inside": "grade de recursos, estado vazio, onboarding",
+      "motion": "tilt no mouse e flutuação opcionais",
+      "avoid": [
+        "em botão ou menu (use ícone de traço)",
+        "misturar materiais na mesma grade",
+        "render 3D de terceiro sem licença"
+      ]
+    },
+    "floating-nav": {
+      "role": "Navegação de landing de uma página só, por seções.",
+      "pairs": [
+        "hero-section",
+        "scroll-progress"
+      ],
+      "inside": "landing longa, página de produto, documentação curta",
+      "motion": "desliza para cima ao descer; pílula desliza entre seções; reduzido só some",
+      "avoid": [
+        "em app logado",
+        "junto com morph-nav na mesma página",
+        "mais de 6 itens"
+      ]
+    },
+    "mega-menu": {
+      "role": "Menu de topo com muitos destinos agrupados.",
+      "pairs": [
+        "morph-nav",
+        "announcement-bar"
+      ],
+      "inside": "site de produto com várias linhas, e-commerce com categorias",
+      "motion": "painel desce 6px e aparece; reduzido só aparece",
+      "avoid": [
+        "menos de 6 links (use dropdown)",
+        "em app logado",
+        "abrir só no hover sem clique"
+      ]
+    },
+    "fullscreen-nav": {
+      "role": "Menu de site de estúdio, portfólio ou marca com poucas páginas.",
+      "pairs": [
+        "hero-section",
+        "site-footer"
+      ],
+      "inside": "portfólio, agência, site institucional",
+      "motion": "tela revela de cima, links em cascata de 60ms; reduzido aparece",
+      "avoid": [
+        "mais de 7 links",
+        "em app logado",
+        "esconder a navegação no desktop sem motivo"
+      ]
+    },
+    "announcement-bar": {
+      "role": "Aviso curto de lançamento, promoção ou evento acima do topo.",
+      "pairs": [
+        "morph-nav",
+        "mega-menu",
+        "floating-nav"
+      ],
+      "inside": "topo de site e loja",
+      "motion": "mensagem sobe 8px ao trocar; reduzido sem giro",
+      "avoid": [
+        "aviso de erro do sistema (use banner)",
+        "mais de 3 mensagens",
+        "texto longo"
+      ]
+    },
+    "tabs-nav": {
+      "role": "Subnavegação de seção (conta, projeto, documentação).",
+      "pairs": [
+        "page-header",
+        "morph-nav"
+      ],
+      "inside": "abaixo do page-header, topo de seção",
+      "motion": "indicador desliza; reduzido troca direto",
+      "avoid": [
+        "trocar painel na mesma tela (use tabs)",
+        "mais de 7 abas",
+        "como navegação principal do app mobile (use tab-bar)"
+      ]
+    },
+    "scroll-progress": {
+      "role": "Mostrar quanto do artigo já foi lido e voltar ao topo.",
+      "pairs": [
+        "floating-nav",
+        "table-of-contents"
+      ],
+      "inside": "artigo, blog, documentação longa",
+      "motion": "barra acompanha a rolagem; anel aparece subindo 8px",
+      "avoid": [
+        "em página curta",
+        "duas barras na mesma página",
+        "como indicador de carregamento (use progress)"
+      ]
+    },
+    "hero-video": {
+      "role": "Abertura de marca com vídeo ambiente.",
+      "pairs": [
+        "morph-nav",
+        "ink-button"
+      ],
+      "inside": "landing de marca, evento, imóvel, turismo",
+      "motion": "vídeo em loop só na tela; reduzido = poster",
+      "avoid": [
+        "vídeo com informação essencial",
+        "texto sem véu",
+        "junto com shader-background"
+      ]
+    },
+    "rotating-text": {
+      "role": "Destacar vários públicos ou usos num título só.",
+      "pairs": [
+        "hero-section",
+        "text-effect"
+      ],
+      "inside": "título de hero",
+      "motion": "troca a cada 2,4 s; reduzido parado",
+      "avoid": [
+        "em texto corrido",
+        "mais de 5 palavras",
+        "duas na mesma tela"
+      ]
+    },
+    "grid-pattern": {
+      "role": "Textura técnica atrás de hero ou seção.",
+      "pairs": [
+        "hero-section",
+        "device-frame"
+      ],
+      "inside": "hero de devtool, seção de recursos",
+      "motion": "feixes lentos em loop; reduzido parado",
+      "avoid": [
+        "atrás de texto pequeno",
+        "com shader-background",
+        "em app logado"
+      ]
+    },
+    "scroll-zoom": {
+      "role": "Revelar o produto ou foto principal com a rolagem.",
+      "pairs": [
+        "hero-section",
+        "device-frame"
+      ],
+      "inside": "logo abaixo do hero, página de produto",
+      "motion": "recorte abre com a rolagem; reduzido estático",
+      "avoid": [
+        "mais de um por página",
+        "com conteúdo essencial só no fim",
+        "em app logado"
+      ]
+    },
+    "logo-cloud": {
+      "role": "Mostrar quem já usa, logo abaixo do hero.",
+      "pairs": [
+        "hero-section",
+        "cta-section"
+      ],
+      "inside": "landing, página de preços",
+      "motion": "faixa contínua opcional com pausa",
+      "avoid": [
+        "logos sem autorização",
+        "mais de 12 logos",
+        "cores originais misturadas"
+      ]
+    },
+    "device-frame": {
+      "role": "Mostrar o produto dentro de um aparelho.",
+      "pairs": [
+        "hero-section",
+        "scroll-zoom",
+        "grid-pattern"
+      ],
+      "inside": "hero, recurso, página de produto",
+      "motion": "inclinação desfaz no hover; reduzido sem inclinar",
+      "avoid": [
+        "moldura de marca de terceiro",
+        "print com texto ilegível",
+        "mais de 3 aparelhos juntos"
+      ]
+    },
+    "magnetic-button": {
+      "role": "CTA principal de landing com toque de vitrine.",
+      "pairs": [
+        "hero-section",
+        "cta-section"
+      ],
+      "inside": "hero, CTA final, portfólio",
+      "motion": "puxa até 10px; mola ao soltar; reduzido parado",
+      "avoid": [
+        "em formulário",
+        "vários lado a lado",
+        "em app logado"
+      ]
+    },
+    "shimmer-button": {
+      "role": "Destacar a ação principal de uma seção de marketing.",
+      "pairs": [
+        "hero-section",
+        "offer-cta"
+      ],
+      "inside": "hero, oferta, preço",
+      "motion": "brilho de 900ms no hover; loop opcional a cada 3,5 s",
+      "avoid": [
+        "mais de um por tela",
+        "em ação destrutiva",
+        "em app logado"
+      ]
+    },
+    "waitlist-form": {
+      "role": "Captar interessados antes do lançamento.",
+      "pairs": [
+        "hero-section",
+        "cta-section"
+      ],
+      "inside": "hero de pré-lançamento, CTA final",
+      "motion": "nenhum além do loading do botão",
+      "avoid": [
+        "pedir mais que o e-mail",
+        "contagem inventada",
+        "em app logado"
+      ]
+    },
+    "offer-cta": {
+      "role": "Promoção com prazo real.",
+      "pairs": [
+        "shimmer-button",
+        "pricing-plans"
+      ],
+      "inside": "landing de campanha, Black Friday, evento",
+      "motion": "contagem por segundo",
+      "avoid": [
+        "prazo falso que reinicia",
+        "mais de uma oferta por tela",
+        "em checkout"
+      ]
+    },
+    "app-download": {
+      "role": "Levar quem está no site para o app.",
+      "pairs": [
+        "device-frame",
+        "site-footer"
+      ],
+      "inside": "landing de app, rodapé",
+      "motion": "nenhum",
+      "avoid": [
+        "logo oficial das lojas sem as regras delas",
+        "QR no celular",
+        "nota inventada"
+      ]
+    },
+    "slide-in-cta": {
+      "role": "Oferta útil para quem já leu boa parte da página.",
+      "pairs": [
+        "text-scroll-reveal",
+        "waitlist-form"
+      ],
+      "inside": "artigo, blog, página longa",
+      "motion": "sobe 24px ao aparecer",
+      "avoid": [
+        "modal de entrada",
+        "voltar depois de fechado",
+        "mais de um por página"
+      ]
+    },
+    "buy-box": {
+      "role": "Decisão de compra na página do produto.",
+      "pairs": [
+        "product-card",
+        "image-viewer",
+        "price-tag"
+      ],
+      "inside": "página de produto",
+      "motion": "nenhum",
+      "avoid": [
+        "esconder o preço",
+        "botão ativo sem a opção escolhida",
+        "mais de 3 grupos de opções"
+      ]
+    },
+    "text-scroll-reveal": {
+      "role": "Manifesto ou frase de impacto lida com a rolagem.",
+      "pairs": [
+        "hero-section",
+        "sticky-cards"
+      ],
+      "inside": "landing de marca, sobre nós",
+      "motion": "cor das palavras acompanha a rolagem; reduzido estático",
+      "avoid": [
+        "texto longo",
+        "texto pequeno",
+        "mais de um por tela"
+      ]
+    },
+    "sticky-cards": {
+      "role": "Passo a passo ou recursos contados em sequência.",
+      "pairs": [
+        "text-scroll-reveal",
+        "cta-section"
+      ],
+      "inside": "como funciona, recursos, cases",
+      "motion": "cartão de baixo recua com a rolagem",
+      "avoid": [
+        "mais de 6 cartões",
+        "conteúdo que precisa ser comparado lado a lado",
+        "em app logado"
+      ]
+    },
+    "horizontal-scroll": {
+      "role": "Galeria de projetos ou produtos em destaque.",
+      "pairs": [
+        "hero-section",
+        "site-footer"
+      ],
+      "inside": "portfólio, vitrine de coleção",
+      "motion": "faixa desliza com a rolagem vertical",
+      "avoid": [
+        "conteúdo essencial no fim da faixa",
+        "mais de 8 itens",
+        "dentro de outro scroll horizontal"
+      ]
+    },
+    "parallax": {
+      "role": "Dar profundidade a hero ou seção visual.",
+      "pairs": [
+        "hero-section",
+        "grid-pattern"
+      ],
+      "inside": "hero, seção de marca",
+      "motion": "camadas em velocidades diferentes; reduzido parado",
+      "avoid": [
+        "texto em camada rápida",
+        "mais de 4 camadas",
+        "junto com scroll-zoom na mesma seção"
+      ]
+    },
+    "text-scramble": {
+      "role": "Título ou rótulo curto com cara técnica.",
+      "pairs": [
+        "grid-pattern",
+        "hero-section"
+      ],
+      "inside": "hero de devtool, contador, link de destaque",
+      "motion": "letras se acertam em ~0,9 s",
+      "avoid": [
+        "texto longo",
+        "em botão de formulário",
+        "vários na mesma tela"
+      ]
+    },
+    "bento-grid": {
+      "role": "Apresentar 4 a 7 recursos com pesos diferentes.",
+      "pairs": [
+        "icon-3d",
+        "device-frame",
+        "grid-pattern"
+      ],
+      "inside": "seção de recursos da landing",
+      "motion": "bloco com link sobe 2px no hover",
+      "avoid": [
+        "mais de 8 blocos",
+        "texto longo no bloco",
+        "em dashboard (use stat-card)"
+      ]
+    },
+    "drawer-nav": {
+      "role": "Menu de loja ou site com categorias em vários níveis.",
+      "pairs": [
+        "morph-nav",
+        "mega-menu"
+      ],
+      "inside": "e-commerce, catálogo, site institucional grande (no celular e no desktop)",
+      "motion": "nível novo desliza da direita por cima; anteriores viram tiras; reduzido aparece",
+      "avoid": [
+        "menos de 2 níveis (use sheet com lista)",
+        "mais de 4 níveis",
+        "navegação de app logado (use sidebar)"
+      ]
+    },
+    "wavy-accordion": {
+      "role": "Vitrine de imagens com destaque que alterna (cases, coleções, destinos).",
+      "pairs": [
+        "hero-section",
+        "cta-section"
+      ],
+      "inside": "landing, portfólio, página de coleção",
+      "motion": "painel aberto cresce e as fatias giram pela distância; reduzido troca direto",
+      "avoid": [
+        "mais de 7 painéis",
+        "imagem com texto embutido",
+        "conteúdo que precisa ficar todo visível (use photo-grid)"
+      ]
+    },
+    "compare-slider": {
+      "role": "Mostrar a diferença entre duas versões da mesma coisa.",
+      "pairs": [
+        "tabs",
+        "hero-section",
+        "device-frame"
+      ],
+      "inside": "landing de produto, portfólio, editor de foto",
+      "motion": "segue o dedo; sem animação própria",
+      "avoid": [
+        "versões de tamanhos diferentes",
+        "mais de 4 pares nas abas",
+        "texto pequeno que some no corte"
+      ]
+    },
+    "scroll-path": {
+      "role": "Rolagem guiada que conta uma sequência curta.",
+      "pairs": [
+        "fullscreen-nav",
+        "hero-section",
+        "sticky-cards"
+      ],
+      "inside": "landing de marca, onboarding, linha do tempo",
+      "motion": "ligado à rolagem; reduzido já desenhado",
+      "avoid": [
+        "em app logado",
+        "mais de 4 passos",
+        "junto de shader ou partículas"
+      ]
+    },
+    "spec-hero": {
+      "role": "Abertura de ferramenta técnica com especificações e figura.",
+      "pairs": [
+        "grid-pattern",
+        "button",
+        "code-block"
+      ],
+      "inside": "devtool, documentação, open source",
+      "motion": "camadas abrem no hover; reduzido parado",
+      "avoid": [
+        "mais de uma palavra em acento",
+        "figura com texto longo",
+        "em landing de varejo"
+      ]
+    },
+    "repo-overview": {
+      "role": "Visão geral densa de projeto ou pacote com arquivos e metadados.",
+      "pairs": [
+        "tabs-nav",
+        "badge",
+        "avatar"
+      ],
+      "inside": "portal de dev, catálogo de SDK, gestão de documentos",
+      "motion": "nenhum",
+      "avoid": [
+        "como landing",
+        "lista sem data",
+        "mais de 7 abas"
+      ]
+    },
+    "detail-hero": {
+      "role": "Topo de página de item de catálogo com instalação ou compra.",
+      "pairs": [
+        "breadcrumb",
+        "copy-button",
+        "button"
+      ],
+      "inside": "loja de templates, skills, plugins, ebooks",
+      "motion": "nenhum; Copiar troca o ícone",
+      "avoid": [
+        "dois botões primários",
+        "comando sem Copiar",
+        "capa com texto essencial"
+      ]
+    },
+    "glass-group": {
+      "role": "Poucos botões de vidro soltos sobre foto, mapa ou vídeo, que se fundem numa cápsula.",
+      "pairs": [
+        "tab-bar",
+        "navigation-bar",
+        "fab"
+      ],
+      "inside": "tela de foto, mapa, player, detalhe com imagem no topo",
+      "motion": "fusão com a mola do tema (espaço e opacidade)",
+      "avoid": [
+        "usar em conteúdo (lista, card, formulário)",
+        "mais de 4 botões por grupo",
+        "mais de uma ação prominent"
+      ]
+    },
+    "symbol-effect": {
+      "role": "iOS: animar o ícone do próprio botão ao mudar de estado (curtir, aviso novo, gravando).",
+      "pairs": [
+        "button",
+        "toggle",
+        "tab-bar"
+      ],
+      "inside": "dentro do botão, em volta do ícone",
+      "motion": "um efeito por intenção; discreto no evento, contínuo só enquanto o estado dura",
+      "avoid": [
+        "efeito contínuo decorativo sem estado",
+        "mais de um ícone animando ao mesmo tempo",
+        "único sinal do estado (sem texto/aria-pressed)"
+      ]
+    },
+    "jiggle-mode": {
+      "role": "iOS: modo de edição de uma grade de atalhos (remover, depois reordenar).",
+      "pairs": [
+        "button",
+        "sortable-list",
+        "undo-snackbar"
+      ],
+      "inside": "grade de atalhos com botão Editar/OK visível",
+      "motion": "tremor leve fora de sincronia; − entra com mola",
+      "avoid": [
+        "só o toque longo como entrada",
+        "editar listas de dados (use list-group com edição)",
+        "remover sem como restaurar"
+      ]
+    },
+    "shake-to-undo": {
+      "role": "iOS: desfazer a última ação chacoalhando, sempre com confirmação.",
+      "pairs": [
+        "undo-snackbar",
+        "sonner",
+        "alert-dialog"
+      ],
+      "inside": "ShakeToUndo uma vez na tela que tem histórico",
+      "motion": "alerta padrão do tema",
+      "avoid": [
+        "gesto como único caminho para desfazer",
+        "desfazer sem confirmar",
+        "ligado sem histórico (action vazio)"
+      ]
+    },
+    "color-filter": {
+      "role": "Buscar ou filtrar conteúdo pela cor (paleta de referência, produto por cor).",
+      "pairs": [
+        "inspiration-grid",
+        "gallery-header"
+      ],
+      "inside": "galeria de inspiração, loja (cor do produto), banco de imagens",
+      "motion": "marca aparece com escala curta; reduzido sem escala",
+      "avoid": [
+        "cor sem nome (leitor de tela e daltonismo)",
+        "mais de 5 cores na busca",
+        "usar para escolher a cor do tema (use color-picker)"
+      ]
+    },
+    "inspiration-grid": {
+      "role": "Mural de referências ou mídia de alturas variadas para explorar e salvar.",
+      "pairs": [
+        "color-filter",
+        "gallery-header",
+        "empty"
+      ],
+      "inside": "moodboard, banco de imagens, portfólio, curadoria",
+      "motion": "imagem cresce 3% no hover; título e Salvar entram em fade",
+      "avoid": [
+        "lista ordenada ou ranking (a leitura é por coluna)",
+        "peça sem ratio (pula ao carregar)",
+        "texto importante dentro da imagem"
+      ]
+    },
+    "project-card": {
+      "role": "Um trabalho de portfólio em grade: capa, autor e métricas, com salvar e curtir.",
+      "pairs": [
+        "gallery-header",
+        "inspiration-grid",
+        "pagination"
+      ],
+      "inside": "galeria de portfólio, vitrine de cases, acervo de logos",
+      "motion": "ações aparecem em fade sobre a capa; botão encolhe ao toque",
+      "avoid": [
+        "misturar variações na mesma grade",
+        "métrica sem rótulo para leitor de tela",
+        "capa com o título embutido"
+      ]
+    },
+    "taxonomy-browser": {
+      "role": "Entrada de um acervo grande pelo tipo visual, com subcategorias e índice por letra.",
+      "pairs": [
+        "gallery-header",
+        "project-card",
+        "command"
+      ],
+      "inside": "diretório de logos, ícones, templates, biblioteca de componentes",
+      "motion": "painel de subcategorias desce curto; símbolo cresce no hover",
+      "avoid": [
+        "mais de 8 categorias no primeiro nível",
+        "categoria sem símbolo representativo",
+        "esconder letra vazia do índice"
+      ]
+    },
+    "award-hero": {
+      "role": "Topo de página de destaque ou premiação com nota, créditos e capa.",
+      "pairs": [
+        "project-card",
+        "cta-section"
+      ],
+      "inside": "página de prêmio, case do dia, vitrine editorial",
+      "motion": "barras das notas crescem uma vez; reduzido sem animação",
+      "avoid": [
+        "nota final digitada à parte dos critérios",
+        "mais de 4 créditos",
+        "título longo (é uma palavra ou duas)"
+      ]
+    },
+    "floating-gallery-hero": {
+      "role": "Abertura de produto visual: colagem que flutua em volta do título e da busca.",
+      "pairs": [
+        "inspiration-grid",
+        "search-bar",
+        "cta-section"
+      ],
+      "inside": "landing de app de inspiração, acervo, moodboard",
+      "motion": "peças flutuam devagar e fogem do ponteiro; pausa no hover; reduzido parado",
+      "avoid": [
+        "imagem com informação (são decorativas)",
+        "mais de 24 peças",
+        "usar em página de tarefa (dashboard, formulário)"
+      ]
+    },
+    "gallery-header": {
+      "role": "Cabeçalho de galeria: categoria atual, seguir, ordenar e filtros.",
+      "pairs": [
+        "project-card",
+        "inspiration-grid",
+        "color-filter"
+      ],
+      "inside": "galeria de portfólio, explorar, resultados de categoria",
+      "motion": "painel de filtros desce curto; reduzido aparece",
+      "avoid": [
+        "ordenar e filtrar escondidos no menu",
+        "mais de 12 categorias sem rolagem",
+        "filtro sem contagem de ativos"
+      ]
+    },
+    "bot-avatar": {
+      "role": "Rosto de um agente de IA: quem é o bot e o que está fazendo (pensando, trabalhando, dormindo).",
+      "pairs": [
+        "chat",
+        "item",
+        "badge",
+        "list-group",
+        "avatar"
+      ],
+      "inside": "lista de agentes, mensagens do chat de IA, vazio de assistente, onboarding",
+      "motion": "canvas próprio: respira, pisca e olha; saltita trabalhando; reduzido = quadro parado do estado",
+      "avoid": [
+        "no lugar de foto de pessoa real (use avatar)",
+        "vários bots grandes animando juntos (um protagonista; o resto pequeno ou paused)",
+        "estado só no desenho: escreva o status ao lado"
+      ]
+    },
+    "thinking-orb": {
+      "role": "Mostra que a IA está trabalhando e como (resolvendo, buscando, pensando, ouvindo).",
+      "pairs": [
+        "chat",
+        "bot-avatar",
+        "spinner",
+        "progress"
+      ],
+      "inside": "linha do chat antes da resposta, barra do agente, espera de tarefa longa",
+      "motion": "canvas: giro lento em 3D e brilho no rótulo; reduzido = figura parada",
+      "avoid": [
+        "no lugar de progresso real quando há porcentagem (use progress)",
+        "várias orbs girando na mesma tela",
+        "rótulo genérico: diga a etapa (Buscando fontes)"
+      ]
+    },
+    "gooey": {
+      "role": "Ações que brotam de um botão com efeito líquido (menu radial, pílula que se abre).",
+      "pairs": [
+        "fab",
+        "tab-bar",
+        "button",
+        "tooltip"
+      ],
+      "inside": "FAB de app, criar novo (doc, foto, pasta), chip de projeto",
+      "motion": "bolhas se fundem no caminho (morph, move, bend, melt); reduzido = só aparece",
+      "avoid": [
+        "sobre vidro ou imagem (o filtro precisa de superfície sólida)",
+        "mais de 5 ações no arco",
+        "ação sem rótulo acessível (ícone só com aria-label)"
+      ]
+    },
+    "pill-filter": {
+      "role": "Escolher uma categoria entre muitas, em pílulas, com o resto em \"+N mais\".",
+      "pairs": [
+        "inspiration-grid",
+        "project-card",
+        "color-filter"
+      ],
+      "inside": "topo de galeria, biblioteca de componentes, blog por tema",
+      "motion": "pílula aperta ao tocar; lista do resto abre curta; reduzido aparece",
+      "avoid": [
+        "mais de 7 pílulas à vista",
+        "escolha ativa escondida no +N mais",
+        "usar para várias escolhas (use facet-bar)"
+      ]
+    },
+    "facet-bar": {
+      "role": "Filtrar um acervo grande por várias facetas ao mesmo tempo, com fichas do que está ativo.",
+      "pairs": [
+        "inspiration-grid",
+        "project-card",
+        "pagination"
+      ],
+      "inside": "explorar acervo, diretório de sites, catálogo B2B",
+      "motion": "menu abre curto; Embaralhar gira o ícone; reduzido sem giro",
+      "avoid": [
+        "faceta com uma opção só",
+        "filtro aplicado sem ficha visível",
+        "total de resultados escondido"
+      ]
+    },
+    "hairline": {
+      "role": "Ilustração de linha que responde ao ponteiro: dá corpo a um recurso, estado vazio ou seção sem foto.",
+      "pairs": [
+        "card",
+        "empty",
+        "button"
+      ],
+      "inside": "cartão de recurso, estado vazio, seção de landing; uma figura por assunto",
+      "motion": "responde ao ponteiro/teclado (do pacote); play só numa figura por tela; reduzido = parada",
+      "avoid": [
+        "várias figuras com play na mesma tela",
+        "no lugar de ícone em botão ou lista",
+        "label genérico (Figura): diga o que representa",
+        "placa diferente da superfície (use surface=\"card\" em cartão)"
+      ]
+    }
+  }
+}

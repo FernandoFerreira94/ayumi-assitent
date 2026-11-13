@@ -1,0 +1,52 @@
+<style>
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+  .fb-page { min-height: 70vh; display: grid; place-content: center; padding: 40px 20px; text-align: center; color: var(--wc-fg-muted); }
+  .fb { container-type: inline-size; overflow: hidden; background: var(--wc-fg); color: var(--wc-bg); }
+  .fb-in { max-width: 1280px; margin: 0 auto; padding: 72px 24px 0; }
+  .fb-kicker { margin: 0 0 12px; font-size: var(--wc-font-size-sm); text-transform: uppercase; letter-spacing: calc(var(--wc-tracking-caps) * 1em); }
+  .fb-mail { display: inline-block; color: inherit; text-decoration: none; font: var(--wc-font-weight-semibold) clamp(28px, 6cqi, var(--wc-font-size-6xl)) / 1.05 var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tighter) * 1em); background: linear-gradient(currentColor, currentColor) 0 100% / 0 2px no-repeat; padding-bottom: 6px; transition: background-size var(--wc-motion-duration-slow) var(--wc-motion-ease-out); overflow-wrap: anywhere; }
+  .fb-mail:hover, .fb-mail:focus-visible { background-size: 100% 2px; }
+  .fb-cols { display: grid; grid-template-columns: repeat(3, 1fr) auto; gap: 32px; margin-top: 56px; padding-top: 24px; border-top: 1px solid color-mix(in oklch, var(--wc-bg) 25%, transparent); font-size: var(--wc-font-size-sm); }
+  .fb-cols h2 { margin: 0 0 10px; font-size: var(--wc-font-size-xs); font-weight: var(--wc-font-weight-semibold); text-transform: uppercase; letter-spacing: calc(var(--wc-tracking-caps) * 1em); }
+  .fb-cols p, .fb-cols ul { margin: 0; padding: 0; list-style: none; line-height: var(--wc-line-height-relaxed); }
+  .fb-cols a, .fb-legal a { color: inherit; text-decoration: none; display: inline-flex; align-items: center; min-height: 32px; }
+  .fb-cols a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .fb-time { font-variant-numeric: tabular-nums; }
+  .fb-top { align-self: start; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; border: 1px solid color-mix(in oklch, var(--wc-bg) 40%, transparent); color: inherit; transition: background-color var(--wc-motion-duration-base), color var(--wc-motion-duration-base); }
+  .fb-top:hover { background: var(--wc-bg); color: var(--wc-fg); }
+  .fb-top svg { transition: translate var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  .fb-top:hover svg { translate: 0 calc(-3px * var(--wc-motion-distance)); }
+  .fb a:focus-visible { outline: 2px solid var(--wc-bg); outline-offset: 4px; }
+  .fb-legal { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; margin-top: 40px; font-size: var(--wc-font-size-xs); }
+  .fb-word { display: flex; justify-content: center; margin: 24px -2cqi 0; font: var(--wc-font-weight-bold) calc(150cqi / var(--n, 4)) / .8 var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tighter) * 1em); white-space: nowrap; overflow: hidden; padding-bottom: .02em; }
+  .fb-word span { display: inline-block; transition: translate var(--wc-motion-duration-slower) var(--wc-motion-ease-emphasized); transition-delay: calc(var(--i) * 45ms); }
+  .fb-word:not(.is-in) span { translate: 0 calc(100% * var(--wc-motion-distance)); }
+  @media (max-width: 760px) { .fb-cols { grid-template-columns: 1fr 1fr; } .fb-top { grid-column: 2; grid-row: 1; justify-self: end; } }
+</style>
+<main class="fb-page" id="fb-topo" tabindex="-1"><p>Último projeto da página. Role para ver o footer subir.</p></main>
+<footer class="fb">
+  <div class="fb-in">
+    <p class="fb-kicker">Tem um projeto em mente?</p>
+    <a class="fb-mail" href="#">ola@estudiomare.com.br</a>
+    <div class="fb-cols">
+      <div><h2>Estúdio</h2><p>Rua Harmonia, 412<br>Vila Madalena, São Paulo</p><p>Agora: <time class="fb-time" datetime="">--:--</time> (BRT)</p></div>
+      <div><h2>Redes</h2><ul><li><a href="#">Instagram</a></li><li><a href="#">Behance</a></li><li><a href="#">LinkedIn</a></li></ul></div>
+      <div><h2>Trabalhe com a gente</h2><ul><li><a href="#">Vagas abertas</a></li><li><a href="#">Freelas</a></li></ul></div>
+      <a class="fb-top" href="#fb-topo" aria-label="Voltar ao topo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></a>
+    </div>
+    <div class="fb-legal"><span>© 2026 Estúdio Maré · CNPJ 00.000.000/0001-00</span><span><a href="#" style="color:inherit">Privacidade</a></span></div>
+  </div>
+  <div class="fb-word" aria-hidden="true"></div>
+</footer>
+<script>
+(() => {
+  const word = document.querySelector('.fb-word');
+  const brand = [...'Maré']; word.style.setProperty('--n', brand.length);
+  word.innerHTML = brand.map((c, i) => `<span style="--i:${i}">${c}</span>`).join('');
+  new IntersectionObserver(([e], o) => { if (e.isIntersecting) { word.classList.add('is-in'); o.disconnect(); } }, { threshold: .3 }).observe(word);
+  const t = document.querySelector('.fb-time');
+  const fmt = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
+  const tick = () => { const d = new Date(); t.textContent = fmt.format(d); t.dateTime = d.toISOString(); };
+  tick(); setTimeout(() => { tick(); setInterval(tick, 60000); }, 60000 - (Date.now() % 60000));
+})();
+</script>

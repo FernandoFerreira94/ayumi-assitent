@@ -1,0 +1,52 @@
+<style>
+  .brk { min-height: 100vh; padding: 20px 16px; max-width: 640px; margin: 0 auto; display: grid; gap: 12px; align-content: start; color: var(--wc-fg); font-size: var(--wc-font-size-sm); font-variant-numeric: tabular-nums; }
+  .brk-card { border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface); padding: 16px; display: grid; gap: 14px; }
+  .brk-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: center; }
+  .brk h3 { margin: 0; font-size: var(--wc-font-size-md); }
+  .brk fieldset { border: 0; margin: 0; padding: 2px; display: inline-flex; border-radius: var(--wc-radius-md); background: var(--wc-sunken); }
+  .brk legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .brk fieldset label { min-height: 32px; padding: 0 10px; display: inline-flex; align-items: center; border-radius: calc(var(--wc-radius-md) - 2px); cursor: pointer; color: var(--wc-fg-muted); }
+  .brk fieldset input { position: absolute; opacity: 0; }
+  .brk fieldset label:has(:checked) { background: var(--wc-surface-raised); color: var(--wc-fg); box-shadow: var(--wc-shadow); font-weight: var(--wc-font-weight-semibold); }
+  .brk fieldset label:has(:focus-visible) { outline: 2px solid var(--wc-focus); outline-offset: 1px; }
+  .brk ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .brk li { display: grid; grid-template-columns: minmax(84px, 34%) minmax(0, 1fr); gap: 10px; align-items: center; min-height: 32px; padding: 2px 4px; border-radius: var(--wc-radius-sm); position: relative; }
+  .brk li:hover { background: var(--wc-sunken); }
+  .brk-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--wc-fg-muted); }
+  .brk li.is-hl .brk-name { color: var(--wc-fg); font-weight: var(--wc-font-weight-semibold); }
+  .brk-bar { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .brk-bar i { height: 16px; flex: none; width: calc(var(--w) * (100% - 92px)); min-width: 3px; border-radius: 0 4px 4px 0; background: color-mix(in oklab, var(--wc-fg-muted) 38%, var(--wc-surface)); transition: width var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  .brk li.is-hl .brk-bar i { background: var(--wc-accent); }
+  .brk li.is-other .brk-bar i { background: repeating-linear-gradient(135deg, color-mix(in oklab, var(--wc-fg-muted) 30%, var(--wc-surface)) 0 3px, transparent 3px 6px); }
+  .brk-v { white-space: nowrap; font-size: var(--wc-font-size-xs); }
+  .brk-v small { color: var(--wc-fg-muted); margin-left: 4px; }
+  @media (max-width: 480px) { .brk li { grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 4px; } .brk-name { white-space: normal; } }
+  .brk-foot { margin: 0; color: var(--wc-fg-muted); font-size: var(--wc-font-size-xs); }
+  ::view-transition-group(*) { animation-duration: var(--wc-motion-duration-base); }
+  @media (prefers-reduced-motion: reduce) { .brk-bar i { transition: none; } }
+</style>
+<div class="brk">
+  <section class="brk-card" aria-labelledby="brk-h">
+    <div class="brk-head">
+      <h3 id="brk-h">Produtos mais vendidos em outubro</h3>
+      <fieldset><legend>Métrica</legend><label><input type="radio" name="brk-m" value="r" checked>Receita</label><label><input type="radio" name="brk-m" value="q">Pedidos</label></fieldset>
+    </div>
+    <ol></ol>
+    <p class="brk-foot">Destaque: o produto em campanha. "Outros" soma 23 produtos.</p>
+  </section>
+</div>
+<script>
+(() => {
+  const D = [['Café especial 250g', 48210, 966], ['Moedor manual', 31900, 169], ['Cafeteira Pro 15 bar', 28780, 24], ['Filtro de papel 102', 9850, 788], ['Caneca esmaltada', 8970, 230], ['Kit degustação', 7420, 106], ['Outros', 12340, 412]];
+  const HL = 'Moedor manual';
+  const ol = document.querySelector('.brk ol');
+  const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }), int = new Intl.NumberFormat('pt-BR');
+  const render = (m) => {
+    const k = m === 'r' ? 1 : 2, rows = D.filter((d) => d[0] !== 'Outros').sort((a, b) => b[k] - a[k]).concat([D.find((d) => d[0] === 'Outros')]);
+    const max = Math.max(...rows.map((r) => r[k])), tot = rows.reduce((s, r) => s + r[k], 0);
+    ol.innerHTML = rows.map((r) => { const pct = (r[k] / tot * 100).toFixed(1).replace('.', ','); const v = m === 'r' ? brl.format(r[k]) : `${int.format(r[k])} pedidos`; return `<li class="${r[0] === HL ? 'is-hl' : ''} ${r[0] === 'Outros' ? 'is-other' : ''}" style="view-transition-name:brk-${r[0].replace(/\W+/g, '')}" title="${r[0]}: ${v} (${pct}% do total)"><span class="brk-name">${r[0]}</span><span class="brk-bar"><i style="--w:${r[k] / max}" aria-hidden="true"></i><span class="brk-v">${v}<small>${pct}%</small></span></span></li>`; }).join('');
+  };
+  document.querySelector('.brk fieldset').addEventListener('change', (e) => { const go = () => render(e.target.value); document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches ? document.startViewTransition(go) : go(); });
+  render('r');
+})();
+</script>

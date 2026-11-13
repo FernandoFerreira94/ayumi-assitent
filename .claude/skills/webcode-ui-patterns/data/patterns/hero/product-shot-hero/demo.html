@@ -1,0 +1,65 @@
+<style>
+  .ps { padding: 88px 20px 160px; text-align: center; overflow: clip; }
+  .ps-eyebrow { font: var(--wc-font-weight-medium) var(--wc-font-size-sm) var(--wc-font-mono); color: var(--wc-accent); }
+  .ps h1 { font: var(--wc-font-weight-semibold) clamp(36px, 6vw, var(--wc-font-size-6xl)) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tighter) * 1em); margin: 14px auto 16px; max-width: 18ch; text-wrap: balance; }
+  .ps p { color: var(--wc-fg-muted); font-size: var(--wc-font-size-lg); max-width: 50ch; margin: 0 auto 28px; }
+  .ps-cta { display: inline-flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .ps-cta a { height: var(--wc-size-control-md); display: inline-flex; align-items: center; padding: 0 18px; border-radius: var(--wc-radius-md); font-weight: var(--wc-font-weight-medium); text-decoration: none; font-size: var(--wc-font-size-md); }
+  .ps-cta a:first-child { background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); }
+  .ps-cta a:last-child { color: var(--wc-fg); box-shadow: inset 0 0 0 1px var(--wc-border-strong); }
+  .ps-cta a:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .ps-stage { perspective: 1400px; margin-top: 64px; }
+  .ps-win { max-width: 1040px; margin: 0 auto; border-radius: var(--wc-radius-lg); background: var(--wc-surface); border: 1px solid var(--wc-border); box-shadow: var(--wc-shadow-lg); overflow: hidden; text-align: left; transform-origin: 50% 0; }
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .ps-win { animation: ps-flatten linear both; animation-timeline: view(); animation-range: entry 0% cover 40%; }
+    }
+  }
+  @keyframes ps-flatten { from { transform: rotateX(22deg) scale(.92); } to { transform: none; } }
+  .ps-bar { display: flex; gap: 6px; padding: 12px 14px; border-bottom: 1px solid var(--wc-border); background: var(--wc-sunken); }
+  .ps-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--wc-border-strong); }
+  .ps-app { display: grid; grid-template-columns: 200px 1fr; min-height: 380px; }
+  .ps-side { border-right: 1px solid var(--wc-border); padding: 14px 10px; display: grid; gap: 2px; align-content: start; font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .ps-side span { padding: 6px 10px; border-radius: var(--wc-radius-sm); }
+  .ps-side span[aria-current] { background: var(--wc-sunken); color: var(--wc-fg); font-weight: var(--wc-font-weight-medium); }
+  .ps-main { padding: 20px; display: grid; gap: 16px; align-content: start; }
+  .ps-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .ps-kpi { border: 1px solid var(--wc-border); border-radius: var(--wc-radius-md); padding: 12px 14px; }
+  .ps-kpi small { color: var(--wc-fg-muted); font-size: var(--wc-font-size-xs); }
+  .ps-kpi strong { display: block; font: var(--wc-font-weight-semibold) var(--wc-font-size-2xl) var(--wc-font-display); font-variant-numeric: tabular-nums; }
+  .ps-kpi em { font-style: normal; font-size: var(--wc-font-size-xs); color: var(--wc-success); }
+  .ps-rows { border: 1px solid var(--wc-border); border-radius: var(--wc-radius-md); overflow: hidden; font-size: var(--wc-font-size-sm); }
+  .ps-rows div { display: grid; grid-template-columns: 1fr 120px 90px; padding: 10px 14px; gap: 8px; }
+  .ps-rows div + div { border-top: 1px solid var(--wc-border); }
+  .ps-rows div:first-child { color: var(--wc-fg-muted); background: var(--wc-sunken); font-size: var(--wc-font-size-xs); }
+  .ps-pill { justify-self: start; padding: 1px 8px; border-radius: var(--wc-radius-pill); font-size: var(--wc-font-size-xs); background: var(--wc-accent-soft); color: var(--wc-accent); }
+  @media (max-width: 640px) { .ps-app { grid-template-columns: 1fr; } .ps-side { display: none; } .ps-rows div { grid-template-columns: 1fr 90px; } .ps-rows div > :nth-child(2) { display: none; } .ps-kpis { grid-template-columns: 1fr 1fr; } .ps-kpi:last-child { display: none; } }
+</style>
+<section class="ps">
+  <div class="ps-eyebrow">Versão 3.0 · já disponível</div>
+  <h1>Planeje, construa e entregue sem planilha paralela</h1>
+  <p>Roadmap, sprints e incidentes no mesmo lugar, com atalhos de teclado para tudo.</p>
+  <div class="ps-cta"><a href="#">Criar workspace</a><a href="#">Falar com vendas</a></div>
+  <div class="ps-stage">
+    <div class="ps-win" role="img" aria-label="Tela do produto mostrando KPIs da sprint e a lista de tarefas">
+      <div class="ps-bar"><i></i><i></i><i></i></div>
+      <div class="ps-app">
+        <nav class="ps-side"><span>Caixa de entrada</span><span aria-current="page">Sprint 42</span><span>Roadmap</span><span>Incidentes</span><span>Relatórios</span></nav>
+        <div class="ps-main">
+          <div class="ps-kpis">
+            <div class="ps-kpi"><small>Concluídas</small><strong>38/52</strong><em>+12% vs. sprint 41</em></div>
+            <div class="ps-kpi"><small>Lead time</small><strong>2,6 d</strong><em>-0,8 d</em></div>
+            <div class="ps-kpi"><small>Bugs abertos</small><strong>7</strong><em>-3 esta semana</em></div>
+          </div>
+          <div class="ps-rows">
+            <div><span>Tarefa</span><span>Responsável</span><span>Status</span></div>
+            <div><span>Checkout com Pix parcelado</span><span>Ana L.</span><span class="ps-pill">Em revisão</span></div>
+            <div><span>Exportar NF-e em lote</span><span>Rafael M.</span><span class="ps-pill">Em progresso</span></div>
+            <div><span>Onboarding com dados de exemplo</span><span>Júlia S.</span><span class="ps-pill">Pronto</span></div>
+            <div><span>Atalho ⌘K para busca global</span><span>Caio P.</span><span class="ps-pill">Backlog</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

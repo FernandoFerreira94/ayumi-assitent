@@ -1,0 +1,45 @@
+<style>
+  .lmi { padding: 24px 20px; color: var(--wc-fg); font-size: var(--wc-font-size-sm); max-width: 560px; display: grid; gap: 12px; }
+  .lmi-box { height: 320px; overflow-y: auto; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface); padding: 8px; }
+  .lmi-box:focus-visible, .lmi button:focus-visible, .lmi li:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .lmi ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .lmi li { padding: 10px 12px; border-radius: var(--wc-radius-sm); background: var(--wc-sunken); animation: lmi-in var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  @keyframes lmi-in { from { opacity: 0; transform: translateY(calc(6px * var(--wc-motion-distance))); } }
+  .lmi-foot { display: grid; justify-items: center; gap: 8px; padding: 16px 0 8px; text-align: center; }
+  .lmi-foot p { margin: 0; color: var(--wc-fg-muted); font-variant-numeric: tabular-nums; }
+  .lmi-foot p b { color: var(--wc-fg); }
+  .lmi-bar { width: 200px; height: 4px; border-radius: var(--wc-radius-pill); background: var(--wc-sunken); overflow: hidden; }
+  .lmi-bar i { display: block; height: 100%; background: var(--wc-accent-solid); transition: width var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  .lmi button { min-height: 40px; padding: 0 16px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: inherit; cursor: pointer; }
+  .lmi button[aria-busy="true"] { cursor: progress; opacity: .7; }
+  .lmi-sentinel { height: 1px; }
+  @media (prefers-reduced-motion: reduce) { .lmi li { animation: none; } .lmi-bar i { transition: none; } }
+</style>
+<div class="lmi">
+  <p style="margin:0;color:var(--wc-fg-muted)">Role a lista: carrega sozinha 2 vezes e depois vira botão.</p>
+  <div class="lmi-box" tabindex="0" aria-label="Produtos">
+    <ul aria-busy="false"></ul>
+    <div class="lmi-sentinel" aria-hidden="true"></div>
+    <div class="lmi-foot"><p aria-live="polite"></p><div class="lmi-bar" aria-hidden="true"><i></i></div><button type="button" hidden>Carregar mais</button></div>
+  </div>
+</div>
+<script>
+(() => {
+  const names = ['Café especial 250g', 'Granola artesanal', 'Mel de laranjeira', 'Azeite extravirgem', 'Queijo canastra', 'Doce de leite', 'Pão de fermentação natural', 'Geleia de jabuticaba'];
+  const TOTAL = 40, STEP = 8, AUTO = 2, root = document.querySelector('.lmi'), ul = root.querySelector('ul'), btn = root.querySelector('button'), sum = root.querySelector('.lmi-foot p'), bar = root.querySelector('.lmi-bar i'), box = root.querySelector('.lmi-box');
+  let shown = 0, loading = false, autos = 0;
+  const paint = () => { sum.innerHTML = shown >= TOTAL ? 'Você chegou ao fim da lista.' : `Mostrando <b>${shown}</b> de ${TOTAL} produtos`; bar.style.width = `${(shown / TOTAL) * 100}%`; btn.hidden = shown >= TOTAL || autos < AUTO; };
+  const load = (fromButton) => {
+    if (loading || shown >= TOTAL) return; loading = true; ul.setAttribute('aria-busy', 'true'); btn.setAttribute('aria-busy', 'true'); btn.textContent = 'Carregando…';
+    setTimeout(() => {
+      const first = shown;
+      for (let k = 0; k < STEP && shown < TOTAL; k++, shown++) { const li = document.createElement('li'); li.tabIndex = -1; li.textContent = `${shown + 1}. ${names[shown % names.length]}`; ul.append(li); }
+      loading = false; ul.setAttribute('aria-busy', 'false'); btn.removeAttribute('aria-busy'); btn.textContent = 'Carregar mais'; paint();
+      if (fromButton) ul.children[first]?.focus();
+    }, 600);
+  };
+  btn.onclick = () => { autos = 0; btn.hidden = true; load(true); };
+  new IntersectionObserver(([e]) => { if (e.isIntersecting && autos < AUTO && shown > 0) { autos++; load(false); } }, { root: box, rootMargin: '0px 0px 120px 0px' }).observe(root.querySelector('.lmi-sentinel'));
+  load(false);
+})();
+</script>

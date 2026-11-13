@@ -1,0 +1,95 @@
+<style>
+  .lpm { min-height: 100vh; max-width: 520px; margin: 0 auto; padding: 20px 16px 40px; color: var(--wc-fg); font-size: var(--wc-font-size-sm); position: relative; }
+  .lpm h3 { margin: 0 0 4px; font: var(--wc-font-weight-bold) var(--wc-font-size-2xl) var(--wc-font-display); }
+  .lpm > p { margin: 0 0 16px; color: var(--wc-fg-muted); }
+  .lpm-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; transition: filter var(--wc-motion-duration-base), opacity var(--wc-motion-duration-base); }
+  .lpm.is-open .lpm-grid > li:not(.is-lift) { filter: blur(3px); opacity: .5; }
+  .lpm-grid > li { position: relative; transition: scale var(--wc-motion-spring-snappy-duration) var(--wc-motion-spring-snappy); }
+  .lpm-grid > li.is-press { scale: .97; transition-duration: 450ms; transition-timing-function: var(--wc-motion-ease-in-out); }
+  .lpm-grid > li.is-lift { scale: 1.04; z-index: 2; }
+  .lpm-card { display: block; width: 100%; padding: 0; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface); color: inherit; font: inherit; text-align: left; overflow: hidden; cursor: pointer; -webkit-touch-callout: none; user-select: none; touch-action: manipulation; }
+  .lpm-grid > li.is-lift .lpm-card { box-shadow: var(--wc-shadow-lg); }
+  .lpm-img { display: block; aspect-ratio: 4 / 3; background: var(--wc-accent-soft); }
+  .lpm-grid > li:nth-child(2n) .lpm-img { background: var(--wc-warning-soft); }
+  .lpm-grid > li:nth-child(3n) .lpm-img { background: var(--wc-success-soft); }
+  .lpm-txt { display: block; padding: 10px 44px 12px 12px; }
+  .lpm-txt b { display: block; } .lpm-txt small { color: var(--wc-fg-muted); font-variant-numeric: tabular-nums; }
+  .lpm-more { position: absolute; right: 2px; bottom: 2px; width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; color: var(--wc-fg-muted); font-size: 20px; cursor: pointer; }
+  .lpm-fav { position: absolute; top: 8px; left: 8px; padding: 2px 8px; border-radius: var(--wc-radius-pill); background: var(--wc-surface-raised); font-size: var(--wc-font-size-xs); }
+  .lpm-menu { position: absolute; z-index: 5; width: 220px; padding: 4px 0; border-radius: var(--wc-radius-lg); background: var(--wc-glass-bg); backdrop-filter: blur(var(--wc-blur-glass)); border: 1px solid var(--wc-glass-border); box-shadow: var(--wc-shadow-lg); transform-origin: top center; animation: lpm-in var(--wc-motion-spring-snappy-duration) var(--wc-motion-spring-snappy); }
+  .lpm-menu.up { transform-origin: bottom center; }
+  @keyframes lpm-in { from { scale: .6; opacity: 0; } }
+  .lpm-menu button { display: flex; justify-content: space-between; align-items: center; width: 100%; min-height: 44px; padding: 0 16px; border: 0; background: none; color: var(--wc-fg); font: inherit; font-size: var(--wc-font-size-md); cursor: pointer; }
+  .lpm-menu button:hover, .lpm-menu button:focus-visible { background: var(--wc-sunken); }
+  .lpm-menu .danger { color: var(--wc-danger); border-top: 1px solid var(--wc-border); }
+  .lpm-st { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); translate: -50% 0; padding: 10px 16px; border-radius: var(--wc-radius-pill); background: var(--wc-fg); color: var(--wc-bg); max-width: calc(100vw - 32px); }
+  .lpm-st:empty { display: none; }
+  .lpm button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: -2px; }
+  @media (prefers-reduced-motion: reduce) { .lpm-grid > li, .lpm-menu { transition: none; animation: none; } }
+</style>
+<div class="lpm">
+  <h3>Pedir de novo</h3>
+  <p>Segure um prato, use ⋯ ou clique com o botão direito.</p>
+  <ul class="lpm-grid"></ul>
+  <div class="lpm-st" role="status"></div>
+</div>
+<script>
+(() => {
+  const ITEMS = [['Poke de salmão', 'R$ 42,90'], ['Burger da casa', 'R$ 36,00'], ['Açaí 500 ml', 'R$ 24,50'], ['Pastel de queijo', 'R$ 12,00'], ['Salada caesar', 'R$ 31,90'], ['Brownie', 'R$ 14,00']];
+  const root = document.querySelector('.lpm'), grid = root.querySelector('.lpm-grid'), st = root.querySelector('.lpm-st');
+  grid.innerHTML = ITEMS.map(([n, p], i) => `<li data-i="${i}"><button type="button" class="lpm-card"><span class="lpm-img" aria-hidden="true"></span><span class="lpm-txt"><b>${n}</b><small>${p}</small></span></button><button type="button" class="lpm-more" aria-label="Ações para ${n}" aria-haspopup="menu" aria-expanded="false">⋯</button></li>`).join('');
+  let menu, li, suppress = false, timer, ttl;
+  const say = (t) => { st.textContent = t; clearTimeout(ttl); ttl = setTimeout(() => (st.textContent = ''), 3500); };
+  const close = (refocus = true) => {
+    if (!menu) return; menu.remove(); menu = null; root.classList.remove('is-open'); grid.querySelectorAll('li').forEach((x) => (x.inert = false));
+    const more = li.querySelector('.lpm-more'); more.setAttribute('aria-expanded', 'false'); li.classList.remove('is-lift');
+    if (refocus) more.focus(); li = null;
+  };
+  const open = (item) => {
+    close(false); li = item; const name = li.querySelector('b').textContent, fav = !!li.querySelector('.lpm-fav');
+    li.classList.remove('is-press'); li.classList.add('is-lift'); root.classList.add('is-open'); grid.querySelectorAll('li').forEach((x) => (x.inert = x !== li));
+    li.querySelector('.lpm-more').setAttribute('aria-expanded', 'true');
+    menu = document.createElement('div'); menu.className = 'lpm-menu'; menu.setAttribute('role', 'menu'); menu.setAttribute('aria-label', `Ações para ${name}`);
+    menu.innerHTML = `<button type="button" role="menuitem" data-a="cart">Adicionar à sacola <span aria-hidden="true">＋</span></button><button type="button" role="menuitem" data-a="fav">${fav ? 'Remover dos favoritos' : 'Favoritar'} <span aria-hidden="true">♡</span></button><button type="button" role="menuitem" data-a="share">Compartilhar <span aria-hidden="true">↗</span></button><button type="button" role="menuitem" class="danger" data-a="hide">Ocultar do histórico</button>`;
+    root.append(menu);
+    const r = li.getBoundingClientRect(), base = root.getBoundingClientRect(), mh = menu.offsetHeight;
+    const below = r.bottom + 8 + mh < innerHeight; menu.classList.toggle('up', !below);
+    menu.style.top = `${(below ? r.bottom + 8 : r.top - 8 - mh) - base.top}px`;
+    menu.style.left = `${Math.min(Math.max(8, r.left - base.left + r.width / 2 - 110), base.width - 228)}px`;
+    menu.querySelector('button').focus();
+    if (navigator.vibrate) try { navigator.vibrate(10); } catch {}
+  };
+  grid.addEventListener('pointerdown', (e) => {
+    const card = e.target.closest('.lpm-card'); if (!card || e.button > 0) return;
+    const item = card.parentElement, x0 = e.clientX, y0 = e.clientY;
+    item.classList.add('is-press');
+    timer = setTimeout(() => { suppress = true; open(item); }, 450);
+    const cancel = () => { clearTimeout(timer); item.classList.remove('is-press'); card.removeEventListener('pointermove', mv); removeEventListener('pointerup', cancel); removeEventListener('pointercancel', cancel); };
+    const mv = (ev) => { if (Math.hypot(ev.clientX - x0, ev.clientY - y0) > 10) cancel(); };
+    card.addEventListener('pointermove', mv); addEventListener('pointerup', cancel); addEventListener('pointercancel', cancel);
+  });
+  grid.addEventListener('contextmenu', (e) => { const item = e.target.closest('li'); if (!item) return; e.preventDefault(); if (!menu) open(item); });
+  grid.addEventListener('click', (e) => {
+    if (suppress) { suppress = false; e.preventDefault(); e.stopPropagation(); return; }
+    const more = e.target.closest('.lpm-more'); if (more) { const item = more.parentElement; return li === item ? close() : open(item); }
+    const card = e.target.closest('.lpm-card'); if (card) say(`Abrindo ${card.querySelector('b').textContent}`);
+  });
+  root.addEventListener('click', (e) => {
+    const a = e.target.closest('.lpm-menu [data-a]');
+    if (!a) { if (menu && !e.target.closest('.lpm-menu, .lpm-more')) close(false); return; }
+    const name = li.querySelector('b').textContent, act = a.dataset.a;
+    if (act === 'fav') { const f = li.querySelector('.lpm-fav'); f ? f.remove() : li.insertAdjacentHTML('beforeend', '<span class="lpm-fav">♥ Favorito</span>'); say(f ? `${name} saiu dos favoritos` : `${name} nos favoritos`); }
+    if (act === 'cart') say(`${name} na sacola`);
+    if (act === 'share') say(`Link de ${name} copiado`);
+    if (act === 'hide') { const item = li; close(false); item.remove(); say(`${name} ocultado`); grid.querySelector('.lpm-more')?.focus(); return; }
+    close();
+  });
+  root.addEventListener('keydown', (e) => {
+    if (!menu) return;
+    const items = [...menu.querySelectorAll('button')], i = items.indexOf(document.activeElement);
+    if (e.key === 'Escape') { e.preventDefault(); close(); }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length].focus(); }
+    if (e.key === 'Tab') close(false);
+  });
+})();
+</script>

@@ -1,0 +1,63 @@
+<style>
+  .bc { min-height: 100vh; padding: 20px; display: grid; gap: 24px; align-content: start; }
+  .bc-box { padding: 16px; border: 1px dashed var(--wc-border-strong); border-radius: var(--wc-radius-md); resize: horizontal; overflow: auto; width: min(720px, 100%); min-width: 200px; max-width: 100%; }
+  .bc small { color: var(--wc-fg-muted); }
+  .bc nav ol { display: flex; align-items: center; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: var(--wc-font-size-sm); white-space: nowrap; min-width: 0; }
+  .bc nav ol.is-fitting { overflow: hidden; }
+  .bc nav li { display: inline-flex; align-items: center; gap: 6px; flex: none; position: relative; }
+  .bc nav li:last-child { flex: 0 1 auto; min-width: 0; }
+  .bc nav li + li::before { content: "/"; color: var(--wc-fg-muted); }
+  .bc nav a { color: var(--wc-fg-muted); text-decoration: none; padding: 4px 2px; border-radius: var(--wc-radius-sm); }
+  .bc nav a:hover { color: var(--wc-fg); text-decoration: underline; }
+  .bc nav a:focus-visible, .bc-more:focus-visible, .bc-menu a:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .bc [aria-current="page"] { color: var(--wc-fg); font-weight: var(--wc-font-weight-medium); overflow: hidden; text-overflow: ellipsis; max-width: 24ch; }
+  .bc-more { min-width: 32px; min-height: 28px; border: 0; border-radius: var(--wc-radius-sm); background: var(--wc-sunken); color: var(--wc-fg-muted); font: inherit; cursor: pointer; }
+  .bc-menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 2; display: grid; min-width: 180px; padding: 6px; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-md); background: var(--wc-surface-raised); box-shadow: var(--wc-shadow-lg); }
+  .bc-menu[hidden] { display: none; }
+  .bc-menu a { padding: 8px 10px !important; color: var(--wc-fg) !important; }
+  .bc-menu a:hover { background: var(--wc-sunken); text-decoration: none !important; }
+  .bc [data-hide] { display: none; }
+  .bc-back { display: none; font-size: var(--wc-font-size-sm); }
+  @media (max-width: 480px) { .bc nav ol { display: none; } .bc-back { display: inline-flex; color: var(--wc-accent); } }
+</style>
+<div class="bc">
+  <div class="bc-box">
+    <small>Arraste o canto inferior direito para estreitar a caixa.</small>
+    <nav aria-label="Trilha"><ol></ol><a class="bc-back" href="#contratos">← Contratos</a></nav>
+  </div>
+</div>
+<script>
+(() => {
+  const trail = [['Clientes', '#clientes'], ['Acme Indústria Ltda', '#acme'], ['Unidades', '#unidades'], ['Filial Campinas', '#campinas'], ['Contratos', '#contratos'], ['Contrato de manutenção 2026–2027', null]];
+  const ol = document.querySelector('.bc ol');
+  const box = document.querySelector('.bc-box');
+  const mid = trail.slice(1, -2);
+  ol.innerHTML = `<li><a href="${trail[0][1]}">${trail[0][0]}</a></li>` +
+    `<li data-more data-hide><button class="bc-more" type="button" aria-expanded="false" aria-label="Mostrar ${mid.length} níveis ocultos">…</button><div class="bc-menu" hidden>${mid.map(([t, h]) => `<a href="${h}">${t}</a>`).join('')}</div></li>` +
+    mid.map(([t, h]) => `<li data-mid><a href="${h}">${t}</a></li>`).join('') +
+    `<li><a href="${trail.at(-2)[1]}">${trail.at(-2)[0]}</a></li><li><span aria-current="page" title="${trail.at(-1)[0]}">${trail.at(-1)[0]}</span></li>`;
+  const more = ol.querySelector('[data-more]');
+  const btn = more.querySelector('button');
+  const menu = more.querySelector('.bc-menu');
+  const mids = [...ol.querySelectorAll('[data-mid]')];
+  const cur = ol.querySelector('[aria-current]');
+  const fit = () => {
+    mids.forEach((m) => m.removeAttribute('data-hide')); more.setAttribute('data-hide', '');
+    cur.style.maxWidth = 'none'; ol.classList.add('is-fitting');
+    const over = ol.scrollWidth > ol.clientWidth;
+    cur.style.maxWidth = ''; ol.classList.remove('is-fitting');
+    if (over) { mids.forEach((m) => m.setAttribute('data-hide', '')); more.removeAttribute('data-hide'); }
+  };
+  new ResizeObserver(fit).observe(box);
+  const close = (focus) => { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); if (focus) btn.focus(); };
+  btn.addEventListener('click', () => { const open = menu.hidden; menu.hidden = !open; btn.setAttribute('aria-expanded', String(open)); if (open) menu.querySelector('a').focus(); });
+  menu.addEventListener('keydown', (e) => {
+    const links = [...menu.querySelectorAll('a')]; const i = links.indexOf(document.activeElement);
+    if (e.key === 'Escape') close(true);
+    if (e.key === 'ArrowDown') { e.preventDefault(); links[(i + 1) % links.length].focus(); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); links[(i - 1 + links.length) % links.length].focus(); }
+  });
+  document.addEventListener('click', (e) => { if (!more.contains(e.target)) close(false); });
+  fit();
+})();
+</script>

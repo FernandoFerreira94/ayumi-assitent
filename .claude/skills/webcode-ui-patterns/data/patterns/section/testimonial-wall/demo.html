@@ -1,0 +1,54 @@
+<style>
+  .tw { max-width: 1120px; margin: 0 auto; padding: 56px 20px 64px; display: grid; gap: 28px; }
+  .tw h2 { margin: 0; text-align: center; font: var(--wc-font-weight-semibold) clamp(28px, 4.4vw, var(--wc-font-size-5xl)) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); text-wrap: balance; }
+  .tw figure { margin: 0; }
+  .tw blockquote { margin: 0; }
+  .tw-hero { display: grid; gap: 20px; padding: clamp(24px, 4vw, 40px); border-radius: var(--wc-radius-xl); background: radial-gradient(90% 120% at 100% 0%, var(--wc-gradient-2), transparent 60%), var(--wc-surface); border: 1px solid var(--wc-border); }
+  .tw-hero blockquote p { margin: 0; font: var(--wc-font-weight-medium) clamp(20px, 2.6vw, var(--wc-font-size-3xl)) / var(--wc-line-height-snug) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); text-wrap: pretty; max-width: 36ch; }
+  .tw-cols { columns: 3 300px; column-gap: 16px; }
+  .tw-card { break-inside: avoid; margin: 0 0 16px; padding: 20px; border-radius: var(--wc-radius-lg); background: var(--wc-surface); border: 1px solid var(--wc-border); display: flex; flex-direction: column; gap: 14px; }
+  .tw-card blockquote p { margin: 0; line-height: var(--wc-line-height-relaxed); }
+  .tw-metric { order: -1; display: flex; align-items: baseline; gap: 8px; }
+  .tw-metric strong { font: var(--wc-font-weight-bold) var(--wc-font-size-3xl) / 1 var(--wc-font-display); color: var(--wc-accent); font-variant-numeric: tabular-nums; letter-spacing: calc(var(--wc-tracking-tight) * 1em); }
+  .tw-metric span { color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .tw figcaption { display: flex; align-items: center; gap: 12px; font-size: var(--wc-font-size-sm); }
+  .tw figcaption b { display: block; font-weight: var(--wc-font-weight-semibold); }
+  .tw figcaption div span { color: var(--wc-fg-muted); }
+  .tw-av { flex: none; width: 40px; height: 40px; border-radius: var(--wc-radius-pill); display: grid; place-items: center; font-weight: var(--wc-font-weight-semibold); font-size: var(--wc-font-size-sm); background: var(--wc-accent-soft); color: var(--wc-fg); }
+  .tw-card[hidden] { display: none; }
+  .tw-card.is-new { animation: tw-in var(--wc-motion-duration-slow) var(--wc-motion-ease-out) both; }
+  @keyframes tw-in { from { opacity: 0; transform: translateY(calc(12px * var(--wc-motion-distance))); } }
+  .tw-more { justify-self: center; font: inherit; font-weight: var(--wc-font-weight-medium); min-height: var(--wc-size-touch-min); padding: 0 20px; border-radius: var(--wc-radius-pill); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); cursor: pointer; }
+  .tw-more:focus-visible, .tw-card:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+</style>
+<section class="tw" aria-labelledby="tw-t">
+  <h2 id="tw-t">Quem usa, não volta para a planilha</h2>
+  <figure class="tw-hero">
+    <blockquote><p>“Fechávamos o mês em duas semanas. Hoje o financeiro concilia o Pix no mesmo dia e eu consigo olhar o caixa antes de decidir uma compra.”</p></blockquote>
+    <figcaption><span class="tw-av" aria-hidden="true">MC</span><div><b>Marina Costa</b><span>Diretora financeira, Grupo Sol · 14 lojas</span></div></figcaption>
+  </figure>
+  <div class="tw-cols" id="tw-list">
+    <figure class="tw-card"><blockquote><p>O WhatsApp parou de ser caos. Cada pedido vira um card e ninguém responde o mesmo cliente duas vezes.</p></blockquote><div class="tw-metric"><strong>−41%</strong><span>tempo de resposta</span></div><figcaption><span class="tw-av" aria-hidden="true">RA</span><div><b>Rafael Alves</b><span>Sócio, Café Aroma</span></div></figcaption></figure>
+    <figure class="tw-card"><blockquote><p>Implantamos em uma tarde. A nota fiscal sai sozinha e o contador recebe o XML sem eu pedir.</p></blockquote><div class="tw-metric"><strong>1 tarde</strong><span>para implantar</span></div><figcaption><span class="tw-av" aria-hidden="true">JP</span><div><b>Júlia Prado</b><span>Dona, Ateliê Prado</span></div></figcaption></figure>
+    <figure class="tw-card"><blockquote><p>O relatório das 22h virou ritual. Sei o que vendeu, o que acabou e o que repor antes de dormir.</p></blockquote><div class="tw-metric"><strong>3,2×</strong><span>mais recompra</span></div><figcaption><span class="tw-av" aria-hidden="true">DS</span><div><b>Diego Santos</b><span>Gerente, Mercado Bom Preço</span></div></figcaption></figure>
+    <figure class="tw-card"><blockquote><p>Funciona sem internet no balcão. Quando a conexão volta, tudo sincroniza e eu não perco venda.</p></blockquote><div class="tw-metric"><strong>0</strong><span>vendas perdidas por queda</span></div><figcaption><span class="tw-av" aria-hidden="true">LV</span><div><b>Lia Vieira</b><span>Proprietária, Padaria Estrela</span></div></figcaption></figure>
+    <figure class="tw-card"><blockquote><p>Antes eu tinha três sistemas. Agora é um, e o suporte responde em português e de verdade.</p></blockquote><div class="tw-metric"><strong>R$ 1,8 mil</strong><span>economia por mês</span></div><figcaption><span class="tw-av" aria-hidden="true">BM</span><div><b>Bruno Melo</b><span>CEO, Studio Lume</span></div></figcaption></figure>
+    <figure class="tw-card"><blockquote><p>A equipe aprendeu sozinha. O treinamento foi um vídeo de cinco minutos.</p></blockquote><div class="tw-metric"><strong>5 min</strong><span>de treinamento</span></div><figcaption><span class="tw-av" aria-hidden="true">CN</span><div><b>Carla Nunes</b><span>Coordenadora, Clínica Vida</span></div></figcaption></figure>
+    <figure class="tw-card" hidden tabindex="-1"><blockquote><p>Abrimos a segunda unidade sem contratar ninguém para o administrativo.</p></blockquote><div class="tw-metric"><strong>+1 loja</strong><span>sem aumentar equipe</span></div><figcaption><span class="tw-av" aria-hidden="true">PM</span><div><b>Paulo Moraes</b><span>Sócio, Auto Peças Sul</span></div></figcaption></figure>
+    <figure class="tw-card" hidden><blockquote><p>O cliente paga no Pix e o pedido já aparece pago na tela da cozinha.</p></blockquote><div class="tw-metric"><strong>8 s</strong><span>do Pix à cozinha</span></div><figcaption><span class="tw-av" aria-hidden="true">AF</span><div><b>Ana Freitas</b><span>Dona, Sabor da Vila</span></div></figcaption></figure>
+    <figure class="tw-card" hidden><blockquote><p>Meu contador agradeceu. Literalmente mandou mensagem agradecendo.</p></blockquote><div class="tw-metric"><strong>100%</strong><span>das notas no prazo</span></div><figcaption><span class="tw-av" aria-hidden="true">GL</span><div><b>Gustavo Lima</b><span>Fundador, Loja Verde</span></div></figcaption></figure>
+  </div>
+  <button class="tw-more" type="button" aria-expanded="false" aria-controls="tw-list">Ver mais depoimentos</button>
+</section>
+<script>
+(() => {
+  const btn = document.querySelector('.tw-more');
+  btn.addEventListener('click', () => {
+    const hidden = [...document.querySelectorAll('#tw-list .tw-card[hidden]')];
+    hidden.forEach((c) => { c.hidden = false; c.classList.add('is-new'); });
+    btn.setAttribute('aria-expanded', 'true');
+    btn.hidden = true;
+    hidden[0]?.focus();
+  });
+})();
+</script>

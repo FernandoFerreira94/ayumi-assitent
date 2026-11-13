@@ -1,0 +1,158 @@
+<style>
+  .pmh { position: relative; isolation: isolate; overflow: hidden; min-height: clamp(560px, 88svh, 880px); display: flex; flex-direction: column; background: var(--wc-bg); color: var(--wc-fg); font-family: var(--wc-font-body); }
+  .pmh-grid { position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: .5; background-image: linear-gradient(var(--wc-border) 1px, transparent 1px), linear-gradient(90deg, var(--wc-border) 1px, transparent 1px); background-size: 56px 56px; -webkit-mask-image: radial-gradient(80% 70% at 60% 45%, black, transparent); mask-image: radial-gradient(80% 70% at 60% 45%, black, transparent); }
+  .pmh-light { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(45% 55% at 72% 45%, light-dark(color-mix(in oklab, var(--wc-accent) 7%, transparent), color-mix(in oklab, var(--wc-accent) 14%, transparent)), transparent 70%), radial-gradient(35% 45% at 12% 60%, light-dark(transparent, color-mix(in oklab, var(--wc-accent) 7%, transparent)), transparent 70%); }
+  .pmh-main { flex: 1; width: 100%; max-width: 1152px; margin: 0 auto; padding: 40px 24px 24px; display: grid; gap: 24px; align-items: center; }
+  .pmh-stage { width: 100%; max-width: min(340px, 70vw); aspect-ratio: 1; margin: 0 auto; }
+  .pmh-stage canvas { display: block; width: 100%; height: 100%; }
+  .pmh-text { display: grid; gap: 20px; max-width: 42rem; }
+  .pmh-text > * { margin: 0; animation: pmh-in var(--wc-motion-duration-slow) var(--wc-motion-ease-out) backwards; }
+  .pmh-text > :nth-child(2) { animation-delay: 60ms; } .pmh-text > :nth-child(3) { animation-delay: 120ms; }
+  @keyframes pmh-in { from { clip-path: inset(0 0 100% 0); transform: translateY(calc(14px * var(--wc-motion-distance))); } to { clip-path: inset(-50%); } }
+  .pmh h1 { font: var(--wc-font-weight-semibold) clamp(36px, 5.4vw, var(--wc-font-size-6xl)) / 1.05 var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); text-wrap: balance; }
+  .pmh h1 em { font-style: normal; color: var(--wc-accent); text-shadow: 0 0 28px light-dark(transparent, color-mix(in oklab, var(--wc-accent) 45%, transparent)); }
+  .pmh-text p { color: var(--wc-fg-muted); font-size: var(--wc-font-size-lg); line-height: var(--wc-line-height-relaxed); max-width: 36rem; text-wrap: pretty; }
+  .pmh-cta { justify-self: start; display: inline-flex; align-items: center; gap: 10px; height: var(--wc-size-control-lg); padding: 0 24px; border-radius: var(--wc-radius-pill); border: 1px solid var(--wc-accent); color: var(--wc-accent); font: var(--wc-font-weight-semibold) var(--wc-font-size-sm) var(--wc-font-body); letter-spacing: .08em; text-transform: uppercase; text-decoration: none; transition: background-color var(--wc-motion-duration-fast), transform var(--wc-motion-duration-fast) var(--wc-motion-ease-out); }
+  .pmh-cta:hover { background: var(--wc-accent-soft); }
+  .pmh-cta:active { transform: scale(.97); }
+  .pmh-cta svg { transition: transform var(--wc-motion-duration-fast) var(--wc-motion-ease-out); }
+  .pmh-cta:hover svg { transform: translateX(calc(3px * var(--wc-motion-distance))); }
+  .pmh a:focus-visible, .pmh button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 3px; }
+  .pmh-nav { display: grid; justify-items: center; gap: 12px; padding: 0 24px 32px; }
+  .pmh-hint { display: flex; align-items: center; gap: 8px; margin: 0; font-size: var(--wc-font-size-xs); font-weight: var(--wc-font-weight-semibold); letter-spacing: .25em; text-transform: uppercase; text-decoration: none; color: var(--wc-fg-muted); }
+  .pmh-hint:hover { color: var(--wc-fg); }
+  .pmh-mouse { position: relative; width: 14px; height: 20px; border: 1px solid currentColor; border-radius: 99px; }
+  .pmh-mouse::after { content: ""; position: absolute; top: 4px; left: 50%; width: 2px; height: 6px; margin-left: -1px; border-radius: 2px; background: currentColor; animation: pmh-wheel 1.8s var(--wc-motion-ease-out) infinite; }
+  @keyframes pmh-wheel { 70% { transform: translateY(8px); opacity: 0; } 100% { opacity: 0; } }
+  .pmh-ctrl { display: flex; align-items: center; gap: 8px; }
+  .pmh-btn { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--wc-border-strong); background: none; color: var(--wc-fg); cursor: pointer; transition: background-color var(--wc-motion-duration-fast), color var(--wc-motion-duration-fast); }
+  .pmh-btn:hover { background: var(--wc-sunken); color: var(--wc-accent); }
+  .pmh-btn.ghost { border-color: transparent; color: var(--wc-fg-muted); }
+  .pmh-dots { display: flex; }
+  .pmh-dot { height: 36px; min-width: 24px; padding: 0 6px; display: grid; place-items: center; background: none; border: 0; border-radius: 99px; cursor: pointer; }
+  .pmh-dot span { position: relative; display: block; width: 6px; height: 6px; border-radius: 99px; overflow: hidden; background: var(--wc-border-strong); transition: width var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  .pmh-dot[aria-current] span { width: 32px; }
+  .pmh-dot i { position: absolute; inset: 0; transform-origin: left; transform: scaleX(0); background: var(--wc-accent); border-radius: inherit; }
+  .pmh-dot[aria-current] i { animation: pmh-progress 7s linear forwards; }
+  .pmh[data-paused] .pmh-dot i { animation-play-state: paused; }
+  .pmh[data-stopped] .pmh-dot i { animation: none; transform: scaleX(1); }
+  @keyframes pmh-progress { to { transform: scaleX(1); } }
+  @media (pointer: coarse) { .pmh-btn { width: 44px; height: 44px; } .pmh-dot { height: 44px; } }
+  @media (min-width: 1024px) {
+    .pmh-main { grid-template-columns: 1.05fr 1fr; gap: 40px; padding: 64px 24px; }
+    .pmh-stage { order: 2; max-width: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .pmh-text > *, .pmh-mouse::after { animation: none; } .pmh-btn.ghost { display: none; } }
+</style>
+<section class="pmh" aria-roledescription="carrossel" aria-label="Destaques da agência">
+  <div class="pmh-grid" aria-hidden="true"></div>
+  <div class="pmh-light" aria-hidden="true"></div>
+  <div class="pmh-main">
+    <div class="pmh-stage"><canvas aria-hidden="true"></canvas></div>
+    <div class="pmh-text" id="pmh-slide" role="group" aria-roledescription="slide"></div>
+  </div>
+  <div class="pmh-nav">
+    <a class="pmh-hint" href="#"><span class="pmh-mouse" aria-hidden="true"></span>Role para explorar</a>
+    <div class="pmh-ctrl" role="group" aria-label="Controles do carrossel">
+      <button class="pmh-btn" type="button" data-go="-1" aria-label="Slide anterior" aria-controls="pmh-slide"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+      <div class="pmh-dots"></div>
+      <button class="pmh-btn" type="button" data-go="1" aria-label="Próximo slide" aria-controls="pmh-slide"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+      <button class="pmh-btn ghost" type="button" data-pause aria-label="Pausar animação"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg></button>
+    </div>
+  </div>
+</section>
+<script>
+(() => {
+  const root = document.querySelector('.pmh'), canvas = root.querySelector('canvas'), ctx = canvas.getContext('2d'), text = root.querySelector('.pmh-text'), dots = root.querySelector('.pmh-dots'), pauseBtn = root.querySelector('[data-pause]');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches, TAU = Math.PI * 2;
+  const arrow = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+  const SLIDES = [
+    { label: 'Ideias', shape: 'bulb', title: 'Transforme suas ideias em <em>produtos digitais</em>', text: 'Do rascunho ao app publicado: produto, design e engenharia no mesmo time, com entregas a cada duas semanas.', cta: 'Quero tirar do papel' },
+    { label: 'Tecnologia', shape: 'pyramids', title: 'Especialistas em <em>tecnologia para todos os mercados</em>', text: 'Sua experiência de mercado com a nossa base técnica: sistemas que aguentam o crescimento sem refazer tudo.', cta: 'Entenda como ajudamos' },
+    { label: 'Pessoas', shape: 'people', title: 'Um time que <em>joga junto com o seu</em>', text: 'Squads dedicados, rituais claros e alguém respondendo no mesmo dia. Sem telefone sem fio.', cta: 'Conheça o time' },
+  ];
+  let seed = 7; const rnd = () => { seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+  const tri = (a, b, c) => { const s = Math.sqrt(rnd()); return lerp(lerp(a, b, s), lerp(a, c, s), rnd()); };
+  const pyramid = (b, hf, apex, n, out) => { const c = [[b[0] - hf, b[1], b[2] - hf], [b[0] + hf, b[1], b[2] - hf], [b[0] + hf, b[1], b[2] + hf], [b[0] - hf, b[1], b[2] + hf]]; for (let i = 0; i < n; i++) { const k = Math.floor(rnd() * 4), a = c[k], d = c[(k + 1) % 4]; out.push(rnd() < .55 ? (rnd() < .5 ? lerp(a, d, rnd()) : lerp(a, apex, rnd())) : tri(apex, a, d)); } };
+  const SHAPES = {
+    pyramids(n) { const o = []; pyramid([-.42, -.62, -.05], .55, [-.42, .82, 0], Math.round(n * .6), o); pyramid([.58, -.62, .2], .36, [.62, .3, .2], n - o.length, o); return o; },
+    bulb(n) {
+      const o = [], cy = .3, R = .62, rays = Math.round(n * .14), fil = Math.round(n * .06);
+      const yn = cy - R * .72, rn = Math.sqrt(R * R - (yn - cy) ** 2), prof = (y) => y > yn ? Math.sqrt(Math.max(0, R * R - (y - cy) ** 2)) : y > -.6 ? .26 + (rn - .26) * ((y + .6) / (yn + .6)) ** 1.6 : .26 + .022 * Math.sin((y + .6) * 70);
+      while (o.length < n - rays - fil) { const y = -.95 + rnd() * (cy + R + .95), r = prof(y); if (rnd() * R > r) continue; const a = rnd() * TAU; o.push([Math.cos(a) * r, y, Math.sin(a) * r]); }
+      for (let i = 0; i < fil; i++) { const t = rnd(); o.push([(t - .5) * .3, cy - .12 + Math.abs(Math.sin(t * 12)) * .12, 0]); }
+      for (let i = 0; i < rays; i++) { const a = Math.PI * (.05 + Math.floor(rnd() * 7) / 6 * .9), d = .74 + rnd() * .24; o.push([Math.cos(a) * d, cy + Math.sin(a) * d, 0]); }
+      return o;
+    },
+    people(n) {
+      const o = [], P = [[-.6, -.3, .82], [.6, -.3, .82], [0, .15, 1]];
+      for (let i = 0; i < n; i++) { const [x, z, s] = P[i % 3 === 2 ? 2 : Math.floor(rnd() * 3)], a = rnd() * TAU;
+        if (rnd() < .32) { const u = rnd() * 2 - 1, q = Math.sqrt(1 - u * u); o.push([x + q * Math.cos(a) * .19 * s, .38 * s + u * .19 * s, z + q * Math.sin(a) * .19 * s]); }
+        else { const u = rnd(), q = Math.sqrt(1 - u * u); o.push([x + q * Math.cos(a) * .4 * s, -.78 + u * .82 * s, z + q * Math.sin(a) * .24 * s]); } }
+      return o;
+    },
+  };
+  const N = matchMedia('(max-width: 639px)').matches ? 1100 : 2400;
+  const pos = new Float32Array(N * 3), from = new Float32Array(N * 3), to = new Float32Array(N * 3), kick = new Float32Array(N * 3), delay = new Float32Array(N), sd = new Float32Array(N), px = new Float32Array(N), py = new Float32Array(N), pz = new Float32Array(N);
+  for (let i = 0; i < N; i++) { sd[i] = rnd(); delay[i] = rnd(); const a = rnd() * TAU, d = 1.4 + rnd() * 1.2; pos.set([Math.cos(a) * d, (rnd() - .5) * 2, Math.sin(a) * d], i * 3); }
+  let color = '', additive = false, w = 0, h = 0, angle = .5, last = 0, raf = 0, morphAt = -1, index = 0, playing = !reduced, hover = false, focus = false, visible = true;
+  const readColors = () => { const cs = getComputedStyle(root); color = cs.getPropertyValue('--wc-accent').trim(); additive = cs.colorScheme.includes('dark'); };
+  const draw = (t) => {
+    if (!w) return; ctx.clearRect(0, 0, w, h); ctx.globalCompositeOperation = additive ? 'lighter' : 'source-over'; ctx.fillStyle = color;
+    const R = Math.min(w, h) * .4, cx = w / 2, cy = h / 2, ca = Math.cos(angle), sa = Math.sin(angle), ct = Math.cos(.22), st = Math.sin(.22), tw = running(), unit = Math.min(1.6, Math.max(.8, R / 240));
+    for (let i = 0; i < N; i++) {
+      const j = tw ? Math.sin(t * .0012 + sd[i] * TAU) * .006 : 0, x = pos[i * 3] + j, y = pos[i * 3 + 1] + j, z = pos[i * 3 + 2];
+      const x1 = x * ca + z * sa, z1 = -x * sa + z * ca, y2 = y * ct - z1 * st, z2 = y * st + z1 * ct, p = 2.8 / (2.8 + z2);
+      const g = tw ? .65 + .35 * Math.sin(t * .002 + sd[i] * TAU) : .85, s = 1.6 * unit * p * (sd[i] > .92 ? 1.8 : 1);
+      ctx.globalAlpha = Math.min(1, Math.max(.2, (p - .5) * 1.8) * g);
+      ctx.fillRect(cx + x1 * R * p - s / 2, cy - y2 * R * p - s / 2, s, s);
+    }
+    ctx.globalAlpha = 1;
+  };
+  const running = () => playing && visible;
+  const step = (t) => {
+    const dt = last ? Math.min(50, t - last) : 16; last = t; if (running()) angle += dt * .00016;
+    let moving = false;
+    if (morphAt >= 0) {
+      const e0 = t - morphAt;
+      for (let i = 0; i < N; i++) { const p = Math.min(1, Math.max(0, (e0 - delay[i] * 630) / 1170)); if (p < 1) moving = true; const e = p < .5 ? 4 * p * p * p : 1 - (-2 * p + 2) ** 3 / 2, b = Math.sin(Math.PI * p); for (let a = 0; a < 3; a++) { const k = i * 3 + a; pos[k] = from[k] + (to[k] - from[k]) * e + kick[k] * b; } }
+      if (!moving) morphAt = -1;
+    }
+    draw(t); raf = running() || moving ? requestAnimationFrame(step) : 0;
+  };
+  const wake = () => { if (!raf) { last = 0; raf = requestAnimationFrame(step); } };
+  const morph = (name) => {
+    const pts = SHAPES[name](N);
+    for (let i = 0; i < N; i++) { const q = pts[Math.floor(rnd() * pts.length)]; for (let a = 0; a < 3; a++) { from[i * 3 + a] = pos[i * 3 + a]; to[i * 3 + a] = q[a]; kick[i * 3 + a] = (rnd() - .5) * .5; } }
+    if (reduced) { pos.set(to); draw(0); } else { morphAt = performance.now(); wake(); }
+  };
+  const sync = () => { if (playing && !hover && !focus && visible) delete root.dataset.paused; else root.dataset.paused = ''; };
+  const render = () => {
+    const s = SLIDES[index];
+    text.setAttribute('aria-label', `${index + 1} de ${SLIDES.length}: ${s.label}`);
+    text.setAttribute('aria-live', playing ? 'off' : 'polite');
+    text.innerHTML = `<h1>${s.title}</h1><p>${s.text}</p><a class="pmh-cta" href="#">${s.cta} ${arrow}</a>`;
+    dots.querySelectorAll('button').forEach((b, i) => { if (i === index) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current'); const bar = b.querySelector('i'); bar.style.animation = 'none'; bar.offsetWidth; bar.style.animation = ''; });
+    morph(s.shape);
+  };
+  const go = (i) => { index = (i + SLIDES.length) % SLIDES.length; render(); };
+  dots.innerHTML = SLIDES.map((s, i) => `<button class="pmh-dot" type="button" aria-label="Ir para o slide ${i + 1}: ${s.label}"><span><i></i></span></button>`).join('');
+  dots.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) go([...dots.children].indexOf(b)); });
+  dots.addEventListener('animationend', (e) => { if (e.animationName === 'pmh-progress') go(index + 1); });
+  root.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => go(index + Number(b.dataset.go))));
+  root.querySelector('.pmh-ctrl').addEventListener('keydown', (e) => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); go(index + (e.key === 'ArrowRight' ? 1 : -1)); } });
+  pauseBtn.addEventListener('click', () => { playing = !playing; pauseBtn.setAttribute('aria-label', playing ? 'Pausar animação' : 'Continuar animação'); pauseBtn.innerHTML = playing ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg>' : '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>'; if (playing) delete root.dataset.stopped; else root.dataset.stopped = ''; text.setAttribute('aria-live', playing ? 'off' : 'polite'); sync(); if (playing) wake(); });
+  if (reduced) root.dataset.stopped = '';
+  // Pausa no hover só do texto e dos controles: o hero ocupa a tela e o mouse quase sempre está sobre ele.
+  [text, root.querySelector('.pmh-nav')].forEach((el) => { el.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') { hover = true; sync(); } }); el.addEventListener('pointerleave', () => { hover = false; sync(); }); });
+  root.addEventListener('focusin', () => { focus = true; sync(); });
+  root.addEventListener('focusout', (e) => { if (!root.contains(e.relatedTarget)) { focus = false; sync(); } });
+  const vis = () => { sync(); if (running()) wake(); };
+  new IntersectionObserver(([e]) => { visible = e.isIntersecting && document.visibilityState === 'visible'; vis(); }).observe(root);
+  document.addEventListener('visibilitychange', () => { visible = document.visibilityState === 'visible'; vis(); });
+  new ResizeObserver(() => { const d = Math.min(2, devicePixelRatio || 1); w = canvas.clientWidth; h = canvas.clientHeight; canvas.width = Math.round(w * d); canvas.height = Math.round(h * d); ctx.setTransform(d, 0, 0, d, 0, 0); draw(performance.now()); }).observe(canvas);
+  new MutationObserver(() => { readColors(); if (!raf) draw(performance.now()); }).observe(document.documentElement, { attributes: true });
+  readColors(); render();
+})();
+</script>

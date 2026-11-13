@@ -1,0 +1,71 @@
+<style>
+  .pp-stage { padding: 24px 16px; display: grid; gap: 12px; }
+  .pp-frame { resize: horizontal; overflow: hidden; width: 100%; min-width: 220px; max-width: 100%; border: 1px dashed var(--wc-border-strong); border-radius: var(--wc-radius-lg); background: var(--wc-surface); }
+  .pp-hint { margin: 0; font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .pp { display: flex; align-items: center; gap: 4px; padding: 8px; position: relative; }
+  .pp-list { display: flex; gap: 4px; list-style: none; margin: 0; padding: 0; min-width: 0; flex: 1; overflow: hidden; }
+  .pp-list li[hidden] { display: none; }
+  .pp a { display: block; white-space: nowrap; padding: 8px 12px; border-radius: var(--wc-radius-sm); color: var(--wc-fg-muted); text-decoration: none; font-size: var(--wc-font-size-sm); }
+  .pp a:hover { color: var(--wc-fg); background: var(--wc-sunken); }
+  .pp a[aria-current] { color: var(--wc-fg); background: var(--wc-sunken); font-weight: var(--wc-font-weight-medium); }
+  .pp :focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .pp-more { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; border-radius: var(--wc-radius-sm); border: 0; background: none; color: var(--wc-fg); font: inherit; font-size: var(--wc-font-size-sm); cursor: pointer; }
+  .pp-more[hidden] { display: none; }
+  .pp-more:hover, .pp-more[aria-expanded="true"] { background: var(--wc-sunken); }
+  .pp-more span { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--wc-accent-soft); color: var(--wc-accent); font-size: var(--wc-font-size-xs); font-weight: var(--wc-font-weight-semibold); display: grid; place-items: center; }
+  .pp-pop { position: fixed; inset: auto; min-width: 200px; margin: 0; padding: 4px; list-style: none; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface-raised); box-shadow: var(--wc-shadow-lg); }
+  .pp-pop:not(:popover-open) { display: none; }
+  .pp-pop a { padding: 10px 12px; color: var(--wc-fg); }
+  .pp-demo-body { padding: 20px; color: var(--wc-fg-muted); min-height: 220px; border-top: 1px solid var(--wc-border); }
+</style>
+<div class="pp-stage">
+  <p class="pp-hint">Arraste o canto inferior direito da moldura (ou gire o celular): os links que não cabem vão para “Mais”.</p>
+  <div class="pp-frame">
+    <nav class="pp" aria-label="Seções">
+      <ul class="pp-list">
+        <li><a href="#">Início</a></li><li><a href="#">Política</a></li><li><a href="#" aria-current="page">Economia</a></li><li><a href="#">Mundo</a></li><li><a href="#">Tecnologia</a></li><li><a href="#">Ciência</a></li><li><a href="#">Cultura</a></li><li><a href="#">Esporte</a></li><li><a href="#">Viagem</a></li><li><a href="#">Podcasts</a></li>
+      </ul>
+      <button class="pp-more" type="button" aria-expanded="false" aria-controls="pp-pop" hidden>Mais <span aria-hidden="true">0</span></button>
+      <ul class="pp-pop" id="pp-pop" popover="manual"></ul>
+    </nav>
+    <div class="pp-demo-body">Conteúdo da seção Economia.</div>
+  </div>
+</div>
+<script>
+(() => {
+  const nav = document.querySelector('.pp'), list = nav.querySelector('.pp-list'), more = nav.querySelector('.pp-more'), pop = nav.querySelector('.pp-pop');
+  const lis = [...list.children], GAP = 4;
+  let widths = [], moreW = 0;
+  function measure() {
+    lis.forEach((li) => (li.hidden = false)); widths = lis.map((li) => li.getBoundingClientRect().width);
+    const h = more.hidden; more.hidden = false; moreW = more.getBoundingClientRect().width + 16; more.hidden = h;
+  }
+  measure();
+  const activeI = lis.findIndex((li) => li.querySelector('[aria-current]'));
+  function layout() {
+    const avail = nav.clientWidth - 16;
+    const total = widths.reduce((s, w) => s + w + GAP, -GAP);
+    let show = new Set(lis.map((_, i) => i));
+    if (total > avail) {
+      show = new Set([activeI]); let used = widths[activeI];
+      for (let i = 0; i < lis.length; i++) { if (i === activeI) continue; if (used + GAP + widths[i] + moreW <= avail) { show.add(i); used += GAP + widths[i]; } else break; }
+    }
+    const hidden = lis.filter((_, i) => !show.has(i));
+    lis.forEach((li, i) => (li.hidden = !show.has(i)));
+    pop.innerHTML = hidden.map((li) => `<li>${li.innerHTML}</li>`).join('');
+    more.hidden = !hidden.length; more.querySelector('span').textContent = hidden.length;
+    more.setAttribute('aria-label', `Mais ${hidden.length} seções`);
+    if (!hidden.length) setOpen(false);
+  }
+  const isOpen = () => pop.matches(':popover-open');
+  function setOpen(o, focus) {
+    if (o && !isOpen()) { pop.showPopover(); const r = more.getBoundingClientRect(); pop.style.top = r.bottom + 6 + 'px'; pop.style.left = Math.max(8, Math.min(r.right - pop.offsetWidth, innerWidth - pop.offsetWidth - 8)) + 'px'; }
+    if (!o && isOpen()) pop.hidePopover(); more.setAttribute('aria-expanded', String(o)); if (!o && focus) more.focus(); }
+  more.addEventListener('click', () => setOpen(!isOpen()));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isOpen()) setOpen(false, true); });
+  document.addEventListener('click', (e) => { if (!nav.contains(e.target)) setOpen(false); });
+  addEventListener('resize', () => setOpen(false));
+  new ResizeObserver(layout).observe(nav);
+  document.fonts?.ready.then(() => { measure(); layout(); });
+})();
+</script>

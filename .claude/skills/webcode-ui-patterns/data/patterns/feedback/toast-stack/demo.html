@@ -1,0 +1,85 @@
+<style>
+  .ts-stage { min-height: 100vh; display: grid; place-content: center; gap: 10px; justify-items: center; padding: 20px; }
+  .ts-stage button { font: inherit; font-weight: var(--wc-font-weight-medium); padding: 8px 14px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); cursor: pointer; }
+  .ts-stage button:focus-visible, .ts-t button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .ts-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .ts { position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: calc(16px + env(safe-area-inset-bottom)); width: min(360px, calc(100vw - 32px)); height: 0; z-index: 60; list-style: none; margin: 0; padding: 0; }
+  .ts-t { --i: 0; --y: 0px; position: absolute; right: 0; bottom: 0; width: 100%; display: flex; align-items: flex-start; gap: 10px; padding: 14px 14px 14px 16px; border-radius: var(--wc-radius-lg); background: var(--wc-surface-raised); border: 1px solid var(--wc-border); box-shadow: var(--wc-shadow-lg); transform: translateY(calc(var(--i) * -10px)) scale(calc(1 - var(--i) * .05)); transform-origin: 50% 0; opacity: 1; transition: transform var(--wc-motion-duration-slow) var(--wc-motion-ease-out), opacity var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  @starting-style { .ts-t { transform: translateY(calc(100% + 16px)); opacity: 0; } }
+  .ts:hover .ts-t, .ts:focus-within .ts-t { transform: translateY(calc(var(--y) * -1)); }
+  .ts-t[data-hidden] { opacity: 0; pointer-events: none; }
+  .ts-t.is-leaving { opacity: 0; transform: translateY(calc(var(--y) * -1)) translateX(24px) !important; transition-duration: var(--wc-motion-duration-fast); }
+  .ts-ico { width: 20px; height: 20px; flex: none; display: grid; place-items: center; border-radius: 50%; font-size: 12px; font-weight: 700; }
+  .ts-t[data-type="success"] .ts-ico { background: var(--wc-success-soft); color: var(--wc-success); }
+  .ts-t[data-type="error"] .ts-ico { background: var(--wc-danger-soft); color: var(--wc-danger); }
+  .ts-t[data-type="info"] .ts-ico { background: var(--wc-accent-soft); color: var(--wc-accent); }
+  .ts-t div { flex: 1; min-width: 0; }
+  .ts-t strong { display: block; font-size: var(--wc-font-size-md); }
+  .ts-t p { margin: 2px 0 0; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .ts-t .ts-act { font: inherit; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-semibold); color: var(--wc-accent); background: none; border: 0; padding: 4px 6px; cursor: pointer; border-radius: var(--wc-radius-sm); }
+  .ts-t .ts-x { background: none; border: 0; color: var(--wc-fg-muted); cursor: pointer; padding: 2px 4px; font-size: 16px; line-height: 1; border-radius: var(--wc-radius-sm); }
+</style>
+<div class="ts-stage">
+  <div class="ts-row">
+    <button type="button" data-t="success">Salvar</button>
+    <button type="button" data-t="error">Simular erro</button>
+    <button type="button" data-t="info">Exportação com ação</button>
+  </div>
+  <small style="color:var(--wc-fg-muted)">Dispare vários e passe o mouse sobre a pilha</small>
+</div>
+<section class="ts" aria-label="Notificações"></section>
+<script>
+(() => {
+  const stack = document.querySelector('.ts');
+  const presets = {
+    success: { title: 'Pedido #10483 salvo', text: 'Cliente notificado por WhatsApp.', icon: '✓' },
+    error: { title: 'Falha ao emitir NF-e', text: 'SEFAZ indisponível. Tentaremos de novo em 5 min.', icon: '!' },
+    info: { title: 'Exportação pronta', text: 'relatorio-outubro.xlsx (2,4 MB)', icon: 'i', action: 'Baixar' },
+  };
+  let paused = false;
+  const layout = () => {
+    const ts = [...stack.querySelectorAll('.ts-t:not(.is-leaving)')].reverse();
+    let y = 0;
+    ts.forEach((t, i) => {
+      t.style.setProperty('--i', i);
+      t.style.setProperty('--y', y + 'px');
+      y += t.offsetHeight + 8;
+      if (i > 2) t.dataset.hidden = ''; else delete t.dataset.hidden;
+    });
+  };
+  const remove = (t) => {
+    if (t.classList.contains('is-leaving')) return;
+    t.classList.add('is-leaving');
+    setTimeout(() => { t.remove(); layout(); }, 160);
+    layout();
+  };
+  const toast = (type) => {
+    const p = presets[type];
+    const t = document.createElement('div');
+    t.className = 'ts-t'; t.dataset.type = type;
+    t.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    t.innerHTML = `<span class="ts-ico" aria-hidden="true">${p.icon}</span><div><strong></strong><p></p></div>${p.action ? `<button class="ts-act" type="button">${p.action}</button>` : ''}<button class="ts-x" type="button" aria-label="Fechar notificação">×</button>`;
+    t.querySelector('strong').textContent = p.title;
+    t.querySelector('p').textContent = p.text;
+    t.querySelector('.ts-x').addEventListener('click', () => remove(t));
+    t.querySelector('.ts-act')?.addEventListener('click', () => remove(t));
+    stack.append(t);
+    layout();
+    if (p.action) return;
+    let left = 4000, last = performance.now();
+    const tick = (now) => {
+      if (!t.isConnected) return;
+      if (!paused) left -= now - last;
+      last = now;
+      if (left <= 0) remove(t); else requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  };
+  stack.addEventListener('pointerenter', () => (paused = true));
+  stack.addEventListener('pointerleave', () => (paused = false));
+  stack.addEventListener('focusin', () => (paused = true));
+  stack.addEventListener('focusout', () => (paused = false));
+  document.querySelectorAll('[data-t]').forEach((b) => b.addEventListener('click', () => toast(b.dataset.t)));
+  toast('success');
+})();
+</script>

@@ -1,0 +1,52 @@
+<style>
+  .efb { min-height: 100vh; display: grid; place-items: center; padding: 16px; color: var(--wc-fg); font-size: var(--wc-font-size-sm); }
+  .efb-phone { position: relative; width: min(390px, 100%); height: min(760px, calc(100vh - 32px)); overflow: hidden; border-radius: var(--wc-radius-xl); border: 1px solid var(--wc-border); background: var(--wc-bg); box-shadow: var(--wc-shadow-lg); }
+  @media (max-width: 480px) { .efb { padding: 0; } .efb-phone { width: 100%; height: 100vh; height: 100dvh; border-radius: 0; border: 0; } }
+  .efb-scroll { height: 100%; overflow-y: auto; overscroll-behavior: contain; padding: calc(16px + env(safe-area-inset-top)) 16px calc(150px + env(safe-area-inset-bottom)); }
+  .efb h3 { margin: 0 0 12px; font: var(--wc-font-weight-bold) var(--wc-font-size-3xl) var(--wc-font-display); letter-spacing: var(--wc-tracking-tight); }
+  .efb ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .efb li { padding: 14px 16px; border-radius: var(--wc-radius-lg); background: var(--wc-surface); border: 1px solid var(--wc-border); }
+  .efb li b { display: block; } .efb li small { color: var(--wc-fg-muted); }
+  .efb-tabs { position: absolute; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(3, 1fr); padding: 6px 0 calc(6px + env(safe-area-inset-bottom)); background: var(--wc-glass-bg); backdrop-filter: blur(var(--wc-blur-glass)); border-top: 1px solid var(--wc-border); }
+  .efb-tabs a { display: grid; justify-items: center; gap: 2px; min-height: 44px; padding-top: 4px; color: var(--wc-fg-muted); font-size: var(--wc-font-size-xs); text-decoration: none; }
+  .efb-tabs a[aria-current] { color: var(--wc-accent); font-weight: var(--wc-font-weight-semibold); }
+  .efb-tabs i { width: 22px; height: 22px; border-radius: 7px; background: currentColor; opacity: .85; }
+  .efb-fab { position: absolute; right: 16px; bottom: calc(76px + env(safe-area-inset-bottom)); display: inline-flex; align-items: center; height: 56px; padding: 0 16px; border: 0; border-radius: var(--wc-radius-lg); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font: inherit; font-size: var(--wc-font-size-md); font-weight: var(--wc-font-weight-semibold); box-shadow: var(--wc-shadow-lg); cursor: pointer; transition: padding var(--wc-motion-spring-snappy-duration) var(--wc-motion-spring-snappy), scale var(--wc-motion-duration-fast); }
+  .efb-fab:active { scale: .96; }
+  .efb-fab svg { flex: none; }
+  .efb-fab span { display: inline-block; max-width: 140px; margin-left: 10px; overflow: hidden; white-space: nowrap; transition: max-width var(--wc-motion-spring-snappy-duration) var(--wc-motion-spring-snappy), opacity var(--wc-motion-duration-fast), margin var(--wc-motion-spring-snappy-duration) var(--wc-motion-spring-snappy); }
+  .efb-fab[data-mini] span { max-width: 0; margin-left: 0; opacity: 0; }
+  .efb-st { position: absolute; left: 16px; right: 88px; bottom: calc(84px + env(safe-area-inset-bottom)); padding: 10px 14px; border-radius: var(--wc-radius-md); background: var(--wc-fg); color: var(--wc-bg); }
+  .efb-st:empty { display: none; }
+  .efb a:focus-visible, .efb-fab:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .efb-fab, .efb-fab span { transition-duration: 1ms; } }
+</style>
+<div class="efb">
+  <div class="efb-phone">
+    <div class="efb-scroll" tabindex="0" aria-label="Lista de ordens">
+      <h3>Ordens</h3>
+      <ul></ul>
+    </div>
+    <p class="efb-st" role="status"></p>
+    <button type="button" class="efb-fab" aria-label="Nova ordem de serviço"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span aria-hidden="true">Nova OS</span></button>
+    <nav class="efb-tabs" aria-label="Principal"><a href="#" aria-current="page"><i aria-hidden="true"></i>Ordens</a><a href="#"><i aria-hidden="true"></i>Agenda</a><a href="#"><i aria-hidden="true"></i>Perfil</a></nav>
+  </div>
+</div>
+<script>
+(() => {
+  const root = document.querySelector('.efb'), sc = root.querySelector('.efb-scroll'), fab = root.querySelector('.efb-fab'), st = root.querySelector('.efb-st');
+  const C = ['Padaria Pão Quente', 'Clínica Sorriso', 'Hotel Jardins', 'Mercado Bom Preço', 'Academia Forma', 'Escola Aprender', 'Restaurante Sabor', 'Farmácia Vida'];
+  sc.querySelector('ul').innerHTML = Array.from({ length: 16 }, (_, i) => `<li><b>#${2050 - i} · ${C[i % C.length]}</b><small>${['Manutenção preventiva', 'Troca de compressor', 'Instalação', 'Vistoria'][i % 4]} · ${8 + (i % 9)}h00</small></li>`).join('');
+  let last = 0, raf, idle;
+  sc.addEventListener('scroll', () => {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      const y = sc.scrollTop, d = y - last;
+      if (Math.abs(d) > 8) { fab.toggleAttribute('data-mini', d > 0 && y > 40); last = y; }
+      clearTimeout(idle); idle = setTimeout(() => fab.removeAttribute('data-mini'), 600);
+    });
+  }, { passive: true });
+  root.querySelectorAll('.efb-tabs a').forEach((a) => (a.onclick = (e) => e.preventDefault()));
+  fab.onclick = () => { st.textContent = 'Abrindo nova OS…'; setTimeout(() => (st.textContent = ''), 2000); };
+})();
+</script>

@@ -1,0 +1,72 @@
+<style>
+  .fc-stage { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; perspective: 1400px; background: radial-gradient(50% 40% at 50% 100%, var(--wc-accent-soft), transparent), var(--wc-bg); }
+  .fc { width: min(400px, 100%); display: grid; transform-style: preserve-3d; transition: rotate var(--wc-motion-spring-smooth-duration) var(--wc-motion-spring-smooth); }
+  .fc[data-flipped="true"] { rotate: y 180deg; }
+  .fc.is-turning { will-change: rotate; }
+  .fc-face { grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden; display: grid; gap: 14px; align-content: start; padding: 32px 28px; border-radius: var(--wc-radius-xl); background: var(--wc-surface-raised); border: 1px solid var(--wc-border); box-shadow: var(--wc-shadow-lg); }
+  .fc-back { rotate: y 180deg; }
+  @media (prefers-reduced-motion: reduce) {
+    .fc, .fc[data-flipped="true"] { rotate: none; transition: none; }
+    .fc-back { rotate: none; }
+    .fc-face { transition: opacity var(--wc-motion-duration-base); }
+    .fc-face[inert] { opacity: 0; visibility: hidden; }
+  }
+  .fc-mark { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: conic-gradient(from 200deg, var(--wc-gradient-1), var(--wc-gradient-2), var(--wc-gradient-3), var(--wc-gradient-1)); color: var(--wc-color-white); font: var(--wc-font-weight-bold) var(--wc-font-size-lg) var(--wc-font-display); }
+  .fc h2 { margin: 6px 0 0; font: var(--wc-font-weight-semibold) var(--wc-font-size-2xl) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); outline: none; }
+  .fc-face > p { margin: -6px 0 4px; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .fc label { display: grid; gap: 6px; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-medium); }
+  .fc input { height: var(--wc-size-control-lg); padding: 0 14px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: inherit; }
+  .fc input:focus { outline: 2px solid var(--wc-focus); outline-offset: 1px; }
+  .fc-terms { display: flex !important; grid-template-columns: none; align-items: flex-start; gap: 10px !important; font-weight: var(--wc-font-weight-regular) !important; color: var(--wc-fg-muted); }
+  .fc-terms input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--wc-accent-solid); }
+  .fc-terms a { color: var(--wc-accent); }
+  .fc-submit { height: var(--wc-size-control-lg); border: 0; border-radius: var(--wc-radius-button); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; }
+  .fc-submit:hover { background: var(--wc-accent-hover); }
+  .fc-switch { margin: 4px 0 0; text-align: center; font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .fc-switch button { font: inherit; border: 0; background: none; padding: 4px; color: var(--wc-accent); font-weight: var(--wc-font-weight-semibold); cursor: pointer; }
+  .fc :focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+<main class="fc-stage">
+  <h1 class="sr">Pulse: entrar ou criar conta</h1>
+  <div class="fc" data-flipped="false">
+    <form class="fc-face fc-front" aria-labelledby="fc-h1" novalidate>
+      <span class="fc-mark" aria-hidden="true">P</span>
+      <h2 id="fc-h1" tabindex="-1">Entrar no Pulse</h2>
+      <p>Seus treinos e playlists te esperando.</p>
+      <label>E-mail<input type="email" autocomplete="username" required></label>
+      <label>Senha<input type="password" autocomplete="current-password" required></label>
+      <button class="fc-submit" type="submit">Entrar</button>
+      <p class="fc-switch">Ainda não tem conta? <button type="button" data-flip="true">Criar conta</button></p>
+    </form>
+    <form class="fc-face fc-back" aria-labelledby="fc-h2" novalidate inert>
+      <span class="fc-mark" aria-hidden="true">P</span>
+      <h2 id="fc-h2" tabindex="-1">Criar conta</h2>
+      <p>7 dias grátis. Cancele quando quiser.</p>
+      <label>Nome<input type="text" autocomplete="given-name" required></label>
+      <label>E-mail<input type="email" autocomplete="email" required></label>
+      <label>Senha<input type="password" autocomplete="new-password" minlength="8" required></label>
+      <label class="fc-terms"><input type="checkbox" required><span>Li e aceito os <a href="#">Termos de uso</a> e a <a href="#">Política de privacidade</a> (LGPD).</span></label>
+      <button class="fc-submit" type="submit">Começar 7 dias grátis</button>
+      <p class="fc-switch">Já tem conta? <button type="button" data-flip="false">Entrar</button></p>
+    </form>
+  </div>
+  <p class="sr" role="status" id="fc-status"></p>
+</main>
+<script>
+(() => {
+  const card = document.querySelector('.fc'), front = card.querySelector('.fc-front'), back = card.querySelector('.fc-back'), status = document.getElementById('fc-status');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  card.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-flip]'); if (!b) return;
+    const flip = b.dataset.flip === 'true', target = flip ? back : front;
+    card.dataset.flipped = String(flip); front.inert = flip; back.inert = !flip;
+    status.textContent = flip ? 'Formulário de cadastro' : 'Formulário de entrada';
+    const done = () => { card.classList.remove('is-turning'); target.querySelector('h2').focus(); };
+    if (reduce.matches) return done();
+    card.classList.add('is-turning');
+    card.addEventListener('transitionend', done, { once: true });
+  });
+  card.querySelectorAll('form').forEach((f) => f.addEventListener('submit', (e) => { e.preventDefault(); const bad = [...f.elements].find((el) => el.willValidate && !el.checkValidity()); if (bad) { bad.focus(); bad.reportValidity(); return; } status.textContent = 'Enviado (demo).'; }));
+})();
+</script>

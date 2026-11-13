@@ -1,0 +1,47 @@
+<style>
+  .kpi { min-height: 100vh; padding: 20px; display: grid; grid-template-columns: minmax(0, 1fr); align-content: center; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; max-width: 960px; width: 100%; margin: 0 auto; }
+  .kpi-card { display: grid; gap: 6px; padding: 16px; border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface); color: var(--wc-fg); text-decoration: none; transition: border-color var(--wc-motion-duration-fast), translate var(--wc-motion-duration-fast) var(--wc-motion-ease-out); }
+  .kpi-card:hover { border-color: var(--wc-border-strong); translate: 0 calc(-1px * var(--wc-motion-distance)); }
+  .kpi-card:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .kpi-label { font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .kpi-value { font: var(--wc-font-weight-semibold) var(--wc-font-size-3xl)/1.1 var(--wc-font-display); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  .kpi-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .kpi-delta { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: var(--wc-radius-pill); font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-medium); font-variant-numeric: tabular-nums; }
+  .kpi-delta.is-good { background: var(--wc-success-soft); color: var(--wc-success); }
+  .kpi-delta.is-bad { background: var(--wc-danger-soft); color: var(--wc-danger); }
+  .kpi-cmp { font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); }
+  .kpi-spark { width: 100%; height: 36px; }
+  .kpi-spark polyline { fill: none; stroke: var(--wc-accent); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+  .kpi-spark polygon { fill: var(--wc-accent-soft); }
+</style>
+<div class="kpi"><div class="kpi-grid"></div></div>
+<script>
+(() => {
+  const items = [
+    { label: 'Receita do mês', value: 1284500, unit: 'brl', delta: 12.4, good: 'up', serie: [62, 58, 70, 66, 74, 80, 78, 88, 92, 96] },
+    { label: 'Pedidos', value: 3412, unit: 'n', delta: 4.1, good: 'up', serie: [40, 44, 43, 50, 48, 52, 55, 54, 58, 60] },
+    { label: 'Custo de frete', value: 98200, unit: 'brl', delta: 8.7, good: 'down', serie: [30, 32, 35, 34, 38, 40, 42, 41, 44, 46] },
+    { label: 'Tempo de resposta', value: 42, unit: 'min', delta: -18, good: 'down', serie: [90, 85, 80, 78, 70, 66, 60, 55, 50, 46] },
+  ];
+  const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 });
+  const brlFull = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+  const num = new Intl.NumberFormat('pt-BR');
+  const show = (it, v) => it.unit === 'brl' ? brl.format(v) : it.unit === 'min' ? `${num.format(Math.round(v))} min` : num.format(Math.round(v));
+  const full = (it) => it.unit === 'brl' ? brlFull.format(it.value) : show(it, it.value);
+  const spark = (s) => { const max = Math.max(...s), min = Math.min(...s); const pts = s.map((v, i) => `${(i / (s.length - 1)) * 100},${36 - ((v - min) / (max - min || 1)) * 32 - 2}`).join(' '); return `<svg class="kpi-spark" viewBox="0 0 100 36" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,36 ${pts} 100,36"/><polyline points="${pts}"/></svg>`; };
+  const grid = document.querySelector('.kpi-grid');
+  grid.innerHTML = items.map((it, i) => {
+    const up = it.delta > 0, good = (up && it.good === 'up') || (!up && it.good === 'down');
+    const d = `${up ? '+' : '−'}${num.format(Math.abs(it.delta))}%`;
+    return `<a class="kpi-card" href="#kpi-${i}" aria-label="${it.label}: ${full(it)}, ${up ? 'alta' : 'queda'} de ${num.format(Math.abs(it.delta))}% vs mês anterior, ${good ? 'melhor' : 'pior'} que antes"><span class="kpi-label">${it.label}</span><span class="kpi-value" title="${full(it)}" data-i="${i}">${show(it, it.value)}</span>${spark(it.serie)}<span class="kpi-foot"><span class="kpi-delta ${good ? 'is-good' : 'is-bad'}">${up ? '↑' : '↓'} ${d}</span><span class="kpi-cmp">vs mês anterior</span></span></a>`;
+  }).join('');
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    grid.querySelectorAll('.kpi-value').forEach((el) => {
+      const it = items[el.dataset.i]; const t0 = performance.now(), dur = 600;
+      const step = (t) => { const k = Math.min(1, (t - t0) / dur); el.textContent = show(it, it.value * (1 - (1 - k) ** 3)); if (k < 1) requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+    });
+  }
+})();
+</script>

@@ -1,0 +1,121 @@
+<style>
+  .at2-stage { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; background: var(--wc-sunken); }
+  .at2 { width: min(420px, 100%); padding: 28px; border-radius: var(--wc-radius-xl); background: var(--wc-surface); border: 1px solid var(--wc-border); box-shadow: var(--wc-shadow); }
+  .at2 h1 { margin: 0 0 4px; text-align: center; font: var(--wc-font-weight-semibold) var(--wc-font-size-2xl) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); }
+  .at2-lead { margin: 0 0 20px; text-align: center; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .at2-tabs { --i: 0; position: relative; display: grid; grid-template-columns: 1fr 1fr; padding: 3px; border-radius: var(--wc-radius-md); background: var(--wc-sunken); margin-bottom: 20px; }
+  .at2-thumb { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); border-radius: calc(var(--wc-radius-md) - 2px); background: var(--wc-surface-raised); box-shadow: var(--wc-shadow); translate: calc(var(--i) * 100%) 0; transition: translate var(--wc-motion-spring-snappy-duration) var(--wc-motion-spring-snappy); }
+  .at2-tabs [role="tab"] { position: relative; height: 36px; border: 0; background: none; color: var(--wc-fg-muted); font: inherit; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-medium); cursor: pointer; border-radius: calc(var(--wc-radius-md) - 2px); transition: color var(--wc-motion-duration-fast); }
+  .at2-tabs [aria-selected="true"] { color: var(--wc-fg); }
+  .at2 :focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .at2-body { overflow: hidden; transition: height var(--wc-motion-duration-slow) var(--wc-motion-ease-emphasized); }
+  .at2-panel { display: grid; gap: 14px; padding: 2px; animation: at2-in var(--wc-motion-duration-slow) var(--wc-motion-ease-out) both; }
+  .at2-panel[hidden] { display: none; }
+  @keyframes at2-in { from { opacity: 0; translate: 0 calc(6px * var(--wc-motion-distance)); } }
+  @media (prefers-reduced-motion: reduce) { .at2-body { transition: none; } .at2-thumb { transition: none; } }
+  .at2 label { display: grid; gap: 6px; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-medium); }
+  .at2 input { height: var(--wc-size-control-lg); padding: 0 14px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: inherit; font-weight: var(--wc-font-weight-regular); }
+  .at2 input:focus { outline: 2px solid var(--wc-focus); outline-offset: 1px; }
+  .at2-pw[hidden], .at2-f[hidden] { display: none; }
+  .at2-f { display: grid; gap: 14px; }
+  .at2-primary { height: var(--wc-size-control-lg); border: 0; border-radius: var(--wc-radius-button); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; }
+  .at2-primary:hover { background: var(--wc-accent-hover); }
+  .at2-text { justify-self: center; font: inherit; font-size: var(--wc-font-size-sm); border: 0; background: none; color: var(--wc-accent); font-weight: var(--wc-font-weight-medium); cursor: pointer; padding: 6px; }
+  .at2-text:disabled { color: var(--wc-fg-muted); cursor: default; }
+  .at2-sent { display: grid; gap: 12px; text-align: center; justify-items: center; }
+  .at2-sent[hidden] { display: none; }
+  .at2-sent .at2-ic { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: var(--wc-accent-soft); color: var(--wc-accent); }
+  .at2-sent h2 { margin: 0; font-size: var(--wc-font-size-lg); }
+  .at2-sent p { margin: 0; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .at2-mail { display: flex; gap: 8px; }
+  .at2-mail a { padding: 8px 14px; border-radius: var(--wc-radius-button); border: 1px solid var(--wc-border); color: var(--wc-fg); text-decoration: none; font-size: var(--wc-font-size-sm); }
+  .at2-mail a:hover { background: var(--wc-sunken); }
+  .at2-fine { margin: 0; font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); text-align: center; }
+  .at2-fine a { color: inherit; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+<main class="at2-stage">
+  <section class="at2" aria-labelledby="at2-title">
+    <h1 id="at2-title">Bem-vindo à Clínica Viva</h1>
+    <p class="at2-lead">Agende consultas e veja resultados de exames.</p>
+    <div class="at2-tabs" role="tablist" aria-label="Acesso">
+      <span class="at2-thumb" aria-hidden="true"></span>
+      <button role="tab" id="at2-t0" aria-selected="true" aria-controls="at2-p0" tabindex="0">Entrar</button>
+      <button role="tab" id="at2-t1" aria-selected="false" aria-controls="at2-p1" tabindex="-1">Criar conta</button>
+    </div>
+    <div class="at2-body">
+      <div class="at2-panel" id="at2-p0" role="tabpanel" aria-labelledby="at2-t0">
+        <form class="at2-f at2-login" novalidate>
+          <label>E-mail<input type="email" name="email" autocomplete="username" required></label>
+          <label class="at2-pw" id="at2-pw">Senha<input type="password" name="password" autocomplete="current-password" required></label>
+          <button class="at2-primary" type="submit">Entrar</button>
+          <button class="at2-text at2-mode" type="button" aria-controls="at2-pw">Prefere sem senha? Receber link por e-mail</button>
+        </form>
+        <div class="at2-sent" hidden>
+          <span class="at2-ic" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span>
+          <h2 tabindex="-1">Confira seu e-mail</h2>
+          <p>Enviamos um link de acesso para <b class="at2-addr"></b>. Ele vale por 15 minutos.</p>
+          <div class="at2-mail"><a href="#">Abrir Gmail</a><a href="#">Abrir Outlook</a></div>
+          <button class="at2-text at2-resend" type="button" disabled>Reenviar em 30s</button>
+          <button class="at2-text at2-back" type="button">Usar outro e-mail</button>
+        </div>
+      </div>
+      <div class="at2-panel" id="at2-p1" role="tabpanel" aria-labelledby="at2-t1" hidden>
+        <form class="at2-f at2-signup" novalidate>
+          <label>Nome completo<input type="text" autocomplete="name" required></label>
+          <label>E-mail<input type="email" autocomplete="email" required></label>
+          <label>Celular<input type="tel" inputmode="tel" autocomplete="tel-national" placeholder="(11) 90000-0000" required></label>
+          <label>Senha<input type="password" autocomplete="new-password" minlength="8" required></label>
+          <button class="at2-primary" type="submit">Criar conta</button>
+          <p class="at2-fine">Ao continuar você aceita os <a href="#">Termos</a> e o tratamento de dados de saúde conforme a <a href="#">LGPD</a>.</p>
+        </form>
+      </div>
+    </div>
+  </section>
+  <p class="sr" role="status" id="at2-status"></p>
+</main>
+<script>
+(() => {
+  const tabs = [...document.querySelectorAll('.at2 [role="tab"]')], list = document.querySelector('.at2-tabs'), body = document.querySelector('.at2-body'), status = document.getElementById('at2-status');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  function morph(change) {
+    if (reduce.matches) return change();
+    const h0 = body.offsetHeight; change(); const h1 = body.scrollHeight;
+    body.style.height = h0 + 'px'; body.offsetHeight; body.style.height = h1 + 'px';
+    body.addEventListener('transitionend', () => (body.style.height = ''), { once: true });
+  }
+  function select(i, focus) {
+    morph(() => tabs.forEach((t, j) => { const on = i === j; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; document.getElementById(t.getAttribute('aria-controls')).hidden = !on; }));
+    list.style.setProperty('--i', i); if (focus) tabs[i].focus();
+  }
+  tabs.forEach((t, i) => t.addEventListener('click', () => select(i)));
+  list.addEventListener('keydown', (e) => {
+    const i = tabs.indexOf(document.activeElement); if (i < 0) return;
+    const map = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 };
+    if (e.key in map) { e.preventDefault(); select((map[e.key] + tabs.length) % tabs.length, true); }
+  });
+  // senha <-> link mágico
+  const login = document.querySelector('.at2-login'), pw = document.getElementById('at2-pw'), mode = login.querySelector('.at2-mode'), sent = document.querySelector('.at2-sent');
+  let magic = false;
+  mode.addEventListener('click', () => {
+    magic = !magic;
+    morph(() => { pw.hidden = magic; pw.querySelector('input').required = !magic; });
+    login.querySelector('.at2-primary').textContent = magic ? 'Enviar link de acesso' : 'Entrar';
+    mode.textContent = magic ? 'Entrar com senha' : 'Prefere sem senha? Receber link por e-mail';
+    status.textContent = magic ? 'Modo link por e-mail' : 'Modo senha';
+  });
+  let timer;
+  function countdown(btn) { let s = 30; btn.disabled = true; clearInterval(timer); timer = setInterval(() => { s--; btn.textContent = s > 0 ? `Reenviar em ${s}s` : 'Reenviar link'; if (s <= 0) { clearInterval(timer); btn.disabled = false; } }, 1000); }
+  login.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const bad = [...login.elements].find((el) => el.willValidate && !el.checkValidity()); if (bad) { bad.focus(); bad.reportValidity(); return; }
+    if (!magic) { status.textContent = 'Entrando (demo).'; return; }
+    sent.querySelector('.at2-addr').textContent = login.email.value;
+    morph(() => { login.hidden = true; sent.hidden = false; });
+    sent.querySelector('h2').focus(); countdown(sent.querySelector('.at2-resend'));
+  });
+  sent.querySelector('.at2-resend').addEventListener('click', (e) => { status.textContent = 'Link reenviado.'; countdown(e.currentTarget); });
+  sent.querySelector('.at2-back').addEventListener('click', () => { morph(() => { sent.hidden = true; login.hidden = false; }); login.email.focus(); });
+  document.querySelector('.at2-signup').addEventListener('submit', (e) => { e.preventDefault(); const f = e.currentTarget; const bad = [...f.elements].find((el) => el.willValidate && !el.checkValidity()); if (bad) { bad.focus(); bad.reportValidity(); return; } status.textContent = 'Conta criada (demo).'; });
+})();
+</script>

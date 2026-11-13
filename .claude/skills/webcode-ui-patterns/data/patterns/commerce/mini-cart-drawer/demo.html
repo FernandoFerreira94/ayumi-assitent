@@ -1,0 +1,118 @@
+<style>
+  .mcd { min-height: 100vh; color: var(--wc-fg); font-size: var(--wc-font-size-sm); font-variant-numeric: tabular-nums; }
+  .mcd-top { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--wc-border); }
+  .mcd-cartbtn { position: relative; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--wc-sunken); color: var(--wc-fg); cursor: pointer; display: grid; place-items: center; }
+  .mcd-badge { position: absolute; top: -2px; right: -2px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: var(--wc-radius-pill); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font-size: 11px; font-weight: var(--wc-font-weight-semibold); display: grid; place-items: center; box-sizing: border-box; }
+  .mcd-badge.is-bump { animation: mcd-bump var(--wc-motion-spring-bouncy-duration) var(--wc-motion-spring-bouncy); }
+  @keyframes mcd-bump { 40% { scale: 1.35; } }
+  .mcd-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); gap: 14px; padding: 16px; }
+  .mcd-p { border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface); padding: 10px; display: grid; gap: 8px; }
+  .mcd-img { aspect-ratio: 4/3; border-radius: var(--wc-radius-md); background: linear-gradient(150deg, var(--wc-accent-soft), var(--wc-sunken)); }
+  .mcd-p h3 { margin: 0; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-semibold); }
+  .mcd button { font: inherit; }
+  .mcd-add { min-height: 44px; border-radius: var(--wc-radius-md); border: 0; background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font-weight: var(--wc-font-weight-semibold); cursor: pointer; display: grid; }
+  .mcd-add > span { grid-area: 1/1; align-self: center; transition: opacity var(--wc-motion-duration-fast), translate var(--wc-motion-duration-fast) var(--wc-motion-ease-out); }
+  .mcd-add .ok { opacity: 0; translate: 0 calc(6px * var(--wc-motion-distance)); }
+  .mcd-add.is-ok .ok { opacity: 1; translate: 0 0; } .mcd-add.is-ok .lb { opacity: 0; translate: 0 calc(-6px * var(--wc-motion-distance)); }
+  .mcd-sheet { margin: 0 0 0 auto; height: 100dvh; max-height: 100dvh; width: min(420px, 100vw); padding: 0; border: 0; background: var(--wc-surface); color: var(--wc-fg); display: grid; grid-template-rows: auto 1fr auto; translate: 100% 0; transition: translate var(--wc-motion-spring-smooth-duration) var(--wc-motion-spring-smooth), overlay var(--wc-motion-duration-base) allow-discrete, display var(--wc-motion-duration-base) allow-discrete; }
+  .mcd-sheet:not([open]) { display: none; }
+  .mcd-sheet[open] { translate: 0 0; }
+  @starting-style { .mcd-sheet[open] { translate: 100% 0; } }
+  .mcd-sheet::backdrop { background: var(--wc-scrim); opacity: 0; transition: opacity var(--wc-motion-duration-base), overlay var(--wc-motion-duration-base) allow-discrete, display var(--wc-motion-duration-base) allow-discrete; }
+  .mcd-sheet[open]::backdrop { opacity: 1; }
+  @starting-style { .mcd-sheet[open]::backdrop { opacity: 0; } }
+  @media (max-width: 560px) {
+    .mcd-sheet { margin: auto 0 0; width: 100vw; max-width: 100vw; height: auto; max-height: 88dvh; border-radius: var(--wc-radius-xl) var(--wc-radius-xl) 0 0; translate: 0 100%; padding-bottom: env(safe-area-inset-bottom); }
+    @starting-style { .mcd-sheet[open] { translate: 0 100%; } }
+  }
+  .mcd-sh { display: flex; justify-content: space-between; align-items: center; padding: 12px 8px 12px 18px; border-bottom: 1px solid var(--wc-border); }
+  .mcd-sh h2 { margin: 0; font-size: var(--wc-font-size-md); }
+  .mcd-x { width: 44px; height: 44px; border-radius: 50%; border: 0; background: none; color: var(--wc-fg-muted); font-size: 22px; cursor: pointer; }
+  .mcd-body { overflow-y: auto; padding: 14px 18px; display: grid; gap: 14px; align-content: start; }
+  .mcd-ship { display: grid; gap: 6px; padding: 10px 12px; border-radius: var(--wc-radius-md); background: var(--wc-sunken); }
+  .mcd-ship i { display: block; height: 6px; border-radius: var(--wc-radius-pill); background: var(--wc-border); overflow: hidden; }
+  .mcd-ship i b { display: block; height: 100%; background: var(--wc-success); transform-origin: left; transition: transform var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  .mcd-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .mcd-items li { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+  .mcd-items .mcd-img { aspect-ratio: 1; }
+  .mcd-items small { color: var(--wc-fg-muted); display: block; }
+  .mcd-qty { display: inline-flex; align-items: center; border: 1px solid var(--wc-border-strong); border-radius: var(--wc-radius-pill); }
+  .mcd-qty button { width: 36px; height: 36px; border: 0; background: none; color: var(--wc-fg); cursor: pointer; border-radius: 50%; font-size: 16px; }
+  .mcd-qty output { min-width: 22px; text-align: center; }
+  .mcd-foot { border-top: 1px solid var(--wc-border); padding: 14px 18px; display: grid; gap: 10px; }
+  .mcd-row { display: flex; justify-content: space-between; gap: 8px; }
+  .mcd-row.big { font-size: var(--wc-font-size-md); font-weight: var(--wc-font-weight-semibold); }
+  .mcd-go { min-height: 48px; border-radius: var(--wc-radius-md); border: 0; background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font-weight: var(--wc-font-weight-semibold); cursor: pointer; }
+  .mcd-undo { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 12px; border-radius: var(--wc-radius-md); background: var(--wc-sunken); }
+  .mcd-undo button { border: 0; background: none; color: var(--wc-accent); font-weight: var(--wc-font-weight-semibold); cursor: pointer; min-height: 36px; }
+  .mcd-empty { color: var(--wc-fg-muted); text-align: center; padding: 24px 0; }
+  .mcd button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .mcd-sheet { transition-duration: 1ms; } .mcd-badge.is-bump { animation: none; } }
+</style>
+<div class="mcd">
+  <header class="mcd-top"><b>Loja Café</b><button type="button" class="mcd-cartbtn" aria-label="Carrinho, 0 itens"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6h15l-2 9H8L6 3H3"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/></svg><span class="mcd-badge" aria-hidden="true">0</span></button></header>
+  <div class="mcd-list"></div>
+  <dialog class="mcd-sheet" aria-labelledby="mcd-h">
+    <div class="mcd-sh"><h2 id="mcd-h">Carrinho</h2><button type="button" class="mcd-x" aria-label="Fechar carrinho">×</button></div>
+    <div class="mcd-body">
+      <div class="mcd-ship"><span class="mcd-ship-t"></span><i aria-hidden="true"><b></b></i></div>
+      <div class="mcd-undo-slot"></div>
+      <ul class="mcd-items"></ul>
+    </div>
+    <div class="mcd-foot">
+      <div class="mcd-row"><span>Subtotal no cartão</span><span class="mcd-sub"></span></div>
+      <div class="mcd-row big"><span>No Pix (5% off)</span><span class="mcd-pix"></span></div>
+      <button type="button" class="mcd-go">Finalizar compra</button>
+    </div>
+    <p role="status" class="mcd-live" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)"></p>
+  </dialog>
+</div>
+<script>
+(() => {
+  const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const PRODUCTS = [{ id: 1, n: 'Café especial 250g', p: 49.9 }, { id: 2, n: 'Filtro de papel 102', p: 12.5 }, { id: 3, n: 'Caneca esmaltada', p: 39 }, { id: 4, n: 'Moedor manual', p: 189 }];
+  const FREE = 199;
+  const root = document.querySelector('.mcd'), list = root.querySelector('.mcd-list'), sheet = root.querySelector('.mcd-sheet'), items = root.querySelector('.mcd-items'), badge = root.querySelector('.mcd-badge'), cartBtn = root.querySelector('.mcd-cartbtn'), live = root.querySelector('.mcd-live'), undoSlot = root.querySelector('.mcd-undo-slot');
+  let cart = [], opened = false, opener = cartBtn, lastRemoved;
+  list.innerHTML = PRODUCTS.map((p) => `<article class="mcd-p"><span class="mcd-img" aria-hidden="true"></span><h3>${p.n}</h3><span>${fmt(p.p)}</span><button type="button" class="mcd-add" data-id="${p.id}" aria-label="Adicionar ${p.n} ao carrinho"><span class="lb">Adicionar</span><span class="ok" aria-hidden="true">✓ Adicionado</span></button></article>`).join('');
+  const count = () => cart.reduce((s, i) => s + i.q, 0);
+  const render = () => {
+    const c = count(), sub = cart.reduce((s, i) => s + i.q * i.p, 0);
+    badge.textContent = c; cartBtn.setAttribute('aria-label', `Carrinho, ${c} ${c === 1 ? 'item' : 'itens'}`);
+    root.querySelector('#mcd-h').textContent = `Carrinho (${c} ${c === 1 ? 'item' : 'itens'})`;
+    items.innerHTML = cart.length ? cart.map((i) => `<li><span class="mcd-img" aria-hidden="true"></span><div><b>${i.n}</b><small>${fmt(i.p)} cada</small></div><div class="mcd-qty"><button type="button" data-d="-1" data-id="${i.id}" aria-label="${i.q === 1 ? 'Remover' : 'Diminuir'} ${i.n}">${i.q === 1 ? '🗑' : '−'}</button><output aria-label="Quantidade">${i.q}</output><button type="button" data-d="1" data-id="${i.id}" aria-label="Aumentar ${i.n}">+</button></div></li>`).join('') : '<li class="mcd-empty">Seu carrinho está vazio.</li>';
+    root.querySelector('.mcd-sub').textContent = fmt(sub); root.querySelector('.mcd-pix').textContent = fmt(sub * .95);
+    const left = FREE - sub;
+    root.querySelector('.mcd-ship-t').textContent = left > 0 ? `Faltam ${fmt(left)} para frete grátis` : 'Você ganhou frete grátis 🎉';
+    root.querySelector('.mcd-ship b').style.transform = `scaleX(${Math.min(1, sub / FREE)})`;
+  };
+  const open = () => { sheet.showModal(); sheet.querySelector('.mcd-x').focus(); };
+  list.addEventListener('click', (e) => {
+    const b = e.target.closest('.mcd-add'); if (!b) return;
+    const p = PRODUCTS.find((x) => x.id === +b.dataset.id), it = cart.find((x) => x.id === p.id);
+    it ? it.q++ : cart.push({ ...p, q: 1 }); render();
+    b.classList.add('is-ok'); setTimeout(() => b.classList.remove('is-ok'), 1400);
+    badge.classList.remove('is-bump'); void badge.offsetWidth; badge.classList.add('is-bump');
+    live.textContent = `${p.n} adicionado. Carrinho com ${count()} itens.`;
+    if (!opened) { opened = true; opener = b; setTimeout(open, 300); }
+  });
+  cartBtn.addEventListener('click', () => { opener = cartBtn; open(); });
+  sheet.querySelector('.mcd-x').onclick = () => sheet.close();
+  sheet.addEventListener('click', (e) => { if (e.target === sheet) sheet.close(); });
+  sheet.addEventListener('close', () => opener?.focus());
+  items.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-d]'); if (!b) return;
+    const idx = cart.findIndex((x) => x.id === +b.dataset.id), it = cart[idx];
+    it.q += +b.dataset.d;
+    if (it.q < 1) {
+      cart.splice(idx, 1); lastRemoved = { it: { ...it, q: 1 }, idx };
+      undoSlot.innerHTML = `<div class="mcd-undo"><span>${it.n} removido</span><button type="button">Desfazer</button></div>`;
+      undoSlot.querySelector('button').onclick = () => { cart.splice(lastRemoved.idx, 0, lastRemoved.it); undoSlot.innerHTML = ''; render(); live.textContent = 'Item devolvido ao carrinho'; items.querySelector('button')?.focus(); };
+      live.textContent = `${it.n} removido`; render(); undoSlot.querySelector('button').focus(); return;
+    }
+    render(); live.textContent = `${it.n}: ${it.q}`;
+    items.querySelector(`[data-id="${it.id}"][data-d="${b.dataset.d}"]`)?.focus();
+  });
+  render();
+})();
+</script>

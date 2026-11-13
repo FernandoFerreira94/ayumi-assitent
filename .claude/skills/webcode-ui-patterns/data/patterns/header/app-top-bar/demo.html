@@ -1,0 +1,79 @@
+<style>
+  .at { position: sticky; top: 0; z-index: 10; height: 56px; padding: 0 12px 0 8px; display: flex; align-items: center; gap: 8px; background: var(--wc-surface); border-bottom: 1px solid var(--wc-border); }
+  .at-icon { position: relative; display: grid; place-items: center; width: 36px; height: 36px; flex: none; border: 0; border-radius: var(--wc-radius-md); background: transparent; color: var(--wc-fg-muted); cursor: pointer; }
+  .at-icon:hover { background: var(--wc-sunken); color: var(--wc-fg); }
+  .at :focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .at-crumbs ol { display: flex; align-items: center; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: var(--wc-font-size-sm); white-space: nowrap; }
+  .at-crumbs li + li::before { content: "/"; color: var(--wc-fg-muted); margin-right: 6px; }
+  .at-crumbs a { color: var(--wc-fg-muted); text-decoration: none; }
+  .at-crumbs a:hover { color: var(--wc-fg); }
+  .at-crumbs [aria-current] { color: var(--wc-fg); font-weight: var(--wc-font-weight-medium); }
+  .at-search { margin-left: auto; display: flex; align-items: center; gap: 8px; width: 260px; height: 34px; padding: 0 8px 0 10px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border); background: var(--wc-sunken); color: var(--wc-fg-muted); font: inherit; font-size: var(--wc-font-size-sm); cursor: pointer; }
+  .at-search:hover { border-color: var(--wc-border-strong); }
+  .at-search kbd { margin-left: auto; font: var(--wc-font-size-xs) var(--wc-font-mono); padding: 2px 6px; border-radius: var(--wc-radius-sm); border: 1px solid var(--wc-border); background: var(--wc-surface); color: var(--wc-fg-muted); }
+  .at-search-sm { display: none; margin-left: auto; }
+  .at-dot { position: absolute; top: 4px; right: 3px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--wc-danger-solid); color: var(--wc-danger-solid-fg); font-size: 10px; font-weight: var(--wc-font-weight-bold); display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+  .at-dot[hidden] { display: none; }
+  .at-avatar { width: 32px; height: 32px; border-radius: var(--wc-radius-pill); border: 0; background: linear-gradient(135deg, var(--wc-gradient-1), var(--wc-gradient-2)); color: var(--wc-color-white); font: var(--wc-font-weight-semibold) var(--wc-font-size-xs) var(--wc-font-body); cursor: pointer; display: grid; place-items: center; text-decoration: none; }
+  .at-wrap { position: relative; }
+  .at-panel { position: absolute; right: 0; top: calc(100% + 8px); width: min(360px, calc(100vw - 24px)); border-radius: var(--wc-radius-lg); background: var(--wc-surface-raised); border: 1px solid var(--wc-border); box-shadow: var(--wc-shadow-lg); transform-origin: top right; transition: opacity var(--wc-motion-duration-fast), scale var(--wc-motion-duration-fast) var(--wc-motion-ease-out), display var(--wc-motion-duration-fast) allow-discrete; }
+  .at-panel[hidden] { display: none; opacity: 0; scale: calc(1 - .03 * var(--wc-motion-distance)); }
+  @starting-style { .at-panel:not([hidden]) { opacity: 0; scale: calc(1 - .03 * var(--wc-motion-distance)); } }
+  .at-panel header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--wc-border); }
+  .at-panel h2 { margin: 0; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-semibold); }
+  .at-panel header button { font: inherit; font-size: var(--wc-font-size-xs); border: 0; background: none; color: var(--wc-accent); cursor: pointer; padding: 4px; border-radius: var(--wc-radius-sm); }
+  .at-panel header button:disabled { color: var(--wc-fg-muted); cursor: default; }
+  .at-panel ul { list-style: none; margin: 0; padding: 6px; max-height: 320px; overflow: auto; }
+  .at-panel li a { display: grid; grid-template-columns: 8px 1fr; gap: 10px; padding: 10px 8px; border-radius: var(--wc-radius-md); color: var(--wc-fg); text-decoration: none; font-size: var(--wc-font-size-sm); }
+  .at-panel li a:hover { background: var(--wc-sunken); }
+  .at-panel li a::before { content: ""; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: var(--wc-accent); }
+  .at-panel li.read a::before { background: transparent; }
+  .at-panel li.read a { color: var(--wc-fg-muted); }
+  .at-panel small { display: block; color: var(--wc-fg-muted); font-size: var(--wc-font-size-xs); margin-top: 2px; }
+  @media (max-width: 640px) { .at-crumbs li:not(:last-child) { display: none; } .at-crumbs li + li::before { content: none; } .at-search { display: none; } .at-search-sm { display: grid; } }
+  .at-main { padding: 24px 20px; color: var(--wc-fg-muted); }
+  .at-main h1 { color: var(--wc-fg); font: var(--wc-font-weight-semibold) var(--wc-font-size-2xl) var(--wc-font-display); margin: 0 0 8px; }
+  .at-toast { position: fixed; bottom: 16px; left: 50%; translate: -50% 0; padding: 10px 14px; border-radius: var(--wc-radius-md); background: var(--wc-fg); color: var(--wc-bg); font-size: var(--wc-font-size-sm); }
+  .at-toast:empty { display: none; }
+</style>
+<header class="at">
+  <button class="at-icon" type="button" aria-label="Alternar menu lateral"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></button>
+  <nav class="at-crumbs" aria-label="Você está em"><ol><li><a href="#">Comercial</a></li><li><a href="#">Pedidos</a></li><li><span aria-current="page">#10482</span></li></ol></nav>
+  <button class="at-search" type="button" aria-keyshortcuts="Meta+K Control+K"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Buscar…<kbd class="at-kbd">Ctrl K</kbd></button>
+  <button class="at-icon at-search-sm" type="button" aria-label="Buscar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+  <div class="at-wrap">
+    <button class="at-icon at-bell" type="button" aria-expanded="false" aria-controls="at-panel" aria-label="Notificações, 3 não lidas"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="at-dot" aria-hidden="true">3</span></button>
+    <section class="at-panel" id="at-panel" aria-labelledby="at-ntitle" hidden>
+      <header><h2 id="at-ntitle">Notificações</h2><button type="button" class="at-readall">Marcar todas como lidas</button></header>
+      <ul>
+        <li><a href="#">Pedido #10482 foi faturado<small>há 2 min · Financeiro</small></a></li>
+        <li><a href="#">Marina mencionou você em “Proposta Grupo Sol”<small>há 18 min · Comercial</small></a></li>
+        <li><a href="#">Estoque de “Cadeira Alba” abaixo do mínimo<small>há 1 h · Estoque</small></a></li>
+        <li class="read"><a href="#">Relatório mensal pronto para download<small>ontem · Relatórios</small></a></li>
+      </ul>
+    </section>
+  </div>
+  <a class="at-avatar" href="#" aria-label="Minha conta: Fernanda Lima">FL</a>
+</header>
+<main class="at-main"><h1>Pedido #10482</h1><p>Abra as notificações, marque como lidas e tente Ctrl+K (⌘K no Mac).</p></main>
+<p class="at-toast" role="status"></p>
+<script>
+(() => {
+  const mac = /Mac|iPhone|iPad/.test(navigator.platform);
+  document.querySelector('.at-kbd').textContent = mac ? '⌘K' : 'Ctrl K';
+  const toast = document.querySelector('.at-toast');
+  const say = (t) => { toast.textContent = t; clearTimeout(say.t); say.t = setTimeout(() => (toast.textContent = ''), 1800); };
+  const openSearch = () => say('Aqui abre a paleta de comandos (padrão command-palette).');
+  document.querySelectorAll('.at-search, .at-search-sm').forEach((b) => b.addEventListener('click', openSearch));
+  document.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearch(); } });
+  const bell = document.querySelector('.at-bell'), panel = document.getElementById('at-panel'), dot = bell.querySelector('.at-dot'), readAll = panel.querySelector('.at-readall');
+  const set = (open, focus) => { panel.hidden = !open; bell.setAttribute('aria-expanded', String(open)); if (!open && focus) bell.focus(); };
+  bell.addEventListener('click', () => set(panel.hidden));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) set(false, true); });
+  document.addEventListener('click', (e) => { if (!panel.hidden && !e.target.closest('.at-wrap')) set(false); });
+  readAll.addEventListener('click', () => {
+    panel.querySelectorAll('li').forEach((li) => li.classList.add('read'));
+    dot.hidden = true; bell.setAttribute('aria-label', 'Notificações, nenhuma não lida'); readAll.disabled = true; say('Todas as notificações foram marcadas como lidas.');
+  });
+})();
+</script>

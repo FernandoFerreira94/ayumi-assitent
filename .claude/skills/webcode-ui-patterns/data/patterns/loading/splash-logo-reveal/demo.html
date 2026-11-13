@@ -1,0 +1,39 @@
+<style>
+  .sp { position: fixed; inset: 0; z-index: 50; display: grid; place-content: center; justify-items: center; gap: 16px; background: var(--wc-bg); animation: sp-out 520ms var(--wc-motion-ease-in-out) 1100ms forwards; }
+  .sp[hidden] { display: none; }
+  .sp svg { width: 64px; height: 64px; }
+  .sp path { fill: none; stroke: var(--wc-accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: sp-draw 620ms var(--wc-motion-ease-out) 80ms forwards; }
+  .sp-name { font: var(--wc-font-weight-semibold) var(--wc-font-size-2xl) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); opacity: 0; transform: translateY(6px); animation: sp-in 320ms var(--wc-motion-ease-out) 640ms forwards; }
+  @keyframes sp-draw { to { stroke-dashoffset: 0; } }
+  @keyframes sp-in { to { opacity: 1; transform: none; } }
+  @keyframes sp-out { to { transform: translateY(-100%); visibility: hidden; } }
+  .sp-app { min-height: 100vh; display: grid; place-content: center; text-align: center; gap: 12px; padding: 20px; }
+  .sp-app h1 { font: var(--wc-font-weight-bold) var(--wc-font-size-4xl) var(--wc-font-display); margin: 0; letter-spacing: calc(var(--wc-tracking-tight) * 1em); }
+  .sp-app p { margin: 0; color: var(--wc-fg-muted); }
+  .sp-app button { justify-self: center; font: inherit; font-weight: var(--wc-font-weight-medium); padding: 8px 16px; border-radius: var(--wc-radius-pill); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); cursor: pointer; }
+  .sp-app button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+</style>
+<div class="sp" aria-hidden="true">
+  <svg viewBox="0 0 64 64"><path pathLength="1" d="M32 6 54 19v26L32 58 10 45V19Z M32 6v26m0 0 22 13M32 32 10 45"/></svg>
+  <div class="sp-name">Órbita</div>
+</div>
+<main class="sp-app">
+  <h1>Bem-vindo de volta</h1>
+  <p>Este conteúdo carregou por baixo da splash.</p>
+  <button type="button" id="sp-replay">Repetir splash</button>
+</main>
+<script>
+(() => {
+  const splash = document.querySelector('.sp');
+  const KEY = 'wc-splash-seen';
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let seen = false;
+  try { seen = sessionStorage.getItem(KEY) === '1'; sessionStorage.setItem(KEY, '1'); } catch {}
+  if (seen || reduce) splash.hidden = true;
+  splash.addEventListener('animationend', (e) => { if (e.animationName === 'sp-out') splash.hidden = true; });
+  document.getElementById('sp-replay').addEventListener('click', () => {
+    splash.hidden = false;
+    for (const el of [splash, ...splash.querySelectorAll('*')]) { el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; }
+  });
+})();
+</script>

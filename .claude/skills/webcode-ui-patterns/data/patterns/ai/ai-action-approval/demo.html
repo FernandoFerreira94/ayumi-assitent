@@ -1,0 +1,80 @@
+<style>
+  .aap { min-height: 100vh; padding: 24px 16px; max-width: 640px; margin: 0 auto; display: grid; gap: 14px; align-content: start; color: var(--wc-fg); font-size: var(--wc-font-size-sm); }
+  .aap-card { border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); background: var(--wc-surface); overflow: hidden; }
+  .aap-head { display: flex; gap: 10px; align-items: flex-start; padding: 14px 16px; background: var(--wc-warning-soft); }
+  .aap-head svg { flex: none; color: var(--wc-warning); margin-top: 1px; }
+  .aap-head h3 { margin: 0; font-size: var(--wc-font-size-md); line-height: var(--wc-line-height-snug); }
+  .aap-head h3:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .aap-head p { margin: 2px 0 0; color: var(--wc-fg-muted); }
+  .aap-body { padding: 14px 16px; display: grid; gap: 12px; }
+  .aap dl { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; }
+  .aap dt { color: var(--wc-fg-muted); }
+  .aap dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .aap-msg { padding: 10px 12px; border-radius: var(--wc-radius-md); background: var(--wc-sunken); white-space: pre-wrap; line-height: var(--wc-line-height-snug); margin: 0; }
+  .aap textarea { width: 100%; box-sizing: border-box; field-sizing: content; min-height: 6lh; padding: 10px 12px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: inherit; resize: vertical; }
+  .aap textarea:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 1px; }
+  .aap-opt { display: flex; gap: 8px; align-items: center; color: var(--wc-fg-muted); }
+  .aap-opt input { width: 18px; height: 18px; accent-color: var(--wc-accent-solid); }
+  .aap-acts { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--wc-border); }
+  .aap-acts .sp { flex: 1; }
+  .aap button { min-height: 44px; padding: 0 16px; border-radius: var(--wc-radius-md); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; }
+  .aap button.pri { background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); border-color: transparent; }
+  .aap button.ghost { border-color: transparent; background: none; color: var(--wc-fg-muted); }
+  .aap button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .aap [hidden] { display: none !important; }
+  .aap-result { display: flex; gap: 8px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--wc-border); color: var(--wc-fg-muted); }
+  .aap-card[data-d="ok"] .aap-head { background: var(--wc-success-soft); } .aap-card[data-d="ok"] .aap-head svg { color: var(--wc-success); }
+  .aap-card[data-d="no"] .aap-head { background: var(--wc-sunken); } .aap-card[data-d="no"] .aap-head svg { color: var(--wc-fg-muted); }
+  .aap-perm { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 14px; border-radius: var(--wc-radius-md); border: 1px dashed var(--wc-border); color: var(--wc-fg-muted); }
+  .aap-card { animation: aap-in var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  @keyframes aap-in { from { opacity: 0; translate: 0 calc(6px * var(--wc-motion-distance)); } }
+  @media (prefers-reduced-motion: reduce) { .aap-card { animation: none; } }
+</style>
+<div class="aap">
+  <section class="aap-card" aria-labelledby="aap-h">
+    <div class="aap-head">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/></svg>
+      <div><h3 id="aap-h" tabindex="-1">O assistente quer enviar 212 mensagens no WhatsApp</h3><p class="aap-sub">Revise antes de aprovar. Mensagens enviadas não podem ser recolhidas.</p></div>
+    </div>
+    <div class="aap-body">
+      <dl>
+        <dt>Para</dt><dd>212 clientes sem compra há 90+ dias</dd>
+        <dt>Canal</dt><dd>WhatsApp Business · número principal</dd>
+        <dt>Custo</dt><dd>R$ 10,60 em créditos</dd>
+      </dl>
+      <p class="aap-msg">Oi, {nome}! Sentimos sua falta por aqui. Separamos 10% de desconto para sua próxima compra até domingo: use VOLTA10. Responda SAIR para não receber mais.</p>
+      <label class="aap-edit" hidden><span style="display:block;margin-bottom:6px;color:var(--wc-fg-muted)">Texto da mensagem</span><textarea></textarea></label>
+      <label class="aap-opt"><input type="checkbox" id="aap-always"> Sempre permitir campanhas com até 300 destinatários</label>
+    </div>
+    <div class="aap-acts">
+      <button type="button" class="ghost" data-a="no">Recusar</button>
+      <span class="sp"></span>
+      <button type="button" data-a="edit">Editar texto</button>
+      <button type="button" class="pri" data-a="ok">Enviar 212 mensagens</button>
+    </div>
+    <div class="aap-result" role="status" hidden></div>
+  </section>
+  <div class="aap-perm" hidden><span>Permitido sempre: campanhas até 300 destinatários.</span><button type="button" class="ghost" data-a="revoke">Revogar</button></div>
+  <button type="button" class="aap-reset ghost" hidden>Mostrar o pedido de novo (demo)</button>
+</div>
+<script>
+(() => {
+  const root = document.querySelector('.aap'), card = root.querySelector('.aap-card'), h = card.querySelector('h3'), sub = card.querySelector('.aap-sub'), msg = card.querySelector('.aap-msg'), edit = card.querySelector('.aap-edit'), ta = edit.querySelector('textarea'), acts = card.querySelector('.aap-acts'), res = card.querySelector('.aap-result'), opt = card.querySelector('.aap-opt'), perm = root.querySelector('.aap-perm'), reset = root.querySelector('.aap-reset');
+  const orig = { h: h.textContent, sub: sub.textContent, msg: msg.textContent };
+  const decide = (d, text) => {
+    if (edit.hidden === false) { msg.textContent = ta.value; edit.hidden = true; msg.hidden = false; }
+    card.dataset.d = d; acts.hidden = true; opt.hidden = true; res.hidden = false; res.textContent = text;
+    h.textContent = d === 'ok' ? '212 mensagens na fila de envio' : 'Envio recusado'; sub.textContent = d === 'ok' ? 'Você aprovou às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '.' : 'O assistente não enviou nada.';
+    if (d === 'ok' && document.getElementById('aap-always').checked) perm.hidden = false;
+    reset.hidden = false; h.focus();
+  };
+  acts.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.a === 'edit') { const on = edit.hidden; edit.hidden = !on; msg.hidden = on; if (on) { ta.value = msg.textContent; ta.focus(); b.textContent = 'Concluir edição'; } else { msg.textContent = ta.value; b.textContent = 'Editar texto'; b.focus(); } }
+    if (b.dataset.a === 'ok') decide('ok', 'Aprovado. O envio começa agora e termina em cerca de 4 minutos.');
+    if (b.dataset.a === 'no') decide('no', 'Recusado. Diga ao assistente o que mudar, se quiser.');
+  });
+  perm.addEventListener('click', (e) => { if (e.target.closest('[data-a="revoke"]')) { perm.hidden = true; res.textContent = 'Permissão revogada. O assistente vai pedir aprovação de novo.'; reset.focus(); } });
+  reset.addEventListener('click', () => { delete card.dataset.d; h.textContent = orig.h; sub.textContent = orig.sub; msg.textContent = orig.msg; acts.hidden = false; opt.hidden = false; res.hidden = true; reset.hidden = true; acts.querySelector('[data-a="edit"]').textContent = 'Editar texto'; document.getElementById('aap-always').checked = false; h.focus(); });
+})();
+</script>

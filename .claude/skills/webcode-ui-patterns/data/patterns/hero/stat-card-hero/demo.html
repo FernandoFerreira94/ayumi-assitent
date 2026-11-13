@@ -1,0 +1,33 @@
+<style>
+  .sh { padding: 72px 20px; max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: 1.4fr 1fr; gap: 40px; align-items: end; }
+  .sh-eyebrow { font: var(--wc-font-weight-medium) var(--wc-font-size-sm) var(--wc-font-mono); color: var(--wc-accent); }
+  .sh h1 { font: var(--wc-font-weight-semibold) clamp(36px, 6vw, var(--wc-font-size-6xl)) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tighter) * 1em); margin: 14px 0 16px; text-wrap: balance; }
+  .sh p { color: var(--wc-fg-muted); font-size: var(--wc-font-size-lg); max-width: 46ch; margin: 0 0 28px; }
+  .sh-cta { display: inline-flex; align-items: center; gap: 14px; text-decoration: none; color: var(--wc-fg); font-weight: var(--wc-font-weight-medium); }
+  .sh-cta i { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); transition: rotate var(--wc-motion-duration-base) var(--wc-motion-ease-out); }
+  .sh-cta:hover i { rotate: -45deg; }
+  .sh-cta:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 4px; border-radius: var(--wc-radius-pill); }
+  .sh-card { border: 1px solid var(--wc-border); background: var(--wc-surface); border-radius: var(--wc-radius-lg); padding: 24px; box-shadow: var(--wc-shadow-md); display: grid; gap: 10px; }
+  .sh-card small { color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .sh-card strong { font: var(--wc-font-weight-semibold) var(--wc-font-size-5xl) / 1 var(--wc-font-display); font-variant-numeric: tabular-nums; }
+  .sh-card em { font-style: normal; font-size: var(--wc-font-size-sm); color: var(--wc-success); }
+  .sh-bars { display: flex; align-items: end; gap: 6px; height: 56px; margin-top: 6px; }
+  .sh-bars span { flex: 1; border-radius: var(--wc-radius-sm); background: var(--wc-accent-soft); }
+  .sh-bars span:last-child { background: var(--wc-accent-solid); }
+  @media (prefers-reduced-motion: reduce) { .sh-cta i { transition: none; } .sh-cta:hover i { rotate: none; } }
+  @media (max-width: 760px) { .sh { grid-template-columns: 1fr; padding: 48px 20px; } }
+</style>
+<section class="sh">
+  <div>
+    <div class="sh-eyebrow">Cobrança recorrente · Pix e cartão</div>
+    <h1>Receba no dia certo, sem cobrar no WhatsApp</h1>
+    <p>Gere a cobrança, envie o link e acompanhe quem pagou. Tudo conciliado automaticamente.</p>
+    <a class="sh-cta" href="#" aria-label="Começar agora: criar conta grátis"><i aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></i><span>Começar agora</span></a>
+  </div>
+  <div class="sh-card" role="group" aria-label="Resultado dos clientes">
+    <small>Recebido por clientes em 2025</small>
+    <strong>R$ 48,2 mi</strong>
+    <em>+27% em relação a 2024</em>
+    <div class="sh-bars" aria-hidden="true"><span style="height:35%"></span><span style="height:48%"></span><span style="height:42%"></span><span style="height:66%"></span><span style="height:80%"></span><span style="height:100%"></span></div>
+  </div>
+</section>

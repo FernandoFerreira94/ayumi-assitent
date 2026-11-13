@@ -1,0 +1,64 @@
+<style>
+  .obp { min-height: 100vh; display: grid; place-items: center; padding: 16px; color: var(--wc-fg); font-size: var(--wc-font-size-sm); }
+  .obp-phone { position: relative; display: flex; flex-direction: column; width: min(390px, 100%); height: min(760px, calc(100vh - 32px)); overflow: hidden; border-radius: var(--wc-radius-xl); border: 1px solid var(--wc-border); background: var(--wc-bg); box-shadow: var(--wc-shadow-lg); }
+  @media (max-width: 480px) { .obp { padding: 0; } .obp-phone { width: 100%; height: 100vh; height: 100dvh; border-radius: 0; border: 0; } }
+  .obp-top { display: flex; justify-content: flex-end; padding: calc(8px + env(safe-area-inset-top)) 8px 0; }
+  .obp-skip { min-height: 44px; padding: 0 14px; border: 0; background: none; color: var(--wc-fg-muted); font: inherit; font-weight: var(--wc-font-weight-medium); cursor: pointer; border-radius: var(--wc-radius-pill); }
+  .obp-track { flex: 1; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; overscroll-behavior-x: contain; scrollbar-width: none; }
+  .obp-track::-webkit-scrollbar { display: none; }
+  .obp-page { flex: 0 0 100%; scroll-snap-align: center; scroll-snap-stop: always; display: grid; align-content: center; justify-items: center; gap: 12px; padding: 0 32px; text-align: center; }
+  .obp-art { width: 200px; height: 200px; margin-bottom: 20px; border-radius: 40%; position: relative; background: var(--wc-accent-soft); }
+  .obp-art::before, .obp-art::after { content: ""; position: absolute; border-radius: 50%; }
+  .obp-page:nth-child(1) .obp-art::before { inset: 50px; background: var(--wc-accent-solid); }
+  .obp-page:nth-child(1) .obp-art::after { width: 36px; height: 36px; right: 22px; top: 26px; background: var(--wc-warning); }
+  .obp-page:nth-child(2) .obp-art { background: var(--wc-success-soft); border-radius: var(--wc-radius-xl); }
+  .obp-page:nth-child(2) .obp-art::before { left: 30px; right: 30px; bottom: 40px; height: 90px; border-radius: var(--wc-radius-md); background: linear-gradient(to right, var(--wc-success) 0 20%, transparent 20% 40%, var(--wc-success) 40% 60%, transparent 60% 80%, var(--wc-success) 80%); }
+  .obp-page:nth-child(3) .obp-art { background: var(--wc-warning-soft); border-radius: 50%; }
+  .obp-page:nth-child(3) .obp-art::before { inset: 60px; border: 10px solid var(--wc-accent-solid); }
+  .obp-page h2 { margin: 0; font: var(--wc-font-weight-bold) var(--wc-font-size-3xl) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: var(--wc-tracking-tight); text-wrap: balance; }
+  .obp-page p { margin: 0; color: var(--wc-fg-muted); font-size: var(--wc-font-size-md); line-height: var(--wc-line-height-relaxed); text-wrap: pretty; }
+  .obp-foot { display: grid; gap: 16px; justify-items: center; padding: 16px 24px calc(24px + env(safe-area-inset-bottom)); }
+  .obp-dots { display: flex; gap: 0; }
+  .obp-dots button { width: 32px; height: 32px; border: 0; background: none; cursor: pointer; display: grid; place-items: center; border-radius: 50%; }
+  .obp-dots button::before { content: ""; width: 8px; height: 8px; border-radius: 99px; background: var(--wc-border-strong); transition: width var(--wc-motion-spring-snappy-duration) var(--wc-motion-spring-snappy), background var(--wc-motion-duration-fast); }
+  .obp-dots button[aria-current="true"]::before { width: 22px; background: var(--wc-accent-solid); }
+  .obp-next { width: 100%; min-height: 52px; border: 0; border-radius: var(--wc-radius-button); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font: inherit; font-size: var(--wc-font-size-md); font-weight: var(--wc-font-weight-semibold); cursor: pointer; }
+  .obp-done { position: absolute; inset: 0; display: grid; place-content: center; gap: 8px; padding: 24px; text-align: center; background: var(--wc-bg); }
+  .obp-done[hidden] { display: none; } .obp-done h2 { margin: 0; outline: none; } .obp-done p { margin: 0; color: var(--wc-fg-muted); }
+  .obp-done button { justify-self: center; min-height: 44px; margin-top: 8px; padding: 0 16px; border-radius: var(--wc-radius-pill); border: 1px solid var(--wc-border); background: var(--wc-surface); color: var(--wc-fg); font: inherit; cursor: pointer; }
+  .obp-track:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: -4px; }
+  .obp button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .obp-track { scroll-behavior: auto; } .obp-dots button::before { transition: none; } }
+</style>
+<div class="obp">
+  <div class="obp-phone">
+    <div class="obp-top"><button type="button" class="obp-skip">Pular</button></div>
+    <div class="obp-track" tabindex="0" aria-roledescription="carrossel" aria-label="Boas-vindas">
+      <section class="obp-page" role="group" aria-roledescription="página" aria-label="1 de 3"><div class="obp-art" aria-hidden="true"></div><h2>Pequenos passos, todo dia</h2><p>Escolha 1 hábito e a gente lembra na hora certa. Dois minutos já contam.</p></section>
+      <section class="obp-page" role="group" aria-roledescription="página" aria-label="2 de 3"><div class="obp-art" aria-hidden="true"></div><h2>Veja sua sequência crescer</h2><p>Cada dia marcado vira um quadradinho. Falhou? A sequência pausa, não zera.</p></section>
+      <section class="obp-page" role="group" aria-roledescription="página" aria-label="3 de 3"><div class="obp-art" aria-hidden="true"></div><h2>No seu ritmo</h2><p>Defina dias e horários. Funciona sem internet e sincroniza depois.</p></section>
+    </div>
+    <div class="obp-foot">
+      <div class="obp-dots" role="group" aria-label="Escolher página"><button type="button" aria-label="Página 1" aria-current="true"></button><button type="button" aria-label="Página 2"></button><button type="button" aria-label="Página 3"></button></div>
+      <button type="button" class="obp-next">Próximo</button>
+    </div>
+    <div class="obp-done" hidden><h2 tabindex="-1">Qual seu primeiro hábito?</h2><p>(Aqui começa o app.)</p><button type="button">Ver onboarding de novo</button></div>
+  </div>
+</div>
+<script>
+(() => {
+  const root = document.querySelector('.obp'), track = root.querySelector('.obp-track'), pages = [...track.children], dots = [...root.querySelectorAll('.obp-dots button')];
+  const next = root.querySelector('.obp-next'), done = root.querySelector('.obp-done'); let cur = 0;
+  const set = (i) => { cur = i; dots.forEach((d, j) => d.setAttribute('aria-current', String(j === i))); pages.forEach((p, j) => (p.inert = j !== i)); next.textContent = i === pages.length - 1 ? 'Criar meu primeiro hábito' : 'Próximo'; };
+  const goTo = (i) => track.scrollTo({ left: pages[i].offsetLeft - track.offsetLeft });
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.intersectionRatio > .6) set(pages.indexOf(e.target)); }), { root: track, threshold: [.6] });
+  pages.forEach((p) => io.observe(p));
+  dots.forEach((d, i) => (d.onclick = () => goTo(i)));
+  const finish = () => { done.hidden = false; done.querySelector('h2').focus(); };
+  next.onclick = () => (cur < pages.length - 1 ? goTo(cur + 1) : finish());
+  root.querySelector('.obp-skip').onclick = finish;
+  done.querySelector('button').onclick = () => { done.hidden = true; track.scrollTo({ left: 0, behavior: 'instant' }); set(0); next.focus(); };
+  track.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight' && cur < 2) goTo(cur + 1); if (e.key === 'ArrowLeft' && cur > 0) goTo(cur - 1); });
+  set(0);
+})();
+</script>

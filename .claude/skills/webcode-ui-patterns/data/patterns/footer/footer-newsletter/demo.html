@@ -1,0 +1,83 @@
+<style>
+  .fn-page { min-height: 30vh; display: grid; place-content: center; padding: 40px 20px; color: var(--wc-fg-muted); text-align: center; }
+  .fn { background: var(--wc-surface); border-top: 1px solid var(--wc-border); }
+  .fn-in { max-width: 1080px; margin: 0 auto; padding: 56px 20px 28px; }
+  .fn-cta { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: center; padding: 36px; border-radius: var(--wc-radius-xl); background: var(--wc-sunken); }
+  .fn-cta h2 { margin: 0 0 10px; font: var(--wc-font-weight-semibold) clamp(26px, 3.6vw, var(--wc-font-size-4xl)) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); }
+  .fn-cta > div > p { margin: 0; color: var(--wc-fg-muted); }
+  .fn-proof { display: flex; align-items: center; gap: 10px; margin-top: 16px; font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .fn-proof span { display: flex; }
+  .fn-proof i { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--wc-sunken); margin-left: -8px; }
+  .fn-proof i:first-child { margin-left: 0; background: linear-gradient(135deg, var(--wc-gradient-1), var(--wc-gradient-2)); }
+  .fn-proof i:nth-child(2) { background: linear-gradient(135deg, var(--wc-gradient-2), var(--wc-gradient-3)); }
+  .fn-proof i:nth-child(3) { background: linear-gradient(135deg, var(--wc-gradient-3), var(--wc-gradient-4)); }
+  .fn-form label { display: block; font-size: var(--wc-font-size-sm); font-weight: var(--wc-font-weight-medium); margin-bottom: 6px; }
+  .fn-row { display: flex; gap: 8px; }
+  .fn-row input { flex: 1; min-width: 0; height: var(--wc-size-control-lg); padding: 0 14px; border-radius: var(--wc-radius-button); border: 1px solid var(--wc-border-strong); background: var(--wc-surface); color: var(--wc-fg); font: inherit; }
+  .fn-row input:focus { outline: 2px solid var(--wc-focus); outline-offset: 1px; }
+  .fn-row input[aria-invalid="true"] { border-color: var(--wc-danger); }
+  .fn-row button { min-width: 128px; height: var(--wc-size-control-lg); padding: 0 18px; border: 0; border-radius: var(--wc-radius-button); background: var(--wc-accent-solid); color: var(--wc-accent-solid-fg); font: inherit; font-weight: var(--wc-font-weight-semibold); cursor: pointer; }
+  .fn-row button:hover { background: var(--wc-accent-hover); }
+  .fn-row button[aria-busy="true"] { cursor: progress; opacity: .85; }
+  .fn-err { margin: 8px 0 0; font-size: var(--wc-font-size-sm); color: var(--wc-danger); }
+  .fn-err:empty { display: none; }
+  .fn-legal { margin: 10px 0 0; font-size: var(--wc-font-size-xs); color: var(--wc-fg-muted); }
+  .fn-legal a { color: inherit; }
+  .fn-ok { display: flex; gap: 14px; align-items: center; outline: none; }
+  .fn-ok[hidden] { display: none; }
+  .fn-ok .fn-ic { flex: none; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--wc-success-soft); color: var(--wc-success); animation: fn-pop var(--wc-motion-spring-bouncy-duration) var(--wc-motion-spring-bouncy) both; }
+  @keyframes fn-pop { from { scale: calc(1 - .6 * var(--wc-motion-distance)); opacity: 0; } }
+  .fn-ok p { margin: 0; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .fn-ok b { display: block; color: var(--wc-fg); font-size: var(--wc-font-size-md); }
+  .fn-links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; margin-top: 32px; font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .fn-links nav { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+  .fn-links a { color: inherit; text-decoration: none; }
+  .fn-links a:hover { color: var(--wc-fg); }
+  .fn :focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  @media (max-width: 760px) { .fn-cta { grid-template-columns: 1fr; padding: 24px 20px; gap: 24px; } .fn-row { flex-direction: column; } .fn-row button { width: 100%; } }
+</style>
+<main class="fn-page"><p>Fim do artigo. Logo abaixo, o footer com a inscrição.</p></main>
+<footer class="fn">
+  <div class="fn-in">
+    <section class="fn-cta" aria-labelledby="fn-title">
+      <div>
+        <h2 id="fn-title">Design de produto, toda quinta no seu e-mail</h2>
+        <p>Um ensaio curto, três links que valem o clique e nenhum spam. Cancele com um clique.</p>
+        <div class="fn-proof"><span aria-hidden="true"><i></i><i></i><i></i></span>12 mil leitores, de startups a bancos</div>
+      </div>
+      <div>
+        <form class="fn-form" action="#" method="post" novalidate>
+          <label for="fn-email">Seu melhor e-mail</label>
+          <div class="fn-row"><input id="fn-email" name="email" type="email" autocomplete="email" placeholder="nome@exemplo.com.br" required aria-describedby="fn-err fn-legal"><button type="submit">Assinar</button></div>
+          <p class="fn-err" id="fn-err" aria-live="polite"></p>
+          <p class="fn-legal" id="fn-legal">Usamos seu e-mail só para a newsletter, conforme a <a href="#">Política de Privacidade</a>.</p>
+        </form>
+        <div class="fn-ok" tabindex="-1" role="status" hidden><span class="fn-ic" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span><p><b>Quase lá! Confirme no seu e-mail.</b>Mandamos um link para <span class="fn-addr"></span>.</p></div>
+      </div>
+    </section>
+    <div class="fn-links">
+      <span>© 2026 Caderno de Produto</span>
+      <nav aria-label="Rodapé"><a href="#">Arquivo</a><a href="#">Sobre</a><a href="#">Patrocínio</a><a href="#">RSS</a><a href="#">Privacidade</a></nav>
+    </div>
+  </div>
+</footer>
+<script>
+(() => {
+  const form = document.querySelector('.fn-form'), input = form.email, err = document.getElementById('fn-err'), btn = form.querySelector('button'), ok = document.querySelector('.fn-ok');
+  const TAKEN = ['ana@exemplo.com.br'];
+  const set = (m) => { err.textContent = m; input.setAttribute('aria-invalid', String(!!m)); };
+  input.addEventListener('input', () => { if (input.getAttribute('aria-invalid') === 'true') set(''); });
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const v = input.validity;
+    if (v.valueMissing) { set('Digite seu e-mail para assinar.'); return input.focus(); }
+    if (v.typeMismatch) { set('Esse e-mail parece incompleto. Confira o @ e o domínio.'); return input.focus(); }
+    btn.setAttribute('aria-busy', 'true'); btn.textContent = 'Enviando…';
+    setTimeout(() => {
+      btn.removeAttribute('aria-busy'); btn.textContent = 'Assinar';
+      if (TAKEN.includes(input.value.toLowerCase())) { set('Esse e-mail já está inscrito. Procure a edição de quinta na sua caixa.'); return input.focus(); }
+      ok.querySelector('.fn-addr').textContent = input.value; form.hidden = true; ok.hidden = false; ok.focus();
+    }, 800);
+  });
+})();
+</script>

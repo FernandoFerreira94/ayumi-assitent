@@ -1,0 +1,136 @@
+<style>
+  .stk { min-height: 100vh; display: grid; place-items: center; padding: 16px; color: var(--wc-fg); font-size: var(--wc-font-size-sm); }
+  .stk-phone { position: relative; width: min(390px, 100%); height: min(760px, calc(100vh - 32px)); overflow: hidden; border-radius: var(--wc-radius-xl); border: 1px solid var(--wc-border); background: var(--wc-sunken); box-shadow: var(--wc-shadow-lg); touch-action: pan-y; }
+  @media (max-width: 480px) { .stk { padding: 0; } .stk-phone { width: 100%; height: 100vh; height: 100dvh; border-radius: 0; border: 0; } }
+  .stk-scr { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--wc-bg); transition: translate var(--wc-motion-spring-smooth-duration) var(--wc-motion-spring-smooth); box-shadow: var(--wc-shadow-lg); }
+  .stk-scr::after { content: ""; position: absolute; inset: 0; background: var(--wc-scrim); opacity: 0; pointer-events: none; transition: opacity var(--wc-motion-spring-smooth-duration) var(--wc-motion-spring-smooth); }
+  .stk-scr.is-off { translate: 100% 0; }
+  .stk-scr.is-under { translate: calc(-30% * var(--wc-motion-distance)) 0; }
+  .stk-scr.is-under::after { opacity: calc(.5 * var(--dim, 1)); }
+  .stk-phone.is-drag .stk-scr, .stk-phone.is-drag .stk-scr::after { transition: none; }
+  .stk-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 44px; padding: env(safe-area-inset-top) 8px 0; border-bottom: 1px solid var(--wc-border); background: var(--wc-glass-bg); backdrop-filter: blur(var(--wc-blur-glass)); }
+  .stk-bar h2 { grid-column: 2; margin: 0; font-size: var(--wc-font-size-md); font-weight: var(--wc-font-weight-semibold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; outline: none; }
+  .stk-back { justify-self: start; display: inline-flex; align-items: center; gap: 2px; min-height: 44px; max-width: 110px; padding: 0 8px 0 4px; border: 0; background: none; color: var(--wc-accent); font: inherit; font-size: var(--wc-font-size-md); cursor: pointer; border-radius: var(--wc-radius-sm); }
+  .stk-back span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stk-back svg { flex: none; }
+  .stk-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+  .stk-large { margin: 0; padding: 12px 16px 8px; font: var(--wc-font-weight-bold) var(--wc-font-size-3xl) / var(--wc-line-height-tight) var(--wc-font-display); letter-spacing: var(--wc-tracking-tight); outline: none; }
+  .stk-list { list-style: none; margin: 8px 16px; padding: 0; border-radius: var(--wc-radius-lg); background: var(--wc-surface); border: 1px solid var(--wc-border); overflow: hidden; }
+  .stk-list li + li { border-top: 1px solid var(--wc-border); }
+  .stk-item { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; width: 100%; min-height: 60px; padding: 10px 12px 10px 16px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+  .stk-item:active { background: var(--wc-sunken); }
+  .stk-item b { display: block; font-weight: var(--wc-font-weight-semibold); }
+  .stk-item small { display: block; color: var(--wc-fg-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stk-item .chev { color: var(--wc-fg-muted); }
+  .stk-tag { padding: 2px 8px; border-radius: var(--wc-radius-pill); background: var(--wc-accent-soft); color: var(--wc-accent); font-size: var(--wc-font-size-xs); font-weight: var(--wc-font-weight-medium); }
+  .stk-tag.warn { background: var(--wc-warning-soft); color: var(--wc-warning); }
+  .stk-sec { margin: 16px 16px 4px; color: var(--wc-fg-muted); font-size: var(--wc-font-size-xs); text-transform: uppercase; letter-spacing: var(--wc-tracking-caps); }
+  .stk-kv { margin: 8px 16px; padding: 4px 16px; border-radius: var(--wc-radius-lg); background: var(--wc-surface); border: 1px solid var(--wc-border); }
+  .stk-kv div { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; }
+  .stk-kv div + div { border-top: 1px solid var(--wc-border); }
+  .stk-kv dt { color: var(--wc-fg-muted); } .stk-kv dd { margin: 0; text-align: right; }
+  .stk-check label { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 16px; cursor: pointer; }
+  .stk-check input { width: 22px; height: 22px; accent-color: var(--wc-accent-solid); }
+  .stk-hint { margin: 16px; color: var(--wc-fg-muted); font-size: var(--wc-font-size-xs); }
+  .stk button:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: -2px; }
+  @media (prefers-reduced-motion: reduce) {
+    .stk-scr, .stk-scr::after { transition: opacity var(--wc-motion-duration-fast) linear; }
+    .stk-scr.is-off { translate: 0 0; opacity: 0; } .stk-scr.is-under { translate: 0 0; }
+  }
+</style>
+<div class="stk">
+  <div class="stk-phone" aria-label="Exemplo de app: ordens de serviço"></div>
+  <template id="stk-t-list">
+    <div class="stk-bar"><h2 aria-hidden="true">Ordens</h2></div>
+    <div class="stk-body">
+      <h1 class="stk-large" tabindex="-1" data-title>Ordens de serviço</h1>
+      <p class="stk-sec">Hoje</p>
+      <ul class="stk-list"></ul>
+      <p class="stk-hint">Toque em uma ordem. Para voltar, use o botão ou arraste da borda esquerda.</p>
+    </div>
+  </template>
+</div>
+<script>
+(() => {
+  const OS = [
+    { n: '2041', c: 'Padaria Pão Quente', a: 'Rua Augusta, 1200 · São Paulo', t: 'Manutenção preventiva', s: 'Em rota', h: '09:30' },
+    { n: '2042', c: 'Clínica Sorriso', a: 'Av. Paulista, 900 · São Paulo', t: 'Troca de compressor', s: 'Aguardando peça', w: 1, h: '11:00' },
+    { n: '2043', c: 'Mercado Bom Preço', a: 'Rua Vergueiro, 3185 · São Paulo', t: 'Instalação de câmara fria', s: 'Agendada', h: '14:00' },
+    { n: '2044', c: 'Hotel Jardins', a: 'Al. Santos, 45 · São Paulo', t: 'Vistoria de split', s: 'Agendada', h: '16:30' },
+  ];
+  const phone = document.querySelector('.stk-phone');
+  const chev = '<svg width="10" height="16" viewBox="0 0 10 16" aria-hidden="true"><path d="M2 2l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const backIco = '<svg width="12" height="20" viewBox="0 0 12 20" aria-hidden="true"><path d="M10 2L2 10l8 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const stack = [];
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  const top = () => stack[stack.length - 1];
+  const make = (title, html, backTo) => {
+    const s = document.createElement('section'); s.className = 'stk-scr'; s.setAttribute('aria-label', title);
+    s.innerHTML = `<div class="stk-bar">${backTo ? `<button type="button" class="stk-back" aria-label="Voltar para ${backTo}">${backIco}<span>${backTo}</span></button>` : ''}<h2 tabindex="-1" data-title>${title}</h2></div><div class="stk-body">${html}</div>`;
+    return s;
+  };
+  const root = document.createElement('section'); root.className = 'stk-scr'; root.setAttribute('aria-label', 'Ordens de serviço');
+  root.append(document.getElementById('stk-t-list').content.cloneNode(true));
+  root.querySelector('.stk-list').innerHTML = OS.map((o, i) => `<li><button type="button" class="stk-item" data-i="${i}"><span><b>#${o.n} · ${o.c}</b><small>${o.h} · ${o.t}</small></span><span class="stk-tag${o.w ? ' warn' : ''}">${o.s}</span><span class="chev">${chev}</span></button></li>`).join('');
+  phone.append(root); stack.push({ el: root });
+
+  const push = (el, opener) => {
+    const prev = top();
+    el.classList.add('is-off'); phone.append(el);
+    el.getBoundingClientRect();
+    el.classList.remove('is-off'); prev.el.classList.add('is-under'); prev.el.inert = true;
+    stack.push({ el, opener });
+    el.querySelector('[data-title]').focus({ preventScroll: true });
+  };
+  const pop = () => {
+    if (stack.length < 2) return;
+    const cur = stack.pop(), prev = top();
+    cur.el.classList.add('is-off'); prev.el.classList.remove('is-under'); prev.el.inert = false;
+    cur.el.inert = true;
+    const done = () => cur.el.remove();
+    reduce.matches ? setTimeout(done, 150) : cur.el.addEventListener('transitionend', done, { once: true });
+    setTimeout(done, 900);
+    cur.opener?.focus({ preventScroll: true });
+  };
+  const detail = (o) => make(`OS #${o.n}`, `
+      <p class="stk-sec">Cliente</p>
+      <dl class="stk-kv"><div><dt>Nome</dt><dd>${o.c}</dd></div><div><dt>Endereço</dt><dd>${o.a}</dd></div><div><dt>Horário</dt><dd>${o.h}</dd></div></dl>
+      <p class="stk-sec">Serviço</p>
+      <ul class="stk-list"><li><button type="button" class="stk-item" data-go="check"><span><b>Checklist</b><small>${o.t}</small></span><span class="stk-tag">2 de 4</span><span class="chev">${chev}</span></button></li>
+      <li><button type="button" class="stk-item" data-go="hist"><span><b>Histórico do equipamento</b><small>3 visitas em 2026</small></span><span></span><span class="chev">${chev}</span></button></li></ul>`, 'Ordens');
+  const sub = (go, o) => go === 'check'
+    ? make('Checklist', `<p class="stk-sec">${o.t}</p><div class="stk-list stk-check">${['Desligar disjuntor', 'Limpar filtros', 'Medir pressão do gás', 'Foto do equipamento'].map((t, i) => `<label><input type="checkbox"${i < 2 ? ' checked' : ''}> ${t}</label>`).join('')}</div>`, `OS #${o.n}`)
+    : make('Histórico', `<dl class="stk-kv"><div><dt>12/08</dt><dd>Limpeza geral</dd></div><div><dt>03/05</dt><dd>Troca de capacitor</dd></div><div><dt>15/02</dt><dd>Instalação</dd></div></dl>`, `OS #${o.n}`);
+  let cur;
+  phone.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.classList.contains('stk-back')) return pop();
+    if (b.dataset.i) { cur = OS[b.dataset.i]; return push(detail(cur), b); }
+    if (b.dataset.go) return push(sub(b.dataset.go, cur), b);
+  });
+  phone.addEventListener('keydown', (e) => { if ((e.key === 'Escape' || (e.altKey && e.key === 'ArrowLeft')) && stack.length > 1) { e.preventDefault(); pop(); } });
+
+  // Voltar pela borda: segue o dedo, decide por distância ou velocidade.
+  phone.addEventListener('pointerdown', (e) => {
+    if (stack.length < 2 || e.button > 0) return;
+    const x0 = e.clientX, y0 = e.clientY, left = phone.getBoundingClientRect().left;
+    if (x0 - left > 24) return;
+    const w = phone.offsetWidth, a = top().el, b = stack[stack.length - 2].el; let mode = null, dx = 0, t = performance.now(), v = 0;
+    const move = (ev) => {
+      const mx = ev.clientX - x0, my = ev.clientY - y0;
+      if (!mode) { if (Math.abs(mx) < 6 && Math.abs(my) < 6) return; mode = mx > Math.abs(my) ? 'x' : 'no'; if (mode === 'x') { phone.setPointerCapture(ev.pointerId); phone.classList.add('is-drag'); } }
+      if (mode !== 'x') return;
+      const now = performance.now(), nx = Math.max(0, mx); v = (nx - dx) / Math.max(1, now - t); t = now; dx = nx;
+      const p = dx / w;
+      a.style.translate = `${dx}px 0`; b.style.translate = `${-30 * (1 - p)}% 0`; b.style.setProperty('--dim', 1 - p);
+    };
+    const up = () => {
+      phone.removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
+      if (mode !== 'x') return;
+      phone.classList.remove('is-drag'); a.style.translate = ''; b.style.translate = ''; b.style.removeProperty('--dim');
+      if (dx > w * .35 || v > .5) { pop(); if (navigator.vibrate) try { navigator.vibrate(6); } catch {} }
+    };
+    phone.addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('pointercancel', up);
+  });
+})();
+</script>

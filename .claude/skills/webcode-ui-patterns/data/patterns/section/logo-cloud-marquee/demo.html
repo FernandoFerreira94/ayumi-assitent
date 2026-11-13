@@ -1,0 +1,58 @@
+<style>
+  .lc { max-width: 1120px; margin: 0 auto; padding: 56px 20px; display: grid; gap: 20px; }
+  .lc-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .lc-top p { margin: 0; color: var(--wc-fg-muted); font-size: var(--wc-font-size-sm); }
+  .lc-top b { color: var(--wc-fg); font-weight: var(--wc-font-weight-semibold); }
+  .lc-pause { font: inherit; font-size: var(--wc-font-size-sm); min-height: 36px; padding: 0 12px; border-radius: var(--wc-radius-pill); border: 1px solid var(--wc-border); background: var(--wc-surface); color: var(--wc-fg-muted); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .lc-pause:hover { color: var(--wc-fg); }
+  .lc-pause:focus-visible, .lc-logo:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .lc-view { overflow: hidden; mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent); -webkit-mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent); }
+  .lc-track { display: flex; width: max-content; animation: lc-move 40s linear infinite; }
+  .lc ul { list-style: none; margin: 0; padding: 0; display: flex; }
+  .lc-logo { display: flex; align-items: center; gap: 10px; height: 64px; padding: 0 28px; color: var(--wc-fg-muted); text-decoration: none; font: var(--wc-font-weight-semibold) var(--wc-font-size-xl) var(--wc-font-display); letter-spacing: calc(var(--wc-tracking-tight) * 1em); white-space: nowrap; transition: color var(--wc-motion-duration-fast) var(--wc-motion-ease-out); }
+  .lc-logo:hover { color: var(--wc-fg); }
+  .lc-logo svg { flex: none; }
+  .lc:hover .lc-track, .lc:focus-within .lc-track, .lc[data-paused] .lc-track { animation-play-state: paused; }
+  @keyframes lc-move { to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) {
+    .lc-track { animation: none; width: auto; }
+    .lc-track > ul:first-child { flex-wrap: wrap; justify-content: center; }
+    .lc-track > [aria-hidden] { display: none; }
+    .lc-view { mask-image: none; -webkit-mask-image: none; }
+    .lc-pause { display: none; }
+  }
+</style>
+<section class="lc" aria-labelledby="lc-t">
+  <div class="lc-top">
+    <p id="lc-t"><b>+2.400 empresas</b> vendem com a gente todo dia</p>
+    <button class="lc-pause" type="button"><span aria-hidden="true">❙❙</span> Pausar</button>
+  </div>
+  <div class="lc-view">
+    <div class="lc-track">
+      <ul aria-label="Clientes">
+        <li><a class="lc-logo" href="#"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"/></svg>Grupo Sol</a></li>
+        <li><a class="lc-logo" href="#"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="currentColor"/></svg>Café Aroma</a></li>
+        <li><a class="lc-logo" href="#"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 22 20H2z" fill="currentColor"/></svg>Studio Lume</a></li>
+        <li><a class="lc-logo" href="#"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v6H4zM4 14h10v6H4z" fill="currentColor"/></svg>Mercado Bom Preço</a></li>
+        <li><a class="lc-logo" href="#"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="6" fill="currentColor"/><circle cx="16" cy="12" r="6" fill="currentColor" opacity=".55"/></svg>Clínica Vida</a></li>
+        <li><a class="lc-logo" href="#"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z" fill="currentColor"/></svg>Padaria Estrela</a></li>
+        <li><a class="lc-logo" href="#"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 18 0v8H3z" fill="currentColor"/></svg>Auto Peças Sul</a></li>
+        <li><a class="lc-logo" href="#"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c5 0 9 3 9 9-6 0-9 4-9 9-5 0-9-4-9-9s4-9 9-9z" fill="currentColor"/></svg>Loja Verde</a></li>
+      </ul>
+      <ul aria-hidden="true" inert></ul>
+    </div>
+  </div>
+</section>
+<script>
+(() => {
+  const root = document.querySelector('.lc');
+  const [list, copy] = root.querySelectorAll('.lc-track > ul');
+  copy.innerHTML = list.innerHTML; // cópia que fecha o loop, fora da árvore de acessibilidade
+  const btn = root.querySelector('.lc-pause');
+  btn.addEventListener('click', () => {
+    const paused = root.toggleAttribute('data-paused');
+
+    btn.innerHTML = paused ? '<span aria-hidden="true">▶</span> Continuar' : '<span aria-hidden="true">❙❙</span> Pausar';
+  });
+})();
+</script>

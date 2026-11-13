@@ -1,0 +1,58 @@
+<style>
+  .brl { min-height: 100vh; display: grid; place-content: center; padding: 20px; }
+  .brl-field { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; width: min(340px, calc(100vw - 40px)); }
+  .brl-field label { font-weight: var(--wc-font-weight-medium); }
+  .brl-box { display: flex; align-items: center; min-height: 56px; padding: 0 14px; border: 1px solid var(--wc-border-strong); border-radius: var(--wc-radius-md); background: var(--wc-bg); }
+  .brl-box:focus-within { outline: 2px solid var(--wc-focus); outline-offset: 2px; }
+  .brl-box span { color: var(--wc-fg-muted); font-size: var(--wc-font-size-xl); margin-right: 8px; }
+  .brl-box input { flex: 1; min-width: 0; width: 100%; border: 0; background: transparent; color: var(--wc-fg); font: var(--wc-font-weight-semibold) var(--wc-font-size-2xl) var(--wc-font-body); font-variant-numeric: tabular-nums; outline: none; }
+  .brl-help, .brl-parc { font-size: var(--wc-font-size-sm); color: var(--wc-fg-muted); }
+  .brl-error { font-size: var(--wc-font-size-sm); color: var(--wc-danger); }
+  .brl-error:empty { display: none; }
+  .brl-parc b { color: var(--wc-fg); font-variant-numeric: tabular-nums; }
+</style>
+<div class="brl">
+  <div class="brl-field">
+    <label for="brl-input">Valor da cobrança</label>
+    <div class="brl-box"><span aria-hidden="true">R$</span><input id="brl-input" inputmode="numeric" autocomplete="off" value="0,00" aria-describedby="brl-help brl-error"></div>
+    <span class="brl-help" id="brl-help">Digite só os números; os centavos entram primeiro.</span>
+    <span class="brl-error" id="brl-error"></span>
+    <span class="brl-parc" role="status"></span>
+  </div>
+</div>
+<script>
+(() => {
+  const input = document.getElementById('brl-input');
+  const err = document.getElementById('brl-error');
+  const parc = document.querySelector('.brl-parc');
+  const fmt = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const MAX = 5000000; // centavos
+  let cents = 0;
+  const render = () => {
+    input.value = fmt.format(cents / 100);
+    err.textContent = cents > MAX ? `Máximo R$ ${fmt.format(MAX / 100)} por cobrança.` : '';
+    input.closest('.brl-box').style.borderColor = cents > MAX ? 'var(--wc-danger)' : '';
+    parc.innerHTML = cents >= 1000 && cents <= MAX ? `ou até <b>10× de R$ ${fmt.format(Math.ceil(cents / 10) / 100)}</b> sem juros` : '';
+    input.setSelectionRange(input.value.length, input.value.length);
+  };
+  input.addEventListener('beforeinput', (e) => {
+    if (e.inputType === 'insertFromPaste') return;
+    e.preventDefault();
+    if (e.inputType.startsWith('delete')) cents = Math.floor(cents / 10);
+    else if (e.data && /^\d+$/.test(e.data)) cents = Math.min(cents * 10 ** e.data.length + Number(e.data), 99999999999);
+    render();
+  });
+  input.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const t = (e.clipboardData?.getData('text') ?? '').replace(/[^\d.,]/g, '');
+    const i = Math.max(t.lastIndexOf(','), t.lastIndexOf('.'));
+    const hasDec = i >= 0 && t.length - i - 1 <= 2;
+    const int = (hasDec ? t.slice(0, i) : t).replace(/\D/g, '') || '0';
+    const dec = hasDec ? t.slice(i + 1).padEnd(2, '0') : '00';
+    cents = Number(int) * 100 + Number(dec);
+    render();
+  });
+  input.addEventListener('focus', () => requestAnimationFrame(() => input.setSelectionRange(input.value.length, input.value.length)));
+  render();
+})();
+</script>
