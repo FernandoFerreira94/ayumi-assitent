@@ -91,6 +91,16 @@ export function GoogleCard({
       `Não deu para conectar. Tente de novo e aceite o acesso à agenda.${errorCode ? ` (código: ${errorCode})` : ""}`;
   }
 
+  // Fica montado em todos os estados: se sumisse junto com o aviso, o vaul fecharia sem animar e sem limpar a tela.
+  const sheet = (
+    <CreatePasswordSheet
+      open={passwordOpen}
+      onOpenChange={setPasswordOpen}
+      email={email}
+      onCreated={() => setNeedsPassword(false)}
+    />
+  );
+
   if (confirming && needsPassword)
     return (
       <>
@@ -119,60 +129,61 @@ export function GoogleCard({
             </button>
           </div>
         </div>
-        <CreatePasswordSheet
-          open={passwordOpen}
-          onOpenChange={setPasswordOpen}
-          email={email}
-          onCreated={() => setNeedsPassword(false)}
-        />
+        {sheet}
       </>
     );
 
   if (confirming)
     return (
-      <div
-        className="glass grid gap-3 rounded-[1.75rem] px-5 py-4"
-        role="alertdialog"
-        aria-label="Desconectar o Google Agenda?"
-      >
-        <div>
-          <p className="font-bold">Desconectar o Google Agenda?</p>
-          <p className="text-sm font-semibold text-muted">
-            Os agendamentos novos deixam de ir para o seu calendário e os eventos de lá param de entrar aqui.
-          </p>
+      <>
+        <div
+          className="glass grid gap-3 rounded-[1.75rem] px-5 py-4"
+          role="alertdialog"
+          aria-label="Desconectar o Google Agenda?"
+        >
+          <div>
+            <p className="font-bold">Desconectar o Google Agenda?</p>
+            <p className="text-sm font-semibold text-muted">
+              Os agendamentos novos deixam de ir para o seu calendário e os eventos de lá param de entrar aqui.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              className="btn-glass min-h-11 rounded-full px-4 text-sm font-bold disabled:opacity-60"
+              onClick={cancel}
+              disabled={pending}
+              autoFocus
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="min-h-11 rounded-full bg-fail px-4 text-sm font-bold text-white disabled:opacity-60"
+              onClick={() => void disconnect()}
+              disabled={pending}
+              aria-busy={pending}
+            >
+              {pending ? "Desconectando…" : "Desconectar"}
+            </button>
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            className="btn-glass min-h-11 rounded-full px-4 text-sm font-bold disabled:opacity-60"
-            onClick={cancel}
-            disabled={pending}
-            autoFocus
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            className="min-h-11 rounded-full bg-fail px-4 text-sm font-bold text-white disabled:opacity-60"
-            onClick={() => void disconnect()}
-            disabled={pending}
-            aria-busy={pending}
-          >
-            {pending ? "Desconectando…" : "Desconectar"}
-          </button>
-        </div>
-      </div>
+        {sheet}
+      </>
     );
 
   return (
-    <div className="flex items-center justify-between gap-3 glass rounded-[1.75rem] px-5 py-4">
-      <div>
-        <TileTitle icon="calendar" tint="blue">
-          Google Agenda
-        </TileTitle>
-        <p className={`text-sm font-semibold ${failed ? "text-fail" : "text-muted"}`}>{hint}</p>
+    <>
+      <div className="flex items-center justify-between gap-3 glass rounded-[1.75rem] px-5 py-4">
+        <div>
+          <TileTitle icon="calendar" tint="blue">
+            Google Agenda
+          </TileTitle>
+          <p className={`text-sm font-semibold ${failed ? "text-fail" : "text-muted"}`}>{hint}</p>
+        </div>
+        <Switch checked={connected} onChange={toggle} busy={pending} label="Google Agenda" />
       </div>
-      <Switch checked={connected} onChange={toggle} busy={pending} label="Google Agenda" />
-    </div>
+      {sheet}
+    </>
   );
 }
