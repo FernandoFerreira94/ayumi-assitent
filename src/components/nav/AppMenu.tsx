@@ -139,7 +139,7 @@ export function AppMenu({
             </span>
           ) : whatsapp === "other" ? (
             <Link
-              href="/ajustes#whatsapp"
+              href="/ajustes/whatsapp"
               onClick={close}
               className="inline-flex items-center gap-1.5 justify-self-start rounded-full bg-fail-bg px-2.5 py-1 text-xs font-bold text-fail"
             >

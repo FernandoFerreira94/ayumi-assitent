@@ -55,7 +55,7 @@ test("agenda dois serviços com desconto: soma duração e valor", async ({ page
 test("tocar num horário de Vagas abre o agendamento já preenchido", async ({ page }) => {
   await prepara(page);
   // Todos os dias abertos, para não depender do dia da semana de hoje
-  await page.goto("/ajustes");
+  await page.goto("/ajustes/expediente");
   for (let i = 0; i < 7; i++) {
     await page.locator(`input[name="open-${i}"]`).check();
     await page.locator(`select[name="opens-${i}"]`).selectOption("06:00");

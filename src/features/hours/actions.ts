@@ -32,7 +32,7 @@ export async function saveWorkingHours(_prev: ActionResult | null, fd: FormData)
   }
   try {
     await withTenant(tenantId, (tx) => saveHours(tx, tenantId, week));
-    revalidatePath("/ajustes");
+    revalidatePath("/ajustes", "layout");
     revalidatePath("/vagas");
     revalidatePath("/agenda");
     revalidatePath("/calendario");

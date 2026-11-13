@@ -19,19 +19,19 @@ export function NavHistory() {
 
 /**
  * Seta de voltar das telas secundárias: volta para onde a pessoa estava, como no iPhone.
- * No PWA aberto direto na tela (sem histórico do app) cai na agenda.
+ * No PWA aberto direto na tela (sem histórico do app) cai em `fallback` (a agenda, ou a tela-mãe da seção).
  */
-export function BackButton() {
+export function BackButton({ fallback = "/agenda" }: { fallback?: string }) {
   const router = useRouter();
   return (
     <a
-      href="/agenda"
+      href={fallback}
       aria-label="Voltar"
       className="btn-glass grid size-11 shrink-0 place-content-center rounded-full"
       onClick={(e) => {
         e.preventDefault();
         if (inAppNavs > 0) router.back();
-        else router.push("/agenda");
+        else router.push(fallback);
       }}
     >
       <svg

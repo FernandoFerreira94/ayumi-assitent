@@ -1,6 +1,6 @@
 # Calendário do iPhone (link assinado ICS + leitura do iCloud)
 
-**Duas direções, cada uma liga separado** (Ajustes > Conexões, interruptor que abre o sheet):
+**Duas direções, cada uma liga separado** (Ajustes > Calendários, interruptor que abre o sheet):
 1. **iPhone → app (PR eventos externos, 13/11):** lê um calendário do iCloud com "Calendário Público" ligado (link `webcal://pXX-caldav.icloud.com/published/...`, só leitura). Os eventos entram como `blocks.source='icloud'` (cinza, ocupam horário). Título com nome de cliente cadastrada mostra "Parece um atendimento" + **Transformar em agendamento**.
 2. **app → iPhone (#115):** o link assinado abaixo.
 
@@ -13,7 +13,7 @@
 - `server.ts`: `tenantByTokenHash` (como dono do banco: tenants sem FORCE RLS) e `feedIcs` (via `withTenant`; janela de 30 dias atrás a 180 à frente).
 - `actions.ts`: `createCalendarLink` (gera ou troca e devolve a URL só nessa hora), `disableCalendarLink`, `setCalendarHideNames`.
 - Rota `app/api/calendar/[token]/route.ts` (aceita `<token>.ics`; dá 404 igual para inválido, trocado ou desligado; `no-store`, `noindex`; nunca loga o token).
-- UI: `IphoneCalendarCard.tsx` (Ajustes > Conexões, `#iphone`), sheet vaul com passo a passo.
+- UI: `IphoneCalendarCard.tsx` (`/ajustes/calendarios#iphone`), sheet vaul com passo a passo.
 
 ## Leitura do iCloud (direção 1)
 

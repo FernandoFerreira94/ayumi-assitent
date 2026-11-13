@@ -47,7 +47,7 @@ export async function saveMessages(_prev: ActionResult | null, fd: FormData): Pr
         ...texts,
       }),
     );
-    revalidatePath("/ajustes");
+    revalidatePath("/ajustes", "layout");
     return ok();
   } catch {
     return fail("UNKNOWN");

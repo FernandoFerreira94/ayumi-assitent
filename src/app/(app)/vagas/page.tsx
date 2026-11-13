@@ -103,7 +103,7 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
         <EmptyState
           icon="clock"
           title="Sem vagas nos próximos dias"
-          description="Confira o expediente em Ajustes ou libere horários na agenda."
+          description="Confira o expediente em Ajustes > Expediente ou libere horários na agenda."
         />
       ) : (
         <div className="grid gap-3">

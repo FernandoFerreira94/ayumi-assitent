@@ -10,12 +10,16 @@ export async function fetchServerBuild(signal?: AbortSignal): Promise<string | n
   }
 }
 
-/** Limpa o service worker e o cache do app e recarrega para pegar a versão nova. */
-export async function applyUpdate(): Promise<void> {
+/**
+ * Limpa o service worker e o cache do app e recarrega para pegar a versão nova. Com `to`, abre essa tela em vez
+ * de recarregar a atual (o botão de Ajustes leva ao Painel, onde aparece o que mudou).
+ */
+export async function applyUpdate(to?: string): Promise<void> {
   try {
     const regs = (await navigator.serviceWorker?.getRegistrations()) ?? [];
     await Promise.all(regs.map((r) => r.unregister()));
     if ("caches" in window) await Promise.all((await caches.keys()).map((k) => caches.delete(k)));
   } catch {}
-  window.location.reload();
+  if (to) window.location.replace(to);
+  else window.location.reload();
 }
