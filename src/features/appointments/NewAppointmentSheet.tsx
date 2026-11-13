@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Drawer } from "vaul";
 import { LetterPicker, type PickerOption } from "@/components/ui/LetterPicker";
 import { LoadingRegion, Skeleton } from "@/components/ui/Skeleton";
@@ -92,6 +92,9 @@ export function NewAppointmentSheet({
   }
   const loading = clients === null || services === null;
   const missing = !loading && (clients.length === 0 || services.length === 0);
+  const ready = !loading && !missing;
+  // O botão Agendar fica fora do <form> (no rodapé fixo) e aponta para ele pelo id
+  const formDomId = useId();
   const working = booking !== null && booking.result === null;
   const times = timeOptions({ include: time });
   const formId = `${formKey}-${date}-${time ?? ""}-${clientId ?? ""}-${serviceIds?.join(",") ?? ""}-${fromBlockId ?? ""}`;
@@ -227,102 +230,114 @@ export function NewAppointmentSheet({
           className={
             booking
               ? "booking-ov fixed inset-0 z-50 overflow-y-auto outline-none"
-              : "sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none"
+              : "sheet fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] flex-col rounded-t-3xl outline-none"
           }
         >
-          <div hidden={booking !== null}>
-            <Drawer.Title className="pb-1 text-xl font-bold">Novo agendamento</Drawer.Title>
-            <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
-              {missing
-                ? "Cadastre ao menos uma cliente (em Clientes) e um serviço (em Serviços)."
-                : "Escolha cliente, serviço e horário."}
-            </Drawer.Description>
-            {loading ? (
-              <LoadingRegion label="Carregando clientes e serviços">
-                <div className="grid gap-3">
-                  <Skeleton className="h-13 w-full rounded-2xl" />
-                  <Skeleton className="h-13 w-full rounded-2xl" />
-                  <Skeleton className="h-13 w-full rounded-2xl" />
-                </div>
-              </LoadingRegion>
-            ) : missing ? null : (
-              // Fica montado por trás da Bolha: se der erro, a folha volta preenchida
-              <form
-                key={formId}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!working) void book(new FormData(e.currentTarget));
-                }}
-                className="grid gap-3"
-              >
-                {fromBlockId ? <input type="hidden" name="fromBlockId" value={fromBlockId} /> : null}
-                <LetterPicker
-                  name="clientId"
-                  label="Cliente"
-                  placeholder="Escolha a cliente…"
-                  options={clients}
-                  defaultId={clientId}
-                />
-                <BookingServices
-                  services={services}
-                  defaultIds={serviceIds}
-                  discountError={fieldErr?.field === "discountValue"}
-                  onMinutes={setMinutes}
-                />
-                {/* Dia e horário lado a lado: a folha fica mais curta e o botão Agendar aparece sem rolar tanto */}
-                <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] gap-3">
-                  <label className="grid min-w-0 gap-1 text-sm font-bold">
-                    Dia
-                    <input
-                      name="date"
-                      type="date"
-                      required
-                      defaultValue={date}
-                      className={pair}
-                      onChange={(e) => setPick((p) => ({ ...p, date: e.target.value }))}
-                    />
-                  </label>
-                  <label className="grid min-w-0 gap-1 text-sm font-bold">
-                    Horário
-                    <select
-                      name="time"
-                      required
-                      className={pair}
-                      defaultValue={time ?? "09:00"}
-                      aria-invalid={fieldErr?.field === "time"}
-                      aria-describedby={outside ? "fora-expediente" : undefined}
-                      onChange={(e) => setPick((p) => ({ ...p, time: e.target.value }))}
+          {/* Só os campos rolam; o botão Agendar fica fixo no rodapé da folha, sempre à vista
+              (o aviso de fora do expediente, desconto e 2+ serviços empurravam ele para fora da tela) */}
+          <div hidden={booking !== null} className="flex min-h-0 flex-1 flex-col">
+            <div
+              className={`min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-4 ${ready ? "pb-3" : "pb-[max(env(safe-area-inset-bottom),20px)]"}`}
+            >
+              <Drawer.Title className="pb-1 text-xl font-bold">Novo agendamento</Drawer.Title>
+              <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
+                {missing
+                  ? "Cadastre ao menos uma cliente (em Clientes) e um serviço (em Serviços)."
+                  : "Escolha cliente, serviço e horário."}
+              </Drawer.Description>
+              {loading ? (
+                <LoadingRegion label="Carregando clientes e serviços">
+                  <div className="grid gap-3">
+                    <Skeleton className="h-13 w-full rounded-2xl" />
+                    <Skeleton className="h-13 w-full rounded-2xl" />
+                    <Skeleton className="h-13 w-full rounded-2xl" />
+                  </div>
+                </LoadingRegion>
+              ) : missing ? null : (
+                // Fica montado por trás da Bolha: se der erro, a folha volta preenchida
+                <form
+                  key={formId}
+                  id={formDomId}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!working) void book(new FormData(e.currentTarget));
+                  }}
+                  className="grid gap-3"
+                >
+                  {fromBlockId ? <input type="hidden" name="fromBlockId" value={fromBlockId} /> : null}
+                  <LetterPicker
+                    name="clientId"
+                    label="Cliente"
+                    placeholder="Escolha a cliente…"
+                    options={clients}
+                    defaultId={clientId}
+                  />
+                  <BookingServices
+                    services={services}
+                    defaultIds={serviceIds}
+                    discountError={fieldErr?.field === "discountValue"}
+                    onMinutes={setMinutes}
+                  />
+                  {/* Dia e horário lado a lado: a folha fica mais curta e o botão Agendar aparece sem rolar tanto */}
+                  <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] gap-3">
+                    <label className="grid min-w-0 gap-1 text-sm font-bold">
+                      Dia
+                      <input
+                        name="date"
+                        type="date"
+                        required
+                        defaultValue={date}
+                        className={pair}
+                        onChange={(e) => setPick((p) => ({ ...p, date: e.target.value }))}
+                      />
+                    </label>
+                    <label className="grid min-w-0 gap-1 text-sm font-bold">
+                      Horário
+                      <select
+                        name="time"
+                        required
+                        className={pair}
+                        defaultValue={time ?? "09:00"}
+                        aria-invalid={fieldErr?.field === "time"}
+                        aria-describedby={outside ? "fora-expediente" : undefined}
+                        onChange={(e) => setPick((p) => ({ ...p, time: e.target.value }))}
+                      >
+                        {times.map((t) => (
+                          <option key={t}>{t}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  {outside ? (
+                    <p
+                      id="fora-expediente"
+                      role="status"
+                      className="flex items-center gap-2 rounded-2xl bg-wait-bg px-4 py-3 text-sm font-semibold text-wait"
                     >
-                      {times.map((t) => (
-                        <option key={t}>{t}</option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                {outside ? (
-                  <p
-                    id="fora-expediente"
-                    role="status"
-                    className="flex items-center gap-2 rounded-2xl bg-wait-bg px-4 py-3 text-sm font-semibold text-wait"
-                  >
-                    <Icon name="alert" size={18} />
-                    {OUTSIDE_HOURS}. Dá para agendar mesmo assim.
-                  </p>
-                ) : null}
-                {fieldErr && fieldErr.field !== "discountValue" ? (
-                  <p role="alert" className="rounded-2xl bg-soft px-4 py-3 text-sm font-semibold">
-                    {messageFor(fieldErr.code)}
-                  </p>
-                ) : null}
+                      <Icon name="alert" size={18} />
+                      {OUTSIDE_HOURS}. Dá para agendar mesmo assim.
+                    </p>
+                  ) : null}
+                  {fieldErr && fieldErr.field !== "discountValue" ? (
+                    <p role="alert" className="rounded-2xl bg-soft px-4 py-3 text-sm font-semibold">
+                      {messageFor(fieldErr.code)}
+                    </p>
+                  ) : null}
+                </form>
+              )}
+            </div>
+            {ready ? (
+              <div className="border-t border-line px-5 pt-3 pb-[max(env(safe-area-inset-bottom),20px)]">
                 <button
                   type="submit"
+                  form={formDomId}
                   disabled={working}
-                  className="btn-tint mt-1 flex min-h-13 items-center justify-center rounded-full px-5 font-bold"
+                  className="btn-tint flex min-h-13 w-full items-center justify-center rounded-full px-5 font-bold"
                 >
                   Agendar
                 </button>
-              </form>
-            )}
+              </div>
+            ) : null}
           </div>
           {booking ? (
             <BookingOverlay
