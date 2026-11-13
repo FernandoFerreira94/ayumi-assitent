@@ -6,6 +6,7 @@ import { tenants } from "@/db/schema";
 import { IphoneCalendarCard } from "@/features/calendar-feed/IphoneCalendarCard";
 import { GoogleCard } from "@/features/google/GoogleCard";
 import { isGoogleConnected } from "@/features/google/server";
+import { getSession } from "@/lib/session";
 import { requireTenant } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Calendários" };
@@ -14,7 +15,7 @@ export const metadata: Metadata = { title: "Calendários" };
 export default async function CalendariosPage({ searchParams }: PageProps<"/ajustes/calendarios">) {
   const { tenantId } = await requireTenant();
   const { google: googleResult, error: googleError } = await searchParams;
-  const [google, [salon]] = await Promise.all([
+  const [google, [salon], session] = await Promise.all([
     isGoogleConnected(tenantId),
     getDb()
       .select({
@@ -24,6 +25,7 @@ export default async function CalendariosPage({ searchParams }: PageProps<"/ajus
       })
       .from(tenants)
       .where(eq(tenants.id, tenantId)),
+    getSession(),
   ]);
   return (
     <PageShell back backHref="/ajustes" title="Calendários">
@@ -33,6 +35,7 @@ export default async function CalendariosPage({ searchParams }: PageProps<"/ajus
             connected={google}
             failed={googleResult === "erro" || !!googleError}
             errorCode={typeof googleError === "string" ? googleError.slice(0, 60) : undefined}
+            email={session?.user.email}
           />
         </section>
         <section id="iphone" aria-label="Calendário do iPhone" className="scroll-mt-6">
