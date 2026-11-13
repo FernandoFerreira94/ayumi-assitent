@@ -4,17 +4,21 @@ import { useEffect, useRef, useState } from "react";
 import { Drawer } from "vaul";
 import { LetterPicker, type PickerOption } from "@/components/ui/LetterPicker";
 import { LoadingRegion, Skeleton } from "@/components/ui/Skeleton";
-import { formatDayTitle } from "@/lib/dates";
+import { Icon } from "@/components/ui/Icon";
+import { formatDayTitle, isDateStr } from "@/lib/dates";
+import { weekdayOf, type Day } from "@/features/hours/slots";
 import { timeOptions } from "@/lib/time-grid";
 import { messageFor, type ErrorCode } from "@/lib/errors";
 import { whatsappStatus } from "@/features/whatsapp/actions";
 import { BookingOverlay, type Booking, type Step } from "./BookingOverlay";
 import { BookingServices } from "./BookingServices";
+import { daySpan, OUTSIDE_HOURS, outsideHours } from "./agenda-grid";
 import type { ServiceOption } from "./options";
 import { warnSync } from "./sync-warning";
 import { createAppointment } from "./actions";
 
-const input = "min-h-13 w-full rounded-2xl border px-4 text-base font-semibold";
+/** Dia e horário na mesma linha: altura fixa (o select do iOS ignora min-height) e texto centrado na vertical. */
+const pair = "h-13 w-full min-w-0 rounded-2xl border px-3 py-3 text-base font-semibold";
 /** Mesmo com resposta instantânea a Bolha trabalha um pouco, para a tela não piscar. */
 const MIN_MS = 900;
 const SLOW_MS = 4000;
@@ -22,6 +26,7 @@ const GIVE_UP_MS = 15000;
 /** Tempo do "Agendado!" antes de a tela fechar sozinha. */
 const DONE_MS = 2500;
 
+const toMinutes = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Resolve com o valor, "network" se a chamada falhar ou "timeout" se passar do prazo. */
 const settle = <T,>(p: Promise<T>, ms: number) =>
@@ -49,6 +54,7 @@ export function NewAppointmentSheet({
   clientId,
   serviceIds,
   fromBlockId,
+  week,
   onClosed,
 }: {
   date: string;
@@ -65,6 +71,8 @@ export function NewAppointmentSheet({
   serviceIds?: string[];
   /** Evento de fora (iPhone/Google) que vira este atendimento: sai da agenda quando salvar. */
   fromBlockId?: string;
+  /** Expediente da semana (0 = domingo); com ele a folha avisa quando o horário cai fora (pode agendar mesmo assim). */
+  week?: Day[] | null;
   /** Avisa quando a folha fecha, para a agenda tirar o bloco provisório. */
   onClosed?: () => void;
 }) {
@@ -86,6 +94,16 @@ export function NewAppointmentSheet({
   const missing = !loading && (clients.length === 0 || services.length === 0);
   const working = booking !== null && booking.result === null;
   const times = timeOptions({ include: time });
+  const formId = `${formKey}-${date}-${time ?? ""}-${clientId ?? ""}-${serviceIds?.join(",") ?? ""}-${fromBlockId ?? ""}`;
+  // Dia, horário e duração escolhidos agora, para o aviso de fora do expediente
+  const [pick, setPick] = useState({ form: formId, date, time: time ?? "09:00" });
+  const [minutes, setMinutes] = useState(0);
+  if (pick.form !== formId) setPick({ form: formId, date, time: time ?? "09:00" });
+  const startMin = toMinutes(pick.time);
+  const outside =
+    !!week &&
+    isDateStr(pick.date) &&
+    outsideHours({ start: startMin, end: startMin + Math.max(minutes, 1) }, daySpan(week[weekdayOf(pick.date)]));
   const closedRef = useRef(onClosed);
   useEffect(() => {
     closedRef.current = onClosed;
@@ -216,7 +234,7 @@ export function NewAppointmentSheet({
             <Drawer.Title className="pb-1 text-xl font-bold">Novo agendamento</Drawer.Title>
             <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
               {missing
-                ? "Cadastre ao menos uma cliente (em Clientes) e um serviço (em Ajustes)."
+                ? "Cadastre ao menos uma cliente (em Clientes) e um serviço (em Serviços)."
                 : "Escolha cliente, serviço e horário."}
             </Drawer.Description>
             {loading ? (
@@ -230,7 +248,7 @@ export function NewAppointmentSheet({
             ) : missing ? null : (
               // Fica montado por trás da Bolha: se der erro, a folha volta preenchida
               <form
-                key={`${formKey}-${date}-${time ?? ""}-${clientId ?? ""}-${serviceIds?.join(",") ?? ""}-${fromBlockId ?? ""}`}
+                key={formId}
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (!working) void book(new FormData(e.currentTarget));
@@ -249,25 +267,48 @@ export function NewAppointmentSheet({
                   services={services}
                   defaultIds={serviceIds}
                   discountError={fieldErr?.field === "discountValue"}
+                  onMinutes={setMinutes}
                 />
-                <label className="grid gap-1 text-sm font-bold">
-                  Dia
-                  <input name="date" type="date" required defaultValue={date} className={input} />
-                </label>
-                <label className="grid gap-1 text-sm font-bold">
-                  Horário
-                  <select
-                    name="time"
-                    required
-                    className={input}
-                    defaultValue={time ?? "09:00"}
-                    aria-invalid={fieldErr?.field === "time"}
+                {/* Dia e horário lado a lado: a folha fica mais curta e o botão Agendar aparece sem rolar tanto */}
+                <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] gap-3">
+                  <label className="grid min-w-0 gap-1 text-sm font-bold">
+                    Dia
+                    <input
+                      name="date"
+                      type="date"
+                      required
+                      defaultValue={date}
+                      className={pair}
+                      onChange={(e) => setPick((p) => ({ ...p, date: e.target.value }))}
+                    />
+                  </label>
+                  <label className="grid min-w-0 gap-1 text-sm font-bold">
+                    Horário
+                    <select
+                      name="time"
+                      required
+                      className={pair}
+                      defaultValue={time ?? "09:00"}
+                      aria-invalid={fieldErr?.field === "time"}
+                      aria-describedby={outside ? "fora-expediente" : undefined}
+                      onChange={(e) => setPick((p) => ({ ...p, time: e.target.value }))}
+                    >
+                      {times.map((t) => (
+                        <option key={t}>{t}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                {outside ? (
+                  <p
+                    id="fora-expediente"
+                    role="status"
+                    className="flex items-center gap-2 rounded-2xl bg-wait-bg px-4 py-3 text-sm font-semibold text-wait"
                   >
-                    {times.map((t) => (
-                      <option key={t}>{t}</option>
-                    ))}
-                  </select>
-                </label>
+                    <Icon name="alert" size={18} />
+                    {OUTSIDE_HOURS}. Dá para agendar mesmo assim.
+                  </p>
+                ) : null}
                 {fieldErr && fieldErr.field !== "discountValue" ? (
                   <p role="alert" className="rounded-2xl bg-soft px-4 py-3 text-sm font-semibold">
                     {messageFor(fieldErr.code)}

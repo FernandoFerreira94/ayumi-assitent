@@ -1,121 +1,74 @@
 import type { Metadata } from "next";
-import { PageShell } from "@/components/ui/PageShell";
 import { eq } from "drizzle-orm";
+import { PageShell } from "@/components/ui/PageShell";
 import { getDb, withTenant } from "@/db/client";
 import { tenants } from "@/db/schema";
-import { GoogleCard } from "@/features/google/GoogleCard";
-import { isGoogleConnected } from "@/features/google/server";
-import { IphoneCalendarCard } from "@/features/calendar-feed/IphoneCalendarCard";
 import { getHours } from "@/features/hours/core";
-import { HoursForm } from "@/features/hours/HoursForm";
-import { getMessageSettings } from "@/features/reminders/core";
-import { MessagesForm } from "@/features/reminders/MessagesForm";
-import { AiRepliesForm } from "@/features/salon/AiRepliesForm";
-import { PushToggle } from "@/features/push/PushToggle";
-import { LocationToggle } from "@/features/owner-notices/LocationToggle";
-import { WhatsAppCard } from "@/features/whatsapp/WhatsAppCard";
 import { InstallGuide } from "@/features/install/InstallGuide";
-import { adminFromEnv } from "@/features/messaging/evolution-admin";
-import { ensureWebhook } from "@/features/whatsapp/webhook";
-import { UpdateButton } from "@/features/update/UpdateButton";
+import { getReminderSettings } from "@/features/reminders/core";
+import { LegacyHashRedirect } from "@/features/settings/LegacyHashRedirect";
+import { PushStatusText } from "@/features/settings/PushStatusText";
+import { hoursSummary } from "@/features/settings/sections";
+import { SettingsGroup, SettingsRow } from "@/features/settings/SettingsList";
+import { shellStatus } from "@/features/shell/status";
 import { ReplayTourButton } from "@/features/tour/ReplayTourButton";
+import { UpdateButton } from "@/features/update/UpdateButton";
 import { requireTenant } from "@/lib/tenant";
-import { whatsappState } from "@/features/shell/status";
 
 export const metadata: Metadata = { title: "Ajustes" };
 
-export default async function AjustesPage({ searchParams }: PageProps<"/ajustes">) {
+/**
+ * Ajustes é a lista de partida, como os Ajustes do iPhone: cada linha diz o estado e abre a sua seção.
+ * Aqui só se lê o resumo; o que cada seção edita (e carrega) fica na tela dela.
+ */
+export default async function AjustesPage() {
   const { tenantId } = await requireTenant();
-  const { google: googleResult, error: googleError } = await searchParams;
-  const { week, messages } = await withTenant(tenantId, async (tx) => ({
-    week: await getHours(tx),
-    messages: await getMessageSettings(tx),
-  }));
-  const [wa, google, [salon]] = await Promise.all([
-    whatsappState(tenantId),
-    isGoogleConnected(tenantId),
+  const [{ whatsapp, google }, { week, reminders }, [salon]] = await Promise.all([
+    shellStatus(tenantId),
+    withTenant(tenantId, async (tx) => ({ week: await getHours(tx), reminders: await getReminderSettings(tx) })),
     getDb()
-      .select({
-        i: tenants.whatsappInstance,
-        name: tenants.name,
-        aiRules: tenants.aiRules,
-        city: tenants.city,
-        state: tenants.state,
-        locationSource: tenants.locationSource,
-        calendarOn: tenants.calendarTokenHash,
-        calendarHideNames: tenants.calendarHideNames,
-        icloudOn: tenants.icloudCalendarUrl,
-      })
+      .select({ calendarOn: tenants.calendarTokenHash, icloudOn: tenants.icloudCalendarUrl })
       .from(tenants)
       .where(eq(tenants.id, tenantId)),
   ]);
-  // WhatsApp conectado antes de existir o webhook: abrir Ajustes já liga as respostas
-  const admin = adminFromEnv();
-  if (wa === "open" && admin && salon?.i) await ensureWebhook(admin, salon.i).catch(() => undefined);
+  const iphone = !!salon?.calendarOn || !!salon?.icloudOn;
+  const calendars = [google ? "Google conectado" : null, iphone ? "iPhone ligado" : null].filter(Boolean);
+  const avisos = [
+    reminders.first ? `1º aviso ${reminders.hours}h antes` : null,
+    reminders.secondHours ? `2º aviso ${reminders.secondHours}h antes` : null,
+  ].filter(Boolean);
+
   return (
     <PageShell title="Ajustes">
-      {/* Grupos como os Ajustes do iPhone: o que conecta, o que a cliente recebe, a agenda e o aparelho */}
-      <Group title="Conexões" first>
-        <section id="whatsapp" aria-label="WhatsApp" className="scroll-mt-6">
-          <WhatsAppCard initial={wa} />
-        </section>
-        <section id="google" aria-label="Google Agenda" className="scroll-mt-6">
-          <GoogleCard
-            connected={google}
-            failed={googleResult === "erro" || !!googleError}
-            errorCode={typeof googleError === "string" ? googleError.slice(0, 60) : undefined}
-          />
-        </section>
-        <section id="iphone" aria-label="Calendário do iPhone" className="scroll-mt-6">
-          <IphoneCalendarCard
-            enabled={!!salon?.calendarOn}
-            hideNames={salon?.calendarHideNames ?? false}
-            googleConnected={google}
-            icloudOn={!!salon?.icloudOn}
-          />
-        </section>
-        <section id="avisos-celular" aria-label="Notificação" className="scroll-mt-6">
-          <PushToggle publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
-        </section>
-        <section id="localizacao" aria-label="Localização" className="scroll-mt-6">
-          <LocationToggle
-            source={salon?.locationSource ?? null}
-            city={salon?.city ?? null}
-            state={salon?.state ?? null}
-          />
-        </section>
-      </Group>
-      <Group title="Mensagens para a cliente">
-        <section id="mensagens" aria-label="Mensagens no WhatsApp" className="scroll-mt-6">
-          <MessagesForm settings={messages} salonName={salon?.name ?? ""} />
-        </section>
-        <section id="ia" aria-label="Leitura das respostas" className="scroll-mt-6">
-          <AiRepliesForm />
-        </section>
-      </Group>
-      <Group title="Agenda">
-        <section id="expediente" aria-label="Expediente" className="scroll-mt-6">
-          <HoursForm week={week} />
-        </section>
-      </Group>
-      <Group title="Este aparelho">
-        <section aria-label="Atualização">
-          <UpdateButton />
-        </section>
-        <section aria-label="Tour e instalação" className="grid gap-3">
-          <InstallGuide />
-          <ReplayTourButton />
-        </section>
-      </Group>
+      <LegacyHashRedirect />
+      <SettingsGroup title="Conexões">
+        <SettingsRow
+          section="whatsapp"
+          status={
+            whatsapp === "open" ? "Conectado" : whatsapp === "unavailable" ? "Sem resposta agora" : "Desconectado"
+          }
+          todo={whatsapp === "other" ? "Conectar" : undefined}
+        />
+        <SettingsRow
+          section="calendarios"
+          status={calendars.length ? calendars.join(" · ") : "Google e iPhone"}
+          todo={calendars.length ? undefined : "Configurar"}
+        />
+        <SettingsRow section="notificacoes" status={<PushStatusText />} />
+      </SettingsGroup>
+      <SettingsGroup title="Clientes e agenda">
+        <SettingsRow
+          section="mensagens"
+          status={avisos.length ? avisos.join(" · ") : "Avisos desligados"}
+        />
+        <SettingsRow section="expediente" status={hoursSummary(week)} />
+      </SettingsGroup>
+      <div className="mt-7 grid gap-3">
+        <h2 className="px-3 text-xs font-bold uppercase tracking-wide text-muted">Este aparelho</h2>
+        <UpdateButton />
+        <InstallGuide />
+        <ReplayTourButton />
+      </div>
     </PageShell>
-  );
-}
-
-function Group({ title, first = false, children }: { title: string; first?: boolean; children: React.ReactNode }) {
-  return (
-    <div className={`grid gap-3 ${first ? "" : "mt-8"}`}>
-      <h2 className="px-2 text-xs font-bold uppercase tracking-wide text-muted">{title}</h2>
-      {children}
-    </div>
   );
 }

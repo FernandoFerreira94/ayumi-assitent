@@ -42,6 +42,19 @@ test("agenda dois serviços com desconto: soma duração e valor", async ({ page
   await page.getByLabel("Desconto em porcentagem").fill("10");
   await expect(page.getByText("Total R$ 135,00")).toBeVisible();
 
+  // Dia e horário lado a lado, e a folha (com desconto e 2 serviços) rola até o botão Agendar
+  const [dia2, hora] = await page.locator("[data-vaul-drawer]").evaluate((el) =>
+    ['input[name="date"]', 'select[name="time"]'].map((q) => {
+      const r = el.querySelector(q)!.getBoundingClientRect();
+      return { y: r.top, x: r.left, right: r.right };
+    }),
+  );
+  expect(Math.abs(dia2.y - hora.y)).toBeLessThan(2);
+  expect(hora.x).toBeGreaterThan(dia2.right);
+  const folha = page.locator("[data-vaul-drawer]");
+  await folha.evaluate((el) => (el.scrollTop = el.scrollHeight));
+  await expect(page.getByRole("button", { name: "Agendar", exact: true }).last()).toBeInViewport({ ratio: 1 });
+
   await page.getByLabel("Horário").selectOption("10:00");
   await page.getByRole("button", { name: "Agendar", exact: true }).last().click();
   await expect(page.getByRole("heading", { name: /Agendado/ })).toBeVisible();
@@ -55,7 +68,7 @@ test("agenda dois serviços com desconto: soma duração e valor", async ({ page
 test("tocar num horário de Vagas abre o agendamento já preenchido", async ({ page }) => {
   await prepara(page);
   // Todos os dias abertos, para não depender do dia da semana de hoje
-  await page.goto("/ajustes");
+  await page.goto("/ajustes/expediente");
   for (let i = 0; i < 7; i++) {
     await page.locator(`input[name="open-${i}"]`).check();
     await page.locator(`select[name="opens-${i}"]`).selectOption("06:00");

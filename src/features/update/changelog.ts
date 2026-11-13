@@ -1,6 +1,6 @@
 /**
- * Novidades do app, em linguagem simples para a profissional. É a única fonte do accordion "O que mudou" em
- * Ajustes e do diálogo "App atualizado" (aparece uma vez por versão, por aparelho).
+ * Novidades do app, em linguagem simples para a profissional. É a fonte do diálogo "App atualizado", que abre no
+ * Painel depois que o app atualiza (uma vez por versão, por aparelho), com cada versão nova num accordion fechado.
  *
  * Como usar: ao publicar algo que ela percebe, ponha uma versão nova NO TOPO da lista e suba o número
  * (1.1.0 → 1.2.0 para novidade; 1.1.0 → 1.1.1 só para correção). Texto curto, sem termo técnico.
@@ -31,13 +31,105 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 /** Mais recente primeiro. */
 export const RELEASES: readonly Release[] = [
   {
+    version: "1.10.0",
+    date: "2026-11-13",
+    title: "Compromissos do Google e do iPhone no Calendário",
+    items: [
+      {
+        kind: "new",
+        text: "Os compromissos que não são do app (do Google Agenda ou do Calendário do iPhone) agora aparecem em cinza nos dias do Calendário, com o ícone de onde vieram. Os que se repetem, como um curso todo dia às 18h, aparecem em todos os dias.",
+      },
+    ],
+  },
+  {
+    version: "1.9.0",
+    date: "2026-11-13",
+    title: "Criar senha direto no aviso do Google",
+    items: [
+      {
+        kind: "improved",
+        text: "Se você entra só pelo Google e tenta desconectar a agenda, o aviso explica o motivo e já traz o botão Criar senha. Criou a senha, é só desconectar; depois você entra com seu e-mail e essa senha.",
+      },
+    ],
+  },
+  {
+    version: "1.8.1",
+    date: "2026-11-13",
+    title: "Tela volta ao normal depois do aviso de atualização",
+    items: [
+      {
+        kind: "fix",
+        text: "Depois de tocar em Entendi no aviso de app atualizado, o Painel não fica mais borrado e travado.",
+      },
+    ],
+  },
+  {
+    version: "1.8.0",
+    date: "2026-11-13",
+    title: "Calendário mais enxuto e agendar mais fácil",
+    items: [
+      {
+        kind: "layout",
+        text: "No Calendário, a rolagem do mês mostra só 3 meses: o anterior, o atual e o próximo. As setas e o ano continuam levando para outros meses.",
+      },
+      {
+        kind: "layout",
+        text: "Ao agendar ou editar, o dia e o horário ficam lado a lado.",
+      },
+      {
+        kind: "fix",
+        text: "Depois de digitar o desconto, a folha de agendar volta a rolar até o botão Agendar.",
+      },
+    ],
+  },
+  {
+    version: "1.7.0",
+    date: "2026-11-13",
+    title: "Painel novo: seus ganhos do dia ao lado da Bolha",
+    items: [
+      {
+        kind: "new",
+        text: "Ao lado da Bolha, um gráfico mostra quanto você já recebeu no dia e quanto falta. Toque no olhinho para esconder os valores, como no app do banco; o aparelho lembra a escolha.",
+      },
+      {
+        kind: "layout",
+        text: "A Bolha ficou maior e fala num balão que aparece e some sozinho, trocando as informações do dia. Toque no balão para fechar ou na Bolha para ouvir a próxima.",
+      },
+      {
+        kind: "improved",
+        text: "Dá para agendar fora do expediente: o app só avisa que o horário está fora, sem impedir.",
+      },
+      {
+        kind: "removed",
+        text: "Os botões Bloquear e Agendar saíram do Painel. Agende pelo + da barra de baixo ou tocando num horário vazio; Bloquear continua no Calendário.",
+      },
+    ],
+  },
+  {
+    version: "1.6.0",
+    date: "2026-11-13",
+    title: "Ajustes organizado em seções",
+    items: [
+      {
+        kind: "layout",
+        text: "Ajustes virou uma lista, como no iPhone: WhatsApp, Calendários, Notificações, Mensagens para a cliente e Expediente. Cada linha mostra o que já está ligado e o que falta.",
+      },
+      { kind: "improved", text: "O tour agora fica em Ajustes e mostra, um por um, o que você precisa configurar." },
+      { kind: "removed", text: "Saíram o texto longo e o aviso de teste da Notificação." },
+      {
+        kind: "layout",
+        text: "O que mudou no app aparece no Painel logo depois de atualizar, em vez de ficar em Ajustes.",
+      },
+    ],
+  },
+  {
     version: "1.4.0",
     date: "2026-11-13",
     title: "A agenda do iPhone dentro do app",
     items: [
       {
         kind: "new",
-        text: "Em Ajustes > Conexões, ligue o Calendário do iPhone e cole o link do Calendário Público: o que você já marca no iPhone aparece na agenda do app, em cinza.",
+        text: "Em Ajustes > Calendários, ligue o Calendário do iPhone e cole o link do Calendário Público: o que você já marca no iPhone aparece na agenda do app, em cinza.",
       },
       {
         kind: "new",
@@ -56,7 +148,7 @@ export const RELEASES: readonly Release[] = [
     items: [
       {
         kind: "new",
-        text: "Em Ajustes > Conexões, o Calendário do iPhone: um link que põe seus agendamentos no app Calendário e atualiza sozinho. Dá para ocultar o nome das clientes.",
+        text: "Em Ajustes > Calendários, o Calendário do iPhone: um link que põe seus agendamentos no app Calendário e atualiza sozinho. Dá para ocultar o nome das clientes.",
       },
     ],
   },
@@ -122,6 +214,16 @@ export const CURRENT_VERSION = RELEASES[0].version;
 /** localStorage: última versão cujo diálogo "App atualizado" este aparelho já viu. */
 export const SEEN_VERSION_KEY = "bubbly:versao-vista";
 export const CURRENT_RELEASE = RELEASES[0];
+
+/**
+ * Versões que este aparelho ainda não viu, da mais nova para a mais antiga. Sem registro (aparelho novo) ou com
+ * uma versão que saiu da lista, mostra só a atual.
+ */
+export function unseenReleases(seen: string | null): readonly Release[] {
+  const i = seen ? RELEASES.findIndex((r) => r.version === seen) : -1;
+  if (i === 0) return [];
+  return i > 0 ? RELEASES.slice(0, i) : RELEASES.slice(0, 1);
+}
 
 /** "12/11/2026" */
 export function releaseDate(iso: string): string {

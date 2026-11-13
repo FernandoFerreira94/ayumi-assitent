@@ -2,6 +2,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
+import { syncExternalCalendars } from "@/features/blocks/external-sync";
 import { CalendarShell } from "@/features/calendar/CalendarShell";
 import { loadYearDays } from "@/features/calendar/data";
 import { getHours } from "@/features/hours/core";
@@ -26,6 +27,8 @@ async function CalendarData({ children }: { children: React.ReactNode }) {
   const today = todayStr();
   const year = today.slice(0, 4);
   const { tenantId } = await requireTenant();
+  // Eventos do Google/iPhone aparecem em cinza no mês: traz os novos antes (no máximo a cada 2 min, nunca lança)
+  await syncExternalCalendars(tenantId);
   const { days, hours } = await withTenant(tenantId, async (tx) => ({
     days: await loadYearDays(tx, year),
     hours: await getHours(tx),

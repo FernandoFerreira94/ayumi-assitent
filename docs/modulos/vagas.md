@@ -3,10 +3,10 @@
 **Finalidade:** expediente por dia da semana (com pausa), cálculo dos horários livres por serviço e o "Copiar texto para divulgar" (formatos Padrão e Agenda aberta, horários exclusivos marcados como "(blindagem)" só no texto, listas personalizadas salvas).
 
 ## Arquivos
-- `features/hours/core.ts` (`getHours`, `saveHours`; sem linha salva usa seg–sáb 09–18), `slots.ts` (livres = expediente − agendamentos − bloqueios − pausa), `actions.saveWorkingHours`, `HoursForm.tsx` (em Ajustes).
+- `features/hours/core.ts` (`getHours`, `saveHours`; sem linha salva usa seg–sáb 09–18), `slots.ts` (livres = expediente − agendamentos − bloqueios − pausa), `actions.saveWorkingHours`, `HoursForm.tsx` (`/ajustes/expediente`).
 - Divulgar: `ShareSheet.tsx`, `share-text.ts` (faixas "09:00 às 11:30"), `CustomSheet.tsx` + `custom-actions.ts` (`computeCustomSlots`, `saveCustomList`, `deleteCustomList`), `custom-slots.ts` (turnos pelo horário de início), `slot-lists.ts`.
 - `SlotButton.tsx`: tocar na vaga abre o agendamento já preenchido.
-- Tela: `app/(app)/vagas` (chama `importExternalEvents` do Google antes de calcular).
+- Tela: `app/(app)/vagas` (chama `blocks/external-sync.syncExternalCalendars`, Google e iCloud em paralelo, antes de calcular). "+ Serviço" abre `services/NewServiceSheet` por cima, sem ir para Serviços.
 
 ## Dados
 - `working_hours` (por dia, com pausa), `slot_lists` (listas personalizadas, `config` jsonb), lê `appointments` e `blocks`.

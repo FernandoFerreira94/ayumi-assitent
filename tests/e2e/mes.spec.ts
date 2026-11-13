@@ -56,31 +56,29 @@ test("Calendário: setas e deslizar trocam o mês sem recarregar a página", asy
   expect(await page.evaluate(() => (window as unknown as { __casca?: number }).__casca)).toBe(1);
 });
 
-test("Calendário: rolar para baixo e para cima passa pelos meses, como no iPhone", async ({ page }) => {
+test("Calendário: a rolagem mostra só 3 meses (anterior, o aberto e o próximo), como no iPhone", async ({ page }) => {
   await page.goto("/calendario?v=mes&m=2026-05");
   await expect(page.getByRole("heading", { name: "Maio" })).toBeVisible();
   await page.evaluate(() => ((window as unknown as { __casca: number }).__casca = 1));
   const box = page.locator(".cal-scroll");
-  // já hidratou: a lista abriu rolada até maio (tem meses em cima)
+  // já hidratou: a lista abriu rolada até maio (abril em cima)
   await expect.poll(() => box.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
-  // para baixo: o mês que chega ao topo vira o mês da URL (e as setas/ano seguem funcionando)
-  await box.evaluate((el) => {
-    const sec = el.querySelector<HTMLElement>('[data-month="2026-08"]')!;
-    el.scrollTop = sec.offsetTop - 20;
-  });
-  await expect(page).toHaveURL(/m=2026-08/);
-  // bem para baixo: mais meses entram sob demanda (ano seguinte)
-  for (let i = 0; i < 6; i++) await box.evaluate((el) => (el.scrollTop = el.scrollHeight));
-  await expect(page.locator('[data-month="2027-03"]')).toHaveCount(1);
-  // para cima, passando do começo: meses anteriores entram em cima sem pular a tela
-  await box.evaluate((el) => {
-    const sec = el.querySelector<HTMLElement>('[data-month="2026-03"]')!;
-    el.scrollTop = sec.offsetTop - 20;
-  });
+  const months = () =>
+    box.evaluate((el) => [...el.querySelectorAll<HTMLElement>("[data-month]")].map((s) => s.dataset.month));
+  await expect.poll(months).toEqual(["2026-04", "2026-05", "2026-06"]);
+  // até o fim: o último mês chega ao topo (vira o mês da URL) e nenhum outro entra
+  for (let i = 0; i < 3; i++) await box.evaluate((el) => (el.scrollTop = el.scrollHeight));
+  await expect(page).toHaveURL(/m=2026-06/);
+  await expect(page.getByRole("heading", { name: "Junho" })).toBeVisible();
+  // até o começo: abril, e nada antes dele
+  for (let i = 0; i < 3; i++) await box.evaluate((el) => (el.scrollTop = 0));
+  await expect(page).toHaveURL(/m=2026-04/);
+  expect(await months()).toEqual(["2026-04", "2026-05", "2026-06"]);
+  // a seta continua indo além: reabre em volta do mês novo, de novo com 3
+  await page.getByRole("button", { name: "Mês anterior" }).click();
   await expect(page).toHaveURL(/m=2026-03/);
-  await box.evaluate((el) => (el.scrollTop = 0));
-  await expect(page.locator('[data-month="2025-08"]')).toHaveCount(1);
-  // a página não recarregou e o dia continua abrindo pelo mês
+  await expect.poll(months).toEqual(["2026-02", "2026-03", "2026-04"]);
+  // a página não recarregou
   expect(await page.evaluate(() => (window as unknown as { __casca?: number }).__casca)).toBe(1);
   await page.screenshot({ path: "test-results/rolagem-meses.png" });
 });

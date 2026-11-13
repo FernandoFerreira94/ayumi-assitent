@@ -39,6 +39,7 @@ Este arquivo **roteia**. O detalhe de cada módulo fica em `docs/modulos/`.
 
 - **Só mobile/iPhone**, o mais perto de app iOS nativo. Tema sempre claro, marca Lavanda Digital + Quicksand, vidro (glass).
 - **Nunca página/navegação para ação**: tudo em sheet/diálogo por cima da tela (vaul). Seletores de cliente/serviço = `components/ui/LetterPicker.tsx`. Navegação sem reload; tela abre no topo.
+- **Ajustes = lista + seções** (estilo Ajustes do iPhone): `/ajustes` só lista e resume o estado; cada assunto mora em `/ajustes/<secao>` (whatsapp, calendarios, notificacoes, mensagens, expediente), registrada em `features/settings/sections.ts`. Página nova só para organizar um assunto; ação continua em sheet/diálogo. O tour fica todo em Ajustes e segue a ordem da lista. Detalhes em `docs/modulos/perfil-ajustes.md`.
 - Ícones só de `components/ui/Icon.tsx`. Toasts via `components/feedback/toast.tsx` (`notify`, Sonner no topo; mascote por tipo em `components/brand/moods.ts`). Animação Órbita só no agendar (`BookingOverlay`).
 - **Regra de UX: teclado no iPhone** (vale para todo campo, sheet e diálogo, atuais e novos):
   1. O campo focado fica sempre visível acima do teclado, com folga; ao trocar de campo ou a textarea crescer, ele continua à vista.

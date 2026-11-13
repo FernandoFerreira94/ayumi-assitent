@@ -2,8 +2,10 @@
 
 import { sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { getDb } from "@/db/client";
 import { z } from "zod";
+import { auth } from "@/lib/auth";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
 import { syncAppointmentSafe } from "./server";
@@ -25,12 +27,37 @@ export async function disconnectGoogle(): Promise<ActionResult<{ onlyLogin?: boo
     if (!acc) return ok();
     if (acc.others === 0) return fail("VALIDATION", "google");
     await getDb().execute(sql`delete from account where id = ${acc.id}`);
-    revalidatePath("/ajustes");
+    revalidatePath("/ajustes", "layout");
     return ok();
   } catch (e) {
     console.error("google_disconnect_failed", { error: e instanceof Error ? e.message : String(e) });
     return fail("UNKNOWN");
   }
+}
+
+const passwordSchema = z
+  .object({ password: z.string().min(8).max(128), confirm: z.string() })
+  .refine((v) => v.password === v.confirm, { path: ["confirm"] });
+
+/**
+ * Cria a senha de quem só entra pelo Google (Better Auth `setPassword`: vincula a conta "credential"
+ * ao usuário logado). Depois disso dá para desconectar o Google e entrar com e-mail + senha.
+ * Senha já existente conta como sucesso: o objetivo (ter outra entrada) já está cumprido.
+ */
+export async function createPassword(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requireTenant();
+  const p = passwordSchema.safeParse({ password: fd.get("password"), confirm: fd.get("confirm") });
+  if (!p.success) return fail("VALIDATION", String(p.error.issues[0]?.path[0] ?? "password"));
+  try {
+    await auth.api.setPassword({ body: { newPassword: p.data.password }, headers: await headers() });
+  } catch (e) {
+    const code = (e as { body?: { code?: string } })?.body?.code ?? "";
+    if (code === "PASSWORD_ALREADY_SET") return ok();
+    if (code.startsWith("PASSWORD_TOO")) return fail("VALIDATION", "password");
+    console.error("set_password_failed", { code, error: e instanceof Error ? e.message : String(e) });
+    return fail("UNKNOWN");
+  }
+  return ok();
 }
 
 /** Tenta de novo mandar um agendamento para o Google. */

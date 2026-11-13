@@ -22,6 +22,8 @@ import {
   dragSpan,
   layoutColumns,
   nextFree,
+  OUTSIDE_HOURS,
+  outsideHours,
   SNAP_MIN,
   type DragMode,
   type Occupant,
@@ -31,6 +33,7 @@ import type { Status } from "./schema";
 import { warnSync } from "./sync-warning";
 import { duration, hhmm, type Span } from "./timeline";
 import type { ServiceOption } from "./options";
+import type { Day } from "@/features/hours/slots";
 
 const HOUR_PX = 80;
 const PPM = HOUR_PX / 60;
@@ -142,6 +145,7 @@ export function AgendaDay({
   nowMin,
   clients,
   services,
+  week,
   blockButton,
 }: {
   date: string;
@@ -157,7 +161,10 @@ export function AgendaDay({
   nowMin: number | null;
   clients: PickerOption[];
   services: ServiceOption[];
-  blockButton: ReactNode;
+  /** Expediente da semana (0 = domingo), para a folha avisar quando o horário cai fora dele. */
+  week: Day[];
+  /** Botão Bloquear; sem ele (no Painel) a fileira Bloquear/Agendar não aparece. */
+  blockButton?: ReactNode;
 }) {
   // Horário otimista depois do arraste, até o servidor mandar a agenda nova
   const [moved, setMoved] = useState<Record<string, Span>>({});
@@ -167,7 +174,9 @@ export function AgendaDay({
     setMoved({});
   }
   const [selId, setSelId] = useState<string | null>(null);
-  const [drag, setDrag] = useState<{ id: string; span: Span; from: Span; bad: string | null } | null>(null);
+  const [drag, setDrag] = useState<{ id: string; span: Span; from: Span; bad: string | null; out: boolean } | null>(
+    null,
+  );
   const [shakeId, setShakeId] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [showTip, setShowTip] = useState(false);
@@ -227,7 +236,7 @@ export function AgendaDay({
     notify.undoable(
       mode === "move" ? `${name} foi para ${hhmm(span.start)}` : `${name}: ${range(span)}`,
       () => void save(id, from, span, mode, true),
-      "Lembrete do WhatsApp reprogramado",
+      outsideHours(span, hours) ? "Fora do expediente · lembrete reprogramado" : "Lembrete do WhatsApp reprogramado",
     );
   }
 
@@ -242,8 +251,8 @@ export function AgendaDay({
       if (!g?.active) return;
       const { win, hours, occupants } = live.current;
       g.span = dragSpan(g.mode, g.from, (g.cy - g.y0 + window.scrollY - g.scroll0) / PPM, win);
-      g.bad = conflictReason({ id: g.id, ...g.span }, hours, occupants);
-      setDrag({ id: g.id, span: g.span, from: g.from, bad: g.bad });
+      g.bad = conflictReason({ id: g.id, ...g.span }, occupants);
+      setDrag({ id: g.id, span: g.span, from: g.from, bad: g.bad, out: outsideHours(g.span, hours) });
     };
     handlers.current.finish = (g, cancelled) => {
       clearTimeout(g.timer);
@@ -317,7 +326,7 @@ export function AgendaDay({
     }
     navigator.vibrate?.(8);
     setSelId(null);
-    setDrag({ id: g.id, span: g.from, from: g.from, bad: null });
+    setDrag({ id: g.id, span: g.from, from: g.from, bad: null, out: outsideHours(g.from, live.current.hours) });
     const scroll = () => {
       if (gesture.current !== g) return;
       // Perto do topo ou do fim da tela, a página rola sozinha
@@ -366,7 +375,7 @@ export function AgendaDay({
     e.preventDefault();
     if (!canDrag(a.status)) return;
     const span = dragSpan("move", a, e.key === "ArrowUp" ? -SNAP_MIN : SNAP_MIN, win);
-    const bad = conflictReason({ id: a.id, ...span }, hours, occupants);
+    const bad = conflictReason({ id: a.id, ...span }, occupants);
     if (bad) return notify.warning("Não dá para mover", bad);
     const k = keyMove.current;
     if (k) clearTimeout(k.timer);
@@ -393,10 +402,10 @@ export function AgendaDay({
   function tapEmpty(e: MouseEvent<HTMLDivElement>) {
     if ((e.target as HTMLElement).closest(".ag-ev")) return;
     setSelId(null);
-    if (!hours) return notify.warning("Salão fechado nesse dia", "Para agendar mesmo assim, use o botão Agendar.");
+    // Fora do expediente (ou salão fechado) pode: a folha de agendar mostra o aviso
     const tapped = win.start + (e.clientY - e.currentTarget.getBoundingClientRect().top) / PPM;
     const start = Math.max(win.start, Math.min(win.end - NEW_LEN, Math.floor(tapped / 30) * 30));
-    const bad = conflictReason({ id: "temp", start, end: start + NEW_LEN }, hours, occupants);
+    const bad = conflictReason({ id: "temp", start, end: start + NEW_LEN }, occupants);
     if (bad) return notify.warning("Esse horário está ocupado", bad);
     openNew(start);
   }
@@ -406,28 +415,30 @@ export function AgendaDay({
 
   return (
     <>
-      <div data-tour="money" className="mb-4 grid grid-cols-2 gap-2">
-        {blockButton}
-        <button
-          type="button"
-          onClick={() => openNew(nextFree(nowMin ?? 0, NEW_LEN, hours, occupants))}
-          className="btn-tint flex min-h-12 items-center justify-center gap-2 rounded-full px-4 text-sm font-bold"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            className="size-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.3"
-            strokeLinecap="round"
-            aria-hidden="true"
+      {blockButton ? (
+        <div className="mb-4 grid grid-cols-2 gap-2">
+          {blockButton}
+          <button
+            type="button"
+            onClick={() => openNew(nextFree(nowMin ?? 0, NEW_LEN, hours, occupants))}
+            className="btn-tint flex min-h-12 items-center justify-center gap-2 rounded-full px-4 text-sm font-bold"
           >
-            <rect x="3.5" y="5" width="17" height="15" rx="4.5" />
-            <path d="M8 3v3.5M16 3v3.5M12 10.5v6M9 13.5h6" />
-          </svg>
-          Agendar
-        </button>
-      </div>
+            <svg
+              viewBox="0 0 24 24"
+              className="size-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.3"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <rect x="3.5" y="5" width="17" height="15" rx="4.5" />
+              <path d="M8 3v3.5M16 3v3.5M12 10.5v6M9 13.5h6" />
+            </svg>
+            Agendar
+          </button>
+        </div>
+      ) : null}
 
       <section aria-label="Linha do dia" className="ag-day mb-6" data-in={enter}>
         <div ref={gridRef} className="relative mt-2" style={{ height: y(win.end) + 8 }} onClick={tapEmpty}>
@@ -546,8 +557,12 @@ export function AgendaDay({
           })}
 
           {drag ? (
-            <div className={`ag-tip ${drag.bad ? "bad" : ""}`} style={{ top: y(drag.span.start) }} aria-live="polite">
-              {drag.bad ?? `${range(drag.span)} · ${duration(drag.span)}`}
+            <div
+              className={`ag-tip ${drag.bad ? "bad" : drag.out ? "out" : ""}`}
+              style={{ top: y(drag.span.start) }}
+              aria-live="polite"
+            >
+              {drag.bad ?? `${range(drag.span)} · ${drag.out ? "fora do expediente" : duration(drag.span)}`}
             </div>
           ) : null}
 
@@ -570,6 +585,7 @@ export function AgendaDay({
         date={date}
         clients={clients}
         services={services}
+        week={week}
         openKey={newKey}
         time={temp ? hhmm(temp.start) : undefined}
         clientId={convert?.clientId}

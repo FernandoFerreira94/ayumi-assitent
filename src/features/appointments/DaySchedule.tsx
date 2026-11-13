@@ -8,8 +8,7 @@ import { minuteOf } from "@/features/appointments/timeline";
 import { WeekStrip } from "@/features/appointments/WeekStrip";
 import { listBlocks } from "@/features/blocks/core";
 import { guessAppointment } from "@/features/calendar-feed/match";
-import { importExternalEvents } from "@/features/google/server";
-import { importIcloudCalendar } from "@/features/calendar-feed/icloud-server";
+import { syncExternalCalendars } from "@/features/blocks/external-sync";
 import { getHours } from "@/features/hours/core";
 import { weekdayOf } from "@/features/hours/slots";
 import { NewBlockSheet } from "@/features/blocks/NewBlockSheet";
@@ -32,6 +31,7 @@ export async function DaySchedule({
   withStrip,
   base = "/calendario",
   calendar = false,
+  actions = true,
 }: {
   tenantId: string;
   date: string;
@@ -39,6 +39,8 @@ export async function DaySchedule({
   /** Página que recebe o dia escolhido na faixa da semana. */
   base?: string;
   calendar?: boolean;
+  /** Fileira Bloquear/Agendar acima da linha do dia (o Painel não mostra: agenda pelo + da barra). */
+  actions?: boolean;
 }) {
   const today = todayStr();
   // Janela de semanas para a rolagem lateral da faixa; ao rolar além dela a faixa recentraliza
@@ -46,8 +48,7 @@ export async function DaySchedule({
   // Uma consulta para a janela toda: os pontinhos da faixa saem dela e o dia é filtrado daqui
   const weekRange: [Date, Date] = [dayRange(weeks[0][0])[0], dayRange(weeks[weeks.length - 1][6])[1]];
 
-  await importExternalEvents(tenantId);
-  await importIcloudCalendar(tenantId);
+  await syncExternalCalendars(tenantId);
   const { weekRows, dayBlocks, clients, services, openHours } = await withTenant(tenantId, async (tx) => ({
     openHours: await getHours(tx),
     dayBlocks: await listBlocks(tx, dayRange(date)),
@@ -132,7 +133,8 @@ export async function DaySchedule({
           blocks={blocks}
           nowMin={date === today ? minuteOf(new Date()) : null}
           {...bookingOptions(clients, services)}
-          blockButton={<NewBlockSheet date={date} />}
+          week={openHours}
+          blockButton={actions ? <NewBlockSheet date={date} /> : undefined}
         />
       </div>
     </>

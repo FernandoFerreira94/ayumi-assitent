@@ -258,7 +258,7 @@ export function ChatSheet({
                   <p role="alert" className="text-right text-xs font-semibold text-fail">
                     Não enviada. {messageFor(b.state.failed)}{" "}
                     {b.state.failed === "WHATSAPP_OFFLINE" ? (
-                      <Link href="/ajustes#whatsapp" className="inline-flex min-h-11 items-center font-bold underline">
+                      <Link href="/ajustes/whatsapp" className="inline-flex min-h-11 items-center font-bold underline">
                         Reconectar
                       </Link>
                     ) : (

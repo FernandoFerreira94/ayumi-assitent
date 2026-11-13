@@ -111,7 +111,7 @@ export function BookingOverlay({
                   : "Não deu para conferir o WhatsApp agora, então o lembrete pode não sair. O horário já está na agenda."}
               </p>
               <Link
-                href="/ajustes#whatsapp"
+                href="/ajustes/whatsapp"
                 autoFocus
                 onClick={() => onDone(result.id)}
                 className="btn-tint flex min-h-13 items-center justify-center rounded-full px-5 font-bold"

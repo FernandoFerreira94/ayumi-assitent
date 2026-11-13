@@ -6,8 +6,7 @@ import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
 import { listDay } from "@/features/appointments/core";
 import { listBlocks } from "@/features/blocks/core";
-import { importExternalEvents } from "@/features/google/server";
-import { importIcloudCalendar } from "@/features/calendar-feed/icloud-server";
+import { syncExternalCalendars } from "@/features/blocks/external-sync";
 import { getHours } from "@/features/hours/core";
 import { CustomSheet } from "@/features/hours/CustomSheet";
 import { shortDayLabel } from "@/features/hours/custom-slots";
@@ -15,7 +14,8 @@ import { ShareSheet } from "@/features/hours/ShareSheet";
 import { listSlotLists } from "@/features/hours/slot-lists";
 import { SlotButton } from "@/features/hours/SlotButton";
 import { freeSlots, weekdayOf } from "@/features/hours/slots";
-import { listBookable } from "@/features/services/core";
+import { NewServiceSheet } from "@/features/services/NewServiceSheet";
+import { listBookable, listServices } from "@/features/services/core";
 import { addDays, dayRange, formatDayTitle, todayStr } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
 
@@ -28,14 +28,15 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
   const today = todayStr();
   const now = new Date();
 
-  await importExternalEvents(tenantId);
-  await importIcloudCalendar(tenantId);
-  const { services, week, busy, lists } = await withTenant(tenantId, async (tx) => {
+  await syncExternalCalendars(tenantId);
+  const { services, all, week, busy, lists } = await withTenant(tenantId, async (tx) => {
     const range: [Date, Date] = [dayRange(today)[0], dayRange(addDays(today, 6))[1]];
     const [appts, blks] = await Promise.all([listDay(tx, range), listBlocks(tx, range)]);
     return {
       // "Mostrar nas vagas" desligado tira o serviço da mensagem de horários livres
       services: (await listBookable(tx)).filter((x) => x.showInSlots),
+      // todos, para o "+ Serviço" não deixar repetir nome
+      all: (await listServices(tx)).map((x) => ({ id: x.id, name: x.name })),
       week: await getHours(tx),
       lists: await listSlotLists(tx),
       // o intervalo depois de cada atendimento também ocupa a agenda
@@ -50,14 +51,7 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
           icon="scissors"
           title="Nenhum serviço cadastrado"
           description="Para ver os horários livres, adicione um serviço."
-          action={
-            <Link
-              href="/servicos?novo=1"
-              className="btn-tint inline-flex min-h-11 items-center rounded-full px-5 text-sm font-bold"
-            >
-              Novo serviço
-            </Link>
-          }
+          action={<NewServiceSheet services={all} label="Novo serviço" />}
         />
       </PageShell>
     );
@@ -89,12 +83,7 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
             {x.name}
           </Link>
         ))}
-        <Link
-          href="/servicos?novo=1"
-          className="btn-tint inline-flex min-h-11 shrink-0 items-center rounded-full px-5 text-sm font-bold"
-        >
-          + Serviço
-        </Link>
+        <NewServiceSheet services={all} />
       </nav>
       <div className="mb-3">
         <CustomSheet services={services.map((x) => ({ id: x.id, name: x.name }))} saved={lists} today={today} />
@@ -103,7 +92,7 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
         <EmptyState
           icon="clock"
           title="Sem vagas nos próximos dias"
-          description="Confira o expediente em Ajustes ou libere horários na agenda."
+          description="Confira o expediente em Ajustes > Expediente ou libere horários na agenda."
         />
       ) : (
         <div className="grid gap-3">

@@ -55,16 +55,23 @@ export function layoutColumns(spans: Placed[]): Map<string, { col: number; cols:
 export type Occupant = Span & { id: string; kind: "appointment" | "block"; label: string };
 
 /**
- * Motivo para não aceitar `span` no dia, ou null se cabe. `hours` null = salão fechado.
+ * Motivo para não aceitar `span` no dia (choca com atendimento ou bloqueio), ou null se cabe.
+ * Fora do expediente não impede mais: é só um aviso (`outsideHours`).
  * O servidor confere de novo (sobreposição e bloqueio); aqui é para o bloco ficar vermelho na hora.
  */
-export function conflictReason(span: Placed, hours: Span | null, others: Occupant[]): string | null {
-  if (!hours || span.start < hours.start || span.end > hours.end) return "Fora do expediente";
+export function conflictReason(span: Placed, others: Occupant[]): string | null {
   const hit = others.find((o) => o.id !== span.id && span.start < o.end && o.start < span.end);
   if (!hit) return null;
   if (hit.kind === "block") return `Choca com ${hit.label ? hit.label.toLowerCase() : "o bloqueio"}`;
   return `Choca com ${hit.label.trim().split(/\s+/)[0]} às ${hhmm(hit.start)}`;
 }
+
+/** Texto do aviso quando o horário cai fora do expediente (pode agendar mesmo assim). */
+export const OUTSIDE_HOURS = "Esse horário está fora do expediente";
+
+/** O horário (ou parte dele) cai fora do expediente; `hours` null = salão fechado nesse dia. */
+export const outsideHours = (span: Span, hours: Span | null) =>
+  !hours || span.start < hours.start || span.end > hours.end;
 
 const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
 
@@ -82,7 +89,7 @@ export const daySpan = (day: Day): Span | null => (day ? { start: toMin(day.open
 export function nextFree(from: number, len: number, hours: Span | null, others: Occupant[]): number | null {
   if (!hours) return null;
   for (let s = Math.max(hours.start, Math.ceil(from / 30) * 30); s + len <= hours.end; s += SNAP_MIN) {
-    if (!conflictReason({ id: "", start: s, end: s + len }, hours, others)) return s;
+    if (!conflictReason({ id: "", start: s, end: s + len }, others)) return s;
   }
   return null;
 }

@@ -6,7 +6,8 @@
 - `features/google/server.ts`: `googleAccessToken`, `calendarForTenant`, `syncAppointmentSafe` (nunca derruba o agendamento), `isGoogleConnected`, `importExternalEvents`.
 - `calendar.ts`: cliente REST mínimo (`fetch` injetável), `refreshAccessToken`, `toExternalEvent`.
 - `sync.ts` (`syncAppointment`: cancelado apaga o evento), `import.ts` (`importGoogleEvents`: janela `[from, to)` vira `blocks.source='google'`, ignora eventos criados pelo app).
-- UI: `GoogleCard.tsx` (Ajustes > Conexões), `RetrySyncButton.tsx`, `actions.disconnectGoogle`/`retrySync`. Aviso de falha: `appointments/sync-warning.ts`.
+- UI: `GoogleCard.tsx` (`/ajustes/calendarios`; volta do OAuth cai lá), `RetrySyncButton.tsx`, `actions.disconnectGoogle`/`retrySync`.
+- Desconectar com o Google como única entrada: `disconnectGoogle` devolve `VALIDATION`; o card troca o aviso por "Crie uma senha antes de desconectar" + botão que abre `CreatePasswordSheet.tsx` → `actions.createPassword` (Better Auth `setPassword`, cria a conta `credential`). Depois o desconectar funciona e o login vira e-mail + senha. Teste: `tests/unit/google-create-password.test.ts`. Aviso de falha: `appointments/sync-warning.ts`.
 - Auth: `lib/auth.ts` (Better Auth, escopos Google), `lib/auth-client.ts`.
 
 ## Dados
