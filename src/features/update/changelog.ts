@@ -31,7 +31,7 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 /** Mais recente primeiro. */
 export const RELEASES: readonly Release[] = [
   {
-    version: "1.5.0",
+    version: "1.6.0",
     date: "2026-11-13",
     title: "Ajustes organizado em seções",
     items: [
