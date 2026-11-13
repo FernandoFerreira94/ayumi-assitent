@@ -13,6 +13,7 @@
 ## Cuidados
 - Tema sempre claro; Lavanda Digital + Quicksand; vidro da biblioteca `webcode-design`.
 - Ação nunca vira página: sheet/diálogo. Toast no topo, banner de atualização embaixo.
+- Fala do mascote (balão do Painel `.speech-solid`, toast `.app-toast`): borda em `var(--m-rim-0)`, a cor do mascote de Meu perfil. Nunca hex fixo.
 - Mascote novo ou expressão nova: registrar em `mascots.ts`/`moods.ts` e conferir push (`push/webpush`) e splash.
 - **Regra de UX do teclado** (detalhe no AGENTS.md): campo focado sempre visível, sheet/diálogo nunca cortado, subida/descida suave junto com o teclado, fonte de campo ≥ 16px, barra de abas some. Sheet ou diálogo novo não precisa de nada (o `KeyboardWatcher` + `globals.css` cuidam); novo diálogo central deve usar `.notif-dialog`/`.notif-panel`. A barra de abas some com o teclado aberto.
 - Sino (`features/notifications`): cada `Aviso` traz `icon` (de `Icon.tsx`) e `tone` (`danger` vermelho, `warning` laranja, `success` verde, `info` azul), definidos em `core.ts`; a linha usa `IconTile` + `.aviso-row[data-tone]` no `globals.css`. Aviso de cliente leva `client` e mostra avatar com iniciais (nome + sobrenome, `initials` do `AppMenu`) na cor fixa `avatarColor(id)` (paleta `--svc-*`) com selo do tom no canto. Aviso novo: escolher ícone e tom lá; a cor nunca é a única pista.
