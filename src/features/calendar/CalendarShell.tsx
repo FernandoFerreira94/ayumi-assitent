@@ -9,6 +9,7 @@ import { CalendarBar, TodayFab } from "./CalendarBar";
 import type { YearDays } from "./data";
 import { parseView, shiftMonth, type CalendarView } from "./grid";
 import { captureGhost, slideDay, zoom, type Ghost } from "./motion";
+import { MonthStream } from "./MonthStream";
 import { MonthGrid } from "./MonthView";
 import { CalendarNavContext, type CalendarNav } from "./nav";
 import { Pager, type PagerHandle } from "./Pager";
@@ -54,11 +55,25 @@ export function CalendarShell({
   // Visão local: muda na hora no toque; a URL vai junto. Navegação de fora (dia, voltar) sincroniza aqui.
   const [view, setView] = useState<CalendarView>(urlView);
   const [seenUrl, setSeenUrl] = useState(urlKey);
+  // meses que a própria rolagem gravou na URL: se a URL chegar atrasada com um deles, não é navegação
+  const [scrollWrites, setScrollWrites] = useState<string[]>([]);
   if (seenUrl !== urlKey) {
     setSeenUrl(urlKey);
-    if (urlKey !== keyOf(view)) setView(urlView);
+    const ownWrite = urlView.kind === "month" && view.kind === "month" && scrollWrites.includes(urlKey);
+    if (urlKey !== keyOf(view) && !ownWrite) setView(urlView);
   }
   const key = keyOf(view);
+
+  // Rolagem contínua do mês: trocar de mês rolando não reabre a lista (só a URL e o título acompanham);
+  // qualquer outro jeito de chegar num mês (setas, deslizar, Hoje, ano, URL) reabre com ele no topo.
+  const [scrolledTo, setScrolledTo] = useState<string | null>(null);
+  const [streamKey, setStreamKey] = useState(0);
+  const [seenMonth, setSeenMonth] = useState(view.kind === "month" ? view.month : "");
+  if (view.kind === "month" && view.month !== seenMonth) {
+    setSeenMonth(view.month);
+    if (view.month !== scrolledTo) setStreamKey((k) => k + 1);
+    else setScrolledTo(null); // usado: a próxima troca que não vier da rolagem reabre a lista
+  }
 
   // ---- dados por ano (o atual vem do servidor; os outros sob demanda) ----
   const [fetched, setFetched] = useState<Record<string, YearState>>({});
@@ -93,7 +108,8 @@ export function CalendarShell({
       return [String(y), String(y - 1), String(y + 1)];
     }
     const m = view.kind === "month" ? view.month : view.date.slice(0, 7);
-    return [...new Set([m, shiftMonth(m, -1), shiftMonth(m, 1)].map((x) => x.slice(0, 4)))];
+    // ±2 meses: na rolagem contínua o ano vizinho já chega antes de aparecer
+    return [...new Set([-2, -1, 0, 1, 2].map((d) => shiftMonth(m, d).slice(0, 4)))];
   }, [view]);
 
   useEffect(() => {
@@ -140,7 +156,12 @@ export function CalendarShell({
         if (a) {
           const r = a.getBoundingClientRect();
           // o mês de destino lá embaixo no ano: rola até ele antes de encolher
-          if (r.bottom > window.innerHeight - 100) window.scrollBy(0, r.top - window.innerHeight / 2 + r.height / 2);
+          if (r.bottom > window.innerHeight - 100) {
+            const by = r.top - window.innerHeight / 2 + r.height / 2;
+            const sc = a.closest<HTMLElement>(".cal-scroll");
+            if (sc) sc.scrollTop += by;
+            else window.scrollBy(0, by);
+          }
           anchor = a.getBoundingClientRect();
         }
       }
@@ -151,7 +172,10 @@ export function CalendarShell({
     if (before.startsWith("d") && key.startsWith("d")) slideDay(el, key > before ? 1 : -1);
   }, [key]);
 
+  const urlTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(urlTimer.current), []);
   const go = (v: CalendarView, mode: "push" | "replace") => {
+    clearTimeout(urlTimer.current);
     const url = hrefOf(v);
     if (mode === "push") window.history.pushState(null, "", url);
     else window.history.replaceState(null, "", url);
@@ -224,6 +248,19 @@ export function CalendarShell({
         onDay={openDay}
       />
     );
+    const onVisible = (month: string) => {
+      setScrolledTo(month);
+      setView({ kind: "month", month });
+      // a URL vai junto quando a rolagem assenta (o Safari limita replaceState em rajada)
+      clearTimeout(urlTimer.current);
+      urlTimer.current = setTimeout(() => {
+        const v: CalendarView = { kind: "month", month };
+        if (window.location.search.includes("v=mes") || !window.location.search) {
+          setScrollWrites((w) => [...w.slice(-5), keyOf(v)]);
+          window.history.replaceState(null, "", hrefOf(v));
+        }
+      }, 250);
+    };
     const pm = shiftMonth(m, -1);
     const nm = shiftMonth(m, 1);
     content = (
@@ -240,7 +277,21 @@ export function CalendarShell({
           ref={pager}
           label="Meses"
           prev={{ key: pm, node: grid(pm) }}
-          cur={{ key: m, node: grid(m) }}
+          cur={{
+            key: `s${streamKey}`,
+            node: (
+              <MonthStream
+                key={streamKey}
+                initial={m}
+                daysOf={daysOf}
+                today={today}
+                closedWeekdays={closedWeekdays}
+                pendingDay={dayPending ? pendingDay : null}
+                onDay={openDay}
+                onVisible={onVisible}
+              />
+            ),
+          }}
           next={{ key: nm, node: grid(nm) }}
           onPage={(dir) => go({ kind: "month", month: shiftMonth(m, dir) }, "replace")}
         />

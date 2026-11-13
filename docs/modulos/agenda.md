@@ -8,6 +8,7 @@
 - `features/appointments/pricing.ts` (desconto % ou R$, nunca passa do subtotal), `schema.ts` (`STATUSES`), `timeline.ts`/`agenda-grid.ts` (grade fixa 06h–23h, estica se houver atendimento fora; lacunas "Livre"), `version.ts` (impressão digital do dia para `AgendaRefresh`), `pendencias.ts`, `briefing.ts`/`DayHero.tsx` (topo do Painel: Bolha com balão que aparece e some sozinho + rosca de ganhos do dia com olhinho; escolha de ocultar em `finance/hide-values.ts`, localStorage do aparelho), `sync-warning.ts`.
 - UI: `AgendaDay`, `DaySchedule`, `WeekStrip`, `MonthPicker`, `AppointmentCard`, `NewAppointmentSheet` + `BookingServices`, `BookingOverlay` (Órbita), `EditAppointmentSheet`, `QuickBook` (evento do "Novo" do nav), `CloseAllButton`.
 - `features/calendar/*`: casca do Calendário com zoom ano ↔ mês ↔ dia (`motion.ts`, `Pager.tsx`, `nav.ts`), dados por ano (`actions.calendarYear`, `data.ts`).
+- `features/calendar/MonthStream.tsx`: no mês, rolagem contínua vertical como no iPhone (caixa `.cal-scroll` própria, dias da semana fixos, meses entram sob demanda nas duas pontas com compensação manual, `overflow-anchor: none`). O mês no topo vira `view.month` + URL (replace com atraso de 250ms); só setas, deslizar, Hoje, ano ou URL reabrem a lista (`streamKey`).
 - `features/blocks/*`: bloqueios/pausas (`insertBlock`, `removeBlock`, `listBlocks`, `overlapsBlock`, `lockTenant`).
 - Telas: `app/(app)/agenda`, `app/(app)/calendario`, `app/(app)/pendencias`.
 
