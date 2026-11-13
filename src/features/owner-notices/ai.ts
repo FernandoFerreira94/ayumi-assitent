@@ -1,5 +1,6 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
+import { errCode } from "@/lib/log";
 
 /**
  * Textos maiores dos avisos com a IA (mesmo modelo das respostas do WhatsApp). Sem chave, erro ou resposta
@@ -33,7 +34,7 @@ async function ask(system: string, user: string, maxTokens: number): Promise<str
     if (!text || /R\$\s?\d/.test(text)) return null;
     return text;
   } catch (e) {
-    console.error(JSON.stringify({ level: "warn", msg: "owner_notice_ai_failed", err: String(e) }));
+    console.error(JSON.stringify({ level: "warn", msg: "owner_notice_ai_failed", ...errCode(e) }));
     return null;
   }
 }

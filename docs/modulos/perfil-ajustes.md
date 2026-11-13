@@ -30,3 +30,7 @@ Links internos apontam direto para a seção (`/ajustes/whatsapp`, `/ajustes/cal
 - O webhook do WhatsApp não é religado no render: `WhatsAppCard` chama `whatsappStatus` uma vez ao abrir conectado.
 - Ícone da tela de início e login são sempre da Bolha; o mascote escolhido troca cores e splash, não o ícone.
 - Testes: `tests/e2e/ajustes.spec.ts`, `tour.spec.ts`, `install.spec.ts`, `shell.spec.ts`; unit `settings-sections`, `changelog`, `whats-new-dialog` (fechar não reabre o fundo borrado), `tour`, `salon-profile`, `install-platform`, `update-check`.
+
+## LGPD em Meu perfil (13/11)
+- **Baixar meus dados** (`salon/ExportDataButton` → `actions.exportMyData`): 3 CSV (clientes, agendamentos, despesas), `;` + BOM para o Excel; `salon/export-csv.toCsv`.
+- **Excluir minha conta** (`salon/DeleteAccountSheet` → `actions.deleteAccount` → `delete-account.deleteAccountData`): digitar EXCLUIR; revoga Google (`google/server.revokeGoogleOfUser`), logout + `admin.remove` da instância Evolution, apaga `tenants` do dono (cascata) e o `user` (cascata em sessões/contas/vínculos). Teste `tests/db/delete-account.test.ts`.

@@ -5,6 +5,7 @@ import type { PushPort } from "@/features/push/port";
 import { holidayGreetingAi, weekPlanAi } from "./ai";
 import { runTenantNotices, type NoticeDeps } from "./core";
 import { mascotsOf } from "./mascots";
+import { errCode } from "@/lib/log";
 
 const AI: NoticeDeps["ai"] = { weekPlan: weekPlanAi, holidayGreeting: holidayGreetingAi };
 
@@ -32,7 +33,7 @@ export async function runOwnerNotices(push: PushPort, now = new Date()) {
       total.kinds.push(...r.kinds);
     } catch (e) {
       console.error(
-        JSON.stringify({ level: "error", msg: "owner_notices_tenant_failed", tenant: t.id, err: String(e) }),
+        JSON.stringify({ level: "error", msg: "owner_notices_tenant_failed", tenant: t.id, ...errCode(e) }),
       );
       total.failed++;
     }

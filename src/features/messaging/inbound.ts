@@ -8,8 +8,18 @@ import { CORRECTION_HOURS, OWNER_QUIET_HOURS, planAiReply, type AiPlan, type AiV
 import type { MessagingPort } from "./port";
 import { isQuietHour } from "@/features/reminders/quiet";
 import { clientCall, slotLabel } from "@/features/reminders/text";
-import { ackText, parseIntent, phoneCandidates, type InboundText, type Intent } from "./replies";
+import {
+  ackText,
+  OPT_IN_TEXT,
+  OPT_OUT_TEXT,
+  parseIntent,
+  parseOptOut,
+  phoneCandidates,
+  type InboundText,
+  type Intent,
+} from "./replies";
 import { recordMessage } from "./store";
+import { errCode } from "@/lib/log";
 
 /**
  * Cancelar e remarcar não mexem no horário sozinhos: os dois viram "quer remarcar" e a profissional
@@ -119,6 +129,18 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
     });
     if (!messageId) return { kind: "skip", reason: "duplicate" } as const;
 
+    // SAIR / VOLTAR: vale para qualquer mensagem, com ou sem lembrete esperando, e não passa pela IA
+    const optOut = msg.media ? null : parseOptOut(msg.text);
+    if (optOut) {
+      const stop = optOut === "stop";
+      const changed = await tx
+        .update(clients)
+        .set({ optedOutAt: stop ? now : null })
+        .where(and(eq(clients.id, cli.id), stop ? isNull(clients.optedOutAt) : isNotNull(clients.optedOutAt)))
+        .returning({ id: clients.id });
+      return { kind: "optout", client: cli, ack: changed.length ? (stop ? OPT_OUT_TEXT : OPT_IN_TEXT) : null } as const;
+    }
+
     // Alvo da mensagem: o lembrete do próximo horário que ainda espera resposta; se não há, a resposta
     // dada há pouco (a cliente pode ter errado o número e corrigir)
     let target: Target | null = null;
@@ -213,6 +235,11 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
 
   if (step.kind === "skip") return { handled: false, reason: step.reason };
   if (step.kind === "done") return { handled: true, intent: null, appointmentId: null };
+  if (step.kind === "optout") {
+    // Responde uma vez (só quando mudou) e respeita o silêncio da noite; a escolha já está gravada
+    if (step.ack && !isQuietHour(now)) await sendAutoReply(deps, msg.instance, tenantId, step.client, null, step.ack);
+    return { handled: true, intent: null, appointmentId: null };
+  }
 
   const { client, messageId, target, ruleIntent, ai } = step;
 
@@ -279,31 +306,11 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
     const body = ack;
     await withTenant(tenantId, (tx) =>
       tx.update(appointments).set({ pendingReply: body }).where(eq(appointments.id, apptId)),
-    ).catch((e) => console.error(JSON.stringify({ level: "warn", msg: "pending_reply_failed", err: String(e) })));
+    ).catch((e) => console.error(JSON.stringify({ level: "warn", msg: "pending_reply_failed", ...errCode(e) })));
     ack = null;
   }
 
-  if (ack) {
-    const port = deps.portFor(msg.instance);
-    const body = ack;
-    try {
-      const sent = port ? await port.sendText(client.phone, body) : null;
-      if (sent)
-        await withTenant(tenantId, (tx) =>
-          recordMessage(tx, tenantId, {
-            clientId: client.id,
-            appointmentId: target?.id ?? null,
-            direction: "out",
-            kind: "auto_reply",
-            body,
-            externalId: sent.id,
-          }),
-        );
-    } catch (e) {
-      // O status já mudou; sem a resposta automática a cliente só não recebe o texto
-      console.error(JSON.stringify({ level: "warn", msg: "auto_reply_failed", err: String(e) }));
-    }
-  }
+  if (ack) await sendAutoReply(deps, msg.instance, tenantId, client, target?.id ?? null, ack);
 
   if (deps.push) {
     const push = deps.push;
@@ -315,7 +322,35 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
     if (title)
       await withTenant(tenantId, (tx) =>
         sendToAll(tx, push, { title, body: msg.text.slice(0, 140), url: `/agenda?conversa=${client.id}` }),
-      ).catch((e) => console.error(JSON.stringify({ level: "warn", msg: "reply_push_failed", err: String(e) })));
+      ).catch((e) => console.error(JSON.stringify({ level: "warn", msg: "reply_push_failed", ...errCode(e) })));
   }
   return { handled: true, intent, appointmentId };
+}
+
+/** Resposta automática à cliente, gravada na conversa. Falha só loga: o que mudou no banco já vale. */
+async function sendAutoReply(
+  deps: InboundDeps,
+  instance: string,
+  tenantId: string,
+  client: { id: string; phone: string },
+  appointmentId: string | null,
+  body: string,
+) {
+  const port = deps.portFor(instance);
+  try {
+    const sent = port ? await port.sendText(client.phone, body) : null;
+    if (sent)
+      await withTenant(tenantId, (tx) =>
+        recordMessage(tx, tenantId, {
+          clientId: client.id,
+          appointmentId,
+          direction: "out",
+          kind: "auto_reply",
+          body,
+          externalId: sent.id,
+        }),
+      );
+  } catch (e) {
+    console.error(JSON.stringify({ level: "warn", msg: "auto_reply_failed", ...errCode(e) }));
+  }
 }

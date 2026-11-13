@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ackText, parseIntent, parseUpsert, phoneCandidates } from "@/features/messaging/replies";
+import { ackText, parseIntent, parseOptOut, parseUpsert, phoneCandidates } from "@/features/messaging/replies";
 
 describe("resposta ao lembrete", () => {
   it("entende as opções numeradas", () => {
@@ -177,5 +177,14 @@ describe("webhook da Evolution", () => {
         body({ remoteJid: "5511987654321@s.whatsapp.net", id: "A" }, { extendedTextMessage: { text: "Confirmo" } }),
       )?.text,
     ).toBe("Confirmo");
+  });
+});
+
+describe("SAIR e VOLTAR", () => {
+  it("só a mensagem inteira vale como pedido", () => {
+    for (const t of ["SAIR", "sair.", "Parar", "pare", "stop", "não quero mais receber", "cancelar lembretes"])
+      expect(parseOptOut(t), t).toBe("stop");
+    for (const t of ["VOLTAR", "quero voltar a receber"]) expect(parseOptOut(t), t).toBe("resume");
+    for (const t of ["vou sair do trabalho às 5", "1", "ok", "não quero cancelar"]) expect(parseOptOut(t), t).toBeNull();
   });
 });

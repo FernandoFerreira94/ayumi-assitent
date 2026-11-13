@@ -6,6 +6,7 @@ import { MessagingOfflineError, MessagingRejectedError, sendFailReason } from "@
 import { recordMessage } from "@/features/messaging/store";
 import { isQuietHour } from "./quiet";
 import { reminderText } from "./text";
+import { errCode } from "@/lib/log";
 
 export { reminderText } from "./text";
 
@@ -46,6 +47,7 @@ export async function claimDue(tx: Tx, now: Date, hours = DEFAULT_REMINDER_HOURS
         where reminder_sent_at is null
           and status in ('pending_confirmation','confirmed')
           and starts_at > ${now.toISOString()} and starts_at <= ${until.toISOString()}
+          and client_id not in (select id from clients where opted_out_at is not null)
         for update skip locked)
       returning id, tenant_id, starts_at, client_id, service_id, price_cents)
     select c.id, c.tenant_id, c.client_id, c.starts_at, c.price_cents, cl.name as client, cl.phone_e164 as phone, s.name as service
@@ -116,7 +118,7 @@ export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Pro
             createdAt: now,
           }),
         )
-        .catch((e) => console.error(JSON.stringify({ level: "warn", msg: "reminder_record_failed", err: String(e) })));
+        .catch((e) => console.error(JSON.stringify({ level: "warn", msg: "reminder_record_failed", ...errCode(e) })));
     } catch (e) {
       console.error(JSON.stringify({ level: "warn", msg: "reminder_send_failed", appointment: a.id, reason: sendFailReason(e) }));
       // Recusado (número sem WhatsApp): fica marcado como tentado e não volta para a fila, senão repete a cada 5 min

@@ -2,7 +2,6 @@
 export const ERROR_MESSAGES = {
   SLOT_TAKEN: "Esse horário acabou de ser ocupado. Escolha outro.",
   HAS_APPOINTMENTS: "Há agendamentos nesse período. Cancele ou reagende antes de bloquear.",
-  CLIENT_HAS_APPOINTMENTS: "Esta cliente tem agendamentos. Cancele ou apague os horários dela antes de excluir.",
   PHONE_EXISTS: "Este número já é de outra cliente.",
   GOOGLE_EXPIRED: "O acesso ao Google expirou. Reconecte para sincronizar.",
   WHATSAPP_UNAVAILABLE: "Não conseguimos falar com o WhatsApp agora. Tente de novo em instantes.",
@@ -24,6 +23,7 @@ export const ERROR_MESSAGES = {
   ICLOUD_FAILED: "Não conseguimos ler o calendário do iPhone agora. Tente de novo em instantes.",
   ICLOUD_TOO_BIG: "Esse calendário tem eventos demais. Use um calendário só para a agenda do salão.",
   CLIPBOARD: "Não deu para copiar. Segure o texto e escolha Copiar.",
+  RATE_LIMITED: "Você enviou muitas mensagens hoje. Tente de novo amanhã.",
   NETWORK: "Sem conexão. Verifique a internet e tente de novo.",
   UNKNOWN: "Algo deu errado do nosso lado. Tente de novo em instantes.",
 } as const;

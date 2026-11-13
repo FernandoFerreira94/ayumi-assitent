@@ -7,6 +7,7 @@ import { messagingForInstance } from "./evolution";
 import { sendDirect } from "./send";
 import { recordMessage } from "./store";
 import { serviceLabel } from "@/features/appointments/core";
+import { errCode } from "@/lib/log";
 
 /** sent = a cliente recebeu; failed = o WhatsApp não enviou; skipped = nada a enviar (sem WhatsApp configurado) */
 export type BookingMessageResult = "sent" | "failed" | "skipped";
@@ -39,6 +40,7 @@ export async function sendBookingMessage(
           clientId: clients.id,
           client: clients.name,
           phone: clients.phoneE164,
+          optedOut: clients.optedOutAt,
           service: serviceLabel,
           startsAt: appointments.startsAt,
           priceCents: appointments.priceCents,
@@ -48,7 +50,8 @@ export async function sendBookingMessage(
         .innerJoin(services, eq(services.id, appointments.serviceId))
         .where(eq(appointments.id, appointmentId)),
     );
-    if (!a) return "skipped";
+    // Cliente respondeu SAIR: nada automático
+    if (!a || a.optedOut) return "skipped";
     const text = bookingText(a, now, { template: t?.template, name: t?.name, fullName: t?.fullName });
     const res = await sendDirect(port, a.phone, text);
     if (!res.ok) {
@@ -66,11 +69,11 @@ export async function sendBookingMessage(
         externalId: res.data.id,
       }),
     ).catch((e) =>
-      console.error(JSON.stringify({ level: "warn", msg: "booking_message_record_failed", err: String(e) })),
+      console.error(JSON.stringify({ level: "warn", msg: "booking_message_record_failed", ...errCode(e) })),
     );
     return "sent";
   } catch (e) {
-    console.error(JSON.stringify({ level: "warn", msg: "booking_message_error", err: String(e) }));
+    console.error(JSON.stringify({ level: "warn", msg: "booking_message_error", ...errCode(e) }));
     return "failed";
   }
 }

@@ -60,6 +60,7 @@ export default async function ClientesPage({ searchParams }: PageProps<"/cliente
                       name: c.name,
                       email: c.email,
                       phone: maskPhone(c.phoneE164.replace(/^\+55/, "")),
+                      optedOut: !!c.optedOutAt,
                     }}
                   />
                 ))}

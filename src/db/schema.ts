@@ -85,6 +85,10 @@ export const clients = pgTable(
     phoneE164: text("phone_e164").notNull(),
     notes: text("notes"),
     email: text("email"),
+    /** Excluída com histórico: nome "Cliente removida", telefone `anon:<id>`, sem contato (LGPD) */
+    anonymizedAt: timestamp("anonymized_at", { withTimezone: true }),
+    /** Respondeu SAIR: não recebe mensagem automática (VOLTAR limpa) */
+    optedOutAt: timestamp("opted_out_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [unique().on(t.tenantId, t.phoneE164)],

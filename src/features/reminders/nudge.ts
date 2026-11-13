@@ -8,6 +8,7 @@ import { getReminderSettings } from "./core";
 import { secondReminderText } from "./text";
 
 import { isQuietHour } from "./quiet";
+import { errCode } from "@/lib/log";
 
 export { isQuietHour, QUIET_FROM_HOUR, QUIET_UNTIL_HOUR } from "./quiet";
 
@@ -60,6 +61,7 @@ export async function claimNudges(tx: Tx, now: Date, hours: number, firstOn = tr
               and created_at <= starts_at - make_interval(hours => ${hours}))
           )
           and starts_at > ${iso} and starts_at <= ${until}
+          and client_id not in (select id from clients where opted_out_at is not null)
         for update skip locked)
       returning id, tenant_id, client_id, starts_at, service_id, price_cents, status)
     select c.id, c.tenant_id, c.client_id, c.starts_at, c.price_cents, cl.name as client, cl.phone_e164 as phone,
@@ -127,7 +129,7 @@ export async function sendNudges(tx: Tx, port: MessagingPort, now: Date): Promis
             createdAt: now,
           }),
         )
-        .catch((e) => console.error(JSON.stringify({ level: "warn", msg: "nudge_record_failed", err: String(e) })));
+        .catch((e) => console.error(JSON.stringify({ level: "warn", msg: "nudge_record_failed", ...errCode(e) })));
     } catch (e) {
       console.error(JSON.stringify({ level: "warn", msg: "nudge_send_failed", appointment: a.id, reason: sendFailReason(e) }));
       // Recusado (número sem WhatsApp): fica marcado como tentado e não volta para a fila, senão repete a cada 5 min

@@ -26,6 +26,12 @@ describe("Evolution (WhatsApp)", () => {
     const down = evolutionMessaging(cfg, vi.fn().mockRejectedValue(new Error("x")) as unknown as typeof fetch);
     await expect(down.sendText("+55119", "x")).rejects.toBeInstanceOf(MessagingTransientError);
   });
+  it("recusa o que não é telefone (cliente anonimizada) sem chamar a Evolution", async () => {
+    const f = vi.fn();
+    const port = evolutionMessaging({ baseUrl: "https://evo.test", apiKey: "k", instance: "i" }, f as unknown as typeof fetch);
+    await expect(port.sendText("anon:5511-aaaa", "x")).rejects.toBeInstanceOf(MessagingRejectedError);
+    expect(f).not.toHaveBeenCalled();
+  });
   it("sem URL e chave da Evolution não há porta", () => {
     expect(messagingForInstance("studio-a", {} as NodeJS.ProcessEnv)).toBeNull();
     expect(
@@ -89,6 +95,7 @@ describe("Evolution admin", () => {
       pair: vi.fn().mockResolvedValue({ pairingCode: "XXXX1111" }),
       state: vi.fn(),
       logout: vi.fn(),
+      remove: vi.fn(),
       number: vi.fn(),
       setWebhook: vi.fn(),
     };
@@ -105,5 +112,17 @@ describe("Evolution admin", () => {
     expect(sendFailReason(new MessagingOfflineError("401"))).toBe("offline:401");
     expect(sendFailReason(new MessagingTransientError("500"))).toBe("transient:500");
     expect(sendFailReason(new TypeError("+5511987654321"))).toBe("error:TypeError");
+  });
+});
+
+describe("Evolution admin: apagar instância", () => {
+  it("DELETE na instância e 404 conta como apagada", async () => {
+    const f = vi.fn().mockResolvedValue({ ok: false, status: 404 } as Response);
+    await evolutionAdmin({ baseUrl: "https://evo.test", apiKey: "k" }, f as unknown as typeof fetch).remove("studio-x");
+    expect(f).toHaveBeenCalledWith("https://evo.test/instance/delete/studio-x", expect.objectContaining({ method: "DELETE" }));
+    const bad = vi.fn().mockResolvedValue({ ok: false, status: 500 } as Response);
+    await expect(
+      evolutionAdmin({ baseUrl: "https://evo.test", apiKey: "k" }, bad as unknown as typeof fetch).remove("studio-x"),
+    ).rejects.toBeInstanceOf(WhatsAppAdminError);
   });
 });

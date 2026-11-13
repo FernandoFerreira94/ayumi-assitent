@@ -7,6 +7,7 @@ import type { PushPort } from "@/features/push/port";
 import { getReminderSettings, sendReminders, type ReminderRun } from "./core";
 import { notifyNoReplies } from "./no-reply";
 import { sendNudges } from "./nudge";
+import { errCode } from "@/lib/log";
 
 /**
  * Uma rodada para todos os estúdios: 1º aviso, 2º aviso, respostas guardadas da noite e, com `push`, o aviso à dona de quem não respondeu.
@@ -27,12 +28,12 @@ export async function runReminders(
       const r = await withTenant(t.id, (tx) => sendReminders(tx, port, now));
       // Reforço único de confirmação (mesma rodada de 5 min); falha aqui não derruba o lembrete
       const n = await withTenant(t.id, (tx) => sendNudges(tx, port, now)).catch((e) => {
-        console.error(JSON.stringify({ level: "warn", msg: "nudge_tenant_failed", tenant: t.id, err: String(e) }));
+        console.error(JSON.stringify({ level: "warn", msg: "nudge_tenant_failed", tenant: t.id, ...errCode(e) }));
         return { sent: 0, failed: 0, offline: false };
       });
       // Respostas que a cliente recebeu à noite ficaram guardadas: saem às 6h
       const p = await withTenant(t.id, (tx) => sendPendingReplies(tx, port, now)).catch((e) => {
-        console.error(JSON.stringify({ level: "warn", msg: "pending_tenant_failed", tenant: t.id, err: String(e) }));
+        console.error(JSON.stringify({ level: "warn", msg: "pending_tenant_failed", tenant: t.id, ...errCode(e) }));
         return { sent: 0, failed: 0, offline: false };
       });
       n.sent += p.sent;
@@ -42,7 +43,7 @@ export async function runReminders(
         await withTenant(t.id, async (tx) =>
           notifyNoReplies(tx, push, now, (await getReminderSettings(tx)).secondHours),
         ).catch((e) =>
-          console.error(JSON.stringify({ level: "warn", msg: "no_reply_tenant_failed", tenant: t.id, err: String(e) })),
+          console.error(JSON.stringify({ level: "warn", msg: "no_reply_tenant_failed", tenant: t.id, ...errCode(e) })),
         );
       r.sent += n.sent;
       r.failed += n.failed;
@@ -51,7 +52,7 @@ export async function runReminders(
       total.failed += r.failed;
       total.offline ||= r.offline;
     } catch (e) {
-      console.error(JSON.stringify({ level: "error", msg: "reminders_tenant_failed", tenant: t.id, err: String(e) }));
+      console.error(JSON.stringify({ level: "error", msg: "reminders_tenant_failed", tenant: t.id, ...errCode(e) }));
       total.failed++;
     }
   }

@@ -21,3 +21,8 @@
 - Nomes curto/completo aparecem nas mensagens (primeiro nome).
 - Excluir cliente com agendamentos: confira o efeito em agenda e financeiro.
 - Testes: `tests/e2e/clientes.spec.ts`, `tests/db/contacts.test.ts`.
+
+## Exclusão (LGPD, 13/11)
+- `clients/core.deleteClientRow`: sem agendamento apaga; com histórico **anonimiza** (`name = "Cliente removida"`, `phone_e164 = anon:<id>`, sem e-mail/observações, conversa apagada, `anonymized_at`). Atendimentos ficam para o financeiro.
+- `searchClients` esconde anonimizadas (lista e seletores). A porta da Evolution recusa telefone que não seja `+dígitos`, então ninguém recebe mensagem para `anon:`.
+- Migration `0033_client_anonymize.sql`.

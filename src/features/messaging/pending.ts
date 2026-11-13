@@ -3,6 +3,7 @@ import type { Tx } from "@/db/client";
 import { isQuietHour } from "@/features/reminders/quiet";
 import { MessagingOfflineError, MessagingRejectedError, sendFailReason, type MessagingPort } from "./port";
 import { recordMessage } from "./store";
+import { errCode } from "@/lib/log";
 
 export type PendingRun = { sent: number; failed: number; offline: boolean };
 
@@ -42,7 +43,7 @@ export async function sendPendingReplies(tx: Tx, port: MessagingPort, now: Date)
             createdAt: now,
           }),
         )
-        .catch((e) => console.error(JSON.stringify({ level: "warn", msg: "pending_record_failed", err: String(e) })));
+        .catch((e) => console.error(JSON.stringify({ level: "warn", msg: "pending_record_failed", ...errCode(e) })));
     } catch (e) {
       console.error(JSON.stringify({ level: "warn", msg: "pending_send_failed", appointment: r.id, reason: sendFailReason(e) }));
       // Recusado (número sem WhatsApp): descarta, senão repete a cada 5 min

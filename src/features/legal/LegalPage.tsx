@@ -4,7 +4,7 @@ import { MascotSync } from "@/components/brand/MascotSync";
 import { Wordmark } from "@/components/brand/Wordmark";
 
 export const SUPPORT_EMAIL = "webcode.ff@gmail.com";
-export const LEGAL_UPDATED = "12 de novembro de 2026";
+export const LEGAL_UPDATED = "13 de novembro de 2026";
 
 /** Casca das páginas públicas (privacidade e termos): sem login, sempre com as cores da Bolha. */
 export function LegalPage({ title, intro, children }: { title: string; intro: ReactNode; children: ReactNode }) {

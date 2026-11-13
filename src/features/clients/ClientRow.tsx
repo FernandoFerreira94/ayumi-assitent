@@ -20,7 +20,7 @@ const RIGHT_W = BTN * 2; // Editar + Excluir
 const SNAP = 36;
 const CLOSE_EVENT = "ayumi:swipe-close";
 
-type Client = { id: string; name: string; phone: string; email: string | null };
+type Client = { id: string; name: string; phone: string; email: string | null; optedOut?: boolean };
 
 const icon = {
   viewBox: "0 0 24 24",
@@ -328,18 +328,14 @@ function DeleteSheet({
   onOpenChange: (v: boolean) => void;
 }) {
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<ActionResult | null>(null);
 
   async function confirm() {
     setBusy(true);
-    setError(null);
     const res = await deleteClient(client.id).catch(() => null);
     setBusy(false);
     if (res?.ok) {
       onOpenChange(false);
       notify.success("Cliente excluída");
-    } else if (res && !res.ok && res.code === "CLIENT_HAS_APPOINTMENTS") {
-      setError(res);
     } else {
       notify.error(res && !res.ok ? res.code : "NETWORK", () => void confirm());
     }
@@ -351,7 +347,6 @@ function DeleteSheet({
       dismissible={!busy}
       onOpenChange={(v) => {
         if (busy) return;
-        if (!v) setError(null);
         onOpenChange(v);
       }}
     >
@@ -360,18 +355,14 @@ function DeleteSheet({
         <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
           <Drawer.Title className="pb-1 text-xl font-bold">Excluir {client.name}?</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
-            A cliente e a conversa dela saem do app. Não dá para desfazer.
+            Nome, telefone e conversa dela saem do app. Se ela já foi atendida, os horários antigos ficam como
+            &quot;Cliente removida&quot; no financeiro. Não dá para desfazer.
           </Drawer.Description>
-          {error && !error.ok ? (
-            <p role="alert" className="mb-3 rounded-2xl bg-soft px-4 py-3 text-sm font-semibold">
-              {messageFor(error.code)}
-            </p>
-          ) : null}
           <div className="grid gap-2">
             <button
               type="button"
               onClick={() => void confirm()}
-              disabled={busy || error !== null}
+              disabled={busy}
               aria-busy={busy}
               className="flex min-h-13 items-center justify-center gap-2 rounded-2xl bg-fail px-5 font-bold text-white disabled:opacity-70"
             >
@@ -448,6 +439,11 @@ function CardSheet({
             {client.phone}
             {client.email ? ` · ${client.email}` : ""}
           </Drawer.Description>
+          {client.optedOut ? (
+            <p className="-mt-2 mb-4 text-sm font-semibold text-muted">
+              Não recebe lembretes automáticos (respondeu SAIR; volta se responder VOLTAR).
+            </p>
+          ) : null}
 
           {failed ? (
             <div role="alert" className="mb-3 flex items-center justify-between gap-3 rounded-2xl bg-fail-bg px-4 py-3 text-sm font-semibold text-fail">

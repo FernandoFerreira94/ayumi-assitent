@@ -8,6 +8,8 @@ export interface WhatsAppAdmin {
   pair(instance: string, phoneE164: string): Promise<{ pairingCode: string; qr: string | null }>;
   state(instance: string): Promise<WaState>;
   logout(instance: string): Promise<void>;
+  /** Apaga a instância na Evolution (conta excluída). Já inexistente conta como apagada. */
+  remove(instance: string): Promise<void>;
   /** Número conectado na instância em E.164 (+55...); null se não houver ou não der para saber. */
   number(instance: string): Promise<string | null>;
   /** Aponta as mensagens novas da instância para o webhook do app (idempotente). */
@@ -63,6 +65,10 @@ export function evolutionAdmin(cfg: Config, fetchImpl: typeof fetch = fetch): Wh
     },
     async logout(instance) {
       const res = await call("DELETE", `/instance/logout/${enc(instance)}`);
+      if (!res.ok && res.status !== 404 && res.status !== 400) throw new WhatsAppAdminError(String(res.status));
+    },
+    async remove(instance) {
+      const res = await call("DELETE", `/instance/delete/${enc(instance)}`);
       if (!res.ok && res.status !== 404 && res.status !== 400) throw new WhatsAppAdminError(String(res.status));
     },
     async number(instance) {
