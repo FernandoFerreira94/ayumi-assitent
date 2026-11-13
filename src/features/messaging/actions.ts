@@ -28,9 +28,8 @@ export async function sendClientMessage(clientId: string, text: string): Promise
     );
     if (!cli) return fail("NOT_ALLOWED");
     const [t] = await getDb().select({ i: tenants.whatsappInstance }).from(tenants).where(eq(tenants.id, tenantId));
-    // Mesma regra dos lembretes: sem instância própria, usa a do ambiente
-    const instance = t?.i ?? process.env.EVOLUTION_INSTANCE;
-    const res = await sendDirect(instance ? messagingForInstance(instance) : null, cli.phone, p.data.text);
+    // Só pelo WhatsApp do próprio estúdio (sem instância, sendDirect devolve WHATSAPP_OFFLINE)
+    const res = await sendDirect(t?.i ? messagingForInstance(t.i) : null, cli.phone, p.data.text);
     if (!res.ok) {
       console.error(JSON.stringify({ level: "error", msg: "client_message_failed", code: res.code }));
       return res;

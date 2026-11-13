@@ -123,13 +123,30 @@ d("reforço único de confirmação (Postgres real)", () => {
     await admin`update tenants set second_reminder_hours = null where id = ${T}`;
     // Sem 2º aviso: 2 h depois do 1º sem resposta. Atendimento 18h BRT (21:00Z), lembrete às 11h BRT (14:00Z)
     const a = await add("2026-11-10T21:00:00Z", "2026-11-10T14:00:00Z");
-    await runReminders(portFor, at("2026-11-10T15:30:00Z"), undefined, push);
+    await runReminders(portFor, at("2026-11-10T15:30:00Z"), push);
     expect(pushed).toHaveLength(0); // só 1,5 h
-    await runReminders(portFor, at("2026-11-10T16:05:00Z"), undefined, push);
+    await runReminders(portFor, at("2026-11-10T16:05:00Z"), push);
     expect(pushed).toEqual([expect.objectContaining({ title: "Bia não respondeu", url: `/agenda?conversa=${C}` })]);
-    await runReminders(portFor, at("2026-11-10T16:30:00Z"), undefined, push);
+    await runReminders(portFor, at("2026-11-10T16:30:00Z"), push);
     expect(pushed).toHaveLength(1); // uma vez por agendamento
     expect((await admin`select no_reply_at from appointments where id = ${a}`)[0].no_reply_at).not.toBeNull();
     await admin`delete from push_subscriptions where tenant_id = ${T}`;
+  });
+
+  it("estúdio sem WhatsApp próprio não envia por nenhuma outra instância", async () => {
+    const [{ id: T2 }] = await admin`insert into tenants (name) values ('Sem WhatsApp') returning id`;
+    const [{ id: S2 }] =
+      await admin`insert into services (tenant_id,name,duration_min,price_cents) values (${T2},'Corte',60,5000) returning id`;
+    const [{ id: C2 }] =
+      await admin`insert into clients (tenant_id,name,phone_e164) values (${T2},'Ana Lima','+5511911110000') returning id`;
+    await admin`insert into appointments (tenant_id,client_id,service_id,starts_at,ends_at,price_cents)
+      values (${T2},${C2},${S2},'2026-12-01T18:00:00Z','2026-12-01T19:00:00Z',5000)`;
+    const asked: string[] = [];
+    await runReminders((i) => {
+      asked.push(i);
+      return portFor();
+    }, at("2026-11-30T18:00:00Z"));
+    expect(asked.every((i) => i === "studio-n")).toBe(true);
+    expect(sent.some((m) => m.startsWith("+5511911110000"))).toBe(false);
   });
 });

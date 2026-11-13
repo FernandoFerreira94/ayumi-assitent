@@ -7,7 +7,7 @@ import { webhookUrl } from "@/features/messaging/webhook-url";
  * pode rodar a cada conexão; falhar não atrapalha conectar (só as respostas não chegam ainda).
  */
 export async function ensureWebhook(admin: WhatsAppAdmin, instance: string): Promise<void> {
-  const url = webhookUrl();
+  const url = webhookUrl(instance);
   if (!url) {
     console.error(JSON.stringify({ level: "warn", msg: "whatsapp_webhook_skipped", reason: "sem BETTER_AUTH_URL ou segredo" }));
     return;

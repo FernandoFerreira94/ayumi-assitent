@@ -30,9 +30,8 @@ export async function sendBookingMessage(
       })
       .from(tenants)
       .where(eq(tenants.id, tenantId));
-    // Mesma regra dos lembretes: sem instância própria, usa a do ambiente
-    const instance = t?.instance ?? process.env.EVOLUTION_INSTANCE;
-    const port = instance ? messagingForInstance(instance) : null;
+    // Só pelo WhatsApp do próprio estúdio: sem instância, não envia
+    const port = t?.instance ? messagingForInstance(t.instance) : null;
     if (!port) return "skipped";
     const [a] = await withTenant(tenantId, (tx) =>
       tx

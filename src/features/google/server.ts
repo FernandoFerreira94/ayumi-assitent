@@ -9,6 +9,7 @@ import {
   refreshAccessToken,
   type CalendarPort,
 } from "./calendar";
+import { readToken, writeToken } from "./token-crypto";
 import { importGoogleEvents } from "./import";
 import { syncAppointment, type SyncResult } from "./sync";
 
@@ -27,7 +28,9 @@ async function ownerGoogleAccount(tenantId: string): Promise<AccountRow | null> 
     from account a join memberships m on m.user_id = a."userId"
     where m.tenant_id = ${tenantId} and m.role = 'owner' and a."providerId" = 'google'
     limit 1`);
-  return rows[0] ?? null;
+  const row = rows[0];
+  if (!row) return null;
+  return { ...row, accessToken: await readToken(row.accessToken), refreshToken: await readToken(row.refreshToken) };
 }
 
 /** Token de acesso do Google do estúdio, renovando quando preciso. Null = Google não conectado. */
@@ -45,7 +48,7 @@ export async function googleAccessToken(tenantId: string): Promise<string | null
     );
     token = fresh.accessToken;
     await getDb().execute(
-      sql`update account set "accessToken" = ${fresh.accessToken}, "accessTokenExpiresAt" = ${fresh.expiresAt.toISOString()}, "updatedAt" = now() where id = ${acc.id}`,
+      sql`update account set "accessToken" = ${await writeToken(fresh.accessToken)}, "accessTokenExpiresAt" = ${fresh.expiresAt.toISOString()}, "updatedAt" = now() where id = ${acc.id}`,
     );
   }
   return token!;

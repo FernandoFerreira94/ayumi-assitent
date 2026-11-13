@@ -34,13 +34,6 @@ export function evolutionMessaging(cfg: Config, fetchImpl: typeof fetch = fetch)
   };
 }
 
-/** Porta configurada pelo ambiente; null enquanto a Evolution não estiver configurada. */
-export function messagingFromEnv(env = process.env): MessagingPort | null {
-  const { EVOLUTION_URL, EVOLUTION_API_KEY, EVOLUTION_INSTANCE } = env;
-  if (!EVOLUTION_URL || !EVOLUTION_API_KEY || !EVOLUTION_INSTANCE) return null;
-  return evolutionMessaging({ baseUrl: EVOLUTION_URL, apiKey: EVOLUTION_API_KEY, instance: EVOLUTION_INSTANCE });
-}
-
 /** Porta de uma instância específica (a do estúdio); null se a Evolution não estiver configurada. */
 export function messagingForInstance(instance: string, env = process.env): MessagingPort | null {
   const { EVOLUTION_URL, EVOLUTION_API_KEY } = env;

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { evolutionMessaging, messagingFromEnv } from "@/features/messaging/evolution";
+import { evolutionMessaging, messagingForInstance } from "@/features/messaging/evolution";
 import { MessagingOfflineError, MessagingRejectedError, MessagingTransientError, sendFailReason } from "@/features/messaging/port";
 
 const cfg = { baseUrl: "https://evo.test/", apiKey: "k", instance: "ayumi" };
@@ -26,14 +26,10 @@ describe("Evolution (WhatsApp)", () => {
     const down = evolutionMessaging(cfg, vi.fn().mockRejectedValue(new Error("x")) as unknown as typeof fetch);
     await expect(down.sendText("+55119", "x")).rejects.toBeInstanceOf(MessagingTransientError);
   });
-  it("sem variáveis de ambiente não há porta", () => {
-    expect(messagingFromEnv({} as NodeJS.ProcessEnv)).toBeNull();
+  it("sem URL e chave da Evolution não há porta", () => {
+    expect(messagingForInstance("studio-a", {} as NodeJS.ProcessEnv)).toBeNull();
     expect(
-      messagingFromEnv({
-        EVOLUTION_URL: "u",
-        EVOLUTION_API_KEY: "k",
-        EVOLUTION_INSTANCE: "i",
-      } as unknown as NodeJS.ProcessEnv),
+      messagingForInstance("studio-a", { EVOLUTION_URL: "u", EVOLUTION_API_KEY: "k" } as unknown as NodeJS.ProcessEnv),
     ).not.toBeNull();
   });
 });

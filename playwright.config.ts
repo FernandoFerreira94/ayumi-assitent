@@ -4,6 +4,7 @@ const { defaultBrowserType: _ignored, ...iphone } = devices["iPhone 15"];
 
 export default defineConfig({
   testDir: "tests/e2e",
+  globalSetup: "./tests/e2e/global-setup.ts",
   fullyParallel: true,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["list"]] : "list",
@@ -23,7 +24,8 @@ export default defineConfig({
     command: "pnpm build && pnpm exec next start -p 3100",
     url: "http://localhost:3100/login",
     // e-mails liberados para os testes de cadastro
-    env: { ALLOWED_EMAILS: "novo@e2e.test" },
+    // DATABASE_URL do processo vence o .env.local: o servidor de teste usa o mesmo banco _test dos testes
+    env: { ALLOWED_EMAILS: "novo@e2e.test", DATABASE_URL: process.env.DATABASE_URL ?? "" },
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
   },

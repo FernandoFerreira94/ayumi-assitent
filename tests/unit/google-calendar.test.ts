@@ -62,3 +62,22 @@ describe("cliente do Google Agenda", () => {
     );
   });
 });
+
+describe("revokeToken", () => {
+  it("chama o endpoint de revogação e aceita token já inválido", async () => {
+    const { revokeToken } = await import("@/features/google/calendar");
+    const calls: [string, RequestInit][] = [];
+    const f = (async (url: string, init: RequestInit) => {
+      calls.push([url, init]);
+      return { ok: false, status: 400 } as Response;
+    }) as unknown as typeof fetch;
+    await expect(revokeToken("1//r", f)).resolves.toBeUndefined();
+    expect(calls[0][0]).toBe("https://oauth2.googleapis.com/revoke");
+    expect(String(calls[0][1].body)).toBe("token=1%2F%2Fr");
+  });
+  it("erro do Google vira GoogleApiError", async () => {
+    const { revokeToken, GoogleApiError } = await import("@/features/google/calendar");
+    const f = (async () => ({ ok: false, status: 503 }) as Response) as unknown as typeof fetch;
+    await expect(revokeToken("x", f)).rejects.toBeInstanceOf(GoogleApiError);
+  });
+});
