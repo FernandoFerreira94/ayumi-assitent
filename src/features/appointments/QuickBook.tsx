@@ -50,6 +50,7 @@ export function QuickBook() {
       serviceIds={preset.serviceIds}
       clients={options?.clients ?? null}
       services={options?.services ?? null}
+      week={options?.week ?? null}
     />
   );
 }

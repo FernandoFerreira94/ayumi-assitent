@@ -4,6 +4,7 @@ import {
   daySpan,
   dragSpan,
   nextFree,
+  outsideHours,
   gridWindow,
   layoutColumns,
   snap,
@@ -59,21 +60,24 @@ describe("grade da agenda do dia", () => {
     expect(lay.get("d")).toEqual({ col: 0, cols: 1 });
   });
 
-  it("conflito diz o motivo: fora do expediente, outro atendimento ou bloqueio", () => {
+  it("conflito diz o motivo (outro atendimento ou bloqueio); fora do expediente é só aviso", () => {
     const hours = { start: h("09:00"), end: h("19:00") };
     const others: Occupant[] = [
       { id: "x", kind: "appointment", label: "Ana Souza", start: h("10:00"), end: h("11:00") },
       { id: "p", kind: "block", label: "Almoço", start: h("12:00"), end: h("13:00") },
     ];
     const at = (s: string, e: string) => ({ id: "me", start: h(s), end: h(e) });
-    expect(conflictReason(at("08:30", "09:30"), hours, others)).toBe("Fora do expediente");
-    expect(conflictReason(at("18:30", "19:15"), hours, others)).toBe("Fora do expediente");
-    expect(conflictReason(at("10:30", "11:30"), hours, others)).toBe("Choca com Ana às 10:00");
-    expect(conflictReason(at("11:30", "12:15"), hours, others)).toBe("Choca com almoço");
-    expect(conflictReason(at("11:00", "12:00"), hours, others)).toBeNull();
-    expect(conflictReason(at("10:00", "11:00"), null, [])).toBe("Fora do expediente");
+    expect(conflictReason(at("08:30", "09:30"), others)).toBeNull();
+    expect(conflictReason(at("10:30", "11:30"), others)).toBe("Choca com Ana às 10:00");
+    expect(conflictReason(at("11:30", "12:15"), others)).toBe("Choca com almoço");
+    expect(conflictReason(at("11:00", "12:00"), others)).toBeNull();
     // o próprio bloco não conta como conflito
-    expect(conflictReason({ id: "x", start: h("10:15"), end: h("11:15") }, hours, others)).toBeNull();
+    expect(conflictReason({ id: "x", start: h("10:15"), end: h("11:15") }, others)).toBeNull();
+    expect(outsideHours(at("08:30", "09:30"), hours)).toBe(true);
+    expect(outsideHours(at("18:30", "19:15"), hours)).toBe(true);
+    expect(outsideHours(at("10:00", "11:00"), hours)).toBe(false);
+    expect(outsideHours(at("18:00", "19:00"), hours)).toBe(false);
+    expect(outsideHours(at("10:00", "11:00"), null)).toBe(true);
   });
 
   it("arrastar move inteiro; as bolinhas mudam começo ou fim, com no mínimo 15 min", () => {
