@@ -9,8 +9,6 @@ export type FeedEvent = {
   end: Date;
   title: string;
   description?: string;
-  /** Usado em DTSTAMP/LAST-MODIFIED; o iOS compara para saber se mudou */
-  updated: Date;
 };
 
 const CRLF = "\r\n";
@@ -23,7 +21,25 @@ export function icsDate(d: Date): string {
 }
 
 export function escapeText(v: string): string {
-  return v.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+  return (
+    v
+      .replace(/\\/g, "\\\\")
+      .replace(/;/g, "\\;")
+      .replace(/,/g, "\\,")
+      .replace(/\r\n?|\n/g, "\\n")
+      // Caractere de controle (fora o TAB) deixa o ICS inválido e o iPhone recusa o calendário inteiro
+      .replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "")
+  );
+}
+
+/** Nome do calendário: nem todo leitor desfaz o escape em X-WR-CALNAME (aparece "\\,"), então tira o que precisaria dele. */
+export function calNameText(v: string): string {
+  return escapeText(
+    v
+      .replace(/[\\;,\r\n]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim(),
+  );
 }
 
 /** Dobra a linha em pedaços de até 75 octetos (UTF-8), sem cortar um caractere ao meio. */
@@ -62,6 +78,7 @@ export function eventTitle({ clientName, service, status, hideNames }: TitleInpu
   let suffix = "";
   if (status === "pending_confirmation") suffix = " (a confirmar)";
   else if (status === "reschedule_requested") suffix = " (pediu para remarcar)";
+  else if (status === "no_show") suffix = " (faltou)";
   return `${who} · ${service}${suffix}`;
 }
 
@@ -80,7 +97,7 @@ export function buildIcs({
     "PRODID:-//Bubbly//Agenda//PT-BR",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    `X-WR-CALNAME:${escapeText(calName)}`,
+    `X-WR-CALNAME:${calNameText(calName)}`,
     "REFRESH-INTERVAL;VALUE=DURATION:PT15M",
     "X-PUBLISHED-TTL:PT15M",
   ];
@@ -89,7 +106,6 @@ export function buildIcs({
       "BEGIN:VEVENT",
       `UID:${e.uid}`,
       `DTSTAMP:${icsDate(now)}`,
-      `LAST-MODIFIED:${icsDate(e.updated)}`,
       `DTSTART:${icsDate(e.start)}`,
       `DTEND:${icsDate(e.end)}`,
       `SUMMARY:${escapeText(e.title)}`,

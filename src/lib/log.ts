@@ -8,3 +8,13 @@ export function log(level: Level, msg: string, extra: Record<string, unknown> = 
 
 export const errInfo = (e: unknown) =>
   e instanceof Error ? { err: e.message, stack: e.stack?.split("\n").slice(0, 4).join("\n") } : { err: String(e) };
+
+/**
+ * Tira segredo de URL antes de logar ou mandar ao Sentry: o token do link do calendário vai no caminho
+ * e o do webhook do WhatsApp na query. Quem tem um deles lê a agenda ou forja mensagem.
+ */
+export function redactUrl(url: string): string {
+  return url
+    .replace(/(\/api\/calendar\/)[^/?#]+/g, "$1[token]")
+    .replace(/([?&](?:token|secret)=)[^&#]*/gi, "$1[redacted]");
+}

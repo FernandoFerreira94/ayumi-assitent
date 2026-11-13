@@ -54,14 +54,12 @@ export async function feedIcs(tenant: { id: string; name: string; hideNames: boo
         status: a.status,
         hideNames: tenant.hideNames,
       }),
-      updated: now,
     })),
     ...blks.map((b) => ({
       uid: `block-${b.id}@bubbly`,
       start: b.startsAt,
       end: b.endsAt,
       title: b.reason?.trim() ? `Bloqueado · ${b.reason.trim()}` : "Bloqueado",
-      updated: now,
     })),
   ];
   return buildIcs({ calName: `Bubbly · ${tenant.name}`, events, now });
