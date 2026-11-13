@@ -4,12 +4,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { notify } from "@/components/feedback/toast";
+import { initials } from "@/components/nav/AppMenu";
+import { Icon, IconTile, type Tint } from "@/components/ui/Icon";
 import { markAllAvisosRead, markClientAvisoRead } from "./actions";
-import type { Aviso } from "./core";
+import { avatarColor, type Aviso, type AvisoTone } from "./core";
 
 const READ_KEY = "mimo:avisos-lidos";
 /** Quanto arrastar para o lado (px) para o aviso contar como visto. */
 const SWIPE_DONE = 90;
+
+/** Quadradinho do aviso, como nos Ajustes: vermelho parou, laranja pede ação, verde deu certo, azul é rotina. */
+const TONE_TINT: Record<AvisoTone, Tint> = { danger: "red", warning: "orange", success: "green", info: "blue" };
 
 /** Chave de um aviso. O título entra porque traz a contagem: se mudar, o aviso volta como novo. */
 const keyOf = (a: Aviso) => `${a.id}|${a.title}`;
@@ -256,7 +261,8 @@ function AvisoRow({ aviso, onOpen, onRead }: { aviso: Aviso; onOpen: () => void;
       onPointerMove={onMove}
       onPointerUp={end}
       onPointerCancel={end}
-      className="flex items-center gap-1 rounded-2xl bg-white/70 pr-1 shadow-[0_1px_0_rgba(255,255,255,0.8)_inset]"
+      data-tone={aviso.tone}
+      className="aviso-row flex items-center gap-1 rounded-2xl pr-1"
     >
       <Link
         href={aviso.href}
@@ -266,10 +272,17 @@ function AvisoRow({ aviso, onOpen, onRead }: { aviso: Aviso; onOpen: () => void;
           if (moved.current) return e.preventDefault();
           onOpen();
         }}
-        className="block min-w-0 flex-1 px-4 py-3"
+        className="flex min-w-0 flex-1 items-start gap-3 py-3 pl-3 pr-2"
       >
-        <span className="block font-bold">{aviso.title}</span>
-        <span className="block text-sm font-semibold text-muted">{aviso.hint}</span>
+        {aviso.client ? (
+          <ClientAvatar client={aviso.client} icon={aviso.icon} tint={TONE_TINT[aviso.tone]} />
+        ) : (
+          <IconTile name={aviso.icon} tint={TONE_TINT[aviso.tone]} />
+        )}
+        <span className="min-w-0">
+          <span className="block font-bold">{aviso.title}</span>
+          <span className="block text-sm font-semibold text-muted">{aviso.hint}</span>
+        </span>
       </Link>
       <button
         type="button"
@@ -291,5 +304,23 @@ function AvisoRow({ aviso, onOpen, onRead }: { aviso: Aviso; onOpen: () => void;
         </svg>
       </button>
     </li>
+  );
+}
+
+/** Iniciais da cliente (nome + sobrenome) na cor fixa dela, com o selo do tipo de aviso no canto. */
+function ClientAvatar({ client, icon, tint }: { client: { id: string; name: string }; icon: Aviso["icon"]; tint: Tint }) {
+  const c = avatarColor(client.id);
+  return (
+    <span aria-hidden="true" className="relative grid size-9 shrink-0">
+      <span
+        className="grid size-9 place-content-center rounded-full text-sm font-bold"
+        style={{ background: `var(--svc-${c}-soft)`, color: `var(--svc-${c}-ink)`, boxShadow: `0 0 0 1px var(--svc-${c}) inset` }}
+      >
+        {initials(client.name)}
+      </span>
+      <span className={`aviso-badge aviso-badge-${tint} absolute -bottom-1 -right-1 grid size-[18px] place-content-center rounded-full text-white ring-2 ring-white`}>
+        <Icon name={icon} size={11} />
+      </span>
+    </span>
   );
 }

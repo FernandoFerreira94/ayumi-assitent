@@ -31,6 +31,21 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 /** Mais recente primeiro. */
 export const RELEASES: readonly Release[] = [
   {
+    version: "1.2.0",
+    date: "2026-11-12",
+    title: "Notificações com ícone e cor",
+    items: [
+      {
+        kind: "layout",
+        text: "Cada notificação do sino tem um ícone e uma cor: vermelho quando algo parou, laranja quando pede atenção, verde quando deu certo e azul para a rotina da agenda.",
+      },
+      {
+        kind: "layout",
+        text: "Quando a notificação é de uma cliente, aparece a bolinha com as iniciais dela, sempre na mesma cor.",
+      },
+    ],
+  },
+  {
     version: "1.1.0",
     date: "2026-11-12",
     title: "Notificação mais simples e lembretes mais flexíveis",

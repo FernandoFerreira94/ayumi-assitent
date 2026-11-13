@@ -1,3 +1,11 @@
+import type { IconName } from "@/components/ui/Icon";
+
+/**
+ * Cor do aviso, sempre junto de um ícone e do texto (a cor nunca é a única pista):
+ * danger = algo parou de funcionar; warning = precisa de ação; success = deu certo; info = rotina da agenda.
+ */
+export type AvisoTone = "danger" | "warning" | "success" | "info";
+
 export type Aviso = {
   /** Fixo por tipo; nas mensagens novas, `message-<cliente>`. */
   id:
@@ -12,6 +20,10 @@ export type Aviso = {
   title: string;
   hint: string;
   href: string;
+  icon: IconName;
+  tone: AvisoTone;
+  /** Aviso de uma cliente: a linha mostra o avatar com as iniciais (cor fixa por cliente) no lugar do quadradinho. */
+  client?: { id: string; name: string };
 };
 
 type Inputs = {
@@ -29,6 +41,8 @@ export function buildAvisos({ whatsapp, google }: Inputs): Aviso[] {
       title: "WhatsApp desconectado",
       hint: "Os lembretes às clientes não saem até conectar de novo.",
       href: "/ajustes",
+      icon: "wifiOff",
+      tone: "danger",
     });
   }
   if (!google) {
@@ -37,6 +51,8 @@ export function buildAvisos({ whatsapp, google }: Inputs): Aviso[] {
       title: "Google Agenda não conectado",
       hint: "Os agendamentos não aparecem no seu calendário.",
       href: "/ajustes",
+      icon: "google",
+      tone: "warning",
     });
   }
   return avisos;
@@ -50,6 +66,15 @@ type UnreadSummary = {
   lastIntent: "confirm" | "cancel" | "reschedule" | null;
 };
 
+type Intent = NonNullable<UnreadSummary["lastIntent"]>;
+
+/** Confirmou = verde; cancelar = vermelho; remarcar = âmbar. */
+const INTENT_LOOK = {
+  confirm: { icon: "checkCircle", tone: "success" },
+  cancel: { icon: "userX", tone: "danger" },
+  reschedule: { icon: "reschedule", tone: "warning" },
+} as const satisfies Record<Intent, { icon: IconName; tone: AvisoTone }>;
+
 /** Abre a conversa com a cliente por cima da tela atual (ver messaging/ConversationHost). */
 export const conversationHref = (clientId: string) => `?conversa=${clientId}`;
 
@@ -59,7 +84,7 @@ export const conversationHref = (clientId: string) => `?conversa=${clientId}`;
  */
 export function messageAvisos(unread: UnreadSummary[]): Aviso[] {
   return unread
-    .filter((u) => u.lastIntent !== null)
+    .filter((u): u is UnreadSummary & { lastIntent: Intent } => u.lastIntent !== null)
     .map((u) => {
       const first = u.clientName.trim().split(/\s+/)[0];
       const what =
@@ -74,6 +99,8 @@ export function messageAvisos(unread: UnreadSummary[]): Aviso[] {
         hint:
           u.count > 1 ? `${u.count} mensagens novas · “${u.lastBody.slice(0, 60)}”` : `“${u.lastBody.slice(0, 80)}”`,
         href: conversationHref(u.clientId),
+        ...INTENT_LOOK[u.lastIntent],
+        client: { id: u.clientId, name: u.clientName },
       };
     });
 }
@@ -85,6 +112,9 @@ export function noReplyAvisos(rows: { id: string; clientId: string; clientName: 
     title: `${r.clientName.trim().split(/\s+/)[0]} não respondeu`,
     hint: `Ainda não confirmou o horário das ${r.time}. Toque para ver a conversa.`,
     href: conversationHref(r.clientId),
+    icon: "message",
+    tone: "warning",
+    client: { id: r.clientId, name: r.clientName },
   }));
 }
 
@@ -104,6 +134,8 @@ export function pendenciaAvisos(counts: {
       title: counts.toReschedule === 1 ? "1 cliente quer remarcar" : `${counts.toReschedule} clientes querem remarcar`,
       hint: "Pediram para cancelar ou remarcar. Combine o melhor horário pela conversa.",
       href: "/pendencias",
+      icon: "reschedule",
+      tone: "warning",
     });
   }
   if (counts.toClose > 0) {
@@ -112,6 +144,8 @@ export function pendenciaAvisos(counts: {
       title: `${atendimentos(counts.toClose)} para fechar`,
       hint: "Já passaram: marque como concluído ou falta.",
       href: "/pendencias",
+      icon: "checkCircle",
+      tone: "info",
     });
   }
   if (counts.toConfirm > 0) {
@@ -120,6 +154,8 @@ export function pendenciaAvisos(counts: {
       title: `${atendimentos(counts.toConfirm)} sem confirmação`,
       hint: "A cliente ainda não confirmou o horário.",
       href: "/pendencias",
+      icon: "clock",
+      tone: "warning",
     });
   }
   if (counts.unsynced > 0) {
@@ -128,7 +164,18 @@ export function pendenciaAvisos(counts: {
       title: `${atendimentos(counts.unsynced)} fora do Google Agenda`,
       hint: "Toque para tentar enviar de novo.",
       href: "/pendencias",
+      icon: "refresh",
+      tone: "warning",
     });
   }
   return avisos;
+}
+
+/** Cores do avatar das clientes (as mesmas dos serviços): sempre a mesma cor para a mesma cliente. */
+export const AVATAR_COLORS = ["lav", "rosa", "mel", "verde", "lilas", "azul"] as const;
+
+export function avatarColor(clientId: string): (typeof AVATAR_COLORS)[number] {
+  let h = 0;
+  for (const ch of clientId) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length]!;
 }
