@@ -6,7 +6,7 @@ test("mudança feita em outro aparelho mostra o botão Atualizar, que traz a nov
   context,
 }) => {
   await page.goto(`/calendario?d=${todayStr()}`);
-  const atualizar = page.getByRole("button", { name: /Atualizar/ });
+  const atualizar = page.getByRole("button", { name: /Agenda mudou/ });
   await expect(atualizar).toHaveCount(0);
   // Marca a página: se ela recarregasse por inteiro, a marca sumiria
   await page.evaluate(() => ((window as { semRecarregar?: boolean }).semRecarregar = true));
@@ -42,5 +42,5 @@ test("o que a própria tela fez não vira aviso de atualização", async ({ page
   // Dá tempo da conferência ir e voltar do servidor antes de afirmar que nada apareceu
   await page.waitForResponse((r) => r.request().method() === "POST" && r.url().includes("/calendario"));
   await page.waitForTimeout(300);
-  await expect(page.getByRole("button", { name: /Atualizar/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Agenda mudou/ })).toHaveCount(0);
 });

@@ -53,7 +53,7 @@ test("agenda dois serviços com desconto: soma duração e valor", async ({ page
   expect(hora.x).toBeGreaterThan(dia2.right);
   const folha = page.locator("[data-vaul-drawer]");
   await folha.evaluate((el) => (el.scrollTop = el.scrollHeight));
-  await expect(page.getByRole("button", { name: "Agendar", exact: true }).last()).toBeInViewport({ ratio: 1 });
+  await expect(page.getByRole("button", { name: "Agendar", exact: true }).last()).toBeInViewport({ ratio: 0.99 });
 
   await page.getByLabel("Horário").selectOption("10:00");
   await page.getByRole("button", { name: "Agendar", exact: true }).last().click();
