@@ -17,7 +17,8 @@ import type { ServiceOption } from "./options";
 import { warnSync } from "./sync-warning";
 import { createAppointment } from "./actions";
 
-const input = "min-h-13 w-full rounded-2xl border px-4 text-base font-semibold";
+/** Dia e horário na mesma linha: altura fixa (o select do iOS ignora min-height) e texto centrado na vertical. */
+const pair = "h-13 w-full min-w-0 rounded-2xl border px-3 py-3 text-base font-semibold";
 /** Mesmo com resposta instantânea a Bolha trabalha um pouco, para a tela não piscar. */
 const MIN_MS = 900;
 const SLOW_MS = 4000;
@@ -268,33 +269,36 @@ export function NewAppointmentSheet({
                   discountError={fieldErr?.field === "discountValue"}
                   onMinutes={setMinutes}
                 />
-                <label className="grid gap-1 text-sm font-bold">
-                  Dia
-                  <input
-                    name="date"
-                    type="date"
-                    required
-                    defaultValue={date}
-                    className={input}
-                    onChange={(e) => setPick((p) => ({ ...p, date: e.target.value }))}
-                  />
-                </label>
-                <label className="grid gap-1 text-sm font-bold">
-                  Horário
-                  <select
-                    name="time"
-                    required
-                    className={input}
-                    defaultValue={time ?? "09:00"}
-                    aria-invalid={fieldErr?.field === "time"}
-                    aria-describedby={outside ? "fora-expediente" : undefined}
-                    onChange={(e) => setPick((p) => ({ ...p, time: e.target.value }))}
-                  >
-                    {times.map((t) => (
-                      <option key={t}>{t}</option>
-                    ))}
-                  </select>
-                </label>
+                {/* Dia e horário lado a lado: a folha fica mais curta e o botão Agendar aparece sem rolar tanto */}
+                <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] gap-3">
+                  <label className="grid min-w-0 gap-1 text-sm font-bold">
+                    Dia
+                    <input
+                      name="date"
+                      type="date"
+                      required
+                      defaultValue={date}
+                      className={pair}
+                      onChange={(e) => setPick((p) => ({ ...p, date: e.target.value }))}
+                    />
+                  </label>
+                  <label className="grid min-w-0 gap-1 text-sm font-bold">
+                    Horário
+                    <select
+                      name="time"
+                      required
+                      className={pair}
+                      defaultValue={time ?? "09:00"}
+                      aria-invalid={fieldErr?.field === "time"}
+                      aria-describedby={outside ? "fora-expediente" : undefined}
+                      onChange={(e) => setPick((p) => ({ ...p, time: e.target.value }))}
+                    >
+                      {times.map((t) => (
+                        <option key={t}>{t}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
                 {outside ? (
                   <p
                     id="fora-expediente"

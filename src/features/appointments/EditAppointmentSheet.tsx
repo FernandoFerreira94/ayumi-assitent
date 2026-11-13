@@ -11,6 +11,8 @@ import { editAppointmentAction, loadBookingOptions } from "./actions";
 import { warnSync } from "./sync-warning";
 
 const input = "min-h-13 w-full rounded-2xl border px-4 text-base font-semibold";
+/** Dia e horário na mesma linha: altura fixa (o select do iOS ignora min-height) e texto centrado na vertical. */
+const pair = "h-13 w-full min-w-0 rounded-2xl border px-3 py-3 text-base font-semibold";
 
 /** Folha para reagendar (dia/horário) ou trocar o serviço do atendimento, sem sair da agenda. */
 export function EditAppointmentSheet({
@@ -46,7 +48,9 @@ export function EditAppointmentSheet({
     setError(null);
     // Serviços só ao abrir: a linha do dia não carrega a lista para cada card
     if (next && !services)
-      void loadBookingOptions().then((r) => setServices(r.ok ? r.data.services : [{ id: serviceId, label: serviceName }]));
+      void loadBookingOptions().then((r) =>
+        setServices(r.ok ? r.data.services : [{ id: serviceId, label: serviceName }]),
+      );
   }
 
   function submit(form: FormData) {
@@ -77,7 +81,7 @@ export function EditAppointmentSheet({
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
-        <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
+        <Drawer.Content className="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none">
           <Drawer.Title className="pb-1 text-xl font-bold">Editar {clientName.split(/\s+/)[0]}</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
             Mudou o horário? Ela recebe um lembrete novo para confirmar.
@@ -105,18 +109,26 @@ export function EditAppointmentSheet({
                 <div className="skel h-13 rounded-2xl" aria-label="Carregando serviços" />
               )}
             </label>
-            <label className="grid gap-1 text-sm font-bold">
-              Dia
-              <input name="date" type="date" required defaultValue={date} className={input} />
-            </label>
-            <label className="grid gap-1 text-sm font-bold">
-              Horário
-              <select name="time" required defaultValue={start} className={input} aria-invalid={error === "SLOT_TAKEN"}>
-                {timeOptions({ include: start }).map((t) => (
-                  <option key={t}>{t}</option>
-                ))}
-              </select>
-            </label>
+            <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] gap-3">
+              <label className="grid min-w-0 gap-1 text-sm font-bold">
+                Dia
+                <input name="date" type="date" required defaultValue={date} className={pair} />
+              </label>
+              <label className="grid min-w-0 gap-1 text-sm font-bold">
+                Horário
+                <select
+                  name="time"
+                  required
+                  defaultValue={start}
+                  className={pair}
+                  aria-invalid={error === "SLOT_TAKEN"}
+                >
+                  {timeOptions({ include: start }).map((t) => (
+                    <option key={t}>{t}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
             {error ? (
               <p role="alert" className="rounded-2xl bg-fail-bg px-4 py-3 text-sm font-semibold text-fail">
                 {messageFor(error)}
