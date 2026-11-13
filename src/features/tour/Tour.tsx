@@ -25,8 +25,8 @@ function measure(selector: string | undefined): Box | null {
 }
 
 /**
- * Tour de primeiro acesso: escurece a tela, recorta o destaque e a Bolha explica num cartão. Passa pelo Painel
- * e depois por Ajustes (WhatsApp, Google, mensagens, IA e horários). No primeiro acesso é obrigatório, sem
+ * Tour de primeiro acesso: escurece a tela, recorta o destaque e a Bolha explica num cartão. Fica todo em Ajustes
+ * e aponta cada linha a configurar (WhatsApp, calendários, notificação, mensagens e horários). No primeiro acesso é obrigatório, sem
  * "Pular"; quem reabre por Ajustes pode pular. Nos passos "tap" só o destaque recebe toque e o toque real avança.
  */
 export function Tour({ autoStart }: { autoStart: boolean }) {
@@ -62,7 +62,7 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
     setStep(0);
   }, []);
 
-  // Cada passo acontece na sua tela: Painel no começo, Ajustes na configuração
+  // Cada passo acontece na sua tela (hoje todos em Ajustes): quem abre o app no Painel é levado para lá
   useEffect(() => {
     if (current?.path && pathname !== current.path) router.push(current.path);
   }, [current, pathname, router]);
@@ -222,7 +222,7 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
               onClick={last ? close : next}
               className="btn-tint min-h-11 rounded-full px-5 text-sm font-bold"
             >
-              {step === 0 ? "Começar" : last ? "Ir para o Painel" : "Próximo"}
+              {step === 0 ? "Começar" : last ? "Vamos configurar" : "Próximo"}
             </button>
           )}
         </div>

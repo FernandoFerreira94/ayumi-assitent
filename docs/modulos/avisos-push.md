@@ -5,7 +5,7 @@
 ## Arquivos
 - Push: `features/push/webpush.ts` (`pushFromEnv`; emoji do mascote da pessoa no título, cache 5 min), `port.ts` (mesma `tag` substitui o aviso anterior), `core.ts` (`saveSubscription`, `sendToAll`, `notifyPendencias`), `actions.subscribePush`/`unsubscribePush`, `PushToggle.tsx`.
 - Avisos: `features/owner-notices/run.ts` (`runOwnerNotices`), `plan.ts` (regra pura: `dueNotices`, `isDayOff`, `dayEndMin`), `core.ts` (`runTenantNotices`, `daySummary`, `testNotice`), `texts.ts` (banco de frases, `pickVariant`), `ai.ts` (texto maior pela IA; sem chave cai no texto pronto), `weather.ts` (Open-Meteo), `holidays.ts`, `device-location.ts` (GPS + BigDataCloud), `mascots.ts`.
-- UI: `DailyNoticesCard.tsx` (Ajustes > Avisos do dia, teste na hora), `LocationToggle.tsx` (Conexões), `NoticeHost.tsx` (`?aviso=<id>` abre o texto num diálogo).
+- UI: `PushToggle` (`features/push`, `/ajustes/notificacoes`, sem texto longo nem botão de teste desde 13/11; a action `sendTestNotice` ficou sem tela), `LocationToggle.tsx` (Ajustes > Notificações), `NoticeHost.tsx` (`?aviso=<id>` abre o texto num diálogo).
 - Worker: fila de avisos a cada 5 min.
 
 ## Dados

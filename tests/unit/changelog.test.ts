@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CHANGE_LABEL, CURRENT_VERSION, RELEASES, releaseDate } from "@/features/update/changelog";
+import { CHANGE_LABEL, CURRENT_VERSION, RELEASES, releaseDate, unseenReleases } from "@/features/update/changelog";
 
 const parse = (v: string) => v.split(".").map(Number);
 const newer = (a: string, b: string) => {
@@ -26,5 +26,12 @@ describe("novidades do app", () => {
   });
   it("data no formato brasileiro", () => {
     expect(releaseDate("2026-11-12")).toBe("12/11/2026");
+  });
+  it("o que mudou: só as versões que o aparelho ainda não viu", () => {
+    expect(unseenReleases(CURRENT_VERSION)).toEqual([]);
+    expect(unseenReleases(RELEASES[2].version)).toEqual(RELEASES.slice(0, 2));
+    // Aparelho novo ou versão que saiu da lista: só a atual
+    expect(unseenReleases(null)).toEqual([RELEASES[0]]);
+    expect(unseenReleases("0.0.1")).toEqual([RELEASES[0]]);
   });
 });

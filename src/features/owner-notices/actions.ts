@@ -109,7 +109,7 @@ export async function clearLocation(): Promise<ActionResult> {
       .update(tenants)
       .set({ latitude: null, longitude: null, city: null, state: null, locationSource: null })
       .where(eq(tenants.id, tenantId));
-    revalidatePath("/ajustes");
+    revalidatePath("/ajustes", "layout");
     return ok();
   } catch {
     return fail("UNKNOWN");

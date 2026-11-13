@@ -50,7 +50,7 @@ test("evento do iPhone aparece cinza, mostra a origem e vira agendamento", async
 });
 
 test("Ajustes: o interruptor abre o passo a passo e recusa link que não é do iCloud", async ({ page }) => {
-  await page.goto("/ajustes");
+  await page.goto("/ajustes/calendarios");
   const sw = page.getByRole("switch", { name: "Calendário do iPhone" });
   await expect(sw).not.toBeChecked();
   await sw.click();

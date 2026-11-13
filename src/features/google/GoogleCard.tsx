@@ -39,8 +39,8 @@ export function GoogleCard({
     setPending(true);
     const { error } = await authClient.linkSocial({
       provider: "google",
-      callbackURL: "/ajustes#google",
-      errorCallbackURL: "/ajustes?google=erro",
+      callbackURL: "/ajustes/calendarios",
+      errorCallbackURL: "/ajustes/calendarios?google=erro",
     });
     if (error) {
       setPending(false);

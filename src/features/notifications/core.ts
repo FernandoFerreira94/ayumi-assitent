@@ -40,7 +40,7 @@ export function buildAvisos({ whatsapp, google }: Inputs): Aviso[] {
       id: "whatsapp",
       title: "WhatsApp desconectado",
       hint: "Os lembretes às clientes não saem até conectar de novo.",
-      href: "/ajustes",
+      href: "/ajustes/whatsapp",
       icon: "wifiOff",
       tone: "danger",
     });
@@ -50,7 +50,7 @@ export function buildAvisos({ whatsapp, google }: Inputs): Aviso[] {
       id: "google",
       title: "Google Agenda não conectado",
       hint: "Os agendamentos não aparecem no seu calendário.",
-      href: "/ajustes",
+      href: "/ajustes/calendarios",
       icon: "google",
       tone: "warning",
     });

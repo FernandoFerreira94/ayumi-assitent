@@ -97,7 +97,7 @@ export default function PrivacidadePage() {
           exigência legal.
         </p>
         <p>
-          Você pode desconectar o Google em <strong>Ajustes &gt; Conexões</strong> ou revogar o acesso em{" "}
+          Você pode desconectar o Google em <strong>Ajustes &gt; Calendários</strong> ou revogar o acesso em{" "}
           <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">
             myaccount.google.com/permissions
           </a>
