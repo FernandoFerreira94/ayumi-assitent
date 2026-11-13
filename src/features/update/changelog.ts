@@ -31,6 +31,17 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 /** Mais recente primeiro. */
 export const RELEASES: readonly Release[] = [
   {
+    version: "1.11.0",
+    date: "2026-11-13",
+    title: "Botão de atualizar no Calendário e no Painel",
+    items: [
+      {
+        kind: "new",
+        text: "Um botãozinho de atualizar no canto direito do dia, no Calendário e no Painel: toque para trazer na hora as novidades da agenda e os compromissos do Google e do iPhone.",
+      },
+    ],
+  },
+  {
     version: "1.10.0",
     date: "2026-11-13",
     title: "Compromissos do Google e do iPhone no Calendário",
