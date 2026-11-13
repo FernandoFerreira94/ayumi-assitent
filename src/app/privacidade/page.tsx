@@ -127,7 +127,11 @@ export default function PrivacidadePage() {
             e-mail.
           </li>
           <li>
-            <strong>Sentry:</strong> registros técnicos de erro.
+            <strong>BigDataCloud:</strong> recebe só a localização aproximada para descobrir o nome da cidade, também só
+            se você ligar a previsão do tempo.
+          </li>
+          <li>
+            <strong>Sentry:</strong> registros técnicos de erro, sem nome, telefone ou texto das mensagens.
           </li>
           <li>Autoridades, apenas quando a lei exigir.</li>
         </ul>
@@ -148,8 +152,17 @@ export default function PrivacidadePage() {
         <ul>
           <li>Enquanto a sua conta estiver ativa.</li>
           <li>
-            Depois de um pedido de exclusão, apagamos os dados em até 30 dias. As cópias de segurança são substituídas
-            automaticamente em até 14 dias.
+            Mensagens do WhatsApp: 12 meses. Depois disso são apagadas automaticamente; o agendamento continua no
+            histórico.
+          </li>
+          <li>
+            Cliente que você excluir: sai da lista na hora. Se ela tiver atendimentos no histórico, o nome, o telefone, o
+            e-mail, as observações e as mensagens são apagados e o atendimento fica sem identificação, só para o seu
+            financeiro.
+          </li>
+          <li>
+            Quando você exclui a conta, os dados saem na hora. As cópias de segurança são substituídas automaticamente
+            em até 14 dias.
           </li>
           <li>Registros de acesso ficam guardados por 6 meses, como pede o Marco Civil da Internet.</li>
         </ul>
@@ -168,7 +181,10 @@ export default function PrivacidadePage() {
         <ul>
           <li>Confirmar se tratamos seus dados e ter acesso a eles.</li>
           <li>Corrigir dados errados ou desatualizados.</li>
-          <li>Receber uma cópia dos dados (portabilidade).</li>
+          <li>
+            Receber uma cópia dos dados (portabilidade). No app, em <strong>Meu perfil &gt; Baixar meus dados</strong>,
+            você baixa clientes, agendamentos e despesas em planilha (CSV).
+          </li>
           <li>Apagar os dados, anonimizar ou bloquear o que não for necessário.</li>
           <li>Saber com quem os dados foram compartilhados.</li>
           <li>Retirar o consentimento.</li>
@@ -181,9 +197,15 @@ export default function PrivacidadePage() {
 
       <LegalSection n={10} title="Excluir a conta e os dados">
         <p>
-          Envie um e-mail para <a href={`mailto:${SUPPORT_EMAIL}?subject=Excluir%20minha%20conta`}>{SUPPORT_EMAIL}</a>{" "}
-          com o assunto <strong>Excluir minha conta</strong>, a partir do e-mail cadastrado. Apagamos a conta, as
-          clientes, a agenda, as mensagens e os acessos ao Google e ao WhatsApp em até 30 dias, e confirmamos por e-mail.
+          No app, em <strong>Meu perfil &gt; Excluir minha conta</strong>. A exclusão é imediata: apagamos a conta, as
+          clientes, a agenda, as mensagens e o financeiro, revogamos o acesso ao Google e desconectamos o WhatsApp do
+          bubbly. Antes, se quiser, baixe uma cópia em <strong>Baixar meus dados</strong>.
+        </p>
+        <p>
+          Se não conseguir entrar no app, envie um e-mail para{" "}
+          <a href={`mailto:${SUPPORT_EMAIL}?subject=Excluir%20minha%20conta`}>{SUPPORT_EMAIL}</a> com o assunto{" "}
+          <strong>Excluir minha conta</strong>, a partir do e-mail cadastrado. Atendemos em até 15 dias. O registro de
+          acesso (data, IP e aparelho do login) fica guardado pelos 6 meses exigidos em lei e depois é apagado.
         </p>
       </LegalSection>
 

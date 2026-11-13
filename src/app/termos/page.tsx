@@ -49,6 +49,12 @@ export default function TermosPage() {
           isso (por exemplo, o atendimento que a cliente pediu), informar a cliente quando necessário e atender os
           pedidos dela previstos na LGPD. A WebCode ajuda no que for preciso pelo e-mail de suporte.
         </p>
+        <p>
+          Nesse papel, você é a <strong>controladora</strong> dos dados das suas clientes e a WebCode é a{" "}
+          <strong>operadora</strong>: tratamos esses dados só para o app funcionar para você, seguindo as suas
+          instruções e a Política de privacidade, sem usar para outro fim. Você também se compromete a avisar as
+          clientes de que elas recebem mensagens automáticas do salão pelo WhatsApp.
+        </p>
       </LegalSection>
 
       <LegalSection n={4} title="WhatsApp">
@@ -56,6 +62,10 @@ export default function TermosPage() {
           <li>
             A conexão é feita com o número que você escolher. Siga os termos e as políticas do WhatsApp, que é um
             serviço de terceiros.
+          </li>
+          <li>
+            O bubbly se conecta ao WhatsApp por uma <strong>integração não oficial</strong> (não é a API oficial da
+            Meta). O WhatsApp pode desconectar a sessão a qualquer momento; nesse caso, é só conectar de novo em Ajustes.
           </li>
           <li>Use o envio só para clientes que você atende, nunca para propaganda em massa ou spam.</li>
           <li>
@@ -106,7 +116,8 @@ export default function TermosPage() {
 
       <LegalSection n={10} title="Encerrar a conta">
         <p>
-          Você pode parar de usar e pedir a exclusão da conta a qualquer momento pelo e-mail{" "}
+          Você pode parar de usar e excluir a conta a qualquer momento em <strong>Meu perfil &gt; Excluir minha
+          conta</strong>, ou pelo e-mail{" "}
           <a href={`mailto:${SUPPORT_EMAIL}?subject=Excluir%20minha%20conta`}>{SUPPORT_EMAIL}</a>. Os dados são
           apagados como explicado na{" "}
           <Link href="/privacidade">Política de privacidade</Link>.
