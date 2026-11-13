@@ -21,9 +21,12 @@ test("a coluna não fica presa nos 520 px do celular", async ({ page }) => {
 
 test("N abre o novo agendamento como painel lateral, e Fechar fecha", async ({ page }) => {
   await page.goto("/agenda");
-  await page.keyboard.press("n");
   const sheet = page.getByRole("dialog").last();
-  await expect(sheet).toBeVisible();
+  // O atalho só existe depois da hidratação; repete a tecla até o ouvinte estar ligado
+  await expect(async () => {
+    await page.keyboard.press("n");
+    await expect(sheet).toBeVisible({ timeout: 1000 });
+  }).toPass();
   const vp = page.viewportSize()!;
   const box = (await sheet.boundingBox())!;
   expect(box.x + box.width).toBeGreaterThan(vp.width - 2);
