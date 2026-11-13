@@ -1532,14 +1532,16 @@ button {
 }
 
 /* Balão da Bolha no Painel: surge da Bolha (à esquerda) e some sozinho */
+/* Borda (e pontinha) na cor do mascote escolhido em Meu perfil: --m-rim-0 vem de mascot-themes.css */
 .speech-solid {
   background: var(--surface);
-  border: 1px solid var(--line);
+  border: 1.5px solid var(--m-rim-0);
   box-shadow: var(--shadow);
 }
 .speech-solid::before {
   background: var(--surface) !important;
-  border-color: var(--line) !important;
+  border-color: var(--m-rim-0) !important;
+  border-width: 1.5px !important;
 }
 .speech-pop {
   transform-origin: 0 50%;
@@ -1772,7 +1774,8 @@ button {
 /* Toasts em vidro, botão Desfazer em lavanda (nunca preto) */
 .app-toast {
   background: rgba(255, 255, 255, 0.86) !important;
-  border: 1px solid var(--glass-line) !important;
+  /* A fala do mascote: borda na cor dele (segue o tema de Meu perfil) */
+  border: 1.5px solid var(--m-rim-0) !important;
   border-radius: 20px !important;
   box-shadow: 0 10px 30px rgba(40, 24, 110, 0.18) !important;
   backdrop-filter: blur(30px) saturate(1.8);
