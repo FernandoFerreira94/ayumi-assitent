@@ -1,6 +1,7 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import type { AiVerdict } from "./ai-policy";
+import { AI_RULES_MAX, AI_TEXT_MAX, clip } from "./quota";
 
 /**
  * Pergunta ao modelo o que a cliente quis dizer ao responder o lembrete. O resultado é só um palpite com
@@ -44,12 +45,13 @@ export async function classifyReply(text: string, rules: string | null): Promise
   if (!apiKey) return null;
   try {
     client ??= new Anthropic({ apiKey, maxRetries: 1, timeout: TIMEOUT_MS });
-    const context = rules?.trim() ? `<regras_da_profissional>\n${rules.trim()}\n</regras_da_profissional>\n\n` : "";
+    const r = rules?.trim() ? clip(rules.trim(), AI_RULES_MAX) : "";
+    const context = r ? `<regras_da_profissional>\n${r}\n</regras_da_profissional>\n\n` : "";
     const res = await client.messages.create({
       model: MODEL,
       max_tokens: 40,
       system: SYSTEM,
-      messages: [{ role: "user", content: `${context}<mensagem_da_cliente>\n${text}\n</mensagem_da_cliente>` }],
+      messages: [{ role: "user", content: `${context}<mensagem_da_cliente>\n${clip(text, AI_TEXT_MAX)}\n</mensagem_da_cliente>` }],
     });
     const block = res.content[0];
     return block?.type === "text" ? parseVerdict(block.text) : null;

@@ -8,6 +8,7 @@ import { fail, ok, type ActionResult } from "@/lib/errors";
 import { maskPhone } from "@/lib/phone";
 import { requireTenant } from "@/lib/tenant";
 import { messagingForInstance } from "./evolution";
+import { overDailyLimit } from "./quota";
 import { MAX_MESSAGE, sendDirect } from "./send";
 import { listConversation, markRead, recordMessage, type ConversationMessage } from "./store";
 
@@ -23,10 +24,12 @@ export async function sendClientMessage(clientId: string, text: string): Promise
   const p = input.safeParse({ clientId, text });
   if (!p.success) return fail("VALIDATION", String(p.error.issues[0]?.path[0] ?? ""));
   try {
-    const [cli] = await withTenant(tenantId, (tx) =>
-      tx.select({ phone: clients.phoneE164 }).from(clients).where(eq(clients.id, p.data.clientId)),
-    );
+    const { cli, limited } = await withTenant(tenantId, async (tx) => {
+      const [c] = await tx.select({ phone: clients.phoneE164 }).from(clients).where(eq(clients.id, p.data.clientId));
+      return { cli: c, limited: c ? await overDailyLimit(tx) : false };
+    });
     if (!cli) return fail("NOT_ALLOWED");
+    if (limited) return fail("RATE_LIMITED");
     const [t] = await getDb().select({ i: tenants.whatsappInstance }).from(tenants).where(eq(tenants.id, tenantId));
     // Só pelo WhatsApp do próprio estúdio (sem instância, sendDirect devolve WHATSAPP_OFFLINE)
     const res = await sendDirect(t?.i ? messagingForInstance(t.i) : null, cli.phone, p.data.text);

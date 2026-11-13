@@ -23,6 +23,7 @@ export const ERROR_MESSAGES = {
   ICLOUD_FAILED: "Não conseguimos ler o calendário do iPhone agora. Tente de novo em instantes.",
   ICLOUD_TOO_BIG: "Esse calendário tem eventos demais. Use um calendário só para a agenda do salão.",
   CLIPBOARD: "Não deu para copiar. Segure o texto e escolha Copiar.",
+  RATE_LIMITED: "Você enviou muitas mensagens hoje. Tente de novo amanhã.",
   NETWORK: "Sem conexão. Verifique a internet e tente de novo.",
   UNKNOWN: "Algo deu errado do nosso lado. Tente de novo em instantes.",
 } as const;
