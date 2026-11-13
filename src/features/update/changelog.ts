@@ -31,6 +31,25 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 /** Mais recente primeiro. */
 export const RELEASES: readonly Release[] = [
   {
+    version: "1.4.0",
+    date: "2026-11-13",
+    title: "A agenda do iPhone dentro do app",
+    items: [
+      {
+        kind: "new",
+        text: "Em Ajustes > Conexões, ligue o Calendário do iPhone e cole o link do Calendário Público: o que você já marca no iPhone aparece na agenda do app, em cinza.",
+      },
+      {
+        kind: "new",
+        text: "Evento com o nome de uma cliente vira agendamento com um toque em Transformar em agendamento, já com a cliente, o serviço e o horário.",
+      },
+      {
+        kind: "layout",
+        text: "Eventos que não são do app (Google ou iPhone) ficam cinza, com o ícone de onde vieram.",
+      },
+    ],
+  },
+  {
     version: "1.3.0",
     date: "2026-11-13",
     title: "Agenda no Calendário do iPhone",

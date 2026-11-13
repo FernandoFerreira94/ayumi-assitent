@@ -44,6 +44,7 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
         locationSource: tenants.locationSource,
         calendarOn: tenants.calendarTokenHash,
         calendarHideNames: tenants.calendarHideNames,
+        icloudOn: tenants.icloudCalendarUrl,
       })
       .from(tenants)
       .where(eq(tenants.id, tenantId)),
@@ -70,6 +71,7 @@ export default async function AjustesPage({ searchParams }: PageProps<"/ajustes"
             enabled={!!salon?.calendarOn}
             hideNames={salon?.calendarHideNames ?? false}
             googleConnected={google}
+            icloudOn={!!salon?.icloudOn}
           />
         </section>
         <section id="avisos-celular" aria-label="Notificação" className="scroll-mt-6">

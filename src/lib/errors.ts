@@ -18,6 +18,11 @@ export const ERROR_MESSAGES = {
   PUSH_NOT_CONFIGURED: "Os avisos no celular ainda não estão configurados no servidor.",
   PUSH_NO_DEVICE: "Nenhum aparelho com aviso ligado. Ligue a Notificação em Ajustes primeiro.",
   PUSH_FAILED: "O aviso não chegou ao aparelho. Desative e ative os avisos de novo e tente outra vez.",
+  ICLOUD_LINK_INVALID:
+    "Esse não é um link de Calendário Público do iCloud. Copie de novo pelo botão Compartilhar Link.",
+  ICLOUD_NOT_FOUND: "O iCloud não achou esse calendário. Confira se o Calendário Público continua ligado no iPhone.",
+  ICLOUD_FAILED: "Não conseguimos ler o calendário do iPhone agora. Tente de novo em instantes.",
+  ICLOUD_TOO_BIG: "Esse calendário tem eventos demais. Use um calendário só para a agenda do salão.",
   CLIPBOARD: "Não deu para copiar. Segure o texto e escolha Copiar.",
   NETWORK: "Sem conexão. Verifique a internet e tente de novo.",
   UNKNOWN: "Algo deu errado do nosso lado. Tente de novo em instantes.",

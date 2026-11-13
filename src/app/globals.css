@@ -828,9 +828,25 @@ button {
   pointer-events: none;
   opacity: 0.85;
 }
+/* Evento de fora (Google/iPhone): cinza liso, sem a cor da marca, para ler como "não é do app" */
 .ag-ev.pause.ext {
-  background: repeating-linear-gradient(-45deg, #e8f0fb 0 6px, #f3f7fd 6px 12px);
-  box-shadow: inset 3px 0 0 #8fb3e6;
+  color: #6f6d7a;
+  background: #efeff2;
+  box-shadow: inset 3px 0 0 #b4b2bd;
+  padding-right: 22px;
+}
+.ag-ev.pause.ext .ext-ic {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  place-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #fff;
+  color: #8a8896;
+  box-shadow: 0 0 0 1px #dcdbe2;
 }
 .ag-ev:focus-visible {
   outline: 2px solid var(--primary);

@@ -1,5 +1,5 @@
 import { withTenant } from "@/db/client";
-import { AgendaDay } from "@/features/appointments/AgendaDay";
+import { AgendaDay, type ExternalSource } from "@/features/appointments/AgendaDay";
 import { breakSpan, daySpan, gridWindow, weekOf } from "@/features/appointments/agenda-grid";
 import { AgendaRefresh } from "@/features/appointments/AgendaRefresh";
 import { dayVersion } from "@/features/appointments/version";
@@ -7,7 +7,9 @@ import { forecastCents, listDay } from "@/features/appointments/core";
 import { minuteOf } from "@/features/appointments/timeline";
 import { WeekStrip } from "@/features/appointments/WeekStrip";
 import { listBlocks } from "@/features/blocks/core";
+import { guessAppointment } from "@/features/calendar-feed/match";
 import { importExternalEvents } from "@/features/google/server";
+import { importIcloudCalendar } from "@/features/calendar-feed/icloud-server";
 import { getHours } from "@/features/hours/core";
 import { weekdayOf } from "@/features/hours/slots";
 import { NewBlockSheet } from "@/features/blocks/NewBlockSheet";
@@ -45,6 +47,7 @@ export async function DaySchedule({
   const weekRange: [Date, Date] = [dayRange(weeks[0][0])[0], dayRange(weeks[weeks.length - 1][6])[1]];
 
   await importExternalEvents(tenantId);
+  await importIcloudCalendar(tenantId);
   const { weekRows, dayBlocks, clients, services, openHours } = await withTenant(tenantId, async (tx) => ({
     openHours: await getHours(tx),
     dayBlocks: await listBlocks(tx, dayRange(date)),
@@ -79,13 +82,18 @@ export async function DaySchedule({
         : null,
     notes: r.notes,
   }));
-  const blocks = dayBlocks.map((b) => ({
-    kind: "block" as const,
-    ...span(b.startsAt, b.endsAt),
-    id: b.id,
-    reason: b.reason,
-    external: b.source === "google",
-  }));
+  const blocks = dayBlocks.map((b) => {
+    const external: ExternalSource | undefined = b.source === "google" || b.source === "icloud" ? b.source : undefined;
+    return {
+      kind: "block" as const,
+      ...span(b.startsAt, b.endsAt),
+      id: b.id,
+      reason: b.reason,
+      external,
+      // Título com o nome de uma cliente cadastrada: sugere "Transformar em agendamento"
+      guess: external && b.reason ? guessAppointment(b.reason, clients, services) : null,
+    };
+  });
   const busyDays = new Set(weekRows.map((r) => todayStr(r.startsAt)));
   const n = rows.length;
   const summary =
