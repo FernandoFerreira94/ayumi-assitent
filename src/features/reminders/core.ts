@@ -6,6 +6,7 @@ import { MessagingOfflineError, MessagingRejectedError, sendFailReason } from "@
 import { recordMessage } from "@/features/messaging/store";
 import { isQuietHour } from "./quiet";
 import { reminderText } from "./text";
+import { errCode } from "@/lib/log";
 
 export { reminderText } from "./text";
 
@@ -117,7 +118,7 @@ export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Pro
             createdAt: now,
           }),
         )
-        .catch((e) => console.error(JSON.stringify({ level: "warn", msg: "reminder_record_failed", err: String(e) })));
+        .catch((e) => console.error(JSON.stringify({ level: "warn", msg: "reminder_record_failed", ...errCode(e) })));
     } catch (e) {
       console.error(JSON.stringify({ level: "warn", msg: "reminder_send_failed", appointment: a.id, reason: sendFailReason(e) }));
       // Recusado (número sem WhatsApp): fica marcado como tentado e não volta para a fila, senão repete a cada 5 min

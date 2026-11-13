@@ -19,6 +19,7 @@ import {
   type Intent,
 } from "./replies";
 import { recordMessage } from "./store";
+import { errCode } from "@/lib/log";
 
 /**
  * Cancelar e remarcar não mexem no horário sozinhos: os dois viram "quer remarcar" e a profissional
@@ -305,7 +306,7 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
     const body = ack;
     await withTenant(tenantId, (tx) =>
       tx.update(appointments).set({ pendingReply: body }).where(eq(appointments.id, apptId)),
-    ).catch((e) => console.error(JSON.stringify({ level: "warn", msg: "pending_reply_failed", err: String(e) })));
+    ).catch((e) => console.error(JSON.stringify({ level: "warn", msg: "pending_reply_failed", ...errCode(e) })));
     ack = null;
   }
 
@@ -321,7 +322,7 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
     if (title)
       await withTenant(tenantId, (tx) =>
         sendToAll(tx, push, { title, body: msg.text.slice(0, 140), url: `/agenda?conversa=${client.id}` }),
-      ).catch((e) => console.error(JSON.stringify({ level: "warn", msg: "reply_push_failed", err: String(e) })));
+      ).catch((e) => console.error(JSON.stringify({ level: "warn", msg: "reply_push_failed", ...errCode(e) })));
   }
   return { handled: true, intent, appointmentId };
 }
@@ -350,6 +351,6 @@ async function sendAutoReply(
         }),
       );
   } catch (e) {
-    console.error(JSON.stringify({ level: "warn", msg: "auto_reply_failed", err: String(e) }));
+    console.error(JSON.stringify({ level: "warn", msg: "auto_reply_failed", ...errCode(e) }));
   }
 }

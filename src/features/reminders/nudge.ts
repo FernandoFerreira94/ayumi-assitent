@@ -8,6 +8,7 @@ import { getReminderSettings } from "./core";
 import { secondReminderText } from "./text";
 
 import { isQuietHour } from "./quiet";
+import { errCode } from "@/lib/log";
 
 export { isQuietHour, QUIET_FROM_HOUR, QUIET_UNTIL_HOUR } from "./quiet";
 
@@ -128,7 +129,7 @@ export async function sendNudges(tx: Tx, port: MessagingPort, now: Date): Promis
             createdAt: now,
           }),
         )
-        .catch((e) => console.error(JSON.stringify({ level: "warn", msg: "nudge_record_failed", err: String(e) })));
+        .catch((e) => console.error(JSON.stringify({ level: "warn", msg: "nudge_record_failed", ...errCode(e) })));
     } catch (e) {
       console.error(JSON.stringify({ level: "warn", msg: "nudge_send_failed", appointment: a.id, reason: sendFailReason(e) }));
       // Recusado (número sem WhatsApp): fica marcado como tentado e não volta para a fila, senão repete a cada 5 min

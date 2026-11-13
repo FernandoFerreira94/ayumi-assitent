@@ -4,6 +4,7 @@ import { parseUpsert } from "@/features/messaging/replies";
 import { classifyReply } from "@/features/messaging/classify";
 import { isLegacyWebhookToken, isValidWebhookToken } from "@/features/messaging/webhook-url";
 import { pushFromEnv } from "@/features/push/webpush";
+import { errCode } from "@/lib/log";
 
 /** Mensagens novas da Evolution (evento MESSAGES_UPSERT). Configurado por instância ao conectar o WhatsApp. */
 export async function POST(req: Request) {
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
     return Response.json({ ok: true, handled: r.handled });
   } catch (e) {
     // 500 faz a Evolution tentar de novo; o id da mensagem impede gravar duas vezes
-    console.error(JSON.stringify({ level: "error", msg: "whatsapp_webhook_failed", err: String(e) }));
+    console.error(JSON.stringify({ level: "error", msg: "whatsapp_webhook_failed", ...errCode(e) }));
     return Response.json({ ok: false }, { status: 500 });
   }
 }

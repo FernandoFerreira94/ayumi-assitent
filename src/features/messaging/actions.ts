@@ -11,6 +11,7 @@ import { messagingForInstance } from "./evolution";
 import { overDailyLimit } from "./quota";
 import { MAX_MESSAGE, sendDirect } from "./send";
 import { listConversation, markRead, recordMessage, type ConversationMessage } from "./store";
+import { errCode } from "@/lib/log";
 
 const input = z.object({ clientId: z.string().uuid(), text: z.string().trim().min(1).max(MAX_MESSAGE) });
 const clientIdOnly = z.string().uuid();
@@ -40,7 +41,7 @@ export async function sendClientMessage(clientId: string, text: string): Promise
     // Já saiu: falha ao gravar não pode virar "não enviada" (ela tentaria de novo e a cliente receberia duas)
     await withTenant(tenantId, (tx) =>
       recordMessage(tx, tenantId, { clientId: p.data.clientId, direction: "out", kind: "manual", body: p.data.text, externalId: res.data.id }),
-    ).catch((e) => console.error(JSON.stringify({ level: "warn", msg: "client_message_record_failed", err: String(e) })));
+    ).catch((e) => console.error(JSON.stringify({ level: "warn", msg: "client_message_record_failed", ...errCode(e) })));
     return ok();
   } catch {
     return fail("UNKNOWN");

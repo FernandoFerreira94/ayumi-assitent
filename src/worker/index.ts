@@ -5,7 +5,7 @@ import { runReminders } from "@/features/reminders/run";
 import { pushFromEnv } from "@/features/push/webpush";
 import { runOwnerNotices } from "@/features/owner-notices/run";
 import { runRetention } from "@/features/retention/run";
-import { log as jlog } from "@/lib/log";
+import { log as jlog, errCode } from "@/lib/log";
 import { adminFromEnv } from "@/features/messaging/evolution-admin";
 import { ensureWebhook } from "@/features/whatsapp/webhook";
 import { getDb } from "@/db/client";
@@ -65,7 +65,7 @@ async function main() {
   await boss.unschedule(PUSH_QUEUE).catch(() => undefined);
   log({ level: "info", msg: "worker_started" });
   // Cada instância passa a chamar o webhook com o próprio token (migração do token único; idempotente)
-  repointWebhooks().catch((e) => log({ level: "warn", msg: "webhook_repoint_failed", err: String(e) }));
+  repointWebhooks().catch((e) => log({ level: "warn", msg: "webhook_repoint_failed", ...errCode(e) }));
 
   const stop = async () => {
     await boss.stop();
@@ -87,6 +87,6 @@ async function repointWebhooks() {
 }
 
 main().catch((e) => {
-  log({ level: "error", msg: "worker_crashed", err: String(e) });
+  log({ level: "error", msg: "worker_crashed", ...errCode(e) });
   process.exit(1);
 });

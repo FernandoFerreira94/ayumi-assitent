@@ -3,6 +3,7 @@ import { getDb, withTenant } from "@/db/client";
 import { tenants } from "@/db/schema";
 import { notifyPendencias, type PushRun } from "./core";
 import type { PushPort } from "./port";
+import { errCode } from "@/lib/log";
 
 export async function runPushPendencias(port: PushPort, now = new Date()): Promise<PushRun> {
   const all = await getDb().select({ id: tenants.id }).from(tenants);
@@ -14,7 +15,7 @@ export async function runPushPendencias(port: PushPort, now = new Date()): Promi
       total.removed += r.removed;
       total.failed += r.failed;
     } catch (e) {
-      console.error(JSON.stringify({ level: "error", msg: "push_tenant_failed", tenant: t.id, err: String(e) }));
+      console.error(JSON.stringify({ level: "error", msg: "push_tenant_failed", tenant: t.id, ...errCode(e) }));
       total.failed++;
     }
   }

@@ -23,3 +23,4 @@
 - Migration nova: próximo número livre (`0029_...` em 12/11; existem dois `0026`). Web roda `pnpm db:migrate` no start.
 - Deploy Railway: web `ayumi-assitent` e worker `distinguished-acceptance`; Redeploy é clicado pelo Fernando.
 - `.env.local` = banco de produção.
+- Logs: em caminhos com dado de cliente use `errCode(e)` (`lib/log.ts`: tipo, código e constraint, sem mensagem), nunca `String(e)`. Sentry do navegador (`instrumentation-client.ts`) passa URL e breadcrumbs por `redactUrl` (token, `conversa`, `aviso`) e não manda texto de clique.

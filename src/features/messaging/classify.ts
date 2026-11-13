@@ -2,6 +2,7 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import type { AiVerdict } from "./ai-policy";
 import { AI_RULES_MAX, AI_TEXT_MAX, clip } from "./quota";
+import { errCode } from "@/lib/log";
 
 /**
  * Pergunta ao modelo o que a cliente quis dizer ao responder o lembrete. O resultado é só um palpite com
@@ -56,7 +57,7 @@ export async function classifyReply(text: string, rules: string | null): Promise
     const block = res.content[0];
     return block?.type === "text" ? parseVerdict(block.text) : null;
   } catch (e) {
-    console.error(JSON.stringify({ level: "warn", msg: "classify_reply_failed", err: String(e) }));
+    console.error(JSON.stringify({ level: "warn", msg: "classify_reply_failed", ...errCode(e) }));
     return null;
   }
 }
