@@ -77,6 +77,7 @@ Skill nova ou atualizada vem da fonte (`~/.agents/skills` ou o repo `webcode-des
 - CI (`.github/workflows/ci.yml`): migrate, typecheck, lint, vitest, playwright.
 - Deploy Railway: web (`railway.json`, migra no start) e worker (`railway.worker.json`, `pnpm worker`).
 - Comandos: `pnpm dev`, `pnpm worker`, `pnpm db:migrate`, `pnpm test`, `pnpm test:e2e`.
+- **Testes de banco e e2e só em Postgres local `_test`** (trava em `tests/db-guard.ts`: recusa host remoto ou nome sem `_test`). Subir: `docker run -d --name bubbly-test-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=assist_test -p 127.0.0.1:54331:5432 postgres:16`; depois `$env:DATABASE_URL="postgres://postgres:postgres@localhost:54331/assist_test"; pnpm db:migrate; pnpm test`.
 - Graphify (índice em `graphify-out/`, fora do git, sem LLM): criar com `graphify extract . --code-only` + `graphify cluster-only . --no-label --no-viz`; atualizar com `graphify update .`.
 
 <!-- BEGIN:nextjs-agent-rules -->
