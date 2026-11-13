@@ -46,7 +46,7 @@ export function ServiceForm({
 }: {
   service?: CatalogService;
   preset?: Partial<Draft>;
-  services: CatalogService[];
+  services: Pick<CatalogService, "id" | "name">[];
   onSaved: () => void;
   onDuplicate: (s: CatalogService) => void;
   onDelete: (s: CatalogService) => void;
