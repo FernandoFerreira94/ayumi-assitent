@@ -31,6 +31,17 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 /** Mais recente primeiro. */
 export const RELEASES: readonly Release[] = [
   {
+    version: "1.12.0",
+    date: "2026-11-13",
+    title: "WhatsApp já vem com o número do seu perfil",
+    items: [
+      {
+        kind: "improved",
+        text: "Ao ligar o WhatsApp em Ajustes, o telefone salvo no Meu perfil já aparece no campo do número. Se o WhatsApp do estúdio for outro, é só trocar.",
+      },
+    ],
+  },
+  {
     version: "1.11.0",
     date: "2026-11-13",
     title: "Botão de atualizar no Calendário e no Painel",

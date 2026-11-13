@@ -14,12 +14,19 @@ type View = "connected" | "disconnected" | "pairing" | "unavailable";
 const POLL_MS = 3000;
 const POLL_MAX = 60; // ~3 minutos
 
-export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavailable" }) {
+export function WhatsAppCard({
+  initial,
+  profilePhone = "",
+}: {
+  initial: "open" | "other" | "unavailable";
+  /** Telefone comercial do Meu perfil, já com máscara: vem pronto no campo do número (editável). */
+  profilePhone?: string;
+}) {
   const router = useRouter();
   const [view, setView] = useState<View>(
     initial === "open" ? "connected" : initial === "unavailable" ? "unavailable" : "disconnected",
   );
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState(profilePhone);
   const [code, setCode] = useState("");
   const [qr, setQr] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -210,6 +217,11 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
             onChange={(e) => setPhone(maskPhone(e.target.value))}
             className="min-h-13 w-full rounded-full border px-5 text-base font-semibold"
           />
+          {profilePhone && phone === profilePhone ? (
+            <p className="-mt-1 px-2 text-sm font-semibold text-muted">
+              Número do seu perfil. Se o WhatsApp do estúdio for outro, é só trocar.
+            </p>
+          ) : null}
           <button
             type="button"
             onClick={generate}
