@@ -176,6 +176,8 @@ body::before {
   padding: 0;
   border: 0;
   border-radius: 0 0 32px 32px;
+  /* Nada do menu pode passar da largura da tela no iPhone */
+  overflow-x: hidden;
   color: var(--fg);
   background: var(--surface);
   box-shadow: 0 20px 40px -22px rgba(23, 20, 43, 0.45);
