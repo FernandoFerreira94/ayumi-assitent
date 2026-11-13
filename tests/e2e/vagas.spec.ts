@@ -13,7 +13,7 @@ test("expediente salvo e vagas listadas com texto para copiar", async ({ page, c
   await expect(page.getByText("Serviço criado")).toBeVisible();
 
   // abre todos os dias das 06:00 às 22:00 para não depender do dia da semana de hoje
-  await page.goto("/ajustes");
+  await page.goto("/ajustes/expediente");
   for (let i = 0; i < 7; i++) {
     await page.locator(`input[name="open-${i}"]`).check();
     await page.locator(`select[name="opens-${i}"]`).selectOption("06:00");

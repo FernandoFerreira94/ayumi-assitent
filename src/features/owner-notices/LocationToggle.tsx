@@ -10,7 +10,7 @@ import { currentPosition, locationGranted, placeOf } from "./device-location";
 type Source = "device" | "manual" | null;
 
 /**
- * Ajustes > Conexões: interruptor da localização do celular (previsão do tempo e feriados da cidade dos avisos do
+ * Ajustes > Notificações: interruptor da localização do celular (previsão do tempo e feriados da cidade dos avisos do
  * dia). Com a permissão já dada, abrir Ajustes atualiza a posição sozinha.
  */
 export function LocationToggle(props: { city: string | null; state: string | null; source: Source }) {

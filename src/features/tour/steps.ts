@@ -1,13 +1,13 @@
 /**
- * Passos do tour de primeiro acesso: o básico no Painel e depois a configuração em Ajustes, que é o que faz
- * o Bubbly funcionar (WhatsApp, Google, avisos, mensagens, IA e horários). `target` é um seletor (pode casar vários
- * elementos: o destaque cobre todos); `path` leva à tela do passo. "tap" só avança quando a pessoa toca no
- * destaque; "next" tem botão.
+ * Passos do tour de primeiro acesso. Fica todo em Ajustes: uma saudação e depois cada linha da lista, na ordem em
+ * que a dona deve configurar (conexões, mensagens, horários). `target` é um seletor (pode casar vários elementos:
+ * o destaque cobre todos); `path` leva à tela do passo. "tap" só avança quando a pessoa toca no destaque; "next"
+ * tem botão.
  */
 export type TourStep = {
   target?: string;
   /** Tela onde o passo acontece; sem `path`, fica onde está. */
-  path?: "/agenda" | "/ajustes";
+  path?: "/ajustes";
   title: string;
   text: string;
   advance: "next" | "tap";
@@ -17,41 +17,48 @@ export type TourStep = {
 
 export const TOUR_STEPS: TourStep[] = [
   {
-    path: "/agenda",
+    path: "/ajustes",
     title: "Oi, eu sou o Bubbly!",
-    text: "Vou te mostrar o principal do app e te ajudar a deixar tudo configurado. Leva uns minutinhos.",
+    text: "Vamos direto para Ajustes: é aqui que você liga as conexões e deixa as mensagens do seu jeito. Vou te mostrar o que configurar, um por um.",
     advance: "next",
   },
   {
-    path: "/agenda",
-    target: "[data-tour='bubble']",
-    title: "Seu dia num toque",
-    text: "Aqui eu conto como está o dia: quantas clientes, quem falta confirmar. Toque em mim para ver a próxima informação.",
-    advance: "tap",
-  },
-  {
-    path: "/agenda",
-    target: "[data-tour='money']",
-    title: "Agendar e bloquear",
-    text: "Daqui você agenda uma cliente ou bloqueia um horário. Na agenda, segure um atendimento para arrastar ou toque num vazio para marcar.",
+    path: "/ajustes",
+    target: "#ajuste-whatsapp",
+    title: "1. Conecte o WhatsApp",
+    text: "É pelo WhatsApp do salão que saem a confirmação do agendamento e os avisos às clientes. Toque aqui, ligue e use o código no seu celular.",
     advance: "next",
   },
   {
-    path: "/agenda",
-    target: ".tabbar",
-    title: "O menu fica embaixo",
-    text: "Painel, Calendário, o + para agendar de qualquer tela, Financeiro e Clientes. O resto (Serviços, Vagas, Pendências, Ajustes e Meu perfil) fica no menu do canto de cima.",
+    path: "/ajustes",
+    target: "#ajuste-calendarios",
+    title: "2. Ligue seus calendários",
+    text: "Conecte o Google Agenda ou o Calendário do iPhone: seus agendamentos aparecem lá e os compromissos de lá bloqueiam a agenda do Bubbly.",
     advance: "next",
   },
   {
-    path: "/agenda",
-    target: "[data-tour='bell']",
-    title: "Notificações",
-    text: "No sino aparece quem confirmou, quem quer cancelar ou remarcar e quem não respondeu. Tocar abre a conversa.",
+    path: "/ajustes",
+    target: "#ajuste-notificacoes",
+    title: "3. Ligue a Notificação",
+    text: "Ligue os avisos neste celular e deixe a localização ligada: eu mando bom dia antes da primeira cliente, com a previsão do tempo, e aviso quando uma cliente responde.",
     advance: "next",
   },
   {
-    path: "/agenda",
+    path: "/ajustes",
+    target: "#ajuste-mensagens",
+    title: "4. Edite suas mensagens",
+    text: "Escreva a mensagem do agendamento, o 1º e o 2º aviso, e escolha como chamar a cliente. A IA lê as respostas e te avisa quem confirmou, cancelou ou quer remarcar.",
+    advance: "next",
+  },
+  {
+    path: "/ajustes",
+    target: "#ajuste-expediente",
+    title: "5. Seus horários",
+    text: "Marque os dias e horários em que você atende e a pausa do almoço. As vagas e a agenda seguem esses horários.",
+    advance: "next",
+  },
+  {
+    path: "/ajustes",
     target: "[data-tour='install']",
     optional: true,
     title: "Instale o app no celular",
@@ -60,50 +67,8 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     path: "/ajustes",
-    target: "#whatsapp",
-    title: "1. Conecte o WhatsApp",
-    text: "É pelo WhatsApp do salão que saem a confirmação do agendamento e os avisos. Toque em Conectar e use o código no seu celular.",
-    advance: "next",
-  },
-  {
-    path: "/ajustes",
-    target: "#google",
-    title: "2. Conecte o Google Agenda",
-    text: "Seus agendamentos aparecem no Google e os compromissos de lá bloqueiam a agenda do Bubbly.",
-    advance: "next",
-  },
-  {
-    path: "/ajustes",
-    target: "#avisos-celular, #localizacao",
-    title: "3. Notificação e previsão do tempo",
-    text: "Ligue a Notificação e deixe a localização ligada: eu mando bom dia com as clientes do dia, a previsão do tempo e os feriados da sua cidade. O botão de teste manda um aviso na hora.",
-    advance: "next",
-  },
-  {
-    path: "/ajustes",
-    target: "#mensagens",
-    title: "4. Monte suas mensagens",
-    text: "Escolha como chamar a cliente e escreva a mensagem do agendamento, o 1º aviso e o 2º aviso. Use {valor} para mostrar o preço.",
-    advance: "next",
-  },
-  {
-    path: "/ajustes",
-    target: "#ia",
-    title: "5. Leitura das respostas",
-    text: "A IA já vem ligada: ela lê o que a cliente responde ao aviso, entende se confirmou, quer cancelar ou remarcar, e avisa você.",
-    advance: "next",
-  },
-  {
-    path: "/ajustes",
-    target: "#expediente",
-    title: "6. Seus horários",
-    text: "Marque os dias e horários em que você atende e a pausa do almoço. As vagas e a agenda seguem esses horários.",
-    advance: "next",
-  },
-  {
-    path: "/agenda",
-    title: "Tudo pronto!",
-    text: "Seu app está configurado. Lembre de tocar em Salvar em cada cartão que mudar, e o tour fica no fim de Ajustes se quiser rever. Tenha uma ótima experiência!",
+    title: "Agora é com você!",
+    text: "Toque em cada linha e configure. O selo amarelo mostra o que ainda falta, e o tour fica no fim de Ajustes se quiser rever.",
     advance: "next",
   },
 ];

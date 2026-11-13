@@ -30,6 +30,12 @@ export function WhatsAppCard({ initial }: { initial: "open" | "other" | "unavail
   /** Interruptor ligado antes de conectar: mostra o campo do número e o botão que gera o código. */
   const [wantsOn, setWantsOn] = useState(false);
 
+  // Já conectado ao abrir: confere uma vez em silêncio. whatsappStatus religa o webhook se faltar (número
+  // conectado antes de existir o webhook), para as respostas das clientes chegarem ao app.
+  useEffect(() => {
+    if (initial === "open") void whatsappStatus().catch(() => null);
+  }, [initial]);
+
   // Enquanto mostra o código, acompanha o estado até conectar (ou expirar).
   useEffect(() => {
     if (view !== "pairing") return;

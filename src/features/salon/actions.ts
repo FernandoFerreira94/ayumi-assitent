@@ -47,7 +47,7 @@ export async function saveAiSettings(_prev: ActionResult | null, form: FormData)
       .update(tenants)
       .set({ aiEnabled: true, aiRules: p.data.aiRules || null })
       .where(eq(tenants.id, tenantId));
-    revalidatePath("/ajustes");
+    revalidatePath("/ajustes", "layout");
     return ok();
   } catch {
     return fail("UNKNOWN");

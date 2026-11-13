@@ -1,6 +1,6 @@
 /**
- * Novidades do app, em linguagem simples para a profissional. É a única fonte do accordion "O que mudou" em
- * Ajustes e do diálogo "App atualizado" (aparece uma vez por versão, por aparelho).
+ * Novidades do app, em linguagem simples para a profissional. É a fonte do diálogo "App atualizado", que abre no
+ * Painel depois que o app atualiza (uma vez por versão, por aparelho), com cada versão nova num accordion fechado.
  *
  * Como usar: ao publicar algo que ela percebe, ponha uma versão nova NO TOPO da lista e suba o número
  * (1.1.0 → 1.2.0 para novidade; 1.1.0 → 1.1.1 só para correção). Texto curto, sem termo técnico.
@@ -31,7 +31,7 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 /** Mais recente primeiro. */
 export const RELEASES: readonly Release[] = [
   {
-    version: "1.5.0",
+    version: "1.7.0",
     date: "2026-11-13",
     title: "Painel novo: seus ganhos do dia ao lado da Bolha",
     items: [
@@ -54,13 +54,30 @@ export const RELEASES: readonly Release[] = [
     ],
   },
   {
+    version: "1.6.0",
+    date: "2026-11-13",
+    title: "Ajustes organizado em seções",
+    items: [
+      {
+        kind: "layout",
+        text: "Ajustes virou uma lista, como no iPhone: WhatsApp, Calendários, Notificações, Mensagens para a cliente e Expediente. Cada linha mostra o que já está ligado e o que falta.",
+      },
+      { kind: "improved", text: "O tour agora fica em Ajustes e mostra, um por um, o que você precisa configurar." },
+      { kind: "removed", text: "Saíram o texto longo e o aviso de teste da Notificação." },
+      {
+        kind: "layout",
+        text: "O que mudou no app aparece no Painel logo depois de atualizar, em vez de ficar em Ajustes.",
+      },
+    ],
+  },
+  {
     version: "1.4.0",
     date: "2026-11-13",
     title: "A agenda do iPhone dentro do app",
     items: [
       {
         kind: "new",
-        text: "Em Ajustes > Conexões, ligue o Calendário do iPhone e cole o link do Calendário Público: o que você já marca no iPhone aparece na agenda do app, em cinza.",
+        text: "Em Ajustes > Calendários, ligue o Calendário do iPhone e cole o link do Calendário Público: o que você já marca no iPhone aparece na agenda do app, em cinza.",
       },
       {
         kind: "new",
@@ -79,7 +96,7 @@ export const RELEASES: readonly Release[] = [
     items: [
       {
         kind: "new",
-        text: "Em Ajustes > Conexões, o Calendário do iPhone: um link que põe seus agendamentos no app Calendário e atualiza sozinho. Dá para ocultar o nome das clientes.",
+        text: "Em Ajustes > Calendários, o Calendário do iPhone: um link que põe seus agendamentos no app Calendário e atualiza sozinho. Dá para ocultar o nome das clientes.",
       },
     ],
   },
@@ -145,6 +162,16 @@ export const CURRENT_VERSION = RELEASES[0].version;
 /** localStorage: última versão cujo diálogo "App atualizado" este aparelho já viu. */
 export const SEEN_VERSION_KEY = "bubbly:versao-vista";
 export const CURRENT_RELEASE = RELEASES[0];
+
+/**
+ * Versões que este aparelho ainda não viu, da mais nova para a mais antiga. Sem registro (aparelho novo) ou com
+ * uma versão que saiu da lista, mostra só a atual.
+ */
+export function unseenReleases(seen: string | null): readonly Release[] {
+  const i = seen ? RELEASES.findIndex((r) => r.version === seen) : -1;
+  if (i === 0) return [];
+  return i > 0 ? RELEASES.slice(0, i) : RELEASES.slice(0, 1);
+}
 
 /** "12/11/2026" */
 export function releaseDate(iso: string): string {

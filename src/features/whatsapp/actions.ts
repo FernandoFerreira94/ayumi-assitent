@@ -63,7 +63,7 @@ export async function disconnectWhatsapp(): Promise<ActionResult> {
   try {
     const instance = await tenantInstance(tenantId);
     if (instance) await admin.logout(instance);
-    revalidatePath("/ajustes");
+    revalidatePath("/ajustes", "layout");
     return ok();
   } catch (e) {
     logWaError("disconnect", e);

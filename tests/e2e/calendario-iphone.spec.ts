@@ -2,7 +2,7 @@ import { expect, test } from "./fixtures";
 
 // Ponta a ponta: cria o link no sheet, o feed responde, trocar e desligar matam o link antigo na hora.
 test("calendário do iPhone: criar, trocar, ocultar nome e desligar o link", async ({ page, request }) => {
-  await page.goto("/ajustes");
+  await page.goto("/ajustes/calendarios");
   await page.getByRole("button", { name: /Calendário do iPhone/ }).click();
   const sheet = page.getByRole("dialog", { name: "Calendário do iPhone" });
   await sheet.getByRole("button", { name: "Criar link do calendário" }).click();

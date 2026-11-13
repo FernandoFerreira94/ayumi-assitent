@@ -62,7 +62,6 @@ export function DayHero({
     <div className="relative mb-3 flex items-center gap-3">
       <button
         type="button"
-        data-tour="bubble"
         aria-label={shown ? "Ver a próxima fala da Bolha" : "Ouvir a Bolha"}
         onClick={() => {
           setHop((n) => n + 1);
@@ -117,7 +116,6 @@ function DayEarnings({
 
   return (
     <section
-      data-tour="money"
       aria-label={isToday ? "Ganhos de hoje" : "Ganhos do dia"}
       className="glass flex min-h-21 min-w-0 flex-1 items-center gap-3 rounded-3xl py-2.5 pl-3 pr-1"
     >

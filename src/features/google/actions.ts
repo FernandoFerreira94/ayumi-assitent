@@ -25,7 +25,7 @@ export async function disconnectGoogle(): Promise<ActionResult<{ onlyLogin?: boo
     if (!acc) return ok();
     if (acc.others === 0) return fail("VALIDATION", "google");
     await getDb().execute(sql`delete from account where id = ${acc.id}`);
-    revalidatePath("/ajustes");
+    revalidatePath("/ajustes", "layout");
     return ok();
   } catch (e) {
     console.error("google_disconnect_failed", { error: e instanceof Error ? e.message : String(e) });

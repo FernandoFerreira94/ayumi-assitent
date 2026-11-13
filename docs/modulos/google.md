@@ -6,7 +6,7 @@
 - `features/google/server.ts`: `googleAccessToken`, `calendarForTenant`, `syncAppointmentSafe` (nunca derruba o agendamento), `isGoogleConnected`, `importExternalEvents`.
 - `calendar.ts`: cliente REST mínimo (`fetch` injetável), `refreshAccessToken`, `toExternalEvent`.
 - `sync.ts` (`syncAppointment`: cancelado apaga o evento), `import.ts` (`importGoogleEvents`: janela `[from, to)` vira `blocks.source='google'`, ignora eventos criados pelo app).
-- UI: `GoogleCard.tsx` (Ajustes > Conexões), `RetrySyncButton.tsx`, `actions.disconnectGoogle`/`retrySync`. Aviso de falha: `appointments/sync-warning.ts`.
+- UI: `GoogleCard.tsx` (`/ajustes/calendarios`; volta do OAuth cai lá), `RetrySyncButton.tsx`, `actions.disconnectGoogle`/`retrySync`. Aviso de falha: `appointments/sync-warning.ts`.
 - Auth: `lib/auth.ts` (Better Auth, escopos Google), `lib/auth-client.ts`.
 
 ## Dados

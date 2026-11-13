@@ -58,6 +58,6 @@ test("a fala da Bolha aparece num balão que some ao toque", async ({ page }) =>
   await balao.click();
   await expect(balao).toHaveCount(0);
   // Tocar na Bolha traz a fala de volta
-  await page.locator("[data-tour='bubble']").click();
+  await page.getByRole("button", { name: "Ouvir a Bolha" }).click();
   await expect(page.getByRole("button", { name: /Toque para fechar/ })).toBeVisible();
 });

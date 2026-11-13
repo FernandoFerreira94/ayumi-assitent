@@ -16,7 +16,7 @@ export const ERROR_MESSAGES = {
   NOT_FOUND: "Não encontramos esse item. Ele pode ter sido apagado.",
   CITY_NOT_FOUND: "Não encontramos essa cidade. Confira o nome e a UF.",
   PUSH_NOT_CONFIGURED: "Os avisos no celular ainda não estão configurados no servidor.",
-  PUSH_NO_DEVICE: "Nenhum aparelho com aviso ligado. Ligue a Notificação em Ajustes primeiro.",
+  PUSH_NO_DEVICE: "Nenhum aparelho com aviso ligado. Ligue a Notificação em Ajustes > Notificações primeiro.",
   PUSH_FAILED: "O aviso não chegou ao aparelho. Desative e ative os avisos de novo e tente outra vez.",
   ICLOUD_LINK_INVALID:
     "Esse não é um link de Calendário Público do iCloud. Copie de novo pelo botão Compartilhar Link.",
