@@ -11,12 +11,13 @@ test("sem sessão, a agenda manda para o login", async ({ page }) => {
 
 test("login mostra mensagem quando a conta não tem acesso", async ({ page }) => {
   await page.goto("/login?error=NOT_ALLOWED");
-  await expect(page.getByText(/^(Esta conta|Não foi possível)/)).toHaveText("Esta conta não tem acesso.");
+  // Texto aparece no formulário e no toast: basta o primeiro
+  await expect(page.getByText("Este e-mail ainda não está liberado no app.", { exact: false }).first()).toBeVisible();
 });
 
 test("login mostra mensagem genérica em outros erros", async ({ page }) => {
   await page.goto("/login?error=oauth_failed");
-  await expect(page.getByText(/^(Esta conta|Não foi possível)/)).toContainText("Não foi possível entrar");
+  await expect(page.getByText("Não foi possível entrar", { exact: false }).first()).toBeVisible();
 });
 
 test("clicar em entrar mostra o carregamento", async ({ page }) => {
