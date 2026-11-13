@@ -5,12 +5,9 @@ import type { YearDays } from "./data";
 import { shiftMonth, WEEKDAYS } from "./grid";
 import { MonthGrid } from "./MonthView";
 
-/** Meses desenhados de saída em volta do mês aberto, e quantos entram de cada vez ao chegar perto da ponta. */
-const START_BEFORE = 3;
-const START_AFTER = 4;
-const CHUNK = 6;
-/** Distância da ponta (em alturas de tela) em que já desenha mais meses, antes de a pessoa chegar lá. */
-const EDGE = 1.5;
+/** No máximo 3 meses na rolagem: o anterior, o aberto e o próximo (13/11, pedido da usuária). */
+const BEFORE = 1;
+const AFTER = 1;
 
 const Month = memo(MonthGrid);
 
@@ -21,8 +18,9 @@ const monthsBetween = (from: string, to: string) => {
 };
 
 /**
- * Rolagem contínua de meses, como no Calendário do iPhone: um mês embaixo do outro, os dias da semana
- * fixos no topo e mais meses desenhados sob demanda nas duas pontas. A rolagem é nativa (caixa própria,
+ * Rolagem de meses como no Calendário do iPhone: um mês embaixo do outro e os dias da semana fixos no topo,
+ * limitada a 3 meses (o anterior, o aberto e o próximo; ao abrir pelo Calendário, o aberto é o de hoje).
+ * Setas, deslizar, Hoje e o ano reabrem a lista em volta de outro mês. A rolagem é nativa (caixa própria,
  * com inércia do iOS); só avisamos a casca qual mês está no topo, para o título, a URL e o "Hoje".
  */
 export function MonthStream({
@@ -43,16 +41,11 @@ export function MonthStream({
   onDay: (day: string, el: HTMLElement) => void;
   onVisible: (month: string) => void;
 }) {
-  const [range, setRange] = useState(() => ({
-    from: shiftMonth(initial, -START_BEFORE),
-    to: shiftMonth(initial, START_AFTER),
-  }));
+  const [months] = useState(() => monthsBetween(shiftMonth(initial, -BEFORE), shiftMonth(initial, AFTER)));
   const box = useRef<HTMLDivElement>(null);
   const wk = useRef<HTMLDivElement>(null);
+  const tail = useRef<HTMLDivElement>(null);
   const top = useRef(initial);
-  /** Altura da rolagem antes de entrar meses em cima: a diferença vira compensação, sem pulo na tela. */
-  const before = useRef<number | null>(null);
-  const growing = useRef(false);
 
   // handlers estáveis para o memo dos meses (a casca recria as funções a cada render)
   const handlers = useRef({ onDay, onVisible });
@@ -61,35 +54,29 @@ export function MonthStream({
   });
   const [stableDay] = useState(() => (day: string, el: HTMLElement) => handlers.current.onDay(day, el));
 
-  // altura da caixa = do topo dela até o fim da tela (a página em si não rola no mês)
+  // altura da caixa = do topo dela até o fim da tela (a página em si não rola no mês), e uma folga no fim
+  // para o último mês também conseguir subir até o topo (senão o título nunca chega nele)
   useLayoutEffect(() => {
     const el = box.current;
     if (!el) return;
     const fit = () => {
       const y = el.getBoundingClientRect().top + window.scrollY;
       el.style.height = `calc(100dvh - ${Math.max(0, Math.round(y))}px)`;
+      const last = el.querySelector<HTMLElement>("[data-month]:last-of-type");
+      if (tail.current && last) {
+        const room = el.clientHeight - (wk.current?.offsetHeight ?? 0) - last.offsetHeight;
+        tail.current.style.height = `${Math.max(0, room)}px`;
+      }
     };
     fit();
+    // abre com o mês pedido no topo, logo abaixo da linha dos dias da semana (só na montagem: a casca
+    // troca a key quando é para reabrir em outro mês)
+    const sec = el.querySelector<HTMLElement>(`[data-month="${initial}"]`);
+    if (sec) el.scrollTop = sec.offsetTop - (wk.current?.offsetHeight ?? 0);
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
-  }, []);
-
-  // abre com o mês pedido no topo, logo abaixo da linha dos dias da semana
-  useLayoutEffect(() => {
-    const el = box.current;
-    const sec = el?.querySelector<HTMLElement>(`[data-month="${initial}"]`);
-    if (el && sec) el.scrollTop = sec.offsetTop - (wk.current?.offsetHeight ?? 0);
-    // só na montagem: a casca troca a key quando é para reabrir em outro mês
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // entraram meses em cima: empurra a rolagem pela mesma altura (a tela fica parada)
-  useLayoutEffect(() => {
-    const el = box.current;
-    if (el && before.current !== null) el.scrollTop += el.scrollHeight - before.current;
-    before.current = null;
-    growing.current = false;
-  }, [range]);
 
   useEffect(() => {
     const el = box.current;
@@ -106,16 +93,6 @@ export function MonthStream({
       if (cur && cur !== top.current) {
         top.current = cur;
         handlers.current.onVisible(cur);
-      }
-      if (growing.current) return;
-      const h = el.clientHeight;
-      if (el.scrollTop < h * EDGE) {
-        growing.current = true;
-        before.current = el.scrollHeight;
-        setRange((r) => ({ ...r, from: shiftMonth(r.from, -CHUNK) }));
-      } else if (el.scrollHeight - el.scrollTop - h < h * EDGE) {
-        growing.current = true;
-        setRange((r) => ({ ...r, to: shiftMonth(r.to, CHUNK) }));
       }
     };
     const onScroll = () => {
@@ -135,7 +112,7 @@ export function MonthStream({
           <span key={i}>{w}</span>
         ))}
       </div>
-      {monthsBetween(range.from, range.to).map((m) => (
+      {months.map((m) => (
         <section key={m} data-month={m} className="cal-sec">
           <Month
             month={m}
@@ -148,6 +125,7 @@ export function MonthStream({
           />
         </section>
       ))}
+      <div ref={tail} aria-hidden="true" />
     </div>
   );
 }

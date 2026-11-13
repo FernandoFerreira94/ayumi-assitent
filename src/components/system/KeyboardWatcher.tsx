@@ -57,6 +57,18 @@ export function KeyboardWatcher() {
     let revealTimer = 0;
     let focused: HTMLElement | null = null;
     let last = "";
+    /** Rolagem da página antes de o teclado abrir: o iOS rola a página até o campo e nem sempre devolve. */
+    let pageY: number | null = null;
+
+    // Teclado fechou: devolve a página para onde estava. Sem isso o iOS deixa a tela deslocada e a folha
+    // (fixed no fim da tela) fica com o fim escondido, sem dar para rolar até o botão.
+    const settlePage = () => {
+      if ("kb" in root.dataset) return; // abriu de novo (troca de campo): espera o próximo fechar
+      const y = pageY;
+      pageY = null;
+      if (y === null) return;
+      if (Math.abs(window.scrollY - y) > 1 || vv.offsetTop > 1) window.scrollTo(window.scrollX, y);
+    };
 
     const scheduleReveal = (wait = ANIM_MS) => {
       window.clearTimeout(revealTimer);
@@ -90,7 +102,10 @@ export function KeyboardWatcher() {
       } else if ("kb" in root.dataset) {
         delete root.dataset.kb;
         // A transição de saída precisa do data-kb-anim até o fim
-        closeTimer = window.setTimeout(() => delete root.dataset.kbAnim, ANIM_MS + 120);
+        closeTimer = window.setTimeout(() => {
+          delete root.dataset.kbAnim;
+          settlePage();
+        }, ANIM_MS + 120);
       }
     };
     const update = () => {
@@ -101,11 +116,14 @@ export function KeyboardWatcher() {
       const el = e.target;
       if (!(el instanceof HTMLElement) || !el.matches(FIELD)) return;
       focused = el;
+      if (!("kb" in root.dataset) && pageY === null) pageY = window.scrollY;
       // Teclado já aberto (troca de campo): só rola. Fechado: espera ele subir (o resize chama de novo)
       scheduleReveal("kb" in root.dataset ? 60 : 600);
     };
     const onFocusOut = () => {
       focused = null;
+      // Saiu do campo sem o teclado ter aberto (teclado físico): nada a devolver
+      if (!("kb" in root.dataset)) pageY = null;
       window.clearTimeout(revealTimer);
     };
     // Textarea que cresce enquanto digita: mantém a linha atual à vista

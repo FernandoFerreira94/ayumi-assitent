@@ -31,6 +31,25 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 /** Mais recente primeiro. */
 export const RELEASES: readonly Release[] = [
   {
+    version: "1.8.0",
+    date: "2026-11-13",
+    title: "Calendário mais enxuto e agendar mais fácil",
+    items: [
+      {
+        kind: "layout",
+        text: "No Calendário, a rolagem do mês mostra só 3 meses: o anterior, o atual e o próximo. As setas e o ano continuam levando para outros meses.",
+      },
+      {
+        kind: "layout",
+        text: "Ao agendar ou editar, o dia e o horário ficam lado a lado.",
+      },
+      {
+        kind: "fix",
+        text: "Depois de digitar o desconto, a folha de agendar volta a rolar até o botão Agendar.",
+      },
+    ],
+  },
+  {
     version: "1.7.0",
     date: "2026-11-13",
     title: "Painel novo: seus ganhos do dia ao lado da Bolha",
