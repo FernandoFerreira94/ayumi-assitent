@@ -94,6 +94,8 @@ type Gesture = {
   el: HTMLElement;
   timer?: ReturnType<typeof setTimeout>;
   active: boolean;
+  /** Mouse não rola a página ao arrastar: passou da tolerância, já levanta o bloco sem esperar. */
+  mouse: boolean;
 };
 
 const STATUS_SHORT: Record<Status, string> = {
@@ -243,11 +245,17 @@ export function AgendaDay({
   }
 
   // Os ouvintes ficam na janela: o dedo pode sair do bloco durante o arraste
-  const handlers = useRef<{ track: () => void; finish: (g: Gesture, cancelled: boolean) => void }>({
+  const handlers = useRef<{
+    track: () => void;
+    finish: (g: Gesture, cancelled: boolean) => void;
+    lift: (g: Gesture) => void;
+  }>({
     track: () => {},
     finish: () => {},
+    lift: () => {},
   });
   useEffect(() => {
+    handlers.current.lift = activate;
     handlers.current.track = () => {
       const g = gesture.current;
       if (!g?.active) return;
@@ -281,12 +289,14 @@ export function AgendaDay({
       const g = gesture.current;
       if (!g || e.pointerId !== g.pid) return;
       if (!g.active) {
-        if (Math.abs(e.clientX - g.x0) > TOLERANCE_PX || Math.abs(e.clientY - g.y0) > TOLERANCE_PX) {
-          clearTimeout(g.timer);
+        if (Math.abs(e.clientX - g.x0) <= TOLERANCE_PX && Math.abs(e.clientY - g.y0) <= TOLERANCE_PX) return;
+        clearTimeout(g.timer);
+        if (!g.mouse) {
           g.el.classList.remove("pressing");
           gesture.current = null;
+          return;
         }
-        return;
+        handlers.current.lift(g);
       }
       e.preventDefault();
       g.cy = e.clientY;
@@ -360,6 +370,7 @@ export function AgendaDay({
       pid: e.pointerId,
       el: e.currentTarget,
       active: false,
+      mouse: e.pointerType === "mouse",
     };
     gesture.current = g;
     if (mode !== "move") {
@@ -509,6 +520,7 @@ export function AgendaDay({
                 data-color={a.color}
                 data-status={a.status}
                 data-appointment={a.id}
+                data-drag={canDrag(a.status) ? "" : undefined}
                 onPointerDown={(e) => press(e, a)}
                 onContextMenu={(e) => e.preventDefault()}
                 onKeyDown={(e) => nudge(e, a)}
@@ -518,7 +530,7 @@ export function AgendaDay({
                   setDetailId(a.id);
                   setShowTip(canDrag(a.status) && takeTip());
                 }}
-                aria-label={`${a.clientName}, ${a.serviceName}, ${hhmm(span.start)} a ${hhmm(span.end)}${canDrag(a.status) ? ". Segure para mover." : ""}`}
+                aria-label={`${a.clientName}, ${a.serviceName}, ${hhmm(span.start)} a ${hhmm(span.end)}${canDrag(a.status) ? ". Segure ou arraste para mover." : ""}`}
               >
                 {(sel || lifted) && canDrag(a.status) ? (
                   <span className="ag-hd t" data-h="t" aria-hidden="true" />
@@ -666,8 +678,14 @@ export function AgendaDay({
             </ul>
             {detailAppt && canDrag(detailAppt.status) && showTip ? (
               <p className="mt-3 rounded-2xl bg-soft px-4 py-3 text-sm font-semibold text-primary-text">
-                Dica: na agenda, segure o atendimento e arraste para mudar o horário, ou puxe a bolinha de cima ou de
-                baixo para mudar a duração.
+                <span className="only-touch">
+                  Dica: na agenda, segure o atendimento e arraste para mudar o horário, ou puxe a bolinha de cima ou de
+                  baixo para mudar a duração.
+                </span>
+                <span className="only-mouse">
+                  Dica: na agenda, arraste o atendimento para remarcar, ou puxe a bolinha de cima ou de baixo para
+                  mudar a duração.
+                </span>
               </p>
             ) : null}
           </Drawer.Content>

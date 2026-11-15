@@ -2606,8 +2606,29 @@ textarea {
   }
 }
 
+/* Texto que muda com o jeito de mexer: segurar (dedo) ou arrastar (mouse). */
+.only-mouse {
+  display: none;
+}
+
 /* Hover só quando há mouse: no toque o estado grudaria depois do toque. */
 @media (hover: hover) and (pointer: fine) {
+  .only-touch {
+    display: none;
+  }
+  .only-mouse {
+    display: inline;
+  }
+  .ag-ev[data-drag] {
+    cursor: grab;
+  }
+  .ag-hd {
+    cursor: ns-resize;
+  }
+  /* Durante o arraste o cursor fica "pegando" mesmo fora do bloco */
+  html:has(.ag-ev.lift) * {
+    cursor: grabbing !important;
+  }
   a[href],
   button:not(:disabled),
   [role="button"],
