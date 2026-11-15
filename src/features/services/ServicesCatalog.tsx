@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Drawer } from "vaul";
 import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { EmptyState } from "@/components/feedback/EmptyState";
@@ -47,13 +47,31 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
   const visible = filterServices(shown, query);
   const newPreset = (name = "") => ({ name });
 
-  /* reordenar: arrastar pela alça (ou setas do teclado) dentro do grupo */
+  /* reordenar: arrastar pela alça (ou setas do teclado). No celular é lista; no desktop, grade de 3 colunas.
+     Por isso o alvo é o cartão sob o cursor (elementsFromPoint), não "meia altura de linha para cima/baixo". */
   const listRef = useRef(list);
   listRef.current = list;
   const visibleRef = useRef(visible);
   visibleRef.current = visible;
-  const drag = useRef<{ id: string; y0: number; h: number; start: string[] } | null>(null);
-  const [dragging, setDragging] = useState<{ id: string; dy: number } | null>(null);
+  const ulRef = useRef<HTMLUListElement>(null);
+  // gx/gy: onde o cartão foi pego, relativo ao canto dele; assim ele acompanha o cursor sem pular
+  const drag = useRef<{ id: string; gx: number; gy: number; start: string[] } | null>(null);
+  const [dragging, setDragging] = useState<{ id: string; px: number; py: number } | null>(null);
+
+  // A posição do cartão na grade muda a cada troca: o deslocamento é recalculado depois do render
+  useLayoutEffect(() => {
+    const ul = ulRef.current;
+    const g = drag.current;
+    if (!ul || !dragging || !g) return;
+    const el = ul.querySelector<HTMLElement>(`[data-svc="${dragging.id}"]`);
+    if (!el) return;
+    const dx = dragging.px - g.gx - el.offsetLeft;
+    const dy = dragging.py - g.gy - el.offsetTop;
+    el.style.transform = `translate(${dx}px, ${dy}px) scale(1.02)`;
+    return () => {
+      el.style.transform = "";
+    };
+  }, [dragging]);
 
   const neighbor = (id: string, step: 1 | -1) => {
     const v = visibleRef.current;
@@ -72,26 +90,30 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
     notify.success("Ordem salva", "É a mesma ordem do novo agendamento");
   }
 
+  const pointIn = (e: React.PointerEvent) => {
+    const r = ulRef.current!.getBoundingClientRect();
+    return { px: e.clientX - r.left, py: e.clientY - r.top };
+  };
+
   function gripDown(e: React.PointerEvent<HTMLButtonElement>, id: string) {
+    const row = e.currentTarget.closest("li");
+    if (!row || !ulRef.current) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
-    const row = e.currentTarget.closest("li");
-    drag.current = { id, y0: e.clientY, h: row?.offsetHeight ?? 60, start: listRef.current.map((s) => s.id) };
-    setDragging({ id, dy: 0 });
+    const { px, py } = pointIn(e);
+    drag.current = { id, gx: px - row.offsetLeft, gy: py - row.offsetTop, start: listRef.current.map((s) => s.id) };
+    setDragging({ id, px, py });
   }
 
   function gripMove(e: React.PointerEvent<HTMLButtonElement>) {
     const g = drag.current;
     if (!g) return;
-    let dy = e.clientY - g.y0;
-    const step = dy > g.h / 2 ? 1 : dy < -g.h / 2 ? -1 : 0;
-    const over = step ? neighbor(g.id, step) : undefined;
-    if (over) {
-      setList((l) => moveService(l, g.id, over));
-      g.y0 += step * g.h;
-      dy -= step * g.h;
-    }
-    setDragging({ id: g.id, dy });
+    const over = document
+      .elementsFromPoint(e.clientX, e.clientY)
+      .map((el) => el.closest<HTMLElement>("[data-svc]")?.dataset.svc)
+      .find((id) => id && id !== g.id);
+    if (over && visibleRef.current.some((s) => s.id === over)) setList((l) => moveService(l, g.id, over));
+    setDragging({ id: g.id, ...pointIn(e) });
   }
 
   function gripUp() {
@@ -102,7 +124,7 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
   }
 
   function gripKey(e: React.KeyboardEvent, id: string) {
-    const step = e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? -1 : 0;
+    const step = e.key === "ArrowDown" || e.key === "ArrowRight" ? 1 : e.key === "ArrowUp" || e.key === "ArrowLeft" ? -1 : 0;
     const over = step ? neighbor(id, step) : undefined;
     if (!over) return;
     e.preventDefault();
@@ -165,7 +187,7 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
           }
         />
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)_auto] lg:items-center">
           <dl className="grid grid-cols-2 gap-2">
             {[
               [String(active.length), active.length === 1 ? "ativo" : "ativos"],
@@ -206,7 +228,7 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
           <button
             type="button"
             onClick={() => openSheet({ kind: "service", preset: newPreset() })}
-            className="btn-tint flex min-h-12 items-center justify-center gap-2 rounded-full font-bold"
+            className="btn-tint flex min-h-12 items-center justify-center gap-2 rounded-full font-bold lg:px-6"
           >
             <svg
               viewBox="0 0 24 24"
@@ -224,7 +246,7 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
           </button>
 
           {visible.length === 0 ? (
-            <div className="grid justify-items-center gap-3 px-3 py-8 text-center text-sm font-semibold text-muted">
+            <div className="grid justify-items-center gap-3 px-3 py-8 lg:col-span-3 text-center text-sm font-semibold text-muted">
               {query.trim() ? `Nenhum serviço com "${query.trim()}".` : "Nenhum serviço ainda."}
               <button
                 type="button"
@@ -236,14 +258,17 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
             </div>
           ) : (
             <>
-              <ul className="overflow-hidden rounded-2xl border border-line bg-surface">
+              <ul
+                ref={ulRef}
+                className="relative overflow-hidden rounded-2xl border border-line bg-surface lg:col-span-3 lg:grid lg:grid-cols-3 lg:gap-3 lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent"
+              >
                 {visible.map((s) => {
                   const lifted = dragging?.id === s.id;
                   return (
                     <li
                       key={s.id}
-                      style={lifted ? { transform: `translateY(${dragging.dy}px) scale(1.02)` } : undefined}
-                      className={`relative grid grid-cols-[10px_minmax(0,1fr)_auto_44px_28px] items-center gap-2.5 border-t border-line bg-surface py-2.5 pl-3 pr-1 first:border-t-0 ${
+                      data-svc={s.id}
+                      className={`relative grid grid-cols-[10px_minmax(0,1fr)_auto_44px_28px] items-center gap-2.5 border-t border-line bg-surface py-2.5 pl-3 pr-1 first:border-t-0 lg:rounded-2xl lg:border lg:first:border-t ${
                         lifted
                           ? "z-10 rounded-2xl shadow-[0_14px_30px_-12px_rgba(23,20,43,0.4)]"
                           : "transition-transform"
@@ -296,7 +321,7 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
                       </button>
                       <button
                         type="button"
-                        aria-label={`Mudar a ordem de ${s.name} (setas para cima e para baixo)`}
+                        aria-label={`Mudar a ordem de ${s.name} (setas do teclado)`}
                         onPointerDown={(e) => gripDown(e, s.id)}
                         onPointerMove={gripMove}
                         onPointerUp={gripUp}

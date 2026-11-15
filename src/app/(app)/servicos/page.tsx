@@ -32,6 +32,7 @@ export default async function ServicosPage({ searchParams }: PageProps<"/servico
   return (
     <PageShell
       back
+      wide
       title="Serviços"
       subtitle={services.length ? `${services.length} ${services.length === 1 ? "serviço" : "serviços"}` : undefined}
     >
