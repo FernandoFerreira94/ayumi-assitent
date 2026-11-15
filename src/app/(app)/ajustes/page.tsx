@@ -39,35 +39,34 @@ export default async function AjustesPage() {
   ].filter(Boolean);
 
   return (
-    <PageShell title="Ajustes">
+    <PageShell wide title="Ajustes">
       <LegacyHashRedirect />
-      <SettingsGroup title="Conexões">
-        <SettingsRow
-          section="whatsapp"
-          status={
-            whatsapp === "open" ? "Conectado" : whatsapp === "unavailable" ? "Sem resposta agora" : "Desconectado"
-          }
-          todo={whatsapp === "other" ? "Conectar" : undefined}
-        />
-        <SettingsRow
-          section="calendarios"
-          status={calendars.length ? calendars.join(" · ") : "Google e iPhone"}
-          todo={calendars.length ? undefined : "Configurar"}
-        />
-        <SettingsRow section="notificacoes" status={<PushStatusText />} />
-      </SettingsGroup>
-      <SettingsGroup title="Clientes e agenda">
-        <SettingsRow
-          section="mensagens"
-          status={avisos.length ? avisos.join(" · ") : "Avisos desligados"}
-        />
-        <SettingsRow section="expediente" status={hoursSummary(week)} />
-      </SettingsGroup>
-      <div className="mt-7 grid gap-3">
-        <h2 className="px-3 text-xs font-bold uppercase tracking-wide text-muted">Este aparelho</h2>
-        <UpdateButton />
-        <InstallGuide />
-        <ReplayTourButton />
+      <div className="grid gap-7 lg:grid-cols-2 lg:items-start lg:gap-x-6">
+        <SettingsGroup title="Conexões">
+          <SettingsRow
+            section="whatsapp"
+            status={
+              whatsapp === "open" ? "Conectado" : whatsapp === "unavailable" ? "Sem resposta agora" : "Desconectado"
+            }
+            todo={whatsapp === "other" ? "Conectar" : undefined}
+          />
+          <SettingsRow
+            section="calendarios"
+            status={calendars.length ? calendars.join(" · ") : "Google e iPhone"}
+            todo={calendars.length ? undefined : "Configurar"}
+          />
+          <SettingsRow section="notificacoes" status={<PushStatusText />} />
+        </SettingsGroup>
+        <SettingsGroup title="Clientes e agenda">
+          <SettingsRow section="mensagens" status={avisos.length ? avisos.join(" · ") : "Avisos desligados"} />
+          <SettingsRow section="expediente" status={hoursSummary(week)} />
+        </SettingsGroup>
+        <section aria-label="Este aparelho" className="grid content-start gap-3">
+          <h2 className="px-3 text-xs font-bold uppercase tracking-wide text-muted">Este aparelho</h2>
+          <UpdateButton />
+          <InstallGuide />
+          <ReplayTourButton />
+        </section>
       </div>
     </PageShell>
   );
