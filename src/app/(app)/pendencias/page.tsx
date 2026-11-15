@@ -42,7 +42,7 @@ export default async function PendenciasPage() {
   );
 
   return (
-    <PageShell back title="Pendências" subtitle={countPendencias(p) ? `${countPendencias(p)} para resolver` : undefined}>
+    <PageShell back wide title="Pendências" subtitle={countPendencias(p) ? `${countPendencias(p)} para resolver` : undefined}>
       {countPendencias(p) === 0 ? (
         <EmptyState
           icon="checkCircle"
@@ -50,7 +50,7 @@ export default async function PendenciasPage() {
           description="Nenhum atendimento esperando confirmação, fechamento ou envio ao Google."
         />
       ) : (
-        <div className="grid gap-5">
+        <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
           {p.toReschedule.length > 0 ? (
             <section aria-labelledby="remarcar" className="grid gap-2">
               <h2 id="remarcar" className="px-1 text-sm font-bold uppercase tracking-wide text-muted">
