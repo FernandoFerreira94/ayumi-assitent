@@ -52,8 +52,8 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
   const sheetDate = ym === today.slice(0, 7) ? today : dates[0];
 
   return (
-    <PageShell title="Financeiro" subtitle={label}>
-      <nav aria-label="Mês" className={`${card} mb-4 grid-cols-[auto_1fr_auto] items-center py-2`}>
+    <PageShell wide title="Financeiro" subtitle={label}>
+      <nav aria-label="Mês" className={`${card} mb-4 grid-cols-[auto_1fr_auto] items-center py-2 md:max-w-md`}>
         <Link
           href={`/financeiro?m=${shiftMonth(ym, -1)}`}
           scroll={false}
@@ -73,8 +73,8 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
         </Link>
       </nav>
 
-      <div className="grid gap-4">
-        <section aria-label="Resumo" className={card}>
+      <div className="grid gap-4 lg:grid-cols-2 lg:items-start lg:gap-6">
+        <section aria-label="Resumo" className={`${card} lg:col-span-2`}>
           <div>
             <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted">
               <Icon name="wallet" size={16} className="text-primary-text" />
@@ -82,7 +82,7 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
             </p>
             <p className={`text-3xl font-bold tabular-nums ${balance < 0 ? "text-fail" : ""}`}>{formatBRL(balance)}</p>
           </div>
-          <dl className="grid grid-cols-2 gap-2 text-sm">
+          <dl className="grid grid-cols-2 gap-2 text-sm md:grid-cols-4">
             <div>
               <dt className="flex items-center gap-1 text-xs font-bold text-muted">
                 <Icon name="arrowUp" size={14} className="text-ok" />
@@ -147,7 +147,7 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
           )}
         </section>
 
-        <section aria-labelledby="lancamentos" className={card}>
+        <section aria-labelledby="lancamentos" className={`${card} lg:col-span-2`}>
           <h2 id="lancamentos" className={h2}>
             Gastos lançados
           </h2>
