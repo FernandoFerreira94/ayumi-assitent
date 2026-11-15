@@ -2,10 +2,13 @@ import Link from "next/link";
 import { IconTile } from "@/components/ui/Icon";
 import { SECTIONS, type SectionKey } from "./sections";
 
-/** Grupo da lista de Ajustes: título pequeno em cima e as linhas num cartão de vidro, como no iPhone. */
+/**
+ * Grupo da lista de Ajustes: título pequeno em cima e as linhas num cartão de vidro, como no iPhone.
+ * O espaço entre grupos fica com a página, que no desktop os põe em duas colunas.
+ */
 export function SettingsGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section aria-label={title} className="mt-7 grid gap-2 first:mt-0">
+    <section aria-label={title} className="grid content-start gap-2">
       <h2 className="px-3 text-xs font-bold uppercase tracking-wide text-muted">{title}</h2>
       <ul className="glass divide-y divide-line overflow-hidden rounded-[1.4rem]">{children}</ul>
     </section>
