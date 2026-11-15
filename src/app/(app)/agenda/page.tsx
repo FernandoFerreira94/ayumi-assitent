@@ -5,8 +5,10 @@ import { withTenant } from "@/db/client";
 import { dayBriefing } from "@/features/appointments/briefing";
 import { forecastCents, listDay, receivedCents } from "@/features/appointments/core";
 import { DaySchedule } from "@/features/appointments/DaySchedule";
+import { DayCards } from "@/features/appointments/DayCards";
 import { DayHero } from "@/features/appointments/DayHero";
-import { dayRange, formatDayTitle, greeting, isDateStr, todayStr } from "@/lib/dates";
+import { dayForecast, dayPendencias, upcoming } from "@/features/appointments/day-panel";
+import { dayRange, formatDayTitle, formatTime, greeting, isDateStr, todayStr } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Painel" };
@@ -20,6 +22,7 @@ export default async function PainelPage({ searchParams }: PageProps<"/agenda">)
   const { tenantId, userName } = await requireTenant();
   const rows = await withTenant(tenantId, (tx) => listDay(tx, dayRange(date)));
   const label = formatDayTitle(date);
+  const now = new Date();
 
   return (
     <PageShell wide title={greeting(new Date(), userName)} subtitle={label.charAt(0).toUpperCase() + label.slice(1)}>
@@ -27,10 +30,21 @@ export default async function PainelPage({ searchParams }: PageProps<"/agenda">)
         {/* No celular a Bolha vem antes da agenda; na tela larga ela vai para a coluna da direita */}
         <aside aria-label="Contexto do dia" className="lg:sticky lg:top-7 lg:order-2">
           <DayHero
-            briefing={dayBriefing(rows, new Date(), date === today)}
+            briefing={dayBriefing(rows, now, date === today)}
             isToday={date === today}
             receivedCents={receivedCents(rows)}
             forecastCents={forecastCents(rows)}
+          />
+          <DayCards
+            isToday={date === today}
+            forecast={dayForecast(rows)}
+            pendencias={dayPendencias(rows, now)}
+            next={upcoming(rows, now).map((r) => ({
+              id: r.id,
+              time: formatTime(r.startsAt),
+              clientName: r.clientName,
+              serviceName: r.serviceName,
+            }))}
           />
         </aside>
         <div className="min-w-0 lg:order-1">
