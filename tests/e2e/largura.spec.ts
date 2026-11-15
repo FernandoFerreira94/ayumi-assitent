@@ -35,6 +35,14 @@ test("N abre o novo agendamento como painel lateral, e Fechar fecha", async ({ p
   await expect(sheet).toBeHidden();
 });
 
+test("Painel: Contexto do dia fica à direita da agenda", async ({ page }) => {
+  await page.goto("/agenda");
+  const aside = page.getByRole("complementary", { name: "Contexto do dia" });
+  await expect(aside).toBeVisible();
+  const week = page.getByRole("navigation", { name: "Dias da semana" });
+  expect((await aside.boundingBox())!.x).toBeGreaterThan((await week.boundingBox())!.x);
+});
+
 test("alvos do menu têm pelo menos 44 px", async ({ page }) => {
   await page.goto("/agenda");
   const links = page.getByRole("navigation", { name: "Navegação principal" }).getByRole("link");

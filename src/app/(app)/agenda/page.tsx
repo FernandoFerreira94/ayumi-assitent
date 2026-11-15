@@ -22,14 +22,21 @@ export default async function PainelPage({ searchParams }: PageProps<"/agenda">)
   const label = formatDayTitle(date);
 
   return (
-    <PageShell title={greeting(new Date(), userName)} subtitle={label.charAt(0).toUpperCase() + label.slice(1)}>
-      <DayHero
-        briefing={dayBriefing(rows, new Date(), date === today)}
-        isToday={date === today}
-        receivedCents={receivedCents(rows)}
-        forecastCents={forecastCents(rows)}
-      />
-      <DaySchedule tenantId={tenantId} date={date} withStrip base="/agenda" actions={false} />
+    <PageShell wide title={greeting(new Date(), userName)} subtitle={label.charAt(0).toUpperCase() + label.slice(1)}>
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        {/* No celular a Bolha vem antes da agenda; na tela larga ela vai para a coluna da direita */}
+        <aside aria-label="Contexto do dia" className="lg:sticky lg:top-7 lg:order-2">
+          <DayHero
+            briefing={dayBriefing(rows, new Date(), date === today)}
+            isToday={date === today}
+            receivedCents={receivedCents(rows)}
+            forecastCents={forecastCents(rows)}
+          />
+        </aside>
+        <div className="min-w-0 lg:order-1">
+          <DaySchedule tenantId={tenantId} date={date} withStrip base="/agenda" actions={false} />
+        </div>
+      </div>
     </PageShell>
   );
 }
