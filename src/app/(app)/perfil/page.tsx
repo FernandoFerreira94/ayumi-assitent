@@ -44,8 +44,8 @@ export default async function PerfilPage() {
   // Ainda sem telefone salvo: já vem o do WhatsApp conectado (editável)
   const phone = t?.businessPhone ?? (await whatsappPhone(t?.instance ?? null));
   return (
-    <PageShell back title="Meu perfil">
-      <div className="grid gap-6">
+    <PageShell back wide title="Meu perfil">
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <MascotPicker />
         <SalonForm
           initial={{

@@ -20,9 +20,9 @@ export default async function ClientesPage({ searchParams }: PageProps<"/cliente
   const list = await withTenant(tenantId, (tx) => searchClients(tx, q));
 
   return (
-    <PageShell title="Clientes">
+    <PageShell wide title="Clientes">
       <ClientSearch initial={q} />
-      <div className="grid grid-cols-2 gap-2 pb-3">
+      <div className="grid grid-cols-2 gap-2 pb-3 md:max-w-md">
         <ImportSheet />
         <NewClientSheet />
       </div>
@@ -42,7 +42,7 @@ export default async function ClientesPage({ searchParams }: PageProps<"/cliente
         )
       ) : (
         // Como os Contatos do iPhone: uma seção por letra, com o rótulo fixo no topo enquanto rola
-        <div className="grid gap-3">
+        <div className="grid gap-3 lg:grid-cols-2 lg:items-start xl:grid-cols-3">
           {groupByLetter(list.map((c) => ({ label: c.name, c }))).map((g) => (
             <section key={g.letter} aria-labelledby={`letra-${g.letter === "#" ? "outros" : g.letter}`}>
               <h2
