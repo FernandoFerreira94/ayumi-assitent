@@ -157,8 +157,11 @@ export function inviteIcs(i: InviteInput): string {
   ];
   const address = i.address?.trim();
   if (address) lines.push(`LOCATION:${escapeText(address)}`);
-  lines.push(`DESCRIPTION:${escapeText(i.cancelled ? `Este horário foi cancelado. ${salon}` : `${i.service} em ${salon}`)}`);
-  if (!i.cancelled) lines.push("BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${escapeText(title)}`, "TRIGGER:-PT2H", "END:VALARM");
+  lines.push(
+    `DESCRIPTION:${escapeText(i.cancelled ? `Este horário foi cancelado. ${salon}` : `${i.service} em ${salon}`)}`,
+  );
+  if (!i.cancelled)
+    lines.push("BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${escapeText(title)}`, "TRIGGER:-PT2H", "END:VALARM");
   lines.push("END:VEVENT", "END:VCALENDAR");
   return lines.map(foldLine).join(CRLF) + CRLF;
 }

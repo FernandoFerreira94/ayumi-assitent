@@ -54,7 +54,11 @@ export async function sendBookingMessage(
     // Cliente respondeu SAIR: nada automático
     if (!a || a.optedOut) return "skipped";
     const calendarUrl = inviteUrl(tenantId, appointmentId);
-    const text = bookingText({ ...a, calendarUrl }, now, { template: t?.template, name: t?.name, fullName: t?.fullName });
+    const text = bookingText({ ...a, calendarUrl }, now, {
+      template: t?.template,
+      name: t?.name,
+      fullName: t?.fullName,
+    });
     const res = await sendDirect(port, a.phone, text);
     if (!res.ok) {
       console.error(JSON.stringify({ level: "warn", msg: "booking_message_failed", code: res.code }));
