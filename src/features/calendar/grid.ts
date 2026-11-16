@@ -56,10 +56,19 @@ export function monthWeeks(month: string): (string | null)[][] {
   return weeks;
 }
 
-export type CalendarView =
-  { kind: "year"; year: string } | { kind: "month"; month: string } | { kind: "day"; date: string };
+/** Domingo da semana que contém `date` (a semana do app começa no domingo, como a faixa do dia). */
+export const weekStart = (date: string) => addDays(date, -weekdayOf(date));
 
-/** Lê os parâmetros da URL: ?v=ano&y=2026, ?v=mes&m=2026-11 ou ?d=2026-11-08 (padrão: o mês de hoje). */
+export type CalendarView =
+  | { kind: "year"; year: string }
+  | { kind: "month"; month: string }
+  | { kind: "week"; date: string }
+  | { kind: "day"; date: string };
+
+/**
+ * Lê os parâmetros da URL: ?v=ano&y=2026, ?v=mes&m=2026-11, ?v=semana&d=2026-11-18 (a semana desse dia,
+ * `date` já no domingo) ou ?d=2026-11-08 (padrão: o mês de hoje).
+ */
 export function parseView(
   params: { v?: string; y?: string; m?: string; d?: string },
   today: string,
@@ -68,6 +77,7 @@ export function parseView(
   if (params.v === "ano") return { kind: "year", year: params.y && isYearStr(params.y) ? params.y : today.slice(0, 4) };
   if (params.v === "mes")
     return { kind: "month", month: params.m && isMonthStr(params.m) ? params.m : today.slice(0, 7) };
+  if (params.v === "semana") return { kind: "week", date: weekStart(params.d && isDate(params.d) ? params.d : today) };
   if (params.d && isDate(params.d)) return { kind: "day", date: params.d };
   return { kind: "month", month: today.slice(0, 7) };
 }

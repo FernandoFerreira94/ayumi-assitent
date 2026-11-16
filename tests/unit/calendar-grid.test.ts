@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { isDateStr } from "@/lib/dates";
-import { lastDayOf, monthWeeks, parseView, shiftMonth } from "@/features/calendar/grid";
+import { lastDayOf, monthWeeks, parseView, shiftMonth, weekStart } from "@/features/calendar/grid";
+import { spreadByDay } from "@/features/calendar/week";
 
 describe("grade do calendário", () => {
   it("novembro de 2026 começa no domingo e tem 5 semanas", () => {
@@ -25,5 +26,31 @@ describe("grade do calendário", () => {
     expect(parseView({ v: "mes", m: "2027-03" }, today, isDateStr)).toEqual({ kind: "month", month: "2027-03" });
     expect(parseView({ v: "mes", m: "lixo" }, today, isDateStr)).toEqual({ kind: "month", month: "2026-11" });
     expect(parseView({ v: "ano" }, today, isDateStr)).toEqual({ kind: "year", year: "2026" });
+  });
+  it("semana começa no domingo, mesmo virando mês e ano", () => {
+    expect(weekStart("2026-11-16")).toBe("2026-11-15");
+    expect(weekStart("2026-11-15")).toBe("2026-11-15");
+    expect(weekStart("2027-01-01")).toBe("2026-12-27");
+  });
+  it("?v=semana abre a semana que contém d (padrão: hoje)", () => {
+    const today = "2026-11-18";
+    expect(parseView({ v: "semana", d: "2026-11-21" }, today, isDateStr)).toEqual({ kind: "week", date: "2026-11-15" });
+    expect(parseView({ v: "semana" }, today, isDateStr)).toEqual({ kind: "week", date: "2026-11-15" });
+    expect(parseView({ v: "semana", d: "lixo" }, today, isDateStr)).toEqual({ kind: "week", date: "2026-11-15" });
+  });
+});
+
+describe("spreadByDay", () => {
+  const at = (iso: string, id: string) => ({ id, startsAt: new Date(iso) });
+  const days = ["2026-11-15", "2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20", "2026-11-21"];
+  it("põe cada item no dia do estúdio (fuso de São Paulo)", () => {
+    const cols = spreadByDay(
+      [at("2026-11-16T12:00:00-03:00", "a"), at("2026-11-17T01:30:00Z", "b"), at("2026-11-21T20:00:00-03:00", "c")],
+      days,
+    );
+    expect(cols.map((c) => c.map((r) => r.id))).toEqual([[], ["a", "b"], [], [], [], [], ["c"]]);
+  });
+  it("ignora o que cai fora da semana", () => {
+    expect(spreadByDay([at("2026-11-22T10:00:00-03:00", "x")], days).flat()).toEqual([]);
   });
 });

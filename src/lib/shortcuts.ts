@@ -1,5 +1,15 @@
 // src/lib/shortcuts.ts
-export type Shortcut = "novo" | "buscar" | "hoje" | "anterior" | "proximo" | "proxima" | "anterior-item";
+export type Shortcut =
+  | "novo"
+  | "buscar"
+  | "hoje"
+  | "anterior"
+  | "proximo"
+  | "proxima"
+  | "anterior-item"
+  | "dia"
+  | "semana"
+  | "mes";
 
 type KeyInfo = { key: string; ctrlKey: boolean; metaKey: boolean; altKey: boolean; target: EventTarget | null };
 
@@ -26,6 +36,16 @@ export function shortcutFor(e: KeyInfo): Shortcut | null {
     case "k":
     case "K":
       return "anterior-item";
+    // Visões do Calendário (só valem lá)
+    case "d":
+    case "D":
+      return "dia";
+    case "s":
+    case "S":
+      return "semana";
+    case "m":
+    case "M":
+      return "mes";
     case "ArrowLeft":
       return "anterior";
     case "ArrowRight":

@@ -10,7 +10,7 @@ Branch: `claude/desktop-fase3b`. Um commit por item, com teste unitário da lóg
 | 1 | Coluna "Contexto do dia" no Painel | 15 | Feito (`48880e6`) |
 | 2 | Login e Splash em duas metades com a Bolha | 24 | Feito (`f8fa561`) |
 | 3 | Ficha de cliente em coluna fixa de 420 px, `?id=` e j/k | 17 | Feito (`16c55ae`) |
-| 4 | Visão Semana do Calendário | 16 | A fazer |
+| 4 | Visão Semana do Calendário | 16 | Grade só leitura feita; arrastar entre dias fica para um segundo commit |
 | 5 | Catálogo de Serviços em 3 colunas, edição no painel de 400 px | 19 | Feito (3 colunas em `d3e2479`; 2 colunas no `md` depois; painel ficou nos 440 px padrão) |
 
 Ordem: 2 → 3 → 5 → 4. A Semana é o maior e vai por último para não travar os outros.
