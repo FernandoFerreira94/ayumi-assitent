@@ -72,11 +72,11 @@ d("painel do dono: guard e step-up (Postgres real)", () => {
     await expect(guard.requireAdmin()).rejects.toThrow("REDIRECT:/admin/ativar-2fa");
   });
 
-  it("step-up: sem verificação pede código; 1 h atrás passa; 13 h atrás pede de novo", async () => {
+  it("step-up: sem verificação pede código; 6 dias atrás passa; 8 dias atrás pede de novo", async () => {
     await expect(guard.requireAdmin()).rejects.toThrow("REDIRECT:/admin/verificar");
-    await db`insert into admin_step_up (session_id, user_id, verified_at) values (${SID}, ${ADMIN}, now() - interval '1 hour')`;
+    await db`insert into admin_step_up (session_id, user_id, verified_at) values (${SID}, ${ADMIN}, now() - interval '6 days')`;
     await expect(guard.requireAdmin()).resolves.toEqual({ userId: ADMIN, sessionId: SID });
-    await db`update admin_step_up set verified_at = now() - interval '13 hours'`;
+    await db`update admin_step_up set verified_at = now() - interval '8 days'`;
     await expect(guard.requireAdmin()).rejects.toThrow("REDIRECT:/admin/verificar");
   });
 

@@ -3,7 +3,7 @@
 **Finalidade:** painel pessoal do dono do produto (só ele) para acompanhar assinaturas, pagamentos e receita do Bubbly. Plano: `docs/superpowers/plans/2026-11-15-dashboard-dono.md`. Bloco 1 (este) = acesso seguro; Bloco 2 = views de leitura; Bloco 3 = telas com dados.
 
 ## Arquivos
-- Regras puras: `features/admin/access.ts` (`isPlatformAdmin`, lê `ADMIN_USER_IDS`), `features/admin/step-up-rules.ts` (janela de 12 h, trava de 5 erros em 15 min).
+- Regras puras: `features/admin/access.ts` (`isPlatformAdmin`, lê `ADMIN_USER_IDS`), `features/admin/step-up-rules.ts` (janela de 7 dias, trava de 5 erros em 15 min).
 - Banco: `features/admin/step-up.ts` (`admin_step_up`), `features/admin/audit.ts` (`admin_audit_log`, rótulos pt-BR).
 - Porta única: `features/admin/guard.ts` (`requireAdmin`: sessão → admin? senão `notFound()` → 2FA ligado? senão `/admin/ativar-2fa` → step-up válido? senão `/admin/verificar`). `requireAdminWithoutTwoFactor` só para a ativação.
 - Actions: `features/admin/actions.ts` (`verifyAdminCode`, `startTwoFactorSetup`, `confirmTwoFactorSetup`, `regenerateBackupCodes`).
@@ -15,7 +15,7 @@
 - `user."twoFactorEnabled"` e `"twoFactor"` (plugin do Better Auth; segredo e códigos cifrados pelo próprio plugin com o `BETTER_AUTH_SECRET`). Apagar o usuário apaga o 2FA (cascade).
 - `admin_step_up(session_id → session.id ON DELETE CASCADE, user_id, verified_at)`: logout apaga a verificação.
 - `admin_audit_log(user_id, action, target, ip, created_at)`: `view_overview`, `view_security`, `step_up_ok`, `step_up_failed`, `2fa_enabled`, `backup_codes_regenerated` (e no Bloco 3 `view_subscribers`, `view_subscriber`, `view_payments`, `export_payments`).
-- Retenção (`features/retention/run.ts`, worker diário): `admin_audit_log` > 365 dias e `admin_step_up` > 12 h.
+- Retenção (`features/retention/run.ts`, worker diário): `admin_audit_log` > 365 dias e `admin_step_up` > 7 dias.
 
 ## 2FA (resultado da Task 0, Better Auth 1.7.18, lido no código do plugin)
 - (a) Login pelo Google **não** é parado: o hook do plugin só olha `/sign-in/email|username|phone-number`. Por isso o `/admin` faz step-up próprio.
