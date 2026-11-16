@@ -47,15 +47,20 @@ export async function notifyPendencias(
   return sendToAll(tx, port, { title: "bubbly", body: pendenciasText(n), url: "/pendencias" });
 }
 
-/** Manda o aviso para todos os aparelhos inscritos do estúdio (o da transação); com função, o texto varia por pessoa. */
+/**
+ * Manda o aviso para os aparelhos inscritos do estúdio (o da transação); com função, o texto varia por pessoa.
+ * Com `only` (ids de login), só esses logins recebem; sem ele, todos (ver recipients.ts para quem escolher).
+ */
 export async function sendToAll(
   tx: Tx,
   port: PushPort,
   payload: PushPayload | ((sub: { userId: string }) => PushPayload),
+  only?: ReadonlySet<string>,
 ): Promise<PushRun> {
   const run: PushRun = { sent: 0, removed: 0, failed: 0 };
   const subs = await tx.select().from(pushSubscriptions);
   for (const s of subs) {
+    if (only && !only.has(s.userId)) continue;
     try {
       await port.send(s, typeof payload === "function" ? payload(s) : payload);
       run.sent++;

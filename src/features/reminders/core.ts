@@ -5,7 +5,7 @@ import type { MessagingPort } from "@/features/messaging/port";
 import { MessagingOfflineError, MessagingRejectedError, sendFailReason } from "@/features/messaging/port";
 import { recordMessage } from "@/features/messaging/store";
 import { isQuietHour } from "./quiet";
-import { reminderText } from "./text";
+import { professionalLabel, reminderText } from "./text";
 import { errCode } from "@/lib/log";
 
 export { reminderText } from "./text";
@@ -22,6 +22,8 @@ type Due = {
   service: string;
   /** Valor do atendimento, para a chave {valor} */
   priceCents: number;
+  /** Nome da profissional para {profissional}; vazio no salão com uma só */
+  professional: string;
 };
 
 /**
@@ -39,6 +41,8 @@ export async function claimDue(tx: Tx, now: Date, hours = DEFAULT_REMINDER_HOURS
     phone: string;
     service: string;
     price_cents: number;
+    professional: string | null;
+    team_size: number;
   }>(sql`
     with claimed as (
       update appointments set reminder_sent_at = ${now.toISOString()}
@@ -49,9 +53,12 @@ export async function claimDue(tx: Tx, now: Date, hours = DEFAULT_REMINDER_HOURS
           and starts_at > ${now.toISOString()} and starts_at <= ${until.toISOString()}
           and client_id not in (select id from clients where opted_out_at is not null)
         for update skip locked)
-      returning id, tenant_id, starts_at, client_id, service_id, price_cents)
-    select c.id, c.tenant_id, c.client_id, c.starts_at, c.price_cents, cl.name as client, cl.phone_e164 as phone, s.name as service
+      returning id, tenant_id, starts_at, client_id, service_id, price_cents, professional_id)
+    select c.id, c.tenant_id, c.client_id, c.starts_at, c.price_cents, cl.name as client, cl.phone_e164 as phone, s.name as service,
+      p.display_name as professional,
+      (select count(*)::int from professionals q where q.tenant_id = c.tenant_id and q.active) as team_size
     from claimed c join clients cl on cl.id = c.client_id join services s on s.id = c.service_id
+    left join professionals p on p.id = c.professional_id
     order by c.starts_at`);
   return rows.map((r) => ({
     id: r.id,
@@ -62,6 +69,7 @@ export async function claimDue(tx: Tx, now: Date, hours = DEFAULT_REMINDER_HOURS
     phone: r.phone,
     service: r.service,
     priceCents: Number(r.price_cents),
+    professional: professionalLabel(r.professional, r.team_size),
   }));
 }
 

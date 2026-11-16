@@ -19,7 +19,7 @@ export const DEFAULT_SECOND_CONFIRMED =
   "Oi, {nome}! Passando para lembrar do seu horário de {servico} {dia} às {hora} 😊 Te espero com carinho! 💜";
 
 export const TEMPLATE_MAX = 600;
-export const REMINDER_VARS = ["nome", "servico", "dia", "hora", "valor", "salao"] as const;
+export const REMINDER_VARS = ["nome", "servico", "dia", "hora", "valor", "salao", "profissional"] as const;
 type Var = (typeof REMINDER_VARS)[number];
 
 /** Opções que vão sempre no fim dos avisos: é por elas que o webhook entende a resposta (messaging/replies.ts). */
@@ -54,10 +54,35 @@ function dayLabel(startsAt: Date, now: Date): string {
 /** "amanhã às 14:00" ou "dia 20/11 às 09:30": o horário nas respostas automáticas, sem deixar dúvida. */
 export const slotLabel = (startsAt: Date, now: Date) => `${dayWord(startsAt, now)} às ${formatTime(startsAt)}`;
 
-export type MessageData = { client: string; service: string; startsAt: Date; priceCents?: number | null };
+export type MessageData = {
+  client: string;
+  service: string;
+  startsAt: Date;
+  priceCents?: number | null;
+  /** Nome da profissional do atendimento para {profissional}; vazio/ausente no salão com uma só (ver professionalLabel) */
+  professional?: string | null;
+};
 export type SalonMessageOpts = { template?: string | null; name?: string | null; fullName?: boolean };
 
+/**
+ * O nome da profissional só entra nas mensagens quando o salão tem 2 ou mais (D13): com uma só (Individual),
+ * dizer "com a Ana" para a cliente da Ana é ruído, e a chave vira texto vazio.
+ */
+export function professionalLabel(name: string | null | undefined, teamSize: number): string {
+  return teamSize >= 2 ? (name?.trim() ?? "") : "";
+}
+
+/** Tira a chave {profissional} do modelo sem deixar vírgula, dois-pontos ou espaço duplo no lugar dela. */
+function withoutProfessional(template: string): string {
+  return template
+    .replace(/^[^\n{}]{0,30}:[ \t]*\{profissional\}[ \t]*(\r?\n|$)/gm, "") // linha "Profissional: {profissional}"
+    .replace(/^[ \t]*\{profissional\}[ \t]*[,;:–—-]?[ \t]*/gm, "")
+    .replace(/[ \t]*[,;:–—-]?[ \t]*\{profissional\}/g, "");
+}
+
 function fill(template: string, a: MessageData, salon: SalonMessageOpts, day: string): string {
+  const professional = a.professional?.trim() ?? "";
+  if (!professional) template = withoutProfessional(template);
   const values: Record<Var, string> = {
     nome: clientCall(a.client, salon.fullName),
     servico: a.service,
@@ -65,6 +90,7 @@ function fill(template: string, a: MessageData, salon: SalonMessageOpts, day: st
     hora: formatTime(a.startsAt),
     valor: a.priceCents == null ? "" : formatBRL(a.priceCents),
     salao: salon.name?.trim() || "",
+    profissional: professional,
   };
   return template
     .replace(/\{(\w+)\}/g, (whole, key: string) => (key in values ? values[key as Var] : whole))

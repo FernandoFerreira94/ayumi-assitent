@@ -3,6 +3,7 @@ import type { Tx } from "@/db/client";
 import { sendToAll } from "@/features/push/core";
 import type { PushPort } from "@/features/push/port";
 import { formatTime } from "@/lib/dates";
+import { appointmentRecipients, type Member } from "@/features/push/recipients";
 import { isQuietHour } from "./nudge";
 
 /** Depois do 2º aviso, quanto esperar a resposta antes de avisar a dona. */
@@ -10,7 +11,7 @@ export const AFTER_SECOND_MIN = 60;
 /** Sem 2º aviso, quanto esperar depois do 1º. */
 export const AFTER_FIRST_MIN = 120;
 
-export type NoReply = { id: string; clientId: string; client: string; startsAt: Date };
+export type NoReply = { id: string; clientId: string; client: string; startsAt: Date; professionalId: string | null };
 
 /**
  * Marca (uma vez por agendamento) quem não respondeu aos avisos: passou o tempo depois do último aviso que
@@ -19,7 +20,13 @@ export type NoReply = { id: string; clientId: string; client: string; startsAt: 
 export async function claimNoReplies(tx: Tx, now: Date, secondHours: number | null): Promise<NoReply[]> {
   const iso = now.toISOString();
   const secondOff = secondHours === null;
-  const rows = await tx.execute<{ id: string; client_id: string; client: string; starts_at: Date }>(sql`
+  const rows = await tx.execute<{
+    id: string;
+    client_id: string;
+    client: string;
+    starts_at: Date;
+    professional_id: string | null;
+  }>(sql`
     with claimed as (
       update appointments set no_reply_at = ${iso}
       where id in (
@@ -35,24 +42,44 @@ export async function claimNoReplies(tx: Tx, now: Date, secondHours: number | nu
               and coalesce(reminder_sent_at, nudge_sent_at) <= ${iso}::timestamptz - interval '30 minutes')
           )
         for update skip locked)
-      returning id, client_id, starts_at)
-    select c.id, c.client_id, c.starts_at, cl.name as client
+      returning id, client_id, starts_at, professional_id)
+    select c.id, c.client_id, c.starts_at, c.professional_id, cl.name as client
     from claimed c join clients cl on cl.id = c.client_id
     order by c.starts_at`);
-  return rows.map((r) => ({ id: r.id, clientId: r.client_id, client: r.client, startsAt: new Date(r.starts_at) }));
+  return rows.map((r) => ({
+    id: r.id,
+    clientId: r.client_id,
+    client: r.client,
+    startsAt: new Date(r.starts_at),
+    professionalId: r.professional_id,
+  }));
 }
 
-/** Avisa a dona no celular, uma notificação por cliente; tocar abre a conversa. Fora do horário, espera a manhã. */
-export async function notifyNoReplies(tx: Tx, push: PushPort, now: Date, secondHours: number | null): Promise<number> {
+/**
+ * Avisa no celular, uma notificação por cliente; tocar abre a conversa. Fora do horário, espera a manhã.
+ * Com `members`, vai à profissional do atendimento e à dona/admin; sem ele, a todos os aparelhos do salão.
+ */
+export async function notifyNoReplies(
+  tx: Tx,
+  push: PushPort,
+  now: Date,
+  secondHours: number | null,
+  members?: readonly Member[],
+): Promise<number> {
   if (isQuietHour(now)) return 0;
   const due = await claimNoReplies(tx, now, secondHours);
   for (const a of due) {
     const first = a.client.trim().split(/\s+/)[0];
-    await sendToAll(tx, push, {
-      title: `${first} não respondeu`,
-      body: `Ainda não confirmou o horário das ${formatTime(a.startsAt)}. Toque para ver a conversa.`,
-      url: `/agenda?conversa=${a.clientId}`,
-    });
+    await sendToAll(
+      tx,
+      push,
+      {
+        title: `${first} não respondeu`,
+        body: `Ainda não confirmou o horário das ${formatTime(a.startsAt)}. Toque para ver a conversa.`,
+        url: `/agenda?conversa=${a.clientId}`,
+      },
+      members && appointmentRecipients(members, a.professionalId),
+    );
   }
   return due.length;
 }

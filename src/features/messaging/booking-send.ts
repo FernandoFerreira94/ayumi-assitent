@@ -1,7 +1,8 @@
 import "server-only";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { getDb, withTenant } from "@/db/client";
-import { appointments, clients, services, tenants } from "@/db/schema";
+import { appointments, clients, professionals, services, tenants } from "@/db/schema";
+import { professionalLabel } from "@/features/reminders/text";
 import { bookingText } from "./booking";
 import { messagingForInstance } from "./evolution";
 import { sendDirect } from "./send";
@@ -44,15 +45,18 @@ export async function sendBookingMessage(
           service: serviceLabel,
           startsAt: appointments.startsAt,
           priceCents: appointments.priceCents,
+          professional: professionals.displayName,
+          teamSize: sql<number>`(select count(*)::int from professionals q where q.tenant_id = ${appointments.tenantId} and q.active)`,
         })
         .from(appointments)
         .innerJoin(clients, eq(clients.id, appointments.clientId))
+        .leftJoin(professionals, eq(professionals.id, appointments.professionalId))
         .innerJoin(services, eq(services.id, appointments.serviceId))
         .where(eq(appointments.id, appointmentId)),
     );
     // Cliente respondeu SAIR: nada automático
     if (!a || a.optedOut) return "skipped";
-    const text = bookingText(a, now, { template: t?.template, name: t?.name, fullName: t?.fullName });
+    const text = bookingText({ ...a, professional: professionalLabel(a.professional, a.teamSize) }, now, { template: t?.template, name: t?.name, fullName: t?.fullName });
     const res = await sendDirect(port, a.phone, text);
     if (!res.ok) {
       console.error(JSON.stringify({ level: "warn", msg: "booking_message_failed", code: res.code }));

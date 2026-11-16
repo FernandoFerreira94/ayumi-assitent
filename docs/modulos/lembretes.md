@@ -8,6 +8,9 @@
 - `nudge.ts` (2º aviso, `isQuietHour`, `claimNudges`), `no-reply.ts` (`claimNoReplies`, `notifyNoReplies`), `text.ts` (modelos com `{chaves}`), `actions.saveMessages`, `MessagesForm.tsx`.
 - Worker: `src/worker/index.ts`, fila a cada 5 min.
 
+## Chave {profissional}
+- `MessageData.professional` alimenta `{profissional}` (agendamento, 1º e 2º aviso). `professionalLabel(nome, tamanhoDoTime)` devolve vazio com menos de 2 profissionais ativas (Individual). Vazia, a chave some sem espaço duplo, vírgula solta ou linha "Rótulo: {profissional}" (`withoutProfessional`). `claimDue`, `claimNudges` e `booking-send` trazem o nome do atendimento. Chip em `MessagesForm`.
+
 ## Dados
 - `appointments` (`reminder_sent_at` e colunas de 2º aviso/não respondeu), `tenants` (`reminder_template`, `second_reminder_template`, `booking_template`, `reminder_hours`, `second_reminder_hours`).
 

@@ -5,6 +5,7 @@ import type { PushPort } from "@/features/push/port";
 import { holidayGreetingAi, weekPlanAi } from "./ai";
 import { runTenantNotices, type NoticeDeps } from "./core";
 import { mascotsOf } from "./mascots";
+import { membersOf } from "@/features/team/membership";
 import { errCode } from "@/lib/log";
 
 const AI: NoticeDeps["ai"] = { weekPlan: weekPlanAi, holidayGreeting: holidayGreetingAi };
@@ -26,7 +27,10 @@ export async function runOwnerNotices(push: PushPort, now = new Date()) {
   for (const t of all) {
     try {
       const mascots = await mascotsOf(t.id).catch(() => ({}));
-      const r = await withTenant(t.id, (tx) => runTenantNotices(tx, t.id, push, now, t, { ai: AI, mascots }));
+      // Se a lista de logins falhar, o aviso sai no formato do salão para todos (melhor que perder o dia)
+      const found = await membersOf(t.id).catch(() => []);
+      const members = found.length ? found : undefined;
+      const r = await withTenant(t.id, (tx) => runTenantNotices(tx, t.id, push, now, t, { ai: AI, mascots, members }));
       total.sent += r.sent;
       total.removed += r.removed;
       total.failed += r.failed;

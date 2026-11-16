@@ -4,6 +4,8 @@ import { getDb, withTenant } from "@/db/client";
 import { appointments, clients, messages, tenants } from "@/db/schema";
 import { sendToAll } from "@/features/push/core";
 import type { PushPort } from "@/features/push/port";
+import { appointmentRecipients } from "@/features/push/recipients";
+import { membersOf } from "@/features/team/membership";
 import { CORRECTION_HOURS, OWNER_QUIET_HOURS, planAiReply, type AiPlan, type AiVerdict } from "./ai-policy";
 import type { MessagingPort } from "./port";
 import { isQuietHour } from "@/features/reminders/quiet";
@@ -72,7 +74,15 @@ export type InboundResult =
   | { handled: false; reason: "tenant" | "client" | "duplicate" }
   | { handled: true; intent: Intent | null; appointmentId: string | null };
 
-type Target = { id: string; handedOff: boolean; correction: boolean; status: string; startsAt: Date };
+type Target = {
+  id: string;
+  handedOff: boolean;
+  correction: boolean;
+  status: string;
+  startsAt: Date;
+  /** Profissional do atendimento: define quem recebe o push (ela e dona/admin) */
+  professionalId: string | null;
+};
 
 /**
  * Uma mensagem chegou pelo webhook. Liga ao estúdio (pela instância) e à cliente (pelo telefone),
@@ -150,6 +160,7 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
         handoff: appointments.aiHandoffAt,
         status: appointments.status,
         startsAt: appointments.startsAt,
+        professionalId: appointments.professionalId,
       })
       .from(appointments)
       .where(
@@ -170,6 +181,7 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
         correction: false,
         status: open.status,
         startsAt: open.startsAt,
+        professionalId: open.professionalId,
       };
     else {
       const [recent] = await tx
@@ -178,6 +190,7 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
           handoff: appointments.aiHandoffAt,
           status: appointments.status,
           startsAt: appointments.startsAt,
+          professionalId: appointments.professionalId,
         })
         .from(appointments)
         .where(
@@ -197,6 +210,7 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
           correction: true,
           status: recent.status,
           startsAt: recent.startsAt,
+          professionalId: recent.professionalId,
         };
     }
 
@@ -319,10 +333,15 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
     const unattended = !!target && plan.action === "silent" && !plan.quiet;
     const title = pushTitle(client.name, intent, guess, correction, handedOff || unattended);
     // Tocar abre a conversa com a cliente dentro do app
-    if (title)
+    if (title) {
+      // Vai à profissional do atendimento e à dona/admin; sem atendimento (conversa solta), só dona/admin
+      // Se a lista de logins falhar, avisa todos os aparelhos (melhor repetido do que perder o aviso)
+      const members = await membersOf(tenantId).catch(() => null);
+      const only = members?.length ? appointmentRecipients(members, target?.professionalId ?? null) : undefined;
       await withTenant(tenantId, (tx) =>
-        sendToAll(tx, push, { title, body: msg.text.slice(0, 140), url: `/agenda?conversa=${client.id}` }),
+        sendToAll(tx, push, { title, body: msg.text.slice(0, 140), url: `/agenda?conversa=${client.id}` }, only),
       ).catch((e) => console.error(JSON.stringify({ level: "warn", msg: "reply_push_failed", ...errCode(e) })));
+    }
   }
   return { handled: true, intent, appointmentId };
 }

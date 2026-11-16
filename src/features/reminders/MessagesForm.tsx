@@ -27,6 +27,7 @@ const CHIPS = [
   ["{hora}", "horário"],
   ["{valor}", "valor do atendimento"],
   ["{salao}", "nome do salão"],
+  ["{profissional}", "quem atende (some se o salão tem só uma)"],
 ] as const;
 
 const hoursInput = "min-h-11 w-20 rounded-xl border border-line px-3 text-center text-base font-bold tabular-nums";

@@ -8,6 +8,12 @@
 - UI: `PushToggle` (`features/push`, `/ajustes/notificacoes`, sem texto longo nem botão de teste desde 13/11; a action `sendTestNotice` ficou sem tela), `LocationToggle.tsx` (Ajustes > Notificações), `NoticeHost.tsx` (`?aviso=<id>` abre o texto num diálogo).
 - Worker: fila de avisos a cada 5 min.
 
+## Por pessoa (equipe, A5)
+- `push/recipients.ts` (regra pura): `appointmentRecipients(members, professionalId)` = login ligado à profissional do atendimento + owner/admin (Set, sem duplicar); sem login dela, só owner/admin. `noticeScope(member)`: owner/admin = salão; profissional = só a própria agenda (D5); sem agenda ligada = sem aviso do dia.
+- `sendToAll(tx, port, payload, only?)`: `only` = ids de login. Push de resposta da cliente (`messaging/inbound.ts`) e "não respondeu" (`reminders/no-reply.ts`) usam o atendimento; conversa sem atendimento vai só para owner/admin. `team/membership.membersOf(tenantId)` lê os logins (papel dono do banco).
+- Avisos do dia: horário e registro (`owner_notices`, uma linha por tipo/dia) seguem o salão; o conteúdo é por login: owner/admin recebem o resumo do salão, profissional o da própria agenda (e só se trabalha no dia). Roteiro da semana da profissional não usa IA nem abre o diálogo (texto compartilhado); datas comemorativas (mensagem para clientes) só para owner/admin.
+- Limitação: sem migration não há aviso por profissional em `owner_notices` (unique por salão/tipo/dia), então a hora do aviso da profissional é a do salão. Pendências (`notifyPendencias`) seguem para todos.
+
 ## Dados
 - `push_subscriptions`, `owner_notices` (kind, day, variant: garante uma vez por dia), `tenants` (localização, `location_source`).
 

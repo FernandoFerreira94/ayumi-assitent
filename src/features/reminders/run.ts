@@ -4,6 +4,7 @@ import { tenants } from "@/db/schema";
 import type { MessagingPort } from "@/features/messaging/port";
 import { sendPendingReplies } from "@/features/messaging/pending";
 import type { PushPort } from "@/features/push/port";
+import { membersOf } from "@/features/team/membership";
 import { getReminderSettings, sendReminders, type ReminderRun } from "./core";
 import { notifyNoReplies } from "./no-reply";
 import { sendNudges } from "./nudge";
@@ -39,12 +40,16 @@ export async function runReminders(
       n.sent += p.sent;
       n.failed += p.failed;
       n.offline ||= p.offline;
-      if (push)
+      if (push) {
+        // Salão sem logins (não deveria existir) mantém o aviso para todos os aparelhos
+        const found = await membersOf(t.id).catch(() => []);
+        const members = found.length ? found : undefined;
         await withTenant(t.id, async (tx) =>
-          notifyNoReplies(tx, push, now, (await getReminderSettings(tx)).secondHours),
+          notifyNoReplies(tx, push, now, (await getReminderSettings(tx)).secondHours, members),
         ).catch((e) =>
           console.error(JSON.stringify({ level: "warn", msg: "no_reply_tenant_failed", tenant: t.id, ...errCode(e) })),
         );
+      }
       r.sent += n.sent;
       r.failed += n.failed;
       r.offline ||= n.offline;

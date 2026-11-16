@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { reminderText } from "@/features/reminders/core";
+import { bookingText, professionalLabel, secondReminderText } from "@/features/reminders/text";
 
 const start = new Date("2026-11-11T17:30:00Z"); // 14:30 em São Paulo
 const eve = new Date("2026-11-10T15:00:00Z");
@@ -56,5 +57,44 @@ describe("2º aviso e escolhas da dona", () => {
   it("nome do contato inteiro quando a dona escolhe", () => {
     const t = reminderText({ client: "Maria Zona Norte", service: "Gel", startsAt: start }, eve, { fullName: true });
     expect(t).toMatch(/^Oi, Maria Zona Norte!/);
+  });
+});
+
+describe("chave {profissional}", () => {
+  const base = { client: "Bia Souza", service: "Gel", startsAt: start };
+  const first = (t: string) => t.split("\n")[0];
+
+  it("vira o nome da profissional do atendimento", () => {
+    const t = reminderText({ ...base, professional: "Ana" }, eve, { template: "Oi, {nome}! {servico} com {profissional} {dia}." });
+    expect(first(t)).toBe("Oi, Bia! Gel com Ana amanhã.");
+  });
+  it("sem profissional (salão com uma só) some sem deixar espaço duplo", () => {
+    const t = reminderText({ ...base, professional: "" }, eve, { template: "Oi, {nome}! {servico} com {profissional} {dia}." });
+    expect(first(t)).toBe("Oi, Bia! Gel com amanhã.");
+    expect(first(t)).not.toMatch(/ {2}/);
+  });
+  it("sem profissional não sobra pontuação solta antes da chave", () => {
+    const t = reminderText({ ...base }, eve, { template: "{servico}, {profissional}! Até {dia}." });
+    expect(first(t)).toBe("Gel! Até amanhã.");
+  });
+  it("sem profissional, a linha que só existia para ela some", () => {
+    const t = bookingText({ ...base }, eve, { template: "Oi, {nome}!\nProfissional: {profissional}\n🕒 {hora}" });
+    expect(t).toBe("Oi, Bia!\n🕒 14:30");
+  });
+  it("sem profissional, chave no começo da linha não deixa vírgula", () => {
+    const t = reminderText({ ...base }, eve, { template: "{profissional}, te espero {dia}." });
+    expect(first(t)).toBe("te espero amanhã.");
+  });
+  it("a chave vale também na mensagem de agendamento e no 2º aviso", () => {
+    expect(bookingText({ ...base, professional: "Ana" }, eve, { template: "Com {profissional}" })).toBe("Com Ana");
+    expect(
+      secondReminderText({ ...base, professional: "Ana" }, eve, { template: "{profissional} te espera" }).split("\n")[0],
+    ).toBe("Ana te espera");
+  });
+  it("professionalLabel: só mostra o nome quando o salão tem 2 ou mais profissionais", () => {
+    expect(professionalLabel("Ana", 1)).toBe("");
+    expect(professionalLabel("Ana", 2)).toBe("Ana");
+    expect(professionalLabel(null, 3)).toBe("");
+    expect(professionalLabel("  Ana  ", 3)).toBe("Ana");
   });
 });

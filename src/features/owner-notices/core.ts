@@ -1,9 +1,10 @@
-import { and, asc, desc, eq, gt, gte, inArray, lt } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, inArray, isNull, lt, or, type SQL } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { appointments, blocks, clients, messages, ownerNotices, pushSubscriptions } from "@/db/schema";
 import { getHours } from "@/features/hours/core";
 import { sendToAll, type PushRun } from "@/features/push/core";
 import type { PushPort } from "@/features/push/port";
+import { noticeScope, type Member } from "@/features/push/recipients";
 import { addDays, dayRange, formatTime, greeting, todayStr, toInstant } from "@/lib/dates";
 import { holidayOn, holidaysBetween } from "./holidays";
 import { dueNotices, isDayOff, LATE_MIN, dayEndMin, toMin, type NoticeKind } from "./plan";
@@ -42,6 +43,11 @@ export type NoticeDeps = {
   forecast?: (salon: Salon) => Promise<Forecast | null>;
   /** Mascote de cada pessoa (Meu perfil), para o emoji do título do aviso no celular dela */
   mascots?: Record<string, string>;
+  /**
+   * Logins do salão (papel e profissional de cada um). Com eles, profissional recebe o resumo da própria agenda e
+   * owner/admin o do salão; sem eles, todo aparelho recebe o resumo do salão (como antes da equipe).
+   */
+  members?: readonly Member[];
 };
 
 /** Título do aviso com o emoji do mascote que a pessoa escolheu em Meu perfil (sem reinstalar o app). */
@@ -55,7 +61,11 @@ const LIVE = ["pending_confirmation", "confirmed", "reschedule_requested", "done
 
 type DayRow = { id: string; startsAt: Date; endsAt: Date; status: string; clientName: string };
 
-async function dayAppointments(tx: Tx, date: string): Promise<DayRow[]> {
+/** Agenda de uma profissional (id) ou do salão todo (null/undefined). */
+const ofProfessional = (prof: string | null | undefined): SQL | undefined =>
+  prof ? eq(appointments.professionalId, prof) : undefined;
+
+async function dayAppointments(tx: Tx, date: string, prof?: string | null): Promise<DayRow[]> {
   const [from, to] = dayRange(date);
   return tx
     .select({
@@ -68,20 +78,37 @@ async function dayAppointments(tx: Tx, date: string): Promise<DayRow[]> {
     .from(appointments)
     .innerJoin(clients, eq(clients.id, appointments.clientId))
     .where(
-      and(gte(appointments.startsAt, from), lt(appointments.startsAt, to), inArray(appointments.status, [...LIVE])),
+      and(
+        gte(appointments.startsAt, from),
+        lt(appointments.startsAt, to),
+        inArray(appointments.status, [...LIVE]),
+        ofProfessional(prof),
+      ),
     )
     .orderBy(asc(appointments.startsAt));
 }
 
 /** Um bloqueio cobre todo o expediente do dia (folga avulsa, férias, evento do Google o dia inteiro). */
-async function blockedAllDay(tx: Tx, date: string, hours: { opens: string; closes: string } | null): Promise<boolean> {
+async function blockedAllDay(
+  tx: Tx,
+  date: string,
+  hours: { opens: string; closes: string } | null,
+  prof?: string | null,
+): Promise<boolean> {
   if (!hours) return false;
   const open = toInstant(date, hours.opens);
   const close = toInstant(date, hours.closes);
   const rows = await tx
     .select({ startsAt: blocks.startsAt, endsAt: blocks.endsAt })
     .from(blocks)
-    .where(and(lt(blocks.startsAt, close), gt(blocks.endsAt, open)));
+    // Bloqueio do salão todo (sem profissional) vale para qualquer agenda
+    .where(
+      and(
+        lt(blocks.startsAt, close),
+        gt(blocks.endsAt, open),
+        prof ? or(isNull(blocks.professionalId), eq(blocks.professionalId, prof)) : undefined,
+      ),
+    );
   return rows.some((b) => b.startsAt <= open && b.endsAt >= close);
 }
 
@@ -146,15 +173,15 @@ const shortDay = (date: string) => {
   return `${wd.charAt(0).toUpperCase()}${wd.slice(1)} ${date.slice(8, 10)}/${date.slice(5, 7)}`;
 };
 
-async function weekDays(tx: Tx, monday: string, salon: Salon): Promise<WeekDay[]> {
-  const week = await getHours(tx);
+async function weekDays(tx: Tx, monday: string, salon: Salon, prof?: string | null): Promise<WeekDay[]> {
+  const week = await getHours(tx, prof ?? undefined);
   const holidays = holidaysBetween(monday, addDays(monday, 6), salon.state, salon.city);
   const days: WeekDay[] = [];
   for (let i = 0; i < 7; i++) {
     const date = addDays(monday, i);
     const hours = week[weekdayOf(date)] ?? null;
-    const rows = await dayAppointments(tx, date);
-    const full = rows.length === 0 && (await blockedAllDay(tx, date, hours));
+    const rows = await dayAppointments(tx, date, prof);
+    const full = rows.length === 0 && (await blockedAllDay(tx, date, hours, prof));
     days.push({
       date,
       label: shortDay(date),
@@ -177,8 +204,11 @@ async function build(
   salon: Salon,
   rows: DayRow[],
   deps: NoticeDeps,
+  /** Agenda do resumo: id da profissional (aviso só dela) ou null (salão todo) */
+  prof: string | null = null,
 ): Promise<Built | null> {
-  const hello = greeting(now, salon.ownerName);
+  // O nome da dona não serve para a saudação da profissional
+  const hello = greeting(now, prof ? null : salon.ownerName);
   const recent = await recentVariants(tx, kind);
   switch (kind) {
     case "morning": {
@@ -189,7 +219,7 @@ async function build(
       return { ...withWeather(morningText(variant, hello, summary, sky), f), variant, detail: null, tag: kind };
     }
     case "day_end": {
-      const week = await getHours(tx);
+      const week = await getHours(tx, prof ?? undefined);
       const h = week[weekdayOf(today)];
       const live = rows.filter((r) => r.status !== "reschedule_requested");
       const end = dayEndMin({
@@ -207,15 +237,16 @@ async function build(
             gte(appointments.startsAt, from),
             lt(appointments.startsAt, to),
             inArray(appointments.status, ["no_show", "cancelled"]),
+            ofProfessional(prof),
           ),
         );
       const tomorrow = addDays(today, 1);
       const th = week[weekdayOf(tomorrow)] ?? null;
-      const next = (await dayAppointments(tx, tomorrow)).filter((r) => r.status !== "reschedule_requested");
+      const next = (await dayAppointments(tx, tomorrow, prof)).filter((r) => r.status !== "reschedule_requested");
       const off = isDayOff({
         hours: th,
         appts: next,
-        fullDayBlock: next.length === 0 && (await blockedAllDay(tx, tomorrow, th)),
+        fullDayBlock: next.length === 0 && (await blockedAllDay(tx, tomorrow, th, prof)),
       });
       const variant = pickVariant(dayEndBank(late).length, recent);
       const t = dayEndText(
@@ -235,17 +266,19 @@ async function build(
     }
     case "week": {
       const monday = addDays(today, 1);
-      const days = await weekDays(tx, monday, salon);
+      const days = await weekDays(tx, monday, salon, prof);
       const lines = days
         .map(
           (d) =>
             `${d.label}: ${d.off ? "folga" : `${d.count} cliente(s)`}${d.holiday ? ` · feriado/data: ${d.holiday}` : ""}`,
         )
         .join("\n");
-      const last = await lastDetail(tx, "week", monday);
-      const text =
-        (await deps.ai?.weekPlan({ name: salon.ownerName ?? salon.name, days: lines, lastWeek: last })) ??
-        weekFallback(days);
+      // O roteiro de uma profissional não passa pela IA nem abre o diálogo do salão (texto compartilhado)
+      const last = prof ? null : await lastDetail(tx, "week", monday);
+      const text = prof
+        ? null
+        : ((await deps.ai?.weekPlan({ name: salon.ownerName ?? salon.name, days: lines, lastWeek: last })) ??
+          weekFallback(days));
       const total = days.reduce((s, d) => s + d.count, 0);
       const hol = days.filter((d) => d.holiday).map((d) => d.holiday);
       const body = [
@@ -253,7 +286,7 @@ async function build(
           ? `${total === 1 ? "1 cliente marcada" : `${total} clientes marcadas`} para a semana.`
           : "Semana com a agenda aberta.",
         hol.length ? `Atenção: ${hol.join(", ")}.` : "",
-        "Toque para ver o roteiro.",
+        prof ? "" : "Toque para ver o roteiro.",
       ]
         .filter(Boolean)
         .join(" ");
@@ -285,7 +318,33 @@ const withWeather = (t: NoticeText, f: Forecast | null): NoticeText =>
 /** Link aberto ao tocar: avisos com texto longo abrem o diálogo por cima da Agenda. */
 export const noticeUrl = (id: string, withDetail: boolean) => (withDetail ? `/agenda?aviso=${id}` : "/agenda");
 
-/** O que está na hora para este estúdio agora (a transação já está no estúdio). */
+/**
+ * Quem recebe cada resumo: os aparelhos agrupados pela agenda que o login enxerga (null = salão todo).
+ * Sem `members`, todos recebem o resumo do salão. Login sem agenda para resumir fica de fora.
+ */
+function groupBySubscribers(
+  subs: { userId: string }[],
+  members: readonly Member[] | undefined,
+): Map<string | null, Set<string>> {
+  const groups = new Map<string | null, Set<string>>();
+  for (const { userId } of subs) {
+    const member = members?.find((m) => m.userId === userId);
+    const scope = members ? (member ? noticeScope(member) : null) : { professionalId: null };
+    if (!scope) continue;
+    const set = groups.get(scope.professionalId) ?? new Set<string>();
+    set.add(userId);
+    groups.set(scope.professionalId, set);
+  }
+  return groups;
+}
+
+/**
+ * O que está na hora para este estúdio agora (a transação já está no estúdio).
+ *
+ * O horário e o registro do aviso (uma linha por tipo e dia) seguem o salão; o que muda por pessoa é o conteúdo:
+ * owner/admin recebem o resumo do salão, cada profissional o da própria agenda (D5), e só se ela trabalha no dia.
+ * Datas comemorativas (mensagem para as clientes do salão) vão só para owner/admin.
+ */
 export async function runTenantNotices(
   tx: Tx,
   tenantId: string,
@@ -295,8 +354,9 @@ export async function runTenantNotices(
   deps: NoticeDeps,
 ): Promise<PushRun & { kinds: NoticeKind[] }> {
   const run = { sent: 0, removed: 0, failed: 0, kinds: [] as NoticeKind[] };
-  const [sub] = await tx.select({ id: pushSubscriptions.id }).from(pushSubscriptions).limit(1);
-  if (!sub) return run; // ninguém com aviso ligado
+  const subs = await tx.select({ userId: pushSubscriptions.userId }).from(pushSubscriptions);
+  if (!subs.length) return run; // ninguém com aviso ligado
+  const groups = groupBySubscribers(subs, deps.members);
 
   const today = todayStr(now);
   const week = await getHours(tx);
@@ -337,20 +397,53 @@ export async function runTenantNotices(
       .onConflictDoNothing()
       .returning({ id: ownerNotices.id });
     if (!row) continue;
-    const r = await sendToAll(tx, push, (sub) => ({
-      title: mascotTitle(text.title, deps.mascots?.[sub.userId]),
-      body: text.body,
-      url: noticeUrl(row.id, !!text.detail),
-      tag: text.tag,
-    }));
+    const total: PushRun = { sent: 0, removed: 0, failed: 0 };
+    for (const [prof, userIds] of groups) {
+      const mine = prof === null ? text : await buildForProfessional(tx, kind, now, today, salon, deps, prof);
+      if (!mine) continue; // folga dela, ou aviso só do salão (datas comemorativas)
+      const r = await sendToAll(
+        tx,
+        push,
+        (sub) => ({
+          title: mascotTitle(mine.title, deps.mascots?.[sub.userId]),
+          body: mine.body,
+          url: noticeUrl(row.id, !!mine.detail),
+          tag: mine.tag,
+        }),
+        userIds,
+      );
+      total.sent += r.sent;
+      total.removed += r.removed;
+      total.failed += r.failed;
+    }
     // Nenhum aparelho recebeu: apaga para tentar de novo na próxima rodada
-    if (r.sent === 0 && r.failed > 0) await tx.delete(ownerNotices).where(eq(ownerNotices.id, row.id));
-    run.sent += r.sent;
-    run.removed += r.removed;
-    run.failed += r.failed;
+    if (total.sent === 0 && total.failed > 0) await tx.delete(ownerNotices).where(eq(ownerNotices.id, row.id));
+    run.sent += total.sent;
+    run.removed += total.removed;
+    run.failed += total.failed;
     run.kinds.push(kind);
   }
   return run;
+}
+
+/** O aviso com a agenda de uma profissional; null se ela folga no dia ou se o aviso é só do salão. */
+async function buildForProfessional(
+  tx: Tx,
+  kind: NoticeKind,
+  now: Date,
+  today: string,
+  salon: Salon,
+  deps: NoticeDeps,
+  prof: string,
+): Promise<Built | null> {
+  if (kind === "holiday") return null;
+  const mine = await dayAppointments(tx, today, prof);
+  if (kind !== "week") {
+    const hours = (await getHours(tx, prof))[weekdayOf(today)] ?? null;
+    const full = mine.length === 0 && (await blockedAllDay(tx, today, hours, prof));
+    if (isDayOff({ hours, appts: mine, fullDayBlock: full })) return null;
+  }
+  return build(tx, kind, now, today, salon, mine, deps, prof);
 }
 
 /**

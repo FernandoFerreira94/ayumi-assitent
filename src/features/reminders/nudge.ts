@@ -5,7 +5,7 @@ import type { MessagingPort } from "@/features/messaging/port";
 import { MessagingOfflineError, MessagingRejectedError, sendFailReason } from "@/features/messaging/port";
 import { recordMessage } from "@/features/messaging/store";
 import { getReminderSettings } from "./core";
-import { secondReminderText } from "./text";
+import { professionalLabel, secondReminderText } from "./text";
 
 import { isQuietHour } from "./quiet";
 import { errCode } from "@/lib/log";
@@ -23,6 +23,8 @@ type Due = {
   priceCents: number;
   /** Já confirmou: o 2º aviso vai só como lembrete, sem as opções 1/2/3 */
   confirmed: boolean;
+  /** Nome da profissional para {profissional}; vazio no salão com uma só */
+  professional: string;
 };
 
 /**
@@ -46,6 +48,8 @@ export async function claimNudges(tx: Tx, now: Date, hours: number, firstOn = tr
     starts_at: Date;
     price_cents: number;
     confirmed: boolean;
+    professional: string | null;
+    team_size: number;
   }>(sql`
     with claimed as (
       update appointments set nudge_sent_at = ${iso}
@@ -63,10 +67,12 @@ export async function claimNudges(tx: Tx, now: Date, hours: number, firstOn = tr
           and starts_at > ${iso} and starts_at <= ${until}
           and client_id not in (select id from clients where opted_out_at is not null)
         for update skip locked)
-      returning id, tenant_id, client_id, starts_at, service_id, price_cents, status)
+      returning id, tenant_id, client_id, starts_at, service_id, price_cents, status, professional_id)
     select c.id, c.tenant_id, c.client_id, c.starts_at, c.price_cents, cl.name as client, cl.phone_e164 as phone,
-      s.name as service, c.status = 'confirmed' as confirmed
+      s.name as service, c.status = 'confirmed' as confirmed, p.display_name as professional,
+      (select count(*)::int from professionals q where q.tenant_id = c.tenant_id and q.active) as team_size
     from claimed c join clients cl on cl.id = c.client_id join services s on s.id = c.service_id
+    left join professionals p on p.id = c.professional_id
     order by c.starts_at`);
   return rows.map((r) => ({
     id: r.id,
@@ -78,6 +84,7 @@ export async function claimNudges(tx: Tx, now: Date, hours: number, firstOn = tr
     startsAt: new Date(r.starts_at),
     priceCents: Number(r.price_cents),
     confirmed: r.confirmed === true,
+    professional: professionalLabel(r.professional, r.team_size),
   }));
 }
 

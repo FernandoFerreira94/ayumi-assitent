@@ -37,3 +37,8 @@
 - Google, link do iPhone (.ics) e iCloud são de cada profissional. Quem gerencia é a profissional do login; owner/admin sem profissional ligada usam a padrão do salão (`features/team/professional.ts`: `calendarProfessionalId(me)`).
 - Google: a conta Google do login ligado à profissional (`memberships.professional_id`). Profissional sem login, ou com login sem Google, não sincroniza e não dá erro. Dona sem vínculo (cadastro novo) vale pela profissional padrão.
 - Os gates de A3 continuam: criar/desligar link, ocultar nomes, iCloud e desconectar Google exigem `salon.settings` (owner/admin). Profissional com login ainda não gerencia o próprio calendário: decisão de produto para A6/A7.
+
+## Avisos e push por profissional (task A5)
+- Push de atendimento (resposta da cliente, "não respondeu") vai ao login ligado à profissional do atendimento + owner/admin; sem login dela, só owner/admin. Avisos do dia: profissional recebe o resumo da própria agenda, owner/admin o do salão. Detalhes em `avisos-push.md`; regra pura em `features/push/recipients.ts`.
+- Textos de WhatsApp ganham `{profissional}` (vazio no salão com uma só); ver `lembretes.md`.
+- Testes: `tests/unit/push-recipients.test.ts`, `tests/unit/reminder-text.test.ts`, `tests/db/avisos-profissional.test.ts`.
