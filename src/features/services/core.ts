@@ -37,6 +37,7 @@ const fields = (input: Omit<ServiceInput, "color"> & { color: string }) => ({
   notes: input.notes,
   bookable: input.bookable,
   showInSlots: input.showInSlots,
+  returnDays: input.returnDays,
 });
 
 async function nextPosition(tx: Tx) {

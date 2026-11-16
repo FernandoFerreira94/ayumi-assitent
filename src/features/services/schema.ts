@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BUFFER_OPTIONS, SERVICE_COLORS, type ServiceColor } from "./catalog";
+import { BUFFER_OPTIONS, RETURN_MAX_DAYS, SERVICE_COLORS, type ServiceColor } from "./catalog";
 
 // Checkbox de formulário: presente = "on", ausente = desligado
 const flag = z.preprocess((v) => v === "on" || v === "true" || v === true, z.boolean());
@@ -25,5 +25,10 @@ export const serviceInput = z.object({
   notes: z.preprocess((v) => (typeof v === "string" && v.trim() ? v.trim() : null), z.string().max(300).nullable()),
   bookable: flag,
   showInSlots: flag,
+  // vazio = sem retorno
+  returnDays: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? null : v),
+    z.coerce.number().int().min(1).max(RETURN_MAX_DAYS).nullable(),
+  ),
 });
 export type ServiceInput = z.infer<typeof serviceInput>;
