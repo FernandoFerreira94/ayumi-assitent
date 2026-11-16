@@ -3,7 +3,7 @@ import { Arrow, Art, Badge, Bar, Callout, Phone, Ring, T } from "@/components/ui
 
 const WA = "#1daa61";
 
-/** Passo 1: aba Configurações, embaixo à direita (iPhone). */
+/** iPhone, passo 1: aba Configurações, embaixo à direita. */
 function OpenSettings() {
   // Celular cortado em cima: aparece só a parte de baixo, com a barra de abas.
   const tabs = [16, 48, 80, 112, 144];
@@ -130,14 +130,112 @@ function EnterCode({ code }: { code: string }) {
   );
 }
 
-/** Passos de conexão por código (o mesmo texto de antes, agora com desenho). */
-export function pairingSteps(code: string): GuideStep[] {
+/** Android, passo 1: menu ⋮ no alto, à direita. */
+function OpenMenuAndroid() {
+  return (
+    <Art>
+      <Phone x={24} y={12} android>
+        <T x={12} y={44} size={13} fill={WA}>
+          WhatsApp
+        </T>
+        {[0, 1, 2].map((i) => (
+          <circle key={i} cx={146} cy={33 + i * 5} r={1.8} fill="#17142b" />
+        ))}
+        {[64, 102, 140].map((y) => (
+          <g key={y}>
+            <circle cx={22} cy={y + 8} r={11} fill="#e7f7ee" />
+            <Bar x={40} y={y} w={70} />
+            <Bar x={40} y={y + 12} w={96} h={6} fill="#f1eff8" />
+          </g>
+        ))}
+      </Phone>
+      <Ring x={161} y={40} w={30} h={30} />
+      <Callout x={214} y={86} w={96} lines={["Toque no ⋮"]} />
+      <Arrow x1={236} y1={86} x2={194} y2={62} bend={14} />
+    </Art>
+  );
+}
+
+/** Android, passo 2: Dispositivos conectados › Conectar dispositivo (duas telas). */
+function LinkedDevicesAndroid() {
+  return (
+    <Art>
+      <Phone x={12} y={12} w={140} h={260} android>
+        <T x={12} y={44} size={12} fill={WA}>
+          WhatsApp
+        </T>
+        <rect x={34} y={30} width={88} height={104} rx={8} fill="#ffffff" stroke="#ecebf2" />
+        <Bar x={44} y={44} w={56} h={6} />
+        <T x={44} y={74} size={8.5}>
+          Dispositivos
+        </T>
+        <T x={44} y={85} size={8.5}>
+          conectados
+        </T>
+        <Bar x={44} y={100} w={50} h={6} />
+        <Bar x={44} y={118} w={62} h={6} />
+      </Phone>
+      <Ring x={47} y={76} w={96} h={30} r={10} />
+      <Badge x={47} y={76} n={1} />
+
+      <Phone x={168} y={12} w={140} h={260} android>
+        <T x={12} y={42} size={10}>
+          Dispositivos conectados
+        </T>
+        <rect x={40} y={60} width={50} height={32} rx={4} fill="none" stroke="#c9c6d6" strokeWidth={3} />
+        <rect x={32} y={94} width={66} height={5} rx={2.5} fill="#c9c6d6" />
+        <rect x={12} y={114} width={106} height={26} rx={13} fill={WA} />
+        <T x={65} y={131} size={9} anchor="middle" fill="#ffffff">
+          Conectar dispositivo
+        </T>
+      </Phone>
+      <Ring x={181} y={127} w={114} h={34} r={17} />
+      <Badge x={181} y={127} n={2} />
+
+      <Arrow x1={146} y1={96} x2={178} y2={140} bend={-8} />
+    </Art>
+  );
+}
+
+export type PhoneOs = "ios" | "android";
+
+/** Passos de conexão por código, com o desenho do sistema do celular do WhatsApp. */
+export function pairingSteps(code: string, os: PhoneOs = "ios"): GuideStep[] {
+  const last: GuideStep = {
+    art: <EnterCode code={code} />,
+    text: (
+      <>
+        Na câmera, toque em <b>Conectar com número de telefone</b> e digite o código. Se estiver em outro aparelho,
+        também dá para escanear o QR code.
+      </>
+    ),
+  };
+  if (os === "android")
+    return [
+      {
+        art: <OpenMenuAndroid />,
+        text: (
+          <>
+            Abra o WhatsApp deste número e toque nos <b>três pontinhos ⋮</b>, no alto à direita.
+          </>
+        ),
+      },
+      {
+        art: <LinkedDevicesAndroid />,
+        text: (
+          <>
+            Toque em <b>Dispositivos conectados</b> e depois em <b>Conectar dispositivo</b>.
+          </>
+        ),
+      },
+      last,
+    ];
   return [
     {
       art: <OpenSettings />,
       text: (
         <>
-          Abra o WhatsApp deste número e toque em <b>Configurações</b> (no Android, toque em <b>⋮</b> no alto).
+          Abra o WhatsApp deste número e toque em <b>Configurações</b>, embaixo à direita.
         </>
       ),
     },
@@ -145,19 +243,10 @@ export function pairingSteps(code: string): GuideStep[] {
       art: <LinkedDevices />,
       text: (
         <>
-          Toque em <b>Aparelhos conectados</b> (no Android, <b>Dispositivos conectados</b>) e depois em{" "}
-          <b>Conectar um aparelho</b>.
+          Toque em <b>Aparelhos conectados</b> e depois em <b>Conectar um aparelho</b>.
         </>
       ),
     },
-    {
-      art: <EnterCode code={code} />,
-      text: (
-        <>
-          Na câmera, toque em <b>Conectar com número de telefone</b> e digite o código. Se estiver em outro aparelho,
-          também dá para escanear o QR code.
-        </>
-      ),
-    },
+    last,
   ];
 }

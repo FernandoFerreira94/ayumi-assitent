@@ -34,6 +34,7 @@ export function Phone({
   w = 170,
   h = 300,
   screen = "#ffffff",
+  android = false,
   children,
 }: {
   x: number;
@@ -41,6 +42,8 @@ export function Phone({
   w?: number;
   h?: number;
   screen?: string;
+  /** Android: câmera em furo (bolinha) em vez da ilha do iPhone. */
+  android?: boolean;
   children: ReactNode;
 }) {
   const clip = useId();
@@ -57,7 +60,11 @@ export function Phone({
       <g transform="translate(5 5)" clipPath={`url(#${clip})`}>
         <rect x={0} y={0} width={sw} height={sh} fill={screen} />
         {children}
-        <rect x={sw / 2 - 22} y={8} width={44} height={12} rx={6} fill="#17142b" />
+        {android ? (
+          <circle cx={sw / 2} cy={13} r={5} fill="#17142b" />
+        ) : (
+          <rect x={sw / 2 - 22} y={8} width={44} height={12} rx={6} fill="#17142b" />
+        )}
       </g>
     </g>
   );
