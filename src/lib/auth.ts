@@ -6,7 +6,9 @@ import { oneTimeToken } from "better-auth/plugins/one-time-token";
 import { twoFactor } from "better-auth/plugins/two-factor";
 import { Pool } from "pg";
 import { isPlatformAdmin } from "@/features/admin/access";
+import { resetPasswordEmail, RESET_LINK_MINUTES } from "@/features/auth/emails";
 import { isEmailAllowed } from "./allowed-emails";
+import { sendEmail } from "./email";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
@@ -31,7 +33,29 @@ export const auth = betterAuth({
   // E-mail e senha só para ENTRAR: conta nova nasce pelo Google (e-mail verificado por ele). Sem verificação de
   // e-mail, cadastro por senha deixaria alguém criar conta com o e-mail de outra pessoa e manter acesso depois
   // que ela entrasse pelo Google. A senha é criada em Ajustes > Calendários (setPassword) por quem já entrou.
-  emailAndPassword: { enabled: true, disableSignUp: true, minPasswordLength: 8 },
+  emailAndPassword: {
+    enabled: true,
+    disableSignUp: true,
+    minPasswordLength: 8,
+    // Esqueci a senha: link de uso único que vale 30 min. A resposta é a mesma exista ou não a conta (o Better Auth
+    // simula o caminho), e o envio não é esperado para o tempo de resposta também não denunciar.
+    resetPasswordTokenExpiresIn: RESET_LINK_MINUTES * 60,
+    // Trocou a senha: derruba as sessões abertas (quem tinha a senha antiga sai de todos os aparelhos)
+    revokeSessionsOnPasswordReset: true,
+    sendResetPassword: async ({ user, url }) => {
+      void (async () => {
+        // Teto por conta (além do limite por IP): no máximo 3 links a cada 15 min, para ninguém lotar a caixa
+        // de alguém pedindo de vários IPs.
+        const r = await pool.query<{ n: number }>(
+          `select count(*)::int as n from verification
+           where value = $1 and identifier like 'reset-password:%' and "createdAt" > now() - interval '15 minutes'`,
+          [user.id],
+        );
+        if ((r.rows[0]?.n ?? 0) > 3) return;
+        await sendEmail(resetPasswordEmail(user.email, user.name, url));
+      })().catch(() => undefined);
+    },
+  },
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
@@ -48,6 +72,13 @@ export const auth = betterAuth({
   account: { encryptOAuthTokens: true, accountLinking: { allowDifferentEmails: true } },
   // Railway repassa o IP real em x-forwarded-for; sem isso o limite de requisições vira um balde único para todos.
   advanced: { ipAddress: { ipAddressHeaders: ["x-forwarded-for", "x-real-ip"] } },
+  // Limite por IP (só em produção). Pedido de link: 3 a cada 10 min; trocar a senha: 10 a cada 15 min.
+  rateLimit: {
+    customRules: {
+      "/request-password-reset": { window: 600, max: 3 },
+      "/reset-password": { window: 900, max: 10 },
+    },
+  },
   session: { expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24 },
   databaseHooks: {
     // Registro de acesso (Marco Civil, 6 meses): cada login vira uma linha; limpeza em features/retention

@@ -10,6 +10,7 @@ import { InstallGuide } from "@/features/install/InstallGuide";
 import { isNativeShell } from "@/features/install/platform";
 import { authClient } from "@/lib/auth-client";
 import { ERROR_MESSAGES } from "@/lib/errors";
+import { LOGIN_INPUT as input, PasswordInput } from "./PasswordInput";
 
 /** E-mail fora da lista de acesso (piloto): explica o que fazer, em vez de só "sem acesso". */
 export const LOGIN_NOT_ALLOWED =
@@ -23,19 +24,24 @@ export function authErrorText(code: string | null | undefined): string | null {
   if (c.includes("USER_ALREADY_EXISTS")) return "Este e-mail já tem conta. Entre com a senha.";
   if (c.includes("PASSWORD_TOO_SHORT")) return "A senha precisa ter pelo menos 8 caracteres.";
   if (c.includes("INVALID_EMAIL")) return "E-mail inválido.";
-  if (c.includes("INVALID_CODE") || c.includes("INVALID_BACKUP_CODE")) return "Código inválido. Confira o app autenticador.";
-  if (c.includes("TOO_MANY") || c.includes("LOCKED")) return "Muitas tentativas. Entre de novo com a senha daqui a 15 minutos.";
+  if (c.includes("INVALID_CODE") || c.includes("INVALID_BACKUP_CODE"))
+    return "Código inválido. Confira o app autenticador.";
+  if (c.includes("TOO_MANY") || c.includes("LOCKED"))
+    return "Muitas tentativas. Entre de novo com a senha daqui a 15 minutos.";
   if (c.includes("TWO_FACTOR_COOKIE")) return "O tempo para digitar o código acabou. Entre de novo com a senha.";
   return "Não foi possível entrar. Tente de novo.";
 }
 
 // Conta nova só pelo Google (e-mail já verificado por ele); e-mail e senha só para entrar.
 // "code": conta com 2FA (só o dono do produto) pede o código do app autenticador depois da senha.
-type View = "start" | "email" | "code";
+// "forgot"/"sent": esqueci a senha (link por e-mail, que leva para /redefinir-senha).
+type View = "start" | "email" | "code" | "forgot" | "sent";
 const HEAD: Record<View, [string, string]> = {
   start: ["Que bom te ver!", "Entre para abrir sua agenda."],
   email: ["Entrar com e-mail", "Use o e-mail e a senha da sua conta."],
   code: ["Código de acesso", "Digite os 6 números do app autenticador."],
+  forgot: ["Esqueceu a senha?", "Mandamos um link para você criar uma nova."],
+  sent: ["Confira seu e-mail", "Se existir conta com esse e-mail, o link chega em instantes."],
 };
 
 /** Cada toque no Bubbly é a próxima reação desta lista, em ordem; só movimento, sem legenda. */
@@ -43,21 +49,6 @@ const REACTIONS = ["pulo", "gelatina", "piscadinha", "coracoes", "bolhinhas", "r
 const REACT_MS = 1300;
 /** Quanto tempo a Bolha fica preocupada depois de um erro. */
 const WORRY_MS = 2200;
-
-const input =
-  "min-h-13 w-full rounded-2xl border-[1.5px] border-line bg-surface px-4 text-base font-semibold transition-[border-color,box-shadow] focus:border-primary focus:shadow-[0_0_0_4px_var(--soft)] focus:outline-none aria-invalid:border-fail";
-
-function passwordStrength(v: string) {
-  let s = 0;
-  if (v.length >= 8) s++;
-  if (/[A-Z]/.test(v) && /[a-z]/.test(v)) s++;
-  if (/\d/.test(v)) s++;
-  if (/[^A-Za-z0-9]/.test(v)) s++;
-  if (!v) return { pct: 0, label: "Força da senha", color: "var(--line)" };
-  if (s >= 3) return { pct: s * 25, label: "Senha forte", color: "var(--ok)" };
-  if (s === 2) return { pct: 50, label: "Senha razoável", color: "var(--wait)" };
-  return { pct: 25, label: "Senha fraca", color: "var(--fail)" };
-}
 
 /** O "G" oficial do Google, nas quatro cores da marca. */
 function GoogleG() {
@@ -86,7 +77,9 @@ function GoogleG() {
 export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const [view, setView] = useState<View>("start");
+  const [view, setView] = useState<View>(params.get("esqueci") ? "forgot" : "start");
+  // E-mail digitado numa tela já vem preenchido na outra (entrar ↔ esqueci a senha)
+  const [email, setEmail] = useState("");
   const [pendingGoogle, setPendingGoogle] = useState(false);
   const [pendingEmail, setPendingEmail] = useState(false);
   const [error, setError] = useState<string | null>(authErrorText(params.get("error")));
@@ -97,7 +90,6 @@ export function LoginForm() {
   const [focus, setFocus] = useState<"text" | "password" | null>(null);
   const [typed, setTyped] = useState(0);
   const [showPass, setShowPass] = useState(false);
-  const [strength, setStrength] = useState(passwordStrength(""));
   const [reaction, setReaction] = useState<{ n: number; k: (typeof REACTIONS)[number] } | null>(null);
   const taps = useRef(0);
 
@@ -128,7 +120,6 @@ export function LoginForm() {
     setError(null);
     setFocus(null);
     setShowPass(false);
-    setStrength(passwordStrength(""));
   }
 
   function fail(text: string | null) {
@@ -172,6 +163,7 @@ export function LoginForm() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const email = String(fd.get("email") ?? "").trim();
+    setEmail(email);
     const password = String(fd.get("password") ?? "");
     if (!/^\S+@\S+\.\S+$/.test(email)) return fail("Digite um e-mail válido, como voce@salao.com.br.");
     if (!password) return fail("Digite sua senha.");
@@ -186,6 +178,33 @@ export function LoginForm() {
       notify.success("Pronto! Abrindo sua agenda");
       router.replace("/agenda");
       router.refresh();
+    } catch {
+      fail(ERROR_MESSAGES.NETWORK);
+    } finally {
+      setPendingEmail(false);
+    }
+  }
+
+  async function submitForgot(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const typed = String(new FormData(e.currentTarget).get("email") ?? "").trim();
+    if (!/^\S+@\S+\.\S+$/.test(typed)) return fail("Digite um e-mail válido, como voce@salao.com.br.");
+    (document.activeElement as HTMLElement | null)?.blur();
+    setEmail(typed);
+    setPendingEmail(true);
+    setError(null);
+    try {
+      // Resposta igual exista ou não a conta: a tela nunca diz se o e-mail está cadastrado
+      const res = await authClient.requestPasswordReset({ email: typed, redirectTo: "/redefinir-senha" });
+      if (res.error) {
+        const c = (res.error.code ?? "").toUpperCase();
+        return fail(
+          res.error.status === 429 || c.includes("TOO_MANY")
+            ? "Muitos pedidos seguidos. Espere alguns minutos e tente de novo."
+            : ERROR_MESSAGES.UNKNOWN,
+        );
+      }
+      go("sent");
     } catch {
       fail(ERROR_MESSAGES.NETWORK);
     } finally {
@@ -235,62 +254,6 @@ export function LoginForm() {
     onInput: (e: React.FormEvent<HTMLInputElement>) => setTyped(e.currentTarget.value.length),
     onBlur: () => setFocus(null),
   };
-
-  const passwordField = (autoComplete: string, placeholder: string, meter: boolean) => (
-    <div className="grid gap-1">
-      <label htmlFor="password" className="pl-1.5 text-xs font-bold text-muted">
-        Senha
-      </label>
-      <div className="relative">
-        <input
-          id="password"
-          name="password"
-          type={showPass ? "text" : "password"}
-          required
-          autoComplete={autoComplete}
-          placeholder={placeholder}
-          className={`${input} pr-12`}
-          onFocus={() => setFocus("password")}
-          onBlur={() => setFocus(null)}
-          onInput={meter ? (e) => setStrength(passwordStrength(e.currentTarget.value)) : undefined}
-        />
-        <button
-          type="button"
-          aria-label={showPass ? "Esconder senha" : "Mostrar senha"}
-          aria-pressed={showPass}
-          // Mantém o foco no campo: assim a Bolha passa de "tapando os olhos" para "espiando"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => setShowPass((v) => !v)}
-          className="absolute right-1 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-xl text-muted"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            className="size-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            aria-hidden="true"
-          >
-            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
-            <circle cx="12" cy="12" r="3" />
-            {showPass ? <path d="M4 4l16 16" /> : null}
-          </svg>
-        </button>
-      </div>
-      {meter ? (
-        <div className="flex items-center gap-2 pl-1.5 text-xs font-semibold text-muted">
-          <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
-            <i
-              className="block h-full rounded-full transition-all duration-300"
-              style={{ width: `${strength.pct}%`, background: strength.color }}
-            />
-          </span>
-          <span aria-live="polite">{strength.label}</span>
-        </div>
-      ) : null}
-    </div>
-  );
 
   const back = (
     <button
@@ -434,6 +397,76 @@ export function LoginForm() {
             Sem o celular? Use um dos códigos de recuperação.
           </p>
         </form>
+      ) : view === "forgot" ? (
+        <form
+          key="forgot"
+          onSubmit={submitForgot}
+          noValidate
+          className={`login-view grid gap-3 ${worried ? "login-shake" : ""}`}
+        >
+          <button
+            type="button"
+            onClick={() => go("email")}
+            className="flex min-h-11 items-center gap-1 self-start text-sm font-bold text-muted"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="size-[18px]"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+            Voltar
+          </button>
+          <div className="grid gap-1">
+            <label htmlFor="forgot-email" className="pl-1.5 text-xs font-bold text-muted">
+              E-mail da conta
+            </label>
+            <input
+              id="forgot-email"
+              name="email"
+              type="email"
+              required
+              autoComplete="username"
+              inputMode="email"
+              placeholder="voce@salao.com.br"
+              defaultValue={email}
+              autoFocus
+              className={input}
+              {...textField}
+            />
+          </div>
+          <SubmitButton pending={pendingEmail} disabled={busy} pendingLabel="Enviando…">
+            Enviar link
+          </SubmitButton>
+          <p className="text-center text-sm font-semibold text-muted">
+            Entra pelo Google? Use o botão do Google, não precisa de senha.
+          </p>
+        </form>
+      ) : view === "sent" ? (
+        <div key="sent" className="login-view grid gap-3">
+          <div className="grid gap-1.5 rounded-2xl bg-soft px-4 py-3.5 text-sm font-semibold text-primary-text">
+            <p>
+              Enviamos para <strong className="break-all">{email}</strong>. O link vale por 30 minutos e só funciona uma
+              vez.
+            </p>
+            <p className="font-medium">Não chegou? Olhe a caixa de spam ou Promoções.</p>
+          </div>
+          <SubmitButton type="button" onClick={() => go("email")} pendingLabel="Voltando…">
+            Voltar para entrar
+          </SubmitButton>
+          <button
+            type="button"
+            onClick={() => go("forgot")}
+            className="flex min-h-11 items-center justify-center text-sm font-bold text-muted"
+          >
+            Usar outro e-mail
+          </button>
+        </div>
       ) : (
         <form
           key={view}
@@ -454,12 +487,29 @@ export function LoginForm() {
               autoComplete="username"
               inputMode="email"
               placeholder="voce@salao.com.br"
+              defaultValue={email}
               autoFocus
               className={input}
               {...textField}
             />
           </div>
-          {passwordField("current-password", "Sua senha", false)}
+          <PasswordInput
+            id="password"
+            label="Senha"
+            autoComplete="current-password"
+            placeholder="Sua senha"
+            show={showPass}
+            onToggle={() => setShowPass((v) => !v)}
+            onFocusChange={(f) => setFocus(f ? "password" : null)}
+          />
+          <button
+            type="button"
+            onClick={() => go("forgot")}
+            disabled={busy}
+            className="-mt-1 flex min-h-11 items-center self-end justify-self-end px-1.5 text-sm font-bold text-primary-text"
+          >
+            Esqueci minha senha
+          </button>
           <SubmitButton pending={pendingEmail} disabled={busy} pendingLabel="Entrando…">
             Entrar
           </SubmitButton>

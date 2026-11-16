@@ -28,6 +28,7 @@ export const ERROR_MESSAGES = {
   ADMIN_STEP_UP_INVALID: "Código inválido. Confira o app autenticador e tente de novo.",
   ADMIN_STEP_UP_LOCKED: "Muitas tentativas. Espere 15 minutos para tentar de novo.",
   ADMIN_PASSWORD_REQUIRED: "Digite a senha da sua conta para continuar.",
+  RESET_LINK_INVALID: "Este link de nova senha expirou ou já foi usado. Peça um novo na tela de entrar.",
   ADMIN_STEP_UP_BUSY: "Outra tentativa ainda está em andamento. Tente de novo em instantes.",
   NETWORK: "Sem conexão. Verifique a internet e tente de novo.",
   UNKNOWN: "Algo deu errado do nosso lado. Tente de novo em instantes.",
