@@ -11,6 +11,7 @@ export const ERROR_MESSAGES = {
   CATEGORY_NOT_EMPTY: "Mova ou exclua os serviços antes de excluir a categoria.",
   IMAGE_TOO_LARGE: "A imagem é grande demais. Tente uma foto menor.",
   NOT_ALLOWED: "Esta conta não tem acesso.",
+  FORBIDDEN: "Você não tem permissão para fazer isso. Peça à dona ou à gerente do salão.",
   VALIDATION: "Confira os campos destacados.",
   NOT_FOUND: "Não encontramos esse item. Ele pode ter sido apagado.",
   CITY_NOT_FOUND: "Não encontramos essa cidade. Confira o nome e a UF.",

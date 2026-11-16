@@ -9,6 +9,8 @@ import { listBookable } from "@/features/services/core";
 import { dayRange, todayStr } from "@/lib/dates";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
+import { mayEditSlotList } from "@/features/team/guard";
+import { canAs, ownAgendaId } from "@/features/team/permissions";
 import { getHours } from "./core";
 import { customConfigSchema, filterDaySlots, resolveDates, shortDayLabel, type CustomDay } from "./custom-slots";
 import { removeSlotList, saveSlotList } from "./slot-lists";
@@ -61,11 +63,19 @@ const saveInput = z.object({
 });
 
 export async function saveCustomList(raw: unknown): Promise<ActionResult<{ id: string }>> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  const { tenantId } = me;
+  // Lista nova entra na agenda da profissional; dona e gerente seguem a profissional padrão (como sempre)
+  const professionalId = ownAgendaId(me);
+  if (!canAs(me, "agenda.edit", professionalId)) return fail("FORBIDDEN");
   const parsed = saveInput.safeParse(raw);
   if (!parsed.success) return fail("VALIDATION", "name");
   try {
-    const res = await withTenant(tenantId, (tx) => saveSlotList(tx, tenantId, parsed.data));
+    const res = await withTenant(tenantId, async (tx) => {
+      if (parsed.data.id && !(await mayEditSlotList(tx, me, parsed.data.id))) return "forbidden" as const;
+      return saveSlotList(tx, tenantId, parsed.data, professionalId);
+    });
+    if (res === "forbidden") return fail("FORBIDDEN");
     if (res.status !== "ok") {
       return res.status === "taken" ? fail("NAME_TAKEN", "name") : fail("NOT_FOUND");
     }
@@ -77,11 +87,17 @@ export async function saveCustomList(raw: unknown): Promise<ActionResult<{ id: s
 }
 
 export async function deleteCustomList(id: string): Promise<ActionResult> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  const { tenantId } = me;
   const p = z.string().uuid().safeParse(id);
   if (!p.success) return fail("VALIDATION");
   try {
-    await withTenant(tenantId, (tx) => removeSlotList(tx, p.data));
+    const allowed = await withTenant(tenantId, async (tx) => {
+      if (!(await mayEditSlotList(tx, me, p.data))) return false;
+      await removeSlotList(tx, p.data);
+      return true;
+    });
+    if (!allowed) return fail("FORBIDDEN");
     revalidatePath("/vagas");
     return ok();
   } catch {

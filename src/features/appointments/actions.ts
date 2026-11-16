@@ -5,6 +5,8 @@ import { z } from "zod";
 import { withTenant } from "@/db/client";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
+import { mayEditAppointments } from "@/features/team/guard";
+import { canAs, ownAgendaId } from "@/features/team/permissions";
 import { syncAppointmentSafe } from "@/features/google/server";
 import { sendBookingMessage } from "@/features/messaging/booking-send";
 import type { SyncResult } from "@/features/google/sync";
@@ -66,7 +68,11 @@ export async function refreshAgenda(): Promise<ActionResult> {
 }
 
 export async function createAppointment(_prev: ActionResult<{ id: string }> | null, formData: FormData) {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  const { tenantId } = me;
+  // Profissional agenda na própria agenda; dona e gerente seguem a profissional padrão do salão
+  const professionalId = ownAgendaId(me);
+  if (!canAs(me, "agenda.edit", professionalId)) return fail("FORBIDDEN");
   const parsed = appointmentInput.safeParse({
     clientId: formData.get("clientId") ?? "",
     // Cada serviço escolhido vem num campo "serviceIds"; vazios são seletores extras ainda sem escolha
@@ -86,7 +92,7 @@ export async function createAppointment(_prev: ActionResult<{ id: string }> | nu
   try {
     const res = await withTenant(tenantId, async (tx) => {
       if (fromBlock.success && !(await convertExternalBlock(tx, fromBlock.data))) return fail("NOT_FOUND");
-      const r = await insertAppointment(tx, tenantId, { ...parsed.data, discount, notes });
+      const r = await insertAppointment(tx, tenantId, { ...parsed.data, discount, notes, professionalId });
       // sem agendamento, o evento volta como estava (desfaz a transação)
       if (!r.ok && fromBlock.success) throw new RollbackWith(r);
       return r;
@@ -113,7 +119,8 @@ export async function rescheduleAppointment(
   time: string,
   durationMin: number,
 ): Promise<ActionResult<{ sync: SyncResult }>> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  const { tenantId } = me;
   const p = z
     .object({
       id: z.string().uuid(),
@@ -131,7 +138,11 @@ export async function rescheduleAppointment(
   const startsAt = toInstant(p.data.date, p.data.time);
   const endsAt = new Date(startsAt.getTime() + p.data.durationMin * 60_000);
   try {
-    const res = await withTenant(tenantId, (tx) => moveAppointment(tx, tenantId, p.data.id, startsAt, endsAt));
+    const res = await withTenant(tenantId, async (tx) =>
+      (await mayEditAppointments(tx, me, [p.data.id]))
+        ? moveAppointment(tx, tenantId, p.data.id, startsAt, endsAt)
+        : fail("FORBIDDEN"),
+    );
     if (!res.ok) return res;
     revalidatePath("/agenda");
     revalidatePath("/calendario");
@@ -158,12 +169,15 @@ export async function editAppointmentAction(input: {
   /** Tinha vários serviços e a pessoa escolheu um só. */
   single?: boolean;
 }): Promise<ActionResult<{ sync: SyncResult }>> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  const { tenantId } = me;
   const p = editInput.safeParse(input);
   if (!p.success) return fail("VALIDATION", String(p.error.issues[0]?.path[0] ?? ""));
   try {
     const { id, ...fields } = p.data;
-    const res = await withTenant(tenantId, (tx) => editAppointment(tx, tenantId, id, fields));
+    const res = await withTenant(tenantId, async (tx) =>
+      (await mayEditAppointments(tx, me, [id])) ? editAppointment(tx, tenantId, id, fields) : fail("FORBIDDEN"),
+    );
     if (!res.ok) return res;
     revalidatePath("/agenda");
     revalidatePath("/pendencias");
@@ -174,11 +188,14 @@ export async function editAppointmentAction(input: {
 }
 
 export async function updateStatus(id: string, status: string): Promise<ActionResult<{ sync: SyncResult }>> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  const { tenantId } = me;
   const p = z.object({ id: z.string().uuid(), status: z.enum(STATUSES) }).safeParse({ id, status });
   if (!p.success) return fail("VALIDATION");
   try {
-    const res = await withTenant(tenantId, (tx) => setStatus(tx, p.data.id, p.data.status));
+    const res = await withTenant(tenantId, async (tx) =>
+      (await mayEditAppointments(tx, me, [p.data.id])) ? setStatus(tx, p.data.id, p.data.status) : fail("FORBIDDEN"),
+    );
     if (!res.ok) return res;
     revalidatePath("/agenda");
     revalidatePath("/calendario");
@@ -205,11 +222,13 @@ class Rollback {
 export async function updateStatuses(
   items: { id: string; status: string }[],
 ): Promise<ActionResult<{ sync: SyncResult }>> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  const { tenantId } = me;
   const p = manyInput.safeParse(items);
   if (!p.success) return fail("VALIDATION");
   try {
     await withTenant(tenantId, async (tx) => {
+      if (!(await mayEditAppointments(tx, me, p.data.map((it) => it.id)))) throw new Rollback(fail("FORBIDDEN"));
       for (const it of p.data) {
         const r = await setStatus(tx, it.id, it.status);
         if (!r.ok) throw new Rollback(r);

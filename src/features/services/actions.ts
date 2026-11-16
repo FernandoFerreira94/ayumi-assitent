@@ -5,6 +5,7 @@ import { z } from "zod";
 import { withTenant } from "@/db/client";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
+import { canAs } from "@/features/team/permissions";
 import { nameTaken, normalizeName } from "./catalog";
 import {
   duplicateService as copyService,
@@ -38,7 +39,9 @@ const parse = (formData: FormData) =>
 
 /** Cria (sem `id`) ou edita (com `id`). Nome repetido na mesma categoria volta como erro do campo. */
 export async function saveService(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  if (!canAs(me, "services.manage")) return fail("FORBIDDEN");
+  const { tenantId } = me;
   const rawId = formData.get("id");
   const id = rawId ? uuid.safeParse(rawId) : null;
   if (id && !id.success) return fail("NOT_ALLOWED");
@@ -61,7 +64,9 @@ export async function saveService(_prev: ActionResult | null, formData: FormData
 }
 
 export async function duplicateService(id: string): Promise<ActionResult<{ id: string }>> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  if (!canAs(me, "services.manage")) return fail("FORBIDDEN");
+  const { tenantId } = me;
   if (!uuid.safeParse(id).success) return fail("NOT_ALLOWED");
   try {
     const row = await withTenant(tenantId, (tx) => copyService(tx, tenantId, id));
@@ -75,7 +80,9 @@ export async function duplicateService(id: string): Promise<ActionResult<{ id: s
 
 /** `false` exclui (arquiva), `true` desfaz. */
 export async function setServiceActive(id: string, active: boolean): Promise<ActionResult> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  if (!canAs(me, "services.manage")) return fail("FORBIDDEN");
+  const { tenantId } = me;
   if (!uuid.safeParse(id).success) return fail("NOT_ALLOWED");
   try {
     const found = await withTenant(tenantId, (tx) => setActive(tx, id, active));
@@ -88,7 +95,9 @@ export async function setServiceActive(id: string, active: boolean): Promise<Act
 }
 
 export async function reorderServices(ids: string[]): Promise<ActionResult> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  if (!canAs(me, "services.manage")) return fail("FORBIDDEN");
+  const { tenantId } = me;
   const parsed = z.array(uuid).max(500).safeParse(ids);
   if (!parsed.success) return fail("VALIDATION");
   try {

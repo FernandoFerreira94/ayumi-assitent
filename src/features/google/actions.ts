@@ -3,11 +3,13 @@
 import { sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import { getDb } from "@/db/client";
+import { getDb, withTenant } from "@/db/client";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
+import { mayEditAppointments } from "@/features/team/guard";
+import { canAs } from "@/features/team/permissions";
 import { revokeToken } from "./calendar";
 import { syncAppointmentSafe } from "./server";
 import { readToken } from "./token-crypto";
@@ -17,7 +19,9 @@ import { readToken } from "./token-crypto";
  * Não apaga se for a única forma de entrar no app (a conta ficaria sem acesso).
  */
 export async function disconnectGoogle(): Promise<ActionResult<{ onlyLogin?: boolean }>> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
+  const { tenantId } = me;
   try {
     const rows = await getDb().execute<{ id: string; others: number; refresh: string | null; access: string | null }>(sql`
       select a.id, a."refreshToken" as refresh, a."accessToken" as access,
@@ -67,9 +71,11 @@ export async function createPassword(_prev: ActionResult | null, fd: FormData): 
 
 /** Tenta de novo mandar um agendamento para o Google. */
 export async function retrySync(id: string): Promise<ActionResult> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  const { tenantId } = me;
   const p = z.string().uuid().safeParse(id);
   if (!p.success) return fail("VALIDATION");
+  if (!(await withTenant(tenantId, (tx) => mayEditAppointments(tx, me, [p.data])))) return fail("FORBIDDEN");
   const r = await syncAppointmentSafe(tenantId, p.data);
   if (r === "auth") return fail("GOOGLE_EXPIRED");
   if (r === "failed") return fail("NETWORK");

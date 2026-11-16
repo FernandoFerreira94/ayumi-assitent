@@ -6,6 +6,7 @@ import { getDb } from "@/db/client";
 import { tenants } from "@/db/schema";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
+import { canAs } from "@/features/team/permissions";
 import { aiSettingsInput, salonInput } from "./schema";
 import { adminFromEnv } from "@/features/messaging/evolution-admin";
 import { revokeGoogleOfUser } from "@/features/google/server";
@@ -18,7 +19,9 @@ import { toCsv } from "./export-csv";
 
 /** Dados do salão e da pessoa. O papel do app só lê `tenants`, então grava pelo dono. */
 export async function saveSalon(_prev: ActionResult | null, form: FormData): Promise<ActionResult> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
+  const { tenantId } = me;
   const p = salonInput.safeParse({
     name: form.get("name") ?? "",
     ownerName: form.get("ownerName") ?? "",
@@ -45,7 +48,9 @@ export async function saveSalon(_prev: ActionResult | null, form: FormData): Pro
 
 /** Regras da profissional para a IA (Ajustes). A IA fica sempre ligada. */
 export async function saveAiSettings(_prev: ActionResult | null, form: FormData): Promise<ActionResult> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
+  const { tenantId } = me;
   const p = aiSettingsInput.safeParse({
     aiRules: form.get("aiRules") ?? "",
   });
@@ -64,7 +69,10 @@ export async function saveAiSettings(_prev: ActionResult | null, form: FormData)
 
 /** Excluir minha conta (Meu perfil). Só com o texto de confirmação; depois a tela volta ao login. */
 export async function deleteAccount(confirm: string): Promise<ActionResult> {
-  const { userId } = await requireTenant();
+  const me = await requireTenant();
+  // Apaga o salão junto: só a dona
+  if (!canAs(me, "salon.delete")) return fail("FORBIDDEN");
+  const { userId } = me;
   if (String(confirm ?? "").trim().toUpperCase() !== DELETE_CONFIRM) return fail("VALIDATION", "confirm");
   try {
     const admin = adminFromEnv();
@@ -87,7 +95,9 @@ export type ExportFiles = { clientes: string; agendamentos: string; despesas: st
 
 /** Baixar meus dados (LGPD, portabilidade): três planilhas CSV só com os dados deste estúdio. */
 export async function exportMyData(): Promise<ActionResult<ExportFiles>> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
+  const { tenantId } = me;
   try {
     const data = await withTenant(tenantId, async (tx) => ({
       cli: await tx

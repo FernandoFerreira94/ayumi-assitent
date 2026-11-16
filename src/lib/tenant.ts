@@ -1,16 +1,21 @@
 import "server-only";
-import { sql } from "drizzle-orm";
-import { getDb } from "@/db/client";
-import { requireSession } from "./session";
 import { redirect } from "next/navigation";
+import { membershipOf } from "@/features/team/membership";
+import { requireSession } from "./session";
 
-/** Usuário logado + estúdio dele. Sem vínculo, volta ao login. */
+/**
+ * Usuário logado + estúdio dele + papel (owner, admin, professional) e a profissional ligada ao login.
+ * Sem vínculo, volta ao login. As actions consultam `canAs(...)` de `features/team/permissions`.
+ */
 export async function requireTenant() {
   const session = await requireSession();
-  const rows = await getDb().execute<{ tenant_id: string }>(
-    sql`select tenant_id from memberships where user_id = ${session.user.id} limit 1`,
-  );
-  const tenantId = rows[0]?.tenant_id;
-  if (!tenantId) redirect("/login?error=NOT_ALLOWED");
-  return { userId: session.user.id, userName: session.user.name, tenantId };
+  const m = await membershipOf(session.user.id);
+  if (!m) redirect("/login?error=NOT_ALLOWED");
+  return {
+    userId: session.user.id,
+    userName: session.user.name,
+    tenantId: m.tenantId,
+    role: m.role,
+    professionalId: m.professionalId,
+  };
 }

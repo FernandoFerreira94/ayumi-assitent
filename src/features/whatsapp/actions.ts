@@ -7,6 +7,7 @@ import { tenants } from "@/db/schema";
 import { adminFromEnv, WhatsAppAdminError, type WaState } from "@/features/messaging/evolution-admin";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
+import { canAs } from "@/features/team/permissions";
 import { currentState, startPairing } from "./core";
 import { ensureWebhook } from "./webhook";
 
@@ -23,7 +24,9 @@ async function tenantInstance(tenantId: string): Promise<string | null> {
 }
 
 export async function whatsappStatus(): Promise<ActionResult<{ state: WaState }>> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
+  const { tenantId } = me;
   const admin = adminFromEnv();
   if (!admin) return fail("WHATSAPP_UNAVAILABLE");
   try {
@@ -41,7 +44,9 @@ export async function whatsappStatus(): Promise<ActionResult<{ state: WaState }>
 export async function startWhatsappPairing(
   phone: string,
 ): Promise<ActionResult<{ pairingCode: string; qr: string | null }>> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
+  const { tenantId } = me;
   const admin = adminFromEnv();
   if (!admin) return fail("WHATSAPP_UNAVAILABLE");
   try {
@@ -57,7 +62,9 @@ export async function startWhatsappPairing(
 }
 
 export async function disconnectWhatsapp(): Promise<ActionResult> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
+  const { tenantId } = me;
   const admin = adminFromEnv();
   if (!admin) return fail("WHATSAPP_UNAVAILABLE");
   try {

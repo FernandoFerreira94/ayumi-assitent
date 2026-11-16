@@ -5,10 +5,13 @@ import { z } from "zod";
 import { withTenant } from "@/db/client";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
+import { canAs } from "@/features/team/permissions";
 import { expenseInput, insertExpense, removeExpense } from "./expenses";
 
 export async function createExpense(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  if (!canAs(me, "finance.salon")) return fail("FORBIDDEN");
+  const { tenantId } = me;
   const parsed = expenseInput.safeParse({
     spentOn: fd.get("spentOn") ?? "",
     amount: fd.get("amount") ?? "",
@@ -26,7 +29,9 @@ export async function createExpense(_prev: ActionResult | null, fd: FormData): P
 }
 
 export async function deleteExpense(id: string): Promise<ActionResult> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  if (!canAs(me, "finance.salon")) return fail("FORBIDDEN");
+  const { tenantId } = me;
   const p = z.string().uuid().safeParse(id);
   if (!p.success) return fail("VALIDATION");
   try {

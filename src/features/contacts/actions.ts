@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { withTenant } from "@/db/client";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
+import { canAs } from "@/features/team/permissions";
 import { GoogleAuthError } from "@/features/google/calendar";
 import { googleAccessToken } from "@/features/google/server";
 import { importClients, markExisting, type Preview } from "./core";
@@ -39,7 +40,9 @@ export async function previewFromFile(fd: FormData): Promise<ActionResult<Previe
 }
 
 export async function previewFromGoogle(): Promise<ActionResult<PreviewResult>> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
+  const { tenantId } = me;
   try {
     const token = await googleAccessToken(tenantId);
     if (!token) return fail("GOOGLE_EXPIRED");

@@ -9,6 +9,7 @@ import { sendToAll } from "@/features/push/core";
 import { pushFromEnv } from "@/features/push/webpush";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
+import { canAs } from "@/features/team/permissions";
 import { loadNotice as load, mascotTitle, testNotice } from "./core";
 import { mascotsOf } from "./mascots";
 import { UF_NAMES } from "./weather";
@@ -30,7 +31,9 @@ async function salonOf(tenantId: string) {
 
 /** Botão "Enviar aviso de teste" em Ajustes: manda agora o aviso do dia para os aparelhos com aviso ligado. */
 export async function sendTestNotice(): Promise<ActionResult<{ sent: number }>> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
+  const { tenantId } = me;
   const push = pushFromEnv();
   if (!push) return fail("PUSH_NOT_CONFIGURED");
   try {
@@ -79,7 +82,9 @@ const deviceInput = z.object({
 export async function saveDeviceLocation(
   raw: unknown,
 ): Promise<ActionResult<{ city: string | null; state: string | null }>> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
+  const { tenantId } = me;
   const p = deviceInput.safeParse(raw);
   if (!p.success) return fail("VALIDATION");
   const state = p.data.state && p.data.state in UF_NAMES ? p.data.state : null;
@@ -103,7 +108,9 @@ export async function saveDeviceLocation(
 
 /** Desliga a localização do aparelho (os avisos seguem, só sem previsão do tempo e feriados da cidade). */
 export async function clearLocation(): Promise<ActionResult> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
+  const { tenantId } = me;
   try {
     await getDb()
       .update(tenants)

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { withTenant } from "@/db/client";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
+import { canAs } from "@/features/team/permissions";
 import { saveMessageSettings } from "./core";
 import { TEMPLATE_MAX } from "./text";
 
@@ -16,7 +17,9 @@ const template = z.string().trim().max(TEMPLATE_MAX);
  * opcional (mais perto do horário que o 1º). Texto em branco = volta ao padrão do app.
  */
 export async function saveMessages(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
+  const { tenantId } = me;
   const firstOn = fd.get("firstOn") === "1";
   const first = hours.safeParse(fd.get("hours"));
   if (!first.success) return fail("VALIDATION", "hours");
