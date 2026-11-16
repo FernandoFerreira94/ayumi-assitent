@@ -1,5 +1,6 @@
 import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse, type NextRequest } from "next/server";
+import { canonicalRedirect } from "@/lib/canonical-host";
 
 // Checagem otimista (só olha o cookie). A validação real é feita no servidor por requireSession().
 // Se o cookie existe mas a sessão não vale mais, requireSession() manda para /login?sessao=invalida:
@@ -7,6 +8,11 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_PATHS = new Set(["/privacidade", "/termos"]);
 
 export function proxy(request: NextRequest) {
+  const canonical = canonicalRedirect(
+    request.headers.get("x-forwarded-host") ?? request.headers.get("host"),
+    request.nextUrl,
+  );
+  if (canonical) return NextResponse.redirect(canonical, 308);
   const logged = !!getSessionCookie(request);
   const { pathname, searchParams } = request.nextUrl;
   // Páginas públicas (exigidas pelo Google OAuth): abertas com ou sem login
@@ -28,5 +34,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|icons|manifest.webmanifest|sw.js|offline|icon.png|apple-icon.png|og.png).*)"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|icons|manifest.webmanifest|sw.js|offline|icon.png|apple-icon.png|og.png).*)",
+  ],
 };
