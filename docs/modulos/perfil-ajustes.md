@@ -6,7 +6,7 @@
 - `features/salon/actions.ts` (`saveSalon`, `saveAiSettings`; grava `tenants` pelo dono do banco, o papel do app só lê), `schema.ts` (segmentos), `SalonForm.tsx`, `AiRepliesForm.tsx`, `MascotPicker.tsx` + `mascot-actions.ts` (mascote por pessoa, vale em qualquer aparelho).
 - `features/settings/*`: `sections.ts` (seções, `legacyTarget` para âncoras antigas `/ajustes#x`, `hoursSummary`), `SettingsList.tsx` (`SettingsGroup`/`SettingsRow`, linha com `id="ajuste-<secao>"`), `LegacyHashRedirect.tsx`, `PushStatusText.tsx`, `SectionSkeleton.tsx`.
 - `features/tour/*`: tour obrigatório do primeiro acesso, **todo em Ajustes**: saudação e depois cada linha (`#ajuste-whatsapp` … `#ajuste-expediente`), instalar (opcional) e fim. `TourGate`, `ReplayTourButton`, `actions.finishTour`.
-- `features/install/*`: guia de instalar o PWA por sistema. `features/update/UpdateButton.tsx` (só "Verificar atualização"; ao atualizar abre o Painel) + `WhatsNewDialog.tsx` (abre só no Painel, lista as versões não vistas pelo aparelho em accordions fechados, `unseenReleases`; só chama showModal com lista não vazia) + `changelog.ts` + `components/nav/UpdateBanner.tsx` + `api/version`.
+- `features/install/*`: guia de instalar o PWA por sistema. `components/nav/AutoUpdate.tsx` (16/11: atualiza SOZINHO, sem banner nem diálogo; confere `api/version` ao abrir e ao voltar ao app, nunca por intervalo; só recarrega se `isBusy()` for falso, sem dialog/sheet aberto nem campo em foco; trava de laço por versão em sessionStorage; depois mostra só o toast "Seu app foi atualizado") + `lib/update-check.ts` + `features/update/UpdateButton.tsx` (manual em Ajustes) + `api/version`. O diálogo "App atualizado"/changelog foi removido.
 - `features/shell/status.ts`: estado da casca (WhatsApp/Google/pendências) para nav e Ajustes.
 - Telas: `app/(app)/perfil`, `app/(app)/ajustes` (lista) e as seções abaixo (`PageShell back backHref="/ajustes"`: aberta direto, a seta volta para a lista).
 
@@ -29,7 +29,7 @@ Links internos apontam direto para a seção (`/ajustes/whatsapp`, `/ajustes/cal
 - Ações continuam em sheet/diálogo **dentro** da seção; seção nova é só para organizar assunto, nunca para uma ação.
 - O webhook do WhatsApp não é religado no render: `WhatsAppCard` chama `whatsappStatus` uma vez ao abrir conectado.
 - Ícone da tela de início e login são sempre da Bolha; o mascote escolhido troca cores e splash, não o ícone.
-- Testes: `tests/e2e/ajustes.spec.ts`, `tour.spec.ts`, `install.spec.ts`, `shell.spec.ts`; unit `settings-sections`, `changelog`, `whats-new-dialog` (fechar não reabre o fundo borrado), `tour`, `salon-profile`, `install-platform`, `update-check`.
+- Testes: `tests/e2e/ajustes.spec.ts`, `tour.spec.ts`, `install.spec.ts`, `shell.spec.ts`; unit `settings-sections`, `tour`, `salon-profile`, `install-platform`, `update-check`.
 
 ## LGPD em Meu perfil (13/11)
 - **Baixar meus dados** (`salon/ExportDataButton` → `actions.exportMyData`): 3 CSV (clientes, agendamentos, despesas), `;` + BOM para o Excel; `salon/export-csv.toCsv`.
