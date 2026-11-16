@@ -116,3 +116,52 @@ export function buildIcs({
   lines.push("END:VCALENDAR");
   return lines.map(foldLine).join(CRLF) + CRLF;
 }
+
+export type InviteInput = {
+  appointmentId: string;
+  start: Date;
+  end: Date;
+  service: string;
+  salonName: string;
+  address?: string | null;
+  cancelled: boolean;
+  /** Momento da última versão. Cada abertura do link é a versão mais nova, então SEQUENCE cresce com ele. */
+  createdAt: Date;
+  now?: Date;
+};
+
+/**
+ * Convite de um atendimento para a cliente salvar na agenda dela (link da mensagem de agendamento).
+ * Mesmo UID sempre: abrir o link de novo depois de remarcar ou cancelar atualiza o evento já salvo.
+ * Sem nome nem telefone da cliente; só serviço, horário e o estúdio.
+ */
+export function inviteIcs(i: InviteInput): string {
+  const now = i.now ?? new Date();
+  const salon = i.salonName.trim() || "Atendimento";
+  const sequence = Math.max(0, Math.floor((now.getTime() - i.createdAt.getTime()) / 1000));
+  const title = `${i.cancelled ? "Cancelado · " : ""}${i.service} · ${salon}`;
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Bubbly//Convite//PT-BR",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:invite-${i.appointmentId}@bubbly`,
+    `SEQUENCE:${sequence}`,
+    `DTSTAMP:${icsDate(now)}`,
+    `DTSTART:${icsDate(i.start)}`,
+    `DTEND:${icsDate(i.end)}`,
+    `SUMMARY:${escapeText(title)}`,
+    `STATUS:${i.cancelled ? "CANCELLED" : "CONFIRMED"}`,
+  ];
+  const address = i.address?.trim();
+  if (address) lines.push(`LOCATION:${escapeText(address)}`);
+  lines.push(
+    `DESCRIPTION:${escapeText(i.cancelled ? `Este horário foi cancelado. ${salon}` : `${i.service} em ${salon}`)}`,
+  );
+  if (!i.cancelled)
+    lines.push("BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${escapeText(title)}`, "TRIGGER:-PT2H", "END:VALARM");
+  lines.push("END:VEVENT", "END:VCALENDAR");
+  return lines.map(foldLine).join(CRLF) + CRLF;
+}

@@ -40,6 +40,7 @@ const SAMPLE: MessageData = {
   service: "Alongamento",
   startsAt: sampleStart,
   priceCents: 12000,
+  calendarUrl: "https://bubbly.app/convite.ics",
 };
 
 /**
@@ -70,8 +71,8 @@ export function MessagesForm({ settings, salonName }: { settings: MessageSetting
           Mensagens no WhatsApp
         </TileTitle>
         <p className="text-sm font-semibold text-muted">
-          O Bubbly manda a confirmação do agendamento e os avisos para a cliente confirmar o horário. Cancelar ou remarcar
-          fica com você.
+          O Bubbly manda a confirmação do agendamento e os avisos para a cliente confirmar o horário. Cancelar ou
+          remarcar fica com você.
         </p>
       </div>
       <input type="hidden" name="fullName" value={fullName ? "1" : ""} />
@@ -108,7 +109,10 @@ export function MessagesForm({ settings, salonName }: { settings: MessageSetting
         </p>
       </fieldset>
 
-      <Step title="Ao agendar" hint="Sai assim que você cria o agendamento. Não pede resposta.">
+      <Step
+        title="Ao agendar"
+        hint="Sai assim que você cria o agendamento. Não pede resposta. Vai junto um link para a cliente salvar o horário na agenda dela: no fim, ou onde você puser {agenda}."
+      >
         <TemplateField
           name="bookingTemplate"
           label="Texto do agendamento confirmado"
