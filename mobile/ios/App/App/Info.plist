@@ -66,6 +66,8 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSContactsUsageDescription</key>
+	<string>Para você escolher contatos da agenda e cadastrá-los como clientes. Só quem você marcar é salvo no Bubbly.</string>
 	<!-- Volta do login do Google (navegador do sistema → br.app.bubbly://auth?code=...) -->
 	<key>CFBundleURLTypes</key>
 	<array>

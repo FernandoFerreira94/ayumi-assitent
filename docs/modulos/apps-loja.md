@@ -24,6 +24,12 @@ O Google não deixa entrar dentro da WebView. Fluxo (`features/native/handoff-co
 - Testes: `tests/unit/native-handoff.test.ts`, `tests/db/native-auth.test.ts` (Better Auth real no Postgres de teste).
 - Ainda não: conectar outra conta Google em Ajustes > Calendários dentro do app (linkSocial também é bloqueado na WebView) e Sign in with Apple (depende da conta Apple).
 
+## Contatos do celular
+- Plugin `@capacitor-community/contacts` (8.0.0). Web: `features/native/device-contacts.ts` (`useDeviceContacts` = nativo **e** plugin disponível; APK antigo não mostra o botão), núcleo puro em `device-contacts-core.ts`.
+- Usos: Clientes → Importar → "Da agenda do celular" (lê nome, telefones, e-mail → `previewFromDevice` só faz a prévia; grava só o que a pessoa marca) e Nova cliente → "Escolher da agenda do celular" (seletor do sistema).
+- Permissões: Android `READ_CONTACTS` + `WRITE_CONTACTS` (o plugin pede as duas no mesmo alias; um só aviso); iPhone `NSContactsUsageDescription`. Negou: toast mandando liberar em Ajustes.
+- Lojas: declarar contatos na Segurança dos dados (Play) e na privacidade do app (Apple): coletados só os escolhidos, para cadastro de clientes, sem compartilhar.
+
 ## Build local (Windows)
 - JDK 21 (Capacitor 8 exige; o JDK 17 do PC não serve): `$env:JAVA_HOME` apontando para um JDK 21.
 - `cd mobile; npx cap sync android; cd android; .\gradlew.bat assembleDebug` → `android/app/build/outputs/apk/debug/app-debug.apk`.
