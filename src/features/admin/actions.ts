@@ -27,7 +27,7 @@ async function isLocked(userId: string) {
   return stepUpLockedUntil(await recentFailures(userId), new Date()) !== null;
 }
 
-/** Confere o código (app autenticador ou recuperação) e libera o painel por 12 h nesta sessão. */
+/** Confere o código (app autenticador ou recuperação) e libera o painel por 7 dias nesta sessão. */
 export async function verifyAdminCode(input: { code: string }): Promise<ActionResult> {
   const { userId, sessionId } = await requireAdmin({ stepUp: false });
   const p = codeSchema.safeParse(input);

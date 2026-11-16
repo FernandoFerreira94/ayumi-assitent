@@ -5,9 +5,9 @@ const now = new Date("2026-11-20T12:00:00Z");
 const ago = (min: number) => new Date(now.getTime() - min * 60_000);
 
 describe("step-up", () => {
-  it("vale por 12 h", () => {
-    expect(isStepUpFresh(ago(11 * 60 + 59), now)).toBe(true);
-    expect(isStepUpFresh(ago(12 * 60), now)).toBe(false);
+  it("vale por 7 dias", () => {
+    expect(isStepUpFresh(ago(7 * 24 * 60 - 1), now)).toBe(true);
+    expect(isStepUpFresh(ago(7 * 24 * 60), now)).toBe(false);
     expect(isStepUpFresh(null, now)).toBe(false);
   });
   it("4 erros não travam; 5 em 15 min travam até 15 min depois do mais recente", () => {
