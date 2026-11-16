@@ -65,12 +65,14 @@ d("eventos do iPhone (Postgres real)", () => {
 
   it("virou atendimento: some da agenda, libera o horário e a reimportação não traz de volta", async () => {
     const [{ id }] = await admin`select id from blocks where tenant_id=${A} and external_uid='e1'`;
-    expect(await db.withTenant(A, (tx) => blocksCore.overlapsBlock(tx, at(0), at(1)))).toBe(true);
+    const { defaultProfessionalId } = await import("@/features/team/professional");
+    const prof = await db.withTenant(A, (tx) => defaultProfessionalId(tx, A));
+    expect(await db.withTenant(A, (tx) => blocksCore.overlapsBlock(tx, prof, at(0), at(1)))).toBe(true);
     // outro estúdio não consegue converter
     expect(await db.withTenant(B, (tx) => blocksCore.convertExternalBlock(tx, id))).toBe(false);
     expect(await db.withTenant(A, (tx) => blocksCore.convertExternalBlock(tx, id))).toBe(true);
     expect(await db.withTenant(A, (tx) => blocksCore.convertExternalBlock(tx, id))).toBe(false); // só uma vez
-    expect(await db.withTenant(A, (tx) => blocksCore.overlapsBlock(tx, at(0), at(1)))).toBe(false);
+    expect(await db.withTenant(A, (tx) => blocksCore.overlapsBlock(tx, prof, at(0), at(1)))).toBe(false);
     const listed = await db.withTenant(A, (tx) => blocksCore.listBlocks(tx, [from, to]));
     expect(listed.some((b) => b.id === id)).toBe(false);
 

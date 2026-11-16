@@ -162,6 +162,14 @@ export const appointments = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id, { onDelete: "cascade" }),
+    /**
+     * Quem atende. Se vier null, a trigger da 0037 preenche com a primeira profissional do salão.
+     * O default null só deixa o insert omitir a coluna; o NOT NULL vale depois da trigger.
+     */
+    professionalId: uuid("professional_id")
+      .notNull()
+      .default(sql`null`)
+      .references(() => professionals.id),
     clientId: uuid("client_id")
       .notNull()
       .references(() => clients.id),
@@ -197,7 +205,10 @@ export const appointments = pgTable(
     notes: text("notes"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("appointments_tenant_start").on(t.tenantId, t.startsAt)],
+  (t) => [
+    index("appointments_tenant_start").on(t.tenantId, t.startsAt),
+    index("appointments_professional_start").on(t.professionalId, t.startsAt),
+  ],
 );
 
 /** Serviços do atendimento, na ordem escolhida, com valor e duração do momento do agendamento. */
@@ -225,6 +236,8 @@ export const blocks = pgTable("blocks", {
   tenantId: uuid("tenant_id")
     .notNull()
     .references(() => tenants.id, { onDelete: "cascade" }),
+  /** null = vale para o salão todo (ex.: feriado, evento importado) */
+  professionalId: uuid("professional_id").references(() => professionals.id, { onDelete: "cascade" }),
   startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
   endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
   reason: text("reason"),
@@ -243,6 +256,9 @@ export const workingHours = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id, { onDelete: "cascade" }),
+    professionalId: uuid("professional_id")
+      .notNull()
+      .references(() => professionals.id, { onDelete: "cascade" }),
     weekday: smallint("weekday").notNull(),
     opens: text("opens").notNull(),
     closes: text("closes").notNull(),
@@ -250,7 +266,7 @@ export const workingHours = pgTable(
     breakStart: text("break_start"),
     breakEnd: text("break_end"),
   },
-  (t) => [primaryKey({ columns: [t.tenantId, t.weekday] })],
+  (t) => [primaryKey({ columns: [t.professionalId, t.weekday] })],
 );
 
 export const pushSubscriptions = pgTable("push_subscriptions", {
@@ -318,12 +334,15 @@ export const slotLists = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id, { onDelete: "cascade" }),
+    professionalId: uuid("professional_id")
+      .notNull()
+      .references(() => professionals.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     /** CustomConfig de features/hours/custom-slots (validada com zod ao ler e ao gravar) */
     config: jsonb("config").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [unique().on(t.tenantId, t.name)],
+  (t) => [unique().on(t.professionalId, t.name)],
 );
 
 /** Avisos do dia no celular da profissional: um por tipo e dia (o worker não repete). */

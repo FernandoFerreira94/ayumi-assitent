@@ -2,6 +2,7 @@ import { and, asc, eq, gte, inArray, lt, ne, sql } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { appointmentServices, appointments, clients, services } from "@/db/schema";
 import { lockTenant, overlapsBlock } from "@/features/blocks/core";
+import { defaultProfessionalId } from "@/features/team/professional";
 import { toInstant } from "@/lib/dates";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { applyDiscount, type Discount } from "./pricing";
@@ -32,6 +33,8 @@ export type BookingInput = {
   discount?: Discount | null;
   /** Observação livre, ex.: motivo do desconto. */
   notes?: string | null;
+  /** Quem atende; sem ela, a profissional padrão do salão. */
+  professionalId?: string;
 };
 
 /** Busca os serviços na ordem pedida; null se algum não existe, está pausado ou foi excluído. */
@@ -89,14 +92,16 @@ export async function insertAppointment(
   const startsAt = toInstant(input.date, input.time);
   const endsAt = new Date(startsAt.getTime() + durationMin * 60_000);
   await lockTenant(tx, tenantId);
+  const professionalId = input.professionalId ?? (await defaultProfessionalId(tx, tenantId));
   const blockedUntil = new Date(endsAt.getTime() + bufferMin * 60_000);
-  if (await overlapsBlock(tx, startsAt, blockedUntil)) return fail("SLOT_TAKEN", "time");
+  if (await overlapsBlock(tx, professionalId, startsAt, blockedUntil)) return fail("SLOT_TAKEN", "time");
   try {
     const row = await tx.transaction(async (sp) => {
       const [r] = await sp
         .insert(appointments)
         .values({
           tenantId,
+          professionalId,
           clientId: cli.id,
           serviceId: list[0]!.id,
           startsAt,
@@ -146,7 +151,12 @@ export async function moveAppointment(
   endsAt: Date,
 ): Promise<ActionResult> {
   await lockTenant(tx, tenantId);
-  if (await overlapsBlock(tx, startsAt, endsAt)) return fail("SLOT_TAKEN", "time");
+  const [cur] = await tx
+    .select({ professionalId: appointments.professionalId })
+    .from(appointments)
+    .where(eq(appointments.id, id));
+  if (!cur) return fail("NOT_ALLOWED");
+  if (await overlapsBlock(tx, cur.professionalId, startsAt, endsAt)) return fail("SLOT_TAKEN", "time");
   try {
     const rows = await tx.transaction((sp) =>
       sp
@@ -174,7 +184,13 @@ export async function editAppointment(
   input: { date: string; time: string; serviceId: string; single?: boolean },
 ): Promise<ActionResult> {
   const [a] = await tx
-    .select({ startsAt: appointments.startsAt, endsAt: appointments.endsAt, serviceId: appointments.serviceId, priceCents: appointments.priceCents })
+    .select({
+      startsAt: appointments.startsAt,
+      endsAt: appointments.endsAt,
+      serviceId: appointments.serviceId,
+      priceCents: appointments.priceCents,
+      professionalId: appointments.professionalId,
+    })
     .from(appointments)
     .where(eq(appointments.id, id));
   if (!a) return fail("NOT_ALLOWED");
@@ -193,7 +209,7 @@ export async function editAppointment(
   const endsAt = new Date(startsAt.getTime() + durationMs);
   const moved = startsAt.getTime() !== a.startsAt.getTime();
   await lockTenant(tx, tenantId);
-  if (await overlapsBlock(tx, startsAt, endsAt)) return fail("SLOT_TAKEN", "time");
+  if (await overlapsBlock(tx, a.professionalId, startsAt, endsAt)) return fail("SLOT_TAKEN", "time");
   try {
     await tx.transaction((sp) =>
       sp
@@ -217,7 +233,8 @@ export async function editAppointment(
   }
 }
 
-export function listDay(tx: Tx, [from, to]: [Date, Date]) {
+/** Atendimentos do período; com `professionalId`, só os dela. */
+export function listDay(tx: Tx, [from, to]: [Date, Date], professionalId?: string) {
   return tx
     .select({
       id: appointments.id,
@@ -241,7 +258,14 @@ export function listDay(tx: Tx, [from, to]: [Date, Date]) {
     .from(appointments)
     .innerJoin(clients, eq(clients.id, appointments.clientId))
     .innerJoin(services, eq(services.id, appointments.serviceId))
-    .where(and(gte(appointments.startsAt, from), lt(appointments.startsAt, to), ne(appointments.status, "cancelled")))
+    .where(
+      and(
+        gte(appointments.startsAt, from),
+        lt(appointments.startsAt, to),
+        ne(appointments.status, "cancelled"),
+        professionalId ? eq(appointments.professionalId, professionalId) : undefined,
+      ),
+    )
     .orderBy(asc(appointments.startsAt));
 }
 

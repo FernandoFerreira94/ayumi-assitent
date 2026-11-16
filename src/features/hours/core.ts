@@ -1,11 +1,17 @@
 import { eq } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { workingHours } from "@/db/schema";
+import { defaultProfessionalId, firstProfessionalId } from "@/features/team/professional";
 import { DEFAULT_HOURS, type Day } from "./slots";
 
-/** Expediente por dia da semana (0 = domingo). Sem nenhuma linha salva, usa o padrão. */
-export async function getHours(tx: Tx): Promise<Day[]> {
-  const rows = await tx.select().from(workingHours);
+/**
+ * Expediente por dia da semana (0 = domingo) de uma profissional. Sem nenhuma linha salva, usa o padrão.
+ * Sem `professionalId`, vale o da profissional padrão do salão (a primeira por posição).
+ */
+export async function getHours(tx: Tx, professionalId?: string): Promise<Day[]> {
+  const prof = professionalId ?? (await firstProfessionalId(tx));
+  if (!prof) return DEFAULT_HOURS;
+  const rows = await tx.select().from(workingHours).where(eq(workingHours.professionalId, prof));
   if (rows.length === 0) return DEFAULT_HOURS;
   const week: Day[] = Array.from({ length: 7 }, () => null);
   for (const r of rows)
@@ -13,13 +19,15 @@ export async function getHours(tx: Tx): Promise<Day[]> {
   return week;
 }
 
-export async function saveHours(tx: Tx, tenantId: string, week: Day[]) {
-  await tx.delete(workingHours).where(eq(workingHours.tenantId, tenantId));
+export async function saveHours(tx: Tx, tenantId: string, week: Day[], professionalId?: string) {
+  const prof = professionalId ?? (await defaultProfessionalId(tx, tenantId));
+  await tx.delete(workingHours).where(eq(workingHours.professionalId, prof));
   const values = week.flatMap((d, weekday) =>
     d
       ? [
           {
             tenantId,
+            professionalId: prof,
             weekday,
             opens: d.opens,
             closes: d.closes,

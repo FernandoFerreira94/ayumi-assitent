@@ -11,9 +11,14 @@
 
 ## Cuidados
 - Campos de calendário continuam em `tenants` até a limpeza; hoje o app ainda lê de lá.
-- Novo cadastro (`lib/auth.ts`) ainda não cria profissional; entra nas tasks seguintes do Bloco A.
+- Novo cadastro (`lib/auth.ts`) ainda não cria profissional; a trigger da 0037 cria a primeira ao agendar ou salvar expediente.
 
 ## Próximas tasks que estendem
-- A2: `professional_id` em appointments/blocks/working_hours/slot_lists e sobreposição por profissional.
 - A3: `requireTenant` devolve `role` e `professionalId`.
 - A6: telas/ações de equipe e permissões (`features/team/permissions.ts`).
+
+## Agenda por profissional (migration 0037, task A2)
+- `appointments`, `working_hours`, `slot_lists` ganham `professional_id` (NOT NULL); `blocks.professional_id` null = salão todo. Detalhes e cuidados em `agenda.md`.
+- Sobreposição de horários por profissional; índices `(professional_id, starts_at)`.
+- Trigger de default: insert sem profissional entra na primeira do salão (cria uma se não houver), então cadastro novo e testes antigos seguem sem passar profissional. Helper TS: `features/team/professional.ts` (`defaultProfessionalId`, `firstProfessionalId`).
+- Backfill da 0037 cria profissional para salões criados depois da 0036 e liga as linhas existentes à primeira de cada salão.

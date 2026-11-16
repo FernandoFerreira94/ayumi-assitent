@@ -39,3 +39,11 @@
 - Animação Órbita só aqui; demais ações usam toast.
 - Folhas de agendar/editar: Dia e Horário lado a lado (classe `pair`, `h-13` fixo porque o select do iOS ignora min-height); a folha rola (`max-h` + `overflow-y-auto`). Ao fechar o teclado, o `KeyboardWatcher` devolve a página para a rolagem de antes do foco (o iOS deixava a folha com o fim fora da tela).
 - Testes: `tests/e2e/agenda*.spec.ts`, `agendamento.spec.ts`, `bloqueios.spec.ts`, `pendencias.spec.ts`, `mes.spec.ts`; `tests/db/reschedule.test.ts`; unit `agenda-grid`, `timeline`, `day-version`, `pricing`, `briefing`, `calendar-grid`, `month-picker`.
+
+## Agenda por profissional (migration 0037)
+- `appointments.professional_id` (NOT NULL), `working_hours` (PK `(professional_id, weekday)`) e `slot_lists` (nome único por profissional) apontam para `professionals`. `blocks.professional_id` pode ser null: bloqueio do salão todo (feriado, eventos importados do Google/iCloud).
+- `appointments_no_overlap` agora é por profissional (`professional_id =` + faixa `starts_at`..`blocked_until`, sem cancelados): duas profissionais do mesmo salão atendem no mesmo horário; a mesma não.
+- Core recebe `professionalId` (opcional por enquanto): `insertAppointment`, `overlapsBlock(tx, professionalId, ...)`, `insertBlock(..., professionalId | null)`, `listDay/listBlocks(..., professionalId?)`, `getHours/saveHours`, `listSlotLists/saveSlotList`. Bloqueio com `professional_id` null vale para todas.
+- Sem `professionalId`, as telas usam a profissional padrão (primeira por `position`, `features/team/professional.ts`). As telas ainda não escolhem profissional (A3 em diante).
+- Banco: trigger BEFORE INSERT em `appointments`, `working_hours` e `slot_lists` preenche `professional_id` null com a profissional padrão do salão, criando uma (nome da dona ou do salão) se não houver. Função `default_professional_id` é SECURITY DEFINER e recusa salão diferente do ativo em `app.tenant_id`. Não existe em `blocks`.
+- Cuidado: a agenda do dia (`listDay`) e o expediente ainda leem a profissional padrão; ao ligar o seletor de profissional, passe o id para esses dois e para `computeCustomSlots`.
