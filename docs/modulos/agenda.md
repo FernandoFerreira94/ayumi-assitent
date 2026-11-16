@@ -34,6 +34,12 @@
 - Link: `/api/agenda/convite/<token>.ics` (`calendar-feed/invite-token.ts`): token = ids do estúdio e do agendamento + HMAC do `BETTER_AUTH_SECRET` (12 bytes). Sem nome/telefone; não dá para montar o link de outro agendamento. Inválido, apagado ou 7 dias após o fim: 404 igual.
 - ICS (`ics.inviteIcs`, montado em `calendar-feed/invite.ts`): título "Serviço · Estúdio", endereço do estúdio em LOCATION, alarme 2h antes, UID fixo `invite-<id>@bubbly`, SEQUENCE = segundos desde a criação (sempre a versão mais nova). Cancelado = `STATUS:CANCELLED`, sem alarme. Remarcou/cancelou: o mesmo link já serve o novo estado, mas o evento salvo só muda se a cliente abrir o link de novo (não há mensagem extra).
 
+## Retorno ao concluir (16/11)
+
+- `core.setStatus`: virar `done` grava `appointments.return_due_on` (menor `services.return_days` entre os serviços do atendimento, contado do dia no fuso do estúdio; `returns/rules.returnDue`). Qualquer outro status (inclusive Desfazer) limpa `return_due_on` e `return_skipped_at`. Vale para um e para o lote (`updateStatuses`, que devolve `returns` = quantos ganharam data; o toast do "Concluir todos" mostra "N retornos previstos").
+- `AppointmentCard` → Concluir → `returns/ReturnPrompt.openReturnPrompt` (folha global no layout, como o `QuickBook`). Ela chama `returns/actions.loadReturnSuggestions` e só abre se há data, sem "Não precisa" e a cliente **não** tem horário futuro; aí some o toast e a folha traz o próprio Desfazer. Sugere até 4 dias perto da data (2 antes a 5 depois, nunca hoje) com 3 horários espalhados (`freeSlots` com a duração dos serviços + maior intervalo, ocupados = agendamentos + bloqueios + Google/iCloud). Tocar no horário abre `openNewAppointment` preenchido (fluxo normal). "Não precisa" = `skipReturn` (`return_skipped_at`).
+- Profissional (plano Empresa): quando `appointments.professional_id` existir, passe a profissional do atendimento para os ocupados e o expediente.
+
 ## Cuidados
 
 - Toda criação/edição/remarcação passa por `lockTenant` + `overlapsBlock`; não pule.
@@ -44,4 +50,4 @@
 - Mudou status/horário: considere Google (sync), lembretes (`reminder_sent_at`) e sino.
 - Animação Órbita só aqui; demais ações usam toast.
 - Folhas de agendar/editar: Dia e Horário lado a lado (classe `pair`, `h-13` fixo porque o select do iOS ignora min-height); a folha rola (`max-h` + `overflow-y-auto`). Ao fechar o teclado, o `KeyboardWatcher` devolve a página para a rolagem de antes do foco (o iOS deixava a folha com o fim fora da tela).
-- Testes: `tests/e2e/agenda*.spec.ts`, `agendamento.spec.ts`, `bloqueios.spec.ts`, `pendencias.spec.ts`, `mes.spec.ts`; `tests/db/reschedule.test.ts`; unit `agenda-grid`, `timeline`, `day-version`, `pricing`, `briefing`, `calendar-grid`, `month-picker`.
+- Testes: `tests/e2e/retorno.spec.ts`, `tests/db/returns.test.ts`, `tests/unit/returns.test.ts`, `tests/e2e/agenda*.spec.ts`, `agendamento.spec.ts`, `bloqueios.spec.ts`, `pendencias.spec.ts`, `mes.spec.ts`; `tests/db/reschedule.test.ts`; unit `agenda-grid`, `timeline`, `day-version`, `pricing`, `briefing`, `calendar-grid`, `month-picker`.

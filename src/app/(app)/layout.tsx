@@ -9,6 +9,7 @@ import { Shortcuts } from "@/components/nav/Shortcuts";
 import { SideNavSlot } from "@/components/nav/SideNavSlot";
 import { TabBar } from "@/components/nav/TabBar";
 import { QuickBook } from "@/features/appointments/QuickBook";
+import { ReturnPrompt } from "@/features/returns/ReturnPrompt";
 import { ConversationHost } from "@/features/messaging/ConversationHost";
 import { NoticeHost } from "@/features/owner-notices/NoticeHost";
 import { TourGate } from "@/features/tour/TourGate";
@@ -58,6 +59,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
       <Suspense fallback={null}>
         <QuickBook />
       </Suspense>
+      <ReturnPrompt />
       <Suspense fallback={null}>
         <TourGate />
       </Suspense>

@@ -1,6 +1,8 @@
 import "server-only";
 import { sql } from "drizzle-orm";
 import { getDb } from "@/db/client";
+// Verificação do 2FA no painel do dono: depois da validade (7 dias) a linha não serve para nada.
+import { STEP_UP_HOURS as ADMIN_STEP_UP_HOURS } from "@/features/admin/step-up-rules";
 
 const DAY = 86_400_000;
 /** Registro de acesso: 6 meses exigidos pelo Marco Civil + folga. */
@@ -9,8 +11,6 @@ export const ACCESS_LOG_DAYS = 200;
 export const MESSAGE_DAYS = 365;
 /** Registro de acesso ao painel do dono: 12 meses. */
 export const ADMIN_AUDIT_DAYS = 365;
-/** Verificação do 2FA no painel do dono vale 12 h; depois disso a linha não serve para nada. */
-export const ADMIN_STEP_UP_HOURS = 12;
 
 /** Limpeza diária (worker). Rotina de plataforma: roda como dono do banco, em todos os estúdios. */
 export async function runRetention(

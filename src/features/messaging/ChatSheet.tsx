@@ -78,6 +78,7 @@ export function ChatSheet({
   children,
   open: controlledOpen,
   onOpenChange,
+  initialText,
 }: {
   clientId: string;
   clientName: string;
@@ -91,11 +92,14 @@ export function ChatSheet({
   children?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** Texto pronto no campo ao abrir (ex.: convite de retorno); a dona edita e envia ela mesma. */
+  initialText?: string;
 }) {
   const side = useSheetSide();
   const [ownOpen, setOwnOpen] = useState(false);
   const open = controlledOpen ?? ownOpen;
   const setOpen = (next: boolean) => {
+    if (next && initialText && !text) setText(initialText);
     if (controlledOpen === undefined) setOwnOpen(next);
     onOpenChange?.(next);
   };

@@ -11,6 +11,7 @@ import { PushStatusText } from "@/features/settings/PushStatusText";
 import { hoursSummary } from "@/features/settings/sections";
 import { SettingsGroup, SettingsRow } from "@/features/settings/SettingsList";
 import { shellStatus } from "@/features/shell/status";
+import { unreadSupportReplies } from "@/features/support/core";
 import { ReplayTourButton } from "@/features/tour/ReplayTourButton";
 import { UpdateButton } from "@/features/update/UpdateButton";
 import { requireTenant } from "@/lib/tenant";
@@ -23,9 +24,13 @@ export const metadata: Metadata = { title: "Ajustes" };
  */
 export default async function AjustesPage() {
   const { tenantId } = await requireTenant();
-  const [{ whatsapp, google }, { week, reminders }, [salon]] = await Promise.all([
+  const [{ whatsapp, google }, { week, reminders, replies }, [salon]] = await Promise.all([
     shellStatus(tenantId),
-    withTenant(tenantId, async (tx) => ({ week: await getHours(tx), reminders: await getReminderSettings(tx) })),
+    withTenant(tenantId, async (tx) => ({
+      week: await getHours(tx),
+      reminders: await getReminderSettings(tx),
+      replies: await unreadSupportReplies(tx),
+    })),
     getDb()
       .select({ calendarOn: tenants.calendarTokenHash, icloudOn: tenants.icloudCalendarUrl })
       .from(tenants)
@@ -62,6 +67,13 @@ export default async function AjustesPage() {
           status={avisos.length ? avisos.join(" · ") : "Avisos desligados"}
         />
         <SettingsRow section="expediente" status={hoursSummary(week)} />
+      </SettingsGroup>
+      <SettingsGroup title="Ajuda">
+        <SettingsRow
+          section="suporte"
+          status={replies ? "O suporte respondeu" : "Fale com a gente e dúvidas comuns"}
+          todo={replies ? (replies === 1 ? "1 nova" : `${replies} novas`) : undefined}
+        />
       </SettingsGroup>
       <div className="mt-7 grid gap-3">
         <h2 className="px-3 text-xs font-bold uppercase tracking-wide text-muted">Este aparelho</h2>

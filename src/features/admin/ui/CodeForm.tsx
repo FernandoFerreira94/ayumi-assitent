@@ -8,7 +8,7 @@ import { messageFor, ERROR_MESSAGES } from "@/lib/errors";
 import { verifyAdminCode } from "../actions";
 import { adminCard, adminInput } from "./styles";
 
-/** Pede o código do app autenticador (ou um de recuperação) e libera o painel por 12 h. */
+/** Pede o código do app autenticador (ou um de recuperação) e libera o painel por 7 dias. */
 export function CodeForm() {
   const router = useRouter();
   const [recovery, setRecovery] = useState(false);
@@ -28,7 +28,7 @@ export function CodeForm() {
         notify.problem(text);
         return;
       }
-      notify.success("Acesso liberado por 12 horas");
+      notify.success("Acesso liberado por 7 dias");
       router.replace("/admin");
       router.refresh();
     } catch {

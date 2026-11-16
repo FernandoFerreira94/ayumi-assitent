@@ -50,14 +50,14 @@ d("painel do dono: tabelas de acesso (Postgres real)", () => {
     await admin`insert into "user" (id, name, email) values (${uid}, ${uid}, ${uid + "@t.test"})`;
   });
 
-  it("retenção: log do painel > 12 meses e verificação > 12 h saem; o resto fica", async () => {
+  it("retenção: log do painel > 12 meses e verificação > 7 dias saem; o resto fica", async () => {
     const now = new Date("2026-11-20T12:00:00Z");
     await admin`insert into admin_audit_log (user_id, action, created_at) values
       (${uid}, 'view_overview', '2025-11-01T00:00:00Z'), (${uid}, 'view_overview', '2026-10-01T00:00:00Z')`;
     await admin`insert into session (id, "expiresAt", token, "userId") values
       ('s-old', now() + interval '1 day', 'tok-old', ${uid}), ('s-new', now() + interval '1 day', 'tok-new', ${uid})`;
     await admin`insert into admin_step_up (session_id, user_id, verified_at) values
-      ('s-old', ${uid}, '2026-11-19T23:00:00Z'), ('s-new', ${uid}, '2026-11-20T11:00:00Z')`;
+      ('s-old', ${uid}, '2026-11-13T11:00:00Z'), ('s-new', ${uid}, '2026-11-14T13:00:00Z')`;
     const r = await runRetention(now);
     expect(r).toMatchObject({ adminAudit: 1, adminStepUp: 1 });
     expect(await admin`select 1 from admin_audit_log`).toHaveLength(1);

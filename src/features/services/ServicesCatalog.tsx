@@ -263,6 +263,7 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
                         <span className="text-xs font-semibold text-muted">
                           {formatDuration(s.durationMin)}
                           {s.bufferMin ? ` + ${s.bufferMin} min de intervalo` : ""}
+                          {s.returnDays ? ` · volta em ~${s.returnDays} dias` : ""}
                           {s.bookable ? "" : <span className="text-accent"> · pausado</span>}
                         </span>
                       </button>

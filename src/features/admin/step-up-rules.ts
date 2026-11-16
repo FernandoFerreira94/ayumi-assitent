@@ -1,5 +1,6 @@
 /** Regras puras do step-up do painel do dono (a parte com banco fica em step-up.ts). */
-export const STEP_UP_HOURS = 12;
+/** Quanto tempo vale o código confirmado no painel (decisão do dono, 16/11/2026: 7 dias). */
+export const STEP_UP_HOURS = 7 * 24;
 export const LOCK_WINDOW_MS = 15 * 60_000;
 const MAX_FAILURES = 5;
 
