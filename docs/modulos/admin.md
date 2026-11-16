@@ -25,6 +25,9 @@
 - Resumo da manhã: fila `admin-digest` no worker, 09:00 BRT. **Precisa de `ADMIN_USER_IDS` também no serviço do worker** e do push ligado no celular do dono (no app, com a conta dele).
 - Futuro: aviso de pagamento recusado / cobrança parada entra quando a cobrança chegar (mesmo `notifyAdmins`).
 
+## Suporte e avisos
+- Telas `admin/suporte` e `admin/avisos`, e o número de conversas esperando no menu: ver [suporte.md](suporte.md).
+
 ## Tabelas (migration `0041_admin_access.sql`, sem GRANT para `app_user`)
 - `user."twoFactorEnabled"` e `"twoFactor"` (plugin do Better Auth; segredo e códigos cifrados pelo próprio plugin com o `BETTER_AUTH_SECRET`). Apagar o usuário apaga o 2FA (cascade).
 - `admin_step_up(session_id → session.id ON DELETE CASCADE, user_id, verified_at)`: logout apaga a verificação.

@@ -11,7 +11,9 @@ export const ADMIN_NAV: Item[] = [
   { href: "/admin", label: "Visão geral", icon: "compass" },
   { href: "/admin/assinantes", label: "Assinantes", icon: "users" },
   { href: "/admin/pagamentos", label: "Pagamentos", icon: "wallet" },
-  { href: "/admin/uso", label: "Uso", icon: "chat" },
+  { href: "/admin/uso", label: "Uso", icon: "forecast" },
+  { href: "/admin/suporte", label: "Suporte", icon: "chat" },
+  { href: "/admin/avisos", label: "Avisos", icon: "bell" },
   { href: "/admin/seguranca", label: "Segurança", icon: "shield" },
 ];
 
@@ -22,8 +24,15 @@ const isOn = (pathname: string, href: string) =>
  * Menu do painel do dono, no mesmo visual do menu lateral do app (trilho de ícones de 768 px, nomes a partir de
  * 1280 px). No celular vira uma faixa de abas no topo. Só aparece depois do requireAdmin (fica dentro da página).
  */
-export function AdminNav() {
+export function AdminNav({ supportUnread = 0 }: { supportUnread?: number }) {
   const pathname = usePathname();
+  const badge = (href: string) =>
+    href === "/admin/suporte" && supportUnread > 0 ? (
+      <span className="rounded-full bg-primary px-1.5 text-xs font-bold leading-5 text-white">
+        {supportUnread}
+        <span className="sr-only"> sem resposta</span>
+      </span>
+    ) : null;
   return (
     <>
       <nav aria-label="Painel do dono" className="sidenav">
@@ -40,8 +49,14 @@ export function AdminNav() {
                 aria-current={isOn(pathname, i.href) ? "page" : undefined}
                 className="sidenav-link"
               >
-                <Icon name={i.icon} size={22} />
+                <span className="relative">
+                  <Icon name={i.icon} size={22} />
+                  {supportUnread > 0 && i.href === "/admin/suporte" ? (
+                    <span aria-hidden="true" className="absolute -right-1 -top-1 size-2.5 rounded-full bg-primary xl:hidden" />
+                  ) : null}
+                </span>
                 <span className="sr-only xl:not-sr-only xl:flex-1">{i.label}</span>
+                <span className="hidden xl:inline">{badge(i.href)}</span>
               </Link>
             </li>
           ))}
@@ -64,6 +79,7 @@ export function AdminNav() {
           >
             <Icon name={i.icon} size={18} />
             {i.label}
+            {badge(i.href)}
           </Link>
         ))}
       </nav>

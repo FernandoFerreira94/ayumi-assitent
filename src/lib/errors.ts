@@ -23,6 +23,7 @@ export const ERROR_MESSAGES = {
   ICLOUD_FAILED: "Não conseguimos ler o calendário do iPhone agora. Tente de novo em instantes.",
   ICLOUD_TOO_BIG: "Esse calendário tem eventos demais. Use um calendário só para a agenda do salão.",
   CLIPBOARD: "Não deu para copiar. Segure o texto e escolha Copiar.",
+  SUPPORT_RATE_LIMITED: "Você mandou muitas mensagens seguidas. Espere um pouco que a gente já responde.",
   RATE_LIMITED: "Você enviou muitas mensagens hoje. Tente de novo amanhã.",
   ADMIN_STEP_UP_INVALID: "Código inválido. Confira o app autenticador e tente de novo.",
   ADMIN_STEP_UP_LOCKED: "Muitas tentativas. Espere 15 minutos para tentar de novo.",
