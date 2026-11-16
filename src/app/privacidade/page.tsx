@@ -131,6 +131,10 @@ export default function PrivacidadePage() {
             se você ligar a previsão do tempo.
           </li>
           <li>
+            <strong>Resend:</strong> envia os e-mails do app (como o link para criar uma nova senha); recebe só o seu
+            e-mail e o nome.
+          </li>
+          <li>
             <strong>Sentry:</strong> registros técnicos de erro, sem nome, telefone ou texto das mensagens.
           </li>
           <li>Autoridades, apenas quando a lei exigir.</li>

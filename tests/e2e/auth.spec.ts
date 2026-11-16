@@ -73,3 +73,62 @@ test.describe("login por e-mail e senha", () => {
     await expect(page).toHaveURL(/\/agenda/);
   });
 });
+
+test.describe("esqueci a senha", () => {
+  // Cada teste com um IP próprio: o limite por IP (3 pedidos de link a cada 10 min) não vaza entre testes e retries
+  test.beforeEach(async ({ page }) => {
+    const ip = `10.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}`;
+    await page.setExtraHTTPHeaders({ "x-forwarded-for": ip });
+  });
+
+  test("e-mail que não existe recebe a mesma resposta", async ({ page }) => {
+    await page.goto("/login?esqueci=1");
+    await page.getByLabel("E-mail da conta").fill("ninguem@e2e.test");
+    await page.getByRole("button", { name: "Enviar link" }).click();
+    await expect(page.getByRole("heading", { name: "Confira seu e-mail" })).toBeVisible();
+  });
+
+  test("pede o link, cria a senha nova e já entra; o link não vale de novo", async ({ page }) => {
+    // Conta só do Google (sem senha), própria deste teste: o link cria a senha e já entra
+    const email = `esqueci-${randomUUID()}@e2e.test`;
+    const db = postgres(process.env.DATABASE_URL!, { max: 1 });
+    const uid = randomUUID();
+    await db`insert into "user" (id, name, email, "emailVerified") values (${uid}, 'Yumi', ${email}, true)`;
+    const [{ id: tid }] = await db`insert into tenants (name) values ('Estúdio Esqueci') returning id`;
+    await db`insert into memberships (user_id, tenant_id, tour_done_at) values (${uid}, ${tid}, now())`;
+    await db.end();
+
+    await page.goto("/login");
+    await page.getByRole("button", { name: "Continuar com e-mail" }).click();
+    await page.getByRole("button", { name: "Esqueci minha senha" }).click();
+    await page.getByLabel("E-mail da conta").fill(email);
+    await page.getByRole("button", { name: "Enviar link" }).click();
+    await expect(page.getByRole("heading", { name: "Confira seu e-mail" })).toBeVisible();
+
+    // O token que iria no e-mail
+    const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+    const [row] = await sql`select v.identifier from verification v join "user" u on u.id = v.value
+      where u.email = ${email} and v.identifier like 'reset-password:%' order by v."createdAt" desc limit 1`;
+    await sql.end();
+    const token = String(row.identifier).slice("reset-password:".length);
+    const link = `/api/auth/reset-password/${token}?callbackURL=${encodeURIComponent("/redefinir-senha")}`;
+
+    await page.goto(link);
+    await expect(page).toHaveURL(/\/redefinir-senha\?token=/);
+    await page.getByLabel("Nova senha").fill("nova-senha-forte-1");
+    await page.getByLabel("Repita a senha").fill("outra-coisa");
+    await page.getByRole("button", { name: "Salvar e entrar" }).click();
+    await expect(page.getByText("As duas senhas não são iguais.")).toBeVisible();
+
+    await page.getByLabel("Nova senha").fill("nova-senha-forte-1");
+    await page.getByLabel("Repita a senha").fill("nova-senha-forte-1");
+    await page.getByRole("button", { name: "Salvar e entrar" }).click();
+    await expect(page).toHaveURL(/\/agenda/);
+
+    // Uso único: o mesmo link agora cai em "Link expirado"
+    await page.context().clearCookies();
+    await page.goto(link);
+    await expect(page.getByRole("heading", { name: "Link expirado" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Pedir um novo link" })).toBeVisible();
+  });
+});

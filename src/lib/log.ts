@@ -32,5 +32,6 @@ export const errInfo = (e: unknown) =>
 export function redactUrl(url: string): string {
   return url
     .replace(/(\/api\/calendar\/)[^/?#]+/g, "$1[token]")
+    .replace(/(\/reset-password\/)[^/?#]+/g, "$1[token]")
     .replace(/([?&](?:token|secret|conversa|aviso)=)[^&#]*/gi, "$1[redacted]");
 }
