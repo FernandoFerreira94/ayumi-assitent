@@ -164,12 +164,18 @@ d("agendamento com vários serviços e desconto", () => {
     expect((row!.endsAt.getTime() - row!.startsAt.getTime()) / 60_000).toBe(90);
     // Um intervalo só, o maior
     expect((row!.blockedUntil.getTime() - row!.endsAt.getTime()) / 60_000).toBe(15);
-    const [saved] = await admin`select service_id, discount_kind, discount_value, discount_cents from appointments where id=${a.data.id}`;
+    const [saved] =
+      await admin`select service_id, discount_kind, discount_value, discount_cents from appointments where id=${a.data.id}`;
     expect(saved).toMatchObject({ service_id: S1, discount_kind: "pct", discount_value: 10, discount_cents: 1500 });
 
     // Serviço pausado ou de outro estúdio não entra
     const bad = await withTenant(T, (tx) =>
-      insertAppointment(tx, T, { clientId: C, serviceIds: [S1, "00000000-0000-4000-8000-000000000000"], date: "2026-11-13", time: "09:00" }),
+      insertAppointment(tx, T, {
+        clientId: C,
+        serviceIds: [S1, "00000000-0000-4000-8000-000000000000"],
+        date: "2026-11-13",
+        time: "09:00",
+      }),
     );
     expect(bad).toMatchObject({ ok: false, code: "VALIDATION" });
 
@@ -202,7 +208,10 @@ d("expediente (núcleo)", () => {
       null,
       { opens: "10:00", closes: "16:00", breakStart: null, breakEnd: null },
       { opens: "09:00", closes: "18:00", breakStart: "12:00", breakEnd: "13:00" },
-      null, null, null, null,
+      null,
+      null,
+      null,
+      null,
     ];
     await withTenant(T, (tx) => saveHours(tx, T, week));
     expect(await withTenant(T, (tx) => getHours(tx))).toEqual(week);
@@ -290,12 +299,14 @@ d("pendências (núcleo)", () => {
     await mk("2026-11-11T10:00:00Z", "2026-11-11T11:00:00Z", "pending_confirmation", "e3"); // confirmar
     await mk("2026-11-12T10:00:00Z", "2026-11-12T11:00:00Z", "confirmed", null); // sem Google
     await mk("2026-11-13T10:00:00Z", "2026-11-13T11:00:00Z", "cancelled", null); // cancelado → nada
+    const [{ professional_id: prof }] =
+      await admin`select professional_id from appointments where tenant_id = ${T} limit 1`;
     await admin.end();
 
-    const withG = await withTenant(T, (tx) => listPendencias(tx, now, true));
+    const withG = await withTenant(T, (tx) => listPendencias(tx, now, [prof]));
     expect([withG.toClose.length, withG.toConfirm.length, withG.unsynced.length]).toEqual([1, 1, 1]);
     expect(countPendencias(withG)).toBe(3);
-    const noG = await withTenant(T, (tx) => listPendencias(tx, now, false));
+    const noG = await withTenant(T, (tx) => listPendencias(tx, now, []));
     expect(noG.unsynced).toHaveLength(0);
   });
 });

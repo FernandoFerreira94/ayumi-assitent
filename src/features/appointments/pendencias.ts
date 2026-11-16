@@ -25,13 +25,17 @@ export type Pendencias = {
   toClose: Awaited<ReturnType<ReturnType<typeof base>["orderBy"]>>;
   /** Aguardando a cliente confirmar (hoje em diante). */
   toConfirm: Awaited<ReturnType<ReturnType<typeof base>["orderBy"]>>;
-  /** Futuros que não chegaram ao Google Agenda (só se o Google estiver conectado). */
+  /** Futuros que não chegaram ao Google Agenda (só das profissionais com Google conectado). */
   unsynced: Awaited<ReturnType<ReturnType<typeof base>["orderBy"]>>;
   /** A cliente respondeu "3" ao lembrete: a dona precisa combinar outro horário. */
   toReschedule: Awaited<ReturnType<ReturnType<typeof base>["orderBy"]>>;
 };
 
-export async function listPendencias(tx: Tx, now: Date, googleConnected: boolean): Promise<Pendencias> {
+/**
+ * `googleProfessionalIds`: profissionais do salão com Google conectado; só os atendimentos delas entram em
+ * "unsynced" (quem não tem Google não tem o que sincronizar). Vazio = nenhuma conectada.
+ */
+export async function listPendencias(tx: Tx, now: Date, googleProfessionalIds: string[]): Promise<Pendencias> {
   const open = inArray(appointments.status, ["pending_confirmation", "confirmed", "reschedule_requested"]);
   const [toClose, toConfirm, unsynced, toReschedule] = await Promise.all([
     base(tx)
@@ -40,9 +44,16 @@ export async function listPendencias(tx: Tx, now: Date, googleConnected: boolean
     base(tx)
       .where(and(eq(appointments.status, "pending_confirmation"), gte(appointments.endsAt, now)))
       .orderBy(asc(appointments.startsAt)),
-    googleConnected
+    googleProfessionalIds.length
       ? base(tx)
-          .where(and(open, gte(appointments.endsAt, now), isNull(appointments.googleEventId)))
+          .where(
+            and(
+              open,
+              gte(appointments.endsAt, now),
+              isNull(appointments.googleEventId),
+              inArray(appointments.professionalId, googleProfessionalIds),
+            ),
+          )
           .orderBy(asc(appointments.startsAt))
       : Promise.resolve([]),
     base(tx)

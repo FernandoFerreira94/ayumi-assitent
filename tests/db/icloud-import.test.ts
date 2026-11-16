@@ -14,7 +14,7 @@ const to = new Date(Date.now() + 30 * 86_400_000);
 
 d("eventos do iPhone (Postgres real)", () => {
   let admin: ReturnType<typeof postgres>;
-  let A: string, B: string;
+  let A: string, B: string, P: string, Q: string;
   let db: typeof import("@/db/client");
   let imp: typeof import("@/features/calendar-feed/icloud-import");
   let blocksCore: typeof import("@/features/blocks/core");
@@ -36,6 +36,10 @@ d("eventos do iPhone (Postgres real)", () => {
       values (${A},${c},${s},${at(4)},${at(5)},5000,'confirmed')`;
     await admin`insert into blocks (tenant_id,starts_at,ends_at,source,reason,google_event_id)
       values (${A},${at(6)},${at(7)},'google','Reunião','g1')`;
+    // P = a profissional do atendimento (padrão do salão, criada pela trigger); Q = outra profissional do mesmo salão
+    [{ professional_id: P }] = await admin`select professional_id from appointments where tenant_id = ${A} limit 1`;
+    [{ id: Q }] =
+      await admin`insert into professionals (tenant_id, display_name, position) values (${A},'Outra',9) returning id`;
   });
   afterAll(async () => {
     await admin?.end();
@@ -51,12 +55,12 @@ d("eventos do iPhone (Postgres real)", () => {
       { uid: "dup-appt", title: "Maria", startsAt: at(4), endsAt: at(5) },
       { uid: "dup-google", title: "Reunião", startsAt: at(6), endsAt: at(7) },
     ];
-    expect(await db.withTenant(A, (tx) => imp.importIcloudEvents(tx, A, evs, from, to))).toBe(2);
+    expect(await db.withTenant(A, (tx) => imp.importIcloudEvents(tx, A, P, evs, from, to))).toBe(2);
     expect((await rows(A)).map((r) => r.external_uid)).toEqual(["e1", "e2"]);
 
     // e1 mudou de título e e2 foi apagado no iPhone
     await db.withTenant(A, (tx) =>
-      imp.importIcloudEvents(tx, A, [{ ...evs[0], title: "Maria Souza - corte" }], from, to),
+      imp.importIcloudEvents(tx, A, P, [{ ...evs[0], title: "Maria Souza - corte" }], from, to),
     );
     const after = await rows(A);
     expect(after.map((r) => [r.external_uid, r.reason])).toEqual([["e1", "Maria Souza - corte"]]);
@@ -77,9 +81,9 @@ d("eventos do iPhone (Postgres real)", () => {
     expect(listed.some((b) => b.id === id)).toBe(false);
 
     await db.withTenant(A, (tx) =>
-      imp.importIcloudEvents(tx, A, [{ uid: "e1", title: "Maria", startsAt: at(0), endsAt: at(1) }], from, to),
+      imp.importIcloudEvents(tx, A, P, [{ uid: "e1", title: "Maria", startsAt: at(0), endsAt: at(1) }], from, to),
     );
-    await db.withTenant(A, (tx) => imp.importIcloudEvents(tx, A, [], from, to));
+    await db.withTenant(A, (tx) => imp.importIcloudEvents(tx, A, P, [], from, to));
     const [r] = await rows(A);
     expect(r.external_uid).toBe("e1");
     expect(r.converted_at).not.toBeNull();
@@ -92,9 +96,31 @@ d("eventos do iPhone (Postgres real)", () => {
   });
 
   it("desligar tira só o que veio do iPhone", async () => {
-    await db.withTenant(A, (tx) => imp.clearIcloudEvents(tx));
+    await db.withTenant(A, (tx) => imp.clearIcloudEvents(tx, P));
     expect(await rows(A)).toHaveLength(0);
     const [{ n }] = await admin`select count(*)::int n from blocks where tenant_id=${A}`;
     expect(n).toBe(2); // Google + bloqueio do app
+  });
+
+  it("cada profissional tem o seu iCloud: importar ou desligar o de uma não mexe no da outra, nem o atendimento de uma esconde o da outra", async () => {
+    const evP = [{ uid: "p1", title: "Dela P", startsAt: at(20), endsAt: at(21) }];
+    // no mesmo horário do atendimento da P, mas é da Q: não é duplicata para ela
+    const evQ = [{ uid: "q1", title: "Dela Q", startsAt: at(4), endsAt: at(5) }];
+    expect(await db.withTenant(A, (tx) => imp.importIcloudEvents(tx, A, P, evP, from, to))).toBe(1);
+    expect(await db.withTenant(A, (tx) => imp.importIcloudEvents(tx, A, Q, evQ, from, to))).toBe(1);
+    const owner = async () =>
+      (
+        await admin`select external_uid u, professional_id p from blocks where tenant_id=${A} and source='icloud' order by external_uid`
+      ).map((r) => [r.u, r.p]);
+    expect(await owner()).toEqual([
+      ["p1", P],
+      ["q1", Q],
+    ]);
+    // a agenda da Q esvazia: só o dela some
+    await db.withTenant(A, (tx) => imp.importIcloudEvents(tx, A, Q, [], from, to));
+    expect(await owner()).toEqual([["p1", P]]);
+    await db.withTenant(A, (tx) => imp.importIcloudEvents(tx, A, Q, evQ, from, to));
+    await db.withTenant(A, (tx) => imp.clearIcloudEvents(tx, Q));
+    expect(await owner()).toEqual([["p1", P]]);
   });
 });

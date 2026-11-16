@@ -10,7 +10,7 @@ export async function runPushPendencias(port: PushPort, now = new Date()): Promi
   const total: PushRun = { sent: 0, removed: 0, failed: 0 };
   for (const t of all) {
     try {
-      const r = await withTenant(t.id, (tx) => notifyPendencias(tx, port, now, false));
+      const r = await withTenant(t.id, (tx) => notifyPendencias(tx, port, now, []));
       total.sent += r.sent;
       total.removed += r.removed;
       total.failed += r.failed;

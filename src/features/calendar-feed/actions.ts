@@ -5,10 +5,11 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { withTenant } from "@/db/client";
-import { tenants } from "@/db/schema";
+import { professionals } from "@/db/schema";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
 import { canAs } from "@/features/team/permissions";
+import { calendarProfessionalId } from "@/features/team/professional";
 import { normalizeIcloudUrl } from "./icloud";
 import { clearIcloudEvents } from "./icloud-import";
 import { IcloudFetchError, resetIcloudThrottle, syncIcloud } from "./icloud-server";
@@ -27,12 +28,13 @@ export async function createCalendarLink(): Promise<ActionResult<{ url: string }
   if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
   const { tenantId } = me;
   try {
+    const professionalId = await calendarProfessionalId(me);
     const token = newToken();
     await withTenant(tenantId, (tx) =>
       tx
-        .update(tenants)
+        .update(professionals)
         .set({ calendarTokenHash: hashToken(token) })
-        .where(eq(tenants.id, tenantId)),
+        .where(eq(professionals.id, professionalId)),
     );
     return ok({ url: `${await baseUrl()}/api/calendar/${token}.ics` });
   } catch {
@@ -45,8 +47,9 @@ export async function disableCalendarLink(): Promise<ActionResult> {
   if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
   const { tenantId } = me;
   try {
+    const professionalId = await calendarProfessionalId(me);
     await withTenant(tenantId, (tx) =>
-      tx.update(tenants).set({ calendarTokenHash: null }).where(eq(tenants.id, tenantId)),
+      tx.update(professionals).set({ calendarTokenHash: null }).where(eq(professionals.id, professionalId)),
     );
     return ok();
   } catch {
@@ -61,8 +64,9 @@ export async function setCalendarHideNames(hide: boolean): Promise<ActionResult>
   if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
   const { tenantId } = me;
   try {
+    const professionalId = await calendarProfessionalId(me);
     await withTenant(tenantId, (tx) =>
-      tx.update(tenants).set({ calendarHideNames: parsed.data }).where(eq(tenants.id, tenantId)),
+      tx.update(professionals).set({ calendarHideNames: parsed.data }).where(eq(professionals.id, professionalId)),
     );
     return ok();
   } catch {
@@ -86,9 +90,10 @@ export async function saveIcloudCalendar(raw: string): Promise<ActionResult<{ co
   if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
   const { tenantId } = me;
   try {
-    const count = await syncIcloud(tenantId, url);
+    const professionalId = await calendarProfessionalId(me);
+    const count = await syncIcloud(tenantId, professionalId, url);
     await withTenant(tenantId, (tx) =>
-      tx.update(tenants).set({ icloudCalendarUrl: url }).where(eq(tenants.id, tenantId)),
+      tx.update(professionals).set({ icloudCalendarUrl: url }).where(eq(professionals.id, professionalId)),
     );
     resetIcloudThrottle(tenantId);
     revalidatePath("/agenda");
@@ -106,9 +111,10 @@ export async function removeIcloudCalendar(): Promise<ActionResult> {
   if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
   const { tenantId } = me;
   try {
+    const professionalId = await calendarProfessionalId(me);
     await withTenant(tenantId, async (tx) => {
-      await tx.update(tenants).set({ icloudCalendarUrl: null }).where(eq(tenants.id, tenantId));
-      await clearIcloudEvents(tx);
+      await tx.update(professionals).set({ icloudCalendarUrl: null }).where(eq(professionals.id, professionalId));
+      await clearIcloudEvents(tx, professionalId);
     });
     revalidatePath("/agenda");
     revalidatePath("/calendario");

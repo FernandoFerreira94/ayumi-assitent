@@ -1,5 +1,5 @@
 import { connection } from "next/server";
-import { feedIcs, tenantByTokenHash } from "@/features/calendar-feed/server";
+import { feedIcs, professionalByTokenHash } from "@/features/calendar-feed/server";
 import { hashToken, isTokenShape } from "@/features/calendar-feed/token";
 import { errInfo, log } from "@/lib/log";
 
@@ -13,9 +13,9 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/calendar/[token
   const notFound = () => new Response("Not found", { status: 404, headers: PRIVATE });
   if (!isTokenShape(token)) return notFound();
   try {
-    const tenant = await tenantByTokenHash(hashToken(token));
-    if (!tenant) return notFound();
-    const body = await feedIcs(tenant);
+    const owner = await professionalByTokenHash(hashToken(token));
+    if (!owner) return notFound();
+    const body = await feedIcs(owner);
     return new Response(body, {
       headers: {
         ...PRIVATE,

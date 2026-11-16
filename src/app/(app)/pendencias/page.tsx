@@ -7,7 +7,7 @@ import { AppointmentCard } from "@/features/appointments/AppointmentCard";
 import { CloseAllButton } from "@/features/appointments/CloseAllButton";
 import { countPendencias, listPendencias } from "@/features/appointments/pendencias";
 import { RetrySyncButton } from "@/features/google/RetrySyncButton";
-import { isGoogleConnected } from "@/features/google/server";
+import { connectedProfessionalIds } from "@/features/google/server";
 import { formatBRL, formatTime, todayStr } from "@/lib/dates";
 import { maskPhone } from "@/lib/phone";
 import { requireTenant } from "@/lib/tenant";
@@ -20,8 +20,9 @@ const when = (d: Date) =>
 export default async function PendenciasPage() {
   await connection();
   const { tenantId } = await requireTenant();
-  const google = await isGoogleConnected(tenantId);
-  const p = await withTenant(tenantId, (tx) => listPendencias(tx, new Date(), google));
+  const p = await withTenant(tenantId, async (tx) =>
+    listPendencias(tx, new Date(), await connectedProfessionalIds(tenantId)),
+  );
 
   const card = (r: (typeof p.toClose)[number], past = false) => (
     <AppointmentCard
@@ -42,7 +43,11 @@ export default async function PendenciasPage() {
   );
 
   return (
-    <PageShell back title="Pendências" subtitle={countPendencias(p) ? `${countPendencias(p)} para resolver` : undefined}>
+    <PageShell
+      back
+      title="Pendências"
+      subtitle={countPendencias(p) ? `${countPendencias(p)} para resolver` : undefined}
+    >
       {countPendencias(p) === 0 ? (
         <EmptyState
           icon="checkCircle"

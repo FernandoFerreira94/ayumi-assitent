@@ -1,5 +1,5 @@
 import { asc, sql } from "drizzle-orm";
-import type { Tx } from "@/db/client";
+import { withTenant, type Tx } from "@/db/client";
 import { professionals } from "@/db/schema";
 
 /**
@@ -23,4 +23,16 @@ export async function firstProfessionalId(tx: Tx): Promise<string | null> {
     .orderBy(asc(professionals.position), asc(professionals.createdAt))
     .limit(1);
   return row?.id ?? null;
+}
+
+/**
+ * Profissional cuja agenda de fora (Google, link do iPhone, iCloud) o login gerencia: a ligada ao login;
+ * owner/admin sem profissional ligada usam a padrão do salão, como nas demais telas.
+ */
+export async function calendarProfessionalId(actor: {
+  tenantId: string;
+  professionalId: string | null;
+}): Promise<string> {
+  if (actor.professionalId) return actor.professionalId;
+  return withTenant(actor.tenantId, (tx) => defaultProfessionalId(tx, actor.tenantId));
 }

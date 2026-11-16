@@ -12,9 +12,9 @@ export const metadata: Metadata = { title: "WhatsApp" };
 
 /** Ajustes > WhatsApp: conectar o número do salão (por onde saem confirmações e avisos). */
 export default async function WhatsAppPage() {
-  const { tenantId } = await requireTenant();
+  const { tenantId, professionalId } = await requireTenant();
   const [{ whatsapp }, [t]] = await Promise.all([
-    shellStatus(tenantId),
+    shellStatus(tenantId, professionalId),
     getDb().select({ phone: tenants.businessPhone }).from(tenants).where(eq(tenants.id, tenantId)),
   ]);
   // Telefone do Meu perfil (E.164) vem como sugestão no campo do número ao conectar

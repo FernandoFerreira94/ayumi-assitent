@@ -1,7 +1,7 @@
 import "server-only";
-import { eq } from "drizzle-orm";
-import { getDb, withTenant } from "@/db/client";
-import { tenants } from "@/db/schema";
+import { isNotNull } from "drizzle-orm";
+import { withTenant } from "@/db/client";
+import { professionals } from "@/db/schema";
 import { isIcloudUrl, parseIcsEvents } from "./icloud";
 import { importIcloudEvents } from "./icloud-import";
 
@@ -74,8 +74,13 @@ export function icloudWindow(now = Date.now()): [Date, Date] {
   return [new Date(now - ICLOUD_WINDOW.pastDays * DAY), new Date(now + ICLOUD_WINDOW.futureDays * DAY)];
 }
 
-/** Lê o calendário e grava na agenda. Lança em falha (nada é apagado sem a lista completa). */
-export async function syncIcloud(tenantId: string, url: string, fetchImpl: typeof fetch = fetch): Promise<number> {
+/** Lê o calendário e grava na agenda da profissional. Lança em falha (nada é apagado sem a lista completa). */
+export async function syncIcloud(
+  tenantId: string,
+  professionalId: string,
+  url: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<number> {
   const text = await fetchIcloudIcs(url, fetchImpl);
   const [from, to] = icloudWindow();
   let events;
@@ -84,26 +89,36 @@ export async function syncIcloud(tenantId: string, url: string, fetchImpl: typeo
   } catch {
     throw new IcloudFetchError("not_calendar");
   }
-  return withTenant(tenantId, (tx) => importIcloudEvents(tx, tenantId, events, from, to));
+  return withTenant(tenantId, (tx) => importIcloudEvents(tx, tenantId, professionalId, events, from, to));
 }
 
 /**
- * Traz os eventos do Calendário do iPhone para a agenda (somente leitura), junto com o Google ao abrir o dia.
- * Nunca lança: sem link ou com falha, a agenda segue com o que já tem.
+ * Traz os eventos do Calendário do iPhone de cada profissional que ligou o dela para a agenda (somente leitura),
+ * junto com o Google ao abrir o dia. Nunca lança: sem link ou com falha, a agenda segue com o que já tem.
  */
 export async function importIcloudCalendar(tenantId: string, force = false): Promise<void> {
   const last = lastImport.get(tenantId) ?? 0;
   if (!force && Date.now() - last < MIN_INTERVAL_MS) return;
   lastImport.set(tenantId, Date.now());
   try {
-    // tenants não tem FORCE RLS: leitura do próprio estúdio pelo dono do banco, como em isGoogleConnected
-    const [t] = await getDb()
-      .select({ url: tenants.icloudCalendarUrl })
-      .from(tenants)
-      .where(eq(tenants.id, tenantId))
-      .limit(1);
-    if (!t?.url) return;
-    await syncIcloud(tenantId, t.url);
+    const linked = await withTenant(tenantId, (tx) =>
+      tx
+        .select({ id: professionals.id, url: professionals.icloudCalendarUrl })
+        .from(professionals)
+        .where(isNotNull(professionals.icloudCalendarUrl)),
+    );
+    const results = await Promise.all(
+      linked.map(async (p) => {
+        try {
+          if (p.url) await syncIcloud(tenantId, p.id, p.url);
+          return true;
+        } catch (e) {
+          console.error("icloud_import_failed", { error: e instanceof IcloudFetchError ? e.kind : "unknown" });
+          return false;
+        }
+      }),
+    );
+    if (results.includes(false)) lastImport.delete(tenantId);
   } catch (e) {
     lastImport.delete(tenantId);
     console.error("icloud_import_failed", { error: e instanceof IcloudFetchError ? e.kind : "unknown" });

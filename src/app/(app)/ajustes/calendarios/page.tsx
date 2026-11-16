@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { eq } from "drizzle-orm";
 import { PageShell } from "@/components/ui/PageShell";
-import { getDb } from "@/db/client";
-import { tenants } from "@/db/schema";
 import { IphoneCalendarCard } from "@/features/calendar-feed/IphoneCalendarCard";
+import { calendarSettings } from "@/features/calendar-feed/server";
 import { GoogleCard } from "@/features/google/GoogleCard";
 import { isGoogleConnected } from "@/features/google/server";
+import { calendarProfessionalId } from "@/features/team/professional";
 import { getSession } from "@/lib/session";
 import { requireTenant } from "@/lib/tenant";
 
@@ -13,18 +12,13 @@ export const metadata: Metadata = { title: "Calendários" };
 
 /** Ajustes > Calendários: Google Agenda e Calendário do iPhone (ida pelo link webcal, volta pelo iCloud). */
 export default async function CalendariosPage({ searchParams }: PageProps<"/ajustes/calendarios">) {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
   const { google: googleResult, error: googleError } = await searchParams;
-  const [google, [salon], session] = await Promise.all([
-    isGoogleConnected(tenantId),
-    getDb()
-      .select({
-        calendarOn: tenants.calendarTokenHash,
-        calendarHideNames: tenants.calendarHideNames,
-        icloudOn: tenants.icloudCalendarUrl,
-      })
-      .from(tenants)
-      .where(eq(tenants.id, tenantId)),
+  // Os calendários são da profissional do login (owner/admin sem ligação: a padrão do salão)
+  const professionalId = await calendarProfessionalId(me);
+  const [google, salon, session] = await Promise.all([
+    isGoogleConnected(professionalId),
+    calendarSettings(me.tenantId, professionalId),
     getSession(),
   ]);
   return (
@@ -40,10 +34,10 @@ export default async function CalendariosPage({ searchParams }: PageProps<"/ajus
         </section>
         <section id="iphone" aria-label="Calendário do iPhone" className="scroll-mt-6">
           <IphoneCalendarCard
-            enabled={!!salon?.calendarOn}
-            hideNames={salon?.calendarHideNames ?? false}
+            enabled={salon.feedOn}
+            hideNames={salon.hideNames}
             googleConnected={google}
-            icloudOn={!!salon?.icloudOn}
+            icloudOn={salon.icloudOn}
           />
         </section>
       </div>

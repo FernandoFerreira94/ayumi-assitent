@@ -10,7 +10,7 @@
 - Backfill: 1 profissional por salão com o nome da dona (`owner_name`, senão nome do usuário, senão nome do salão).
 
 ## Cuidados
-- Campos de calendário continuam em `tenants` até a limpeza; hoje o app ainda lê de lá.
+- Campos de calendário continuam em `tenants` só até a limpeza; desde a A4 o app lê e grava em `professionals` (as colunas de `tenants` ficam paradas, sem uso).
 - Novo cadastro (`lib/auth.ts`) ainda não cria profissional; a trigger da 0037 cria a primeira ao agendar ou salvar expediente.
 
 ## Próximas tasks que estendem
@@ -32,3 +32,8 @@
 - Onde há checagem: agenda (criar/remarcar/editar/status/vários status/`retrySync`), bloqueios, expediente e listas de vagas (`agenda.edit`); despesas (`finance.salon`); serviços (`services.manage`); Ajustes do salão, WhatsApp, calendários, Google, mensagens, avisos de teste, localização, IA, exportar dados (`salon.settings`); excluir conta (`salon.delete`). Profissional que cria atendimento/bloqueio/expediente/lista grava na agenda dela.
 - Sem checagem de propósito: clientes, conversa do WhatsApp, sino, push do próprio aparelho, leituras (agenda, vagas, calendário). Telas (`/financeiro`, `/ajustes/*`) ainda não escondem nada por papel: A6.
 - Testes: `tests/unit/permissions.test.ts` (matriz) e `tests/db/professional-isolation.test.ts`.
+
+## Calendários por profissional (task A4)
+- Google, link do iPhone (.ics) e iCloud são de cada profissional. Quem gerencia é a profissional do login; owner/admin sem profissional ligada usam a padrão do salão (`features/team/professional.ts`: `calendarProfessionalId(me)`).
+- Google: a conta Google do login ligado à profissional (`memberships.professional_id`). Profissional sem login, ou com login sem Google, não sincroniza e não dá erro. Dona sem vínculo (cadastro novo) vale pela profissional padrão.
+- Os gates de A3 continuam: criar/desligar link, ocultar nomes, iCloud e desconectar Google exigem `salon.settings` (owner/admin). Profissional com login ainda não gerencia o próprio calendário: decisão de produto para A6/A7.

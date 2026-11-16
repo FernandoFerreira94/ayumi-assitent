@@ -1,15 +1,25 @@
-import { and, eq, gt, isNotNull, lt, notInArray } from "drizzle-orm";
+import { and, eq, gt, isNotNull, isNull, lt, notInArray, or, sql } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { appointments, blocks } from "@/db/schema";
 import type { CalendarReader } from "./calendar";
 
 /**
- * Traz os eventos do Google Agenda da janela [from, to) como horário ocupado (blocks.source = 'google').
+ * Traz os eventos do Google Agenda da profissional na janela [from, to) como horário ocupado
+ * (blocks.source = 'google', na agenda dela).
+ * - evento antigo sem profissional (importado antes da equipe) é adotado por quem o importa
+ * - a limpeza do que sumiu só mexe nos blocos dela e nos antigos sem profissional
  * - eventos que o próprio app criou (appointments.google_event_id) não voltam: já são atendimentos
  * - o que sumiu ou mudou no Google é atualizado/removido aqui (a janela inteira é refeita)
  * Lança se o Google falhar: nada é apagado sem a lista completa.
  */
-export async function importGoogleEvents(tx: Tx, tenantId: string, reader: CalendarReader, from: Date, to: Date) {
+export async function importGoogleEvents(
+  tx: Tx,
+  tenantId: string,
+  professionalId: string,
+  reader: CalendarReader,
+  from: Date,
+  to: Date,
+) {
   const fetched = await reader.listEvents(from, to);
   const own = new Set(
     (
@@ -27,6 +37,7 @@ export async function importGoogleEvents(tx: Tx, tenantId: string, reader: Calen
       .insert(blocks)
       .values({
         tenantId,
+        professionalId,
         startsAt: e.startsAt,
         endsAt: e.endsAt,
         reason: e.title,
@@ -36,7 +47,12 @@ export async function importGoogleEvents(tx: Tx, tenantId: string, reader: Calen
       .onConflictDoUpdate({
         target: [blocks.tenantId, blocks.googleEventId],
         targetWhere: isNotNull(blocks.googleEventId),
-        set: { startsAt: e.startsAt, endsAt: e.endsAt, reason: e.title },
+        set: {
+          startsAt: e.startsAt,
+          endsAt: e.endsAt,
+          reason: e.title,
+          professionalId: sql`coalesce(${blocks.professionalId}, ${professionalId})`,
+        },
       });
   }
   const keep = events.map((e) => e.id);
@@ -45,6 +61,7 @@ export async function importGoogleEvents(tx: Tx, tenantId: string, reader: Calen
     .where(
       and(
         eq(blocks.source, "google"),
+        or(eq(blocks.professionalId, professionalId), isNull(blocks.professionalId)),
         lt(blocks.startsAt, to),
         gt(blocks.endsAt, from),
         keep.length ? notInArray(blocks.googleEventId, keep) : undefined,

@@ -42,7 +42,7 @@ d("push (Postgres real)", () => {
     const now = new Date("2026-11-10T12:00:00Z");
 
     // sem pendências: nada enviado
-    expect(await withTenant(A, (tx) => core.notifyPendencias(tx, ok, now, false))).toEqual({
+    expect(await withTenant(A, (tx) => core.notifyPendencias(tx, ok, now, []))).toEqual({
       sent: 0,
       removed: 0,
       failed: 0,
@@ -55,7 +55,7 @@ d("push (Postgres real)", () => {
       await admin`insert into clients (tenant_id,name,phone_e164) values (${A},'C','+5511900007777') returning id`;
     await admin`insert into appointments (tenant_id,client_id,service_id,starts_at,ends_at,price_cents,status)
       values (${A},${cli},${svc},'2026-11-09T14:00:00Z','2026-11-09T15:00:00Z',1000,'confirmed')`;
-    expect(await withTenant(A, (tx) => core.notifyPendencias(tx, ok, now, false))).toEqual({
+    expect(await withTenant(A, (tx) => core.notifyPendencias(tx, ok, now, []))).toEqual({
       sent: 2,
       removed: 0,
       failed: 0,
@@ -69,7 +69,7 @@ d("push (Postgres real)", () => {
         throw new Error("x");
       },
     };
-    expect(await withTenant(A, (tx) => core.notifyPendencias(tx, gone, now, false))).toEqual({
+    expect(await withTenant(A, (tx) => core.notifyPendencias(tx, gone, now, []))).toEqual({
       sent: 0,
       removed: 1,
       failed: 1,

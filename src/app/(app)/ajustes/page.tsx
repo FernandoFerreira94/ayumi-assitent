@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { eq } from "drizzle-orm";
 import { PageShell } from "@/components/ui/PageShell";
-import { getDb, withTenant } from "@/db/client";
-import { tenants } from "@/db/schema";
+import { withTenant } from "@/db/client";
+import { calendarSettings } from "@/features/calendar-feed/server";
 import { getHours } from "@/features/hours/core";
 import { InstallGuide } from "@/features/install/InstallGuide";
 import { getReminderSettings } from "@/features/reminders/core";
@@ -11,6 +10,7 @@ import { PushStatusText } from "@/features/settings/PushStatusText";
 import { hoursSummary } from "@/features/settings/sections";
 import { SettingsGroup, SettingsRow } from "@/features/settings/SettingsList";
 import { shellStatus } from "@/features/shell/status";
+import { calendarProfessionalId } from "@/features/team/professional";
 import { ReplayTourButton } from "@/features/tour/ReplayTourButton";
 import { UpdateButton } from "@/features/update/UpdateButton";
 import { requireTenant } from "@/lib/tenant";
@@ -22,16 +22,13 @@ export const metadata: Metadata = { title: "Ajustes" };
  * Aqui só se lê o resumo; o que cada seção edita (e carrega) fica na tela dela.
  */
 export default async function AjustesPage() {
-  const { tenantId } = await requireTenant();
-  const [{ whatsapp, google }, { week, reminders }, [salon]] = await Promise.all([
-    shellStatus(tenantId),
+  const { tenantId, professionalId } = await requireTenant();
+  const [{ whatsapp, google }, { week, reminders }, calendar] = await Promise.all([
+    shellStatus(tenantId, professionalId),
     withTenant(tenantId, async (tx) => ({ week: await getHours(tx), reminders: await getReminderSettings(tx) })),
-    getDb()
-      .select({ calendarOn: tenants.calendarTokenHash, icloudOn: tenants.icloudCalendarUrl })
-      .from(tenants)
-      .where(eq(tenants.id, tenantId)),
+    calendarProfessionalId({ tenantId, professionalId }).then((id) => calendarSettings(tenantId, id)),
   ]);
-  const iphone = !!salon?.calendarOn || !!salon?.icloudOn;
+  const iphone = calendar.feedOn || calendar.icloudOn;
   const calendars = [google ? "Google conectado" : null, iphone ? "iPhone ligado" : null].filter(Boolean);
   const avisos = [
     reminders.first ? `1º aviso ${reminders.hours}h antes` : null,
@@ -57,10 +54,7 @@ export default async function AjustesPage() {
         <SettingsRow section="notificacoes" status={<PushStatusText />} />
       </SettingsGroup>
       <SettingsGroup title="Clientes e agenda">
-        <SettingsRow
-          section="mensagens"
-          status={avisos.length ? avisos.join(" · ") : "Avisos desligados"}
-        />
+        <SettingsRow section="mensagens" status={avisos.length ? avisos.join(" · ") : "Avisos desligados"} />
         <SettingsRow section="expediente" status={hoursSummary(week)} />
       </SettingsGroup>
       <div className="mt-7 grid gap-3">

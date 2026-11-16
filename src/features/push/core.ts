@@ -36,8 +36,13 @@ export function pendenciasText(n: number): string {
 export type PushRun = { sent: number; removed: number; failed: number };
 
 /** Avisa o estúdio se houver pendências. Inscrições mortas são apagadas; falhas não propagam. */
-export async function notifyPendencias(tx: Tx, port: PushPort, now: Date, googleConnected: boolean): Promise<PushRun> {
-  const n = countPendencias(await listPendencias(tx, now, googleConnected));
+export async function notifyPendencias(
+  tx: Tx,
+  port: PushPort,
+  now: Date,
+  googleProfessionalIds: string[],
+): Promise<PushRun> {
+  const n = countPendencias(await listPendencias(tx, now, googleProfessionalIds));
   if (n === 0) return { sent: 0, removed: 0, failed: 0 };
   return sendToAll(tx, port, { title: "bubbly", body: pendenciasText(n), url: "/pendencias" });
 }

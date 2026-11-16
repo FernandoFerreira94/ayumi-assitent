@@ -4,7 +4,8 @@ import { cache } from "react";
 import { getDb, withTenant } from "@/db/client";
 import { tenants } from "@/db/schema";
 import { listPendencias } from "@/features/appointments/pendencias";
-import { isGoogleConnected } from "@/features/google/server";
+import { connectedProfessionalIds, isGoogleConnected } from "@/features/google/server";
+import { calendarProfessionalId } from "@/features/team/professional";
 import { adminFromEnv } from "@/features/messaging/evolution-admin";
 import { currentState } from "@/features/whatsapp/core";
 
@@ -21,9 +22,18 @@ export async function whatsappState(tenantId: string): Promise<WhatsAppState> {
   }
 }
 
-/** O sino e o menu do avatar mostram o mesmo estado: cache() faz uma consulta só por pedido. */
-export const shellStatus = cache(async (tenantId: string) => {
-  const [google, whatsapp] = await Promise.all([isGoogleConnected(tenantId), whatsappState(tenantId)]);
-  const pendencias = await withTenant(tenantId, (tx) => listPendencias(tx, new Date(), google));
+/**
+ * O sino e o menu do avatar mostram o mesmo estado: cache() faz uma consulta só por pedido.
+ * `google` é o Google de quem está logado (a profissional dele; owner/admin sem ligação: a padrão);
+ * as pendências de sincronização olham todas as profissionais conectadas do salão.
+ */
+export const shellStatus = cache(async (tenantId: string, professionalId: string | null) => {
+  const viewer = await calendarProfessionalId({ tenantId, professionalId });
+  const [google, googleProfessionals, whatsapp] = await Promise.all([
+    isGoogleConnected(viewer),
+    connectedProfessionalIds(tenantId),
+    whatsappState(tenantId),
+  ]);
+  const pendencias = await withTenant(tenantId, (tx) => listPendencias(tx, new Date(), googleProfessionals));
   return { google, whatsapp, pendencias };
 });

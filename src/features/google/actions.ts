@@ -11,29 +11,26 @@ import { requireTenant } from "@/lib/tenant";
 import { mayEditAppointments } from "@/features/team/guard";
 import { canAs } from "@/features/team/permissions";
 import { revokeToken } from "./calendar";
-import { syncAppointmentSafe } from "./server";
-import { readToken } from "./token-crypto";
+import { calendarProfessionalId } from "@/features/team/professional";
+import { professionalGoogleAccount, syncAppointmentSafe } from "./server";
 
 /**
- * Desliga o Google Agenda: apaga o vínculo (e os tokens) da conta Google do dono do estúdio.
+ * Desliga o Google Agenda da profissional do login (owner/admin sem profissional ligada: a padrão do salão):
+ * apaga o vínculo (e os tokens) da conta Google do login ligado a ela.
  * Não apaga se for a única forma de entrar no app (a conta ficaria sem acesso).
  */
 export async function disconnectGoogle(): Promise<ActionResult<{ onlyLogin?: boolean }>> {
   const me = await requireTenant();
   if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
-  const { tenantId } = me;
   try {
-    const rows = await getDb().execute<{ id: string; others: number; refresh: string | null; access: string | null }>(sql`
-      select a.id, a."refreshToken" as refresh, a."accessToken" as access,
-             (select count(*)::int from account o where o."userId" = a."userId" and o.id <> a.id) as others
-      from account a join memberships m on m.user_id = a."userId"
-      where m.tenant_id = ${tenantId} and m.role = 'owner' and a."providerId" = 'google'
-      limit 1`);
-    const acc = rows[0];
+    const acc = await professionalGoogleAccount(await calendarProfessionalId(me));
     if (!acc) return ok();
-    if (acc.others === 0) return fail("VALIDATION", "google");
+    const [{ others }] = await getDb().execute<{ others: number }>(
+      sql`select count(*)::int as others from account o where o."userId" = ${acc.userId} and o.id <> ${acc.id}`,
+    );
+    if (others === 0) return fail("VALIDATION", "google");
     // Revoga no Google antes de apagar (revogar o refresh derruba o acesso todo); falha não impede desligar
-    const token = (await readToken(acc.refresh).catch(() => null)) ?? (await readToken(acc.access).catch(() => null));
+    const token = acc.refreshToken ?? acc.accessToken;
     if (token) await revokeToken(token).catch(() => undefined);
     await getDb().execute(sql`delete from account where id = ${acc.id}`);
     revalidatePath("/ajustes", "layout");
