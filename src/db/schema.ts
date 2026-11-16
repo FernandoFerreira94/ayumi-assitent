@@ -74,6 +74,28 @@ export const tenants = pgTable("tenants", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** Quem atende no salão (pode não ter login). Os campos de calendário foram copiados de `tenants` na 0036. */
+export const professionals = pgTable(
+  "professionals",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    displayName: text("display_name").notNull(),
+    color: text("color"),
+    active: boolean("active").notNull().default(true),
+    position: integer("position").notNull().default(0),
+    /** SHA-256 do token do link de calendário assinado; null = link desligado */
+    calendarTokenHash: text("calendar_token_hash").unique(),
+    calendarHideNames: boolean("calendar_hide_names").notNull().default(false),
+    /** Link público do calendário do iCloud, só leitura. Nunca logar. */
+    icloudCalendarUrl: text("icloud_calendar_url"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("professionals_tenant_active_position").on(t.tenantId, t.active, t.position)],
+);
+
 export const clients = pgTable(
   "clients",
   {
