@@ -7,6 +7,7 @@ import { Wordmark } from "@/components/brand/Wordmark";
 import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import { InstallGuide } from "@/features/install/InstallGuide";
+import { isNativeShell } from "@/features/install/platform";
 import { authClient } from "@/lib/auth-client";
 import { ERROR_MESSAGES } from "@/lib/errors";
 
@@ -144,6 +145,17 @@ export function LoginForm() {
   async function google() {
     setPendingGoogle(true);
     setError(null);
+    // App da loja: o Google não deixa entrar na WebView; abre o navegador do sistema e volta pelo link do app
+    if (isNativeShell(navigator.userAgent)) {
+      try {
+        const { startNativeGoogleLogin } = await import("@/features/native/google-login");
+        await startNativeGoogleLogin(() => setPendingGoogle(false));
+      } catch {
+        fail(ERROR_MESSAGES.NETWORK);
+        setPendingGoogle(false);
+      }
+      return;
+    }
     const res = await authClient.signIn.social({
       provider: "google",
       callbackURL: "/agenda",

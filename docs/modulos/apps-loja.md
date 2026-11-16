@@ -12,6 +12,18 @@
 - Web: `features/install/platform.ts` (`isNativeShell`: user agent com `BubblyApp/`), `useInstall` trata o app da loja como já instalado (não ensina a instalar o PWA).
 - Web: `features/native/well-known.ts` + rotas `app/.well-known/assetlinks.json` e `app/.well-known/apple-app-site-association` (links do domínio abrem o app). Variáveis no Railway (web): `ANDROID_CERT_SHA256` (impressões SHA-256, vírgula) e `APPLE_TEAM_ID`; sem elas, lista vazia/404. `proxy.ts` deixa `.well-known` passar sem login.
 
+## Login do Google no app (Bloco 2)
+O Google não deixa entrar dentro da WebView. Fluxo (`features/native/handoff-core.ts` explica cada passo):
+1. `LoginForm` (com `isNativeShell`) chama `google-login.startNativeGoogleLogin`: cria um segredo (verifier) no `localStorage`, abre o navegador do sistema (`@capacitor/browser`) em `/api/native-auth/start?challenge=<sha256>`.
+2. `start` guarda o challenge num cookie `bubbly_native_challenge` (Path=/api, 10 min) e manda para o Google pelo Better Auth (`signInSocial`, volta em `/api/native-auth/finish`).
+3. `finish` (navegador): gera um token de uso único do Better Auth (plugin `oneTimeToken`, só pelo servidor) para a sessão do navegador, guarda {token, challenge} na tabela `verification` sob o hash de um código aleatório (2 min) e volta ao app por `br.app.bubbly://auth?code=...`. Apaga os cookies do navegador.
+4. `NativeBridge` (root layout, só no app) recebe o link (`@capacitor/app` `appUrlOpen`), fecha o navegador e faz POST `/api/native-auth/exchange` {code, verifier}. O servidor consome o código, confere o segredo e abre a sessão (cookie) na WebView.
+- Erro na volta do Google com o cookie do challenge: o wrapper de `api/auth/[...all]` manda para `finish?error=CODE`, que volta ao app com o erro (o `/login` do app mostra o texto).
+- As rotas `/api/auth/one-time-token/*` respondem 404 pela rede (hook `before` em `lib/auth.ts`); o token nunca sai do servidor.
+- Link de volta registrado em `AndroidManifest.xml` (intent-filter `br.app.bubbly://auth`) e `Info.plist` (`CFBundleURLTypes`).
+- Testes: `tests/unit/native-handoff.test.ts`, `tests/db/native-auth.test.ts` (Better Auth real no Postgres de teste).
+- Ainda não: conectar outra conta Google em Ajustes > Calendários dentro do app (linkSocial também é bloqueado na WebView) e Sign in with Apple (depende da conta Apple).
+
 ## Build local (Windows)
 - JDK 21 (Capacitor 8 exige; o JDK 17 do PC não serve): `$env:JAVA_HOME` apontando para um JDK 21.
 - `cd mobile; npx cap sync android; cd android; .\gradlew.bat assembleDebug` → `android/app/build/outputs/apk/debug/app-debug.apk`.
@@ -19,7 +31,6 @@
 
 ## Cuidados
 - Regra de loja: o app **não vende nada** (sem preço, botão de assinar ou link de pagamento) quando `isNativeShell`; assinatura só no site (Apple 3.1.3(f)).
-- Login do Google não funciona dentro de WebView (o Google bloqueia): Bloco 2 leva o login ao navegador do sistema com volta por link. Até lá, no app só e-mail e senha.
 - Push no app precisa de FCM/APNs (Bloco 3); Web Push não funciona na WebView do iPhone.
 - Teclado: a WebView não é o Safari; conferir as regras de teclado do iPhone (`KeyboardWatcher`) no TestFlight antes de mexer.
 - Segredos de assinatura (.p8, keystore) só no Codemagic; `.gitignore` de `mobile/` barra `*.jks`, `*.p8`, `*.p12`.
