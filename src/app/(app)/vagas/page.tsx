@@ -46,7 +46,7 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
 
   if (services.length === 0) {
     return (
-      <PageShell title="Vagas">
+      <PageShell wide title="Vagas">
         <EmptyState
           icon="scissors"
           title="Nenhum serviço cadastrado"
@@ -71,7 +71,7 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
   const withSlots = days.filter((d) => d.slots.length > 0);
 
   return (
-    <PageShell title="Vagas" subtitle="Toque num horário para agendar">
+    <PageShell wide title="Vagas" subtitle="Toque num horário para agendar">
       <nav aria-label="Serviço" className="mb-4 flex gap-2 overflow-x-auto pb-1">
         {services.map((x) => (
           <Link
@@ -95,12 +95,14 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
           description="Confira o expediente em Ajustes > Expediente ou libere horários na agenda."
         />
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-3 md:grid-cols-2 md:items-start xl:grid-cols-3">
           {/* No topo: é a ação da tela, não precisa rolar a semana até achar */}
-          <ShareSheet
-            serviceName={service.name}
-            days={withSlots.map((d) => ({ date: d.date, label: shortDayLabel(d.date), slots: d.slots }))}
-          />
+          <div className="md:col-span-full">
+            <ShareSheet
+              serviceName={service.name}
+              days={withSlots.map((d) => ({ date: d.date, label: shortDayLabel(d.date), slots: d.slots }))}
+            />
+          </div>
           {withSlots.map((d) => (
             <section key={d.date} aria-label={formatDayTitle(d.date)} className="glass rounded-2xl px-4 py-3">
               <h2 className="pb-2 text-sm font-bold capitalize">{formatDayTitle(d.date)}</h2>
