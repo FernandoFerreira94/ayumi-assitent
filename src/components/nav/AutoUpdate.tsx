@@ -13,7 +13,7 @@ const CURRENT = process.env.NEXT_PUBLIC_BUILD_ID ?? "";
 export function AutoUpdate() {
   useEffect(() => {
     // Toast depois do recarregamento (espera o Toaster montar e a abertura passar)
-    const toast = takeJustUpdated() ? setTimeout(() => notify.success("Seu app foi atualizado"), 900) : undefined;
+    const toast = takeJustUpdated() ? setTimeout(() => notify.success("App atualizado"), 900) : undefined;
     if (process.env.NODE_ENV !== "production" || !CURRENT) return () => clearTimeout(toast);
 
     let running = false;

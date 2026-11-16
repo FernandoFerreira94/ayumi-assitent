@@ -14,7 +14,7 @@ const JUST_UPDATED_KEY = "bubbly:app-atualizado";
 /** Versão para a qual esta aba já tentou atualizar (trava contra recarregar em laço). */
 export const UPDATING_TO_KEY = "bubbly:atualizando-para";
 
-/** true uma única vez depois de atualizar (para o toast "Seu app foi atualizado"). */
+/** true uma única vez depois de atualizar (para o toast "App atualizado"). */
 export function takeJustUpdated(): boolean {
   try {
     if (sessionStorage.getItem(JUST_UPDATED_KEY) !== "1") return false;
@@ -34,7 +34,7 @@ export function isBusy(): boolean {
 
 /**
  * Limpa o service worker e o cache do app e recarrega para pegar a versão nova. Com `to`, abre essa tela em vez
- * de recarregar a atual. Depois de carregar aparece o toast "Seu app foi atualizado".
+ * de recarregar a atual. Depois de carregar aparece o toast "App atualizado".
  */
 export async function applyUpdate(to?: string): Promise<void> {
   try {
