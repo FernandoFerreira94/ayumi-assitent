@@ -7,7 +7,9 @@ import { maskPhone } from "@/lib/phone";
 import { QrImage } from "./QrImage";
 import { disconnectWhatsapp, startWhatsappPairing, whatsappStatus } from "./actions";
 import { TileTitle } from "@/components/ui/Icon";
+import { StepGuide } from "@/components/ui/StepGuide";
 import { Switch } from "@/components/ui/Switch";
+import { pairingSteps } from "./pairing-guide";
 
 type View = "connected" | "disconnected" | "pairing" | "unavailable";
 
@@ -168,11 +170,7 @@ export function WhatsAppCard({
         >
           Copiar código
         </button>
-        <ol className="list-decimal pl-5 text-sm font-semibold text-muted">
-          <li>Abra o WhatsApp deste número.</li>
-          <li>Toque em Configurações &gt; Aparelhos conectados &gt; Conectar um aparelho.</li>
-          <li>Escaneie o QR code ou escolha &quot;Conectar com número de telefone&quot; e digite o código.</li>
-        </ol>
+        <StepGuide steps={pairingSteps(code)} label="Como conectar o WhatsApp" />
         <p className="text-sm font-semibold text-muted">Aguardando a conexão…</p>
         <button type="button" className={btn} onClick={() => setView("disconnected")}>
           Cancelar

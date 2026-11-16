@@ -7,6 +7,7 @@
 - Feedback: `components/feedback/toast.tsx` (`notify`, 5 tipos), `ErrorState`, `EmptyState`, `OfflineBanner`, `SubmitButton`.
 - Nav: `components/nav/TabBar.tsx` (aba atual mostra nome; Financeiro = "Finanças"), `AppMenu`/`HeaderMenu` (avatar: não mexer sem pedido), `NotificationBell`, `BackButton`, `UpdateBanner`, `nav-icons.tsx`, `ServiceWorkerRegister`.
 - UI: `components/ui/Icon.tsx` (único conjunto de ícones), `LetterPicker.tsx`, `MultiSelect.tsx`, `Switch.tsx` (estilo iPhone), `PageShell.tsx`, `Skeleton.tsx`.
+- Passo a passo ilustrado: `components/ui/StepGuide.tsx` (carrossel com encaixe nativo, botões e pontos, texto sempre embaixo, ilustração `aria-hidden`, `data-vaul-no-drag`) + `GuideArt.tsx` (peças SVG: `Phone`, `Ring` que pulsa, `Callout`, `Arrow`, `Badge`, `Toggle`; área 320×190). Guias: `whatsapp/pairing-guide.tsx`, `calendar-feed/icloud-guide.tsx`.
 - Estilos: `src/app/globals.css` (tokens, `--svc-*`, splash, glass).
 - Prévia de link (WhatsApp/Instagram): `lib/share-meta.ts` (`shareMeta`, `siteUrl` → `metadataBase` = `BETTER_AUTH_URL`) + `public/og.png` (1200x630). Usado no `app/layout.tsx`, `/login`, `/privacidade`, `/termos`; `og.png` é público no `proxy.ts`. Trocou a imagem: subir o `?v=` (WhatsApp guarda cache).
 
@@ -18,4 +19,5 @@
 - **Regra de UX do teclado** (detalhe no AGENTS.md): campo focado sempre visível, sheet/diálogo nunca cortado, subida/descida suave junto com o teclado, fonte de campo ≥ 16px, barra de abas some. Sheet ou diálogo novo não precisa de nada (o `KeyboardWatcher` + `globals.css` cuidam); novo diálogo central deve usar `.notif-dialog`/`.notif-panel`. A barra de abas some com o teclado aberto.
 - **Folha (vaul) com conteúdo longo:** a rolagem fica num filho com `SHEET_SCROLL` (`components/ui/AdaptiveSheet.tsx`) e a folha com `flex flex-col` sem `overflow-y-auto`. O vaul põe `touch-action: none` na folha, então se ela mesma rolar o iPhone trava a rolagem. `Drawer.Handle` fica fora do miolo.
 - Sino (`features/notifications`): cada `Aviso` traz `icon` (de `Icon.tsx`) e `tone` (`danger` vermelho, `warning` laranja, `success` verde, `info` azul), definidos em `core.ts`; a linha usa `IconTile` + `.aviso-row[data-tone]` no `globals.css`. Aviso de cliente leva `client` e mostra avatar com iniciais (nome + sobrenome, `initials` do `AppMenu`) na cor fixa `avatarColor(id)` (paleta `--svc-*`) com selo do tom no canto. Aviso novo: escolher ícone e tom lá; a cor nunca é a única pista.
-- Testes: `tests/e2e/splash.spec.ts`, `shell.spec.ts`, axe nos e2e; unit `mascots`, `season`, `feedback`.
+- Ilustração de instrução: sempre mockup desenhado em SVG inline com tokens (`var(--primary)` segue o mascote), nunca print real nem dado de pessoa. Guia novo: um array `GuideStep[]` na feature, com o mesmo texto que antes estava na lista.
+- Testes: `tests/e2e/splash.spec.ts`, `shell.spec.ts`, axe nos e2e; unit `mascots`, `season`, `feedback`, `step-guide`.

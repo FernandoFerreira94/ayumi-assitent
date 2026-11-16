@@ -13,7 +13,7 @@
 - `server.ts`: `tenantByTokenHash` (como dono do banco: tenants sem FORCE RLS) e `feedIcs` (via `withTenant`; janela de 30 dias atrás a 180 à frente).
 - `actions.ts`: `createCalendarLink` (gera ou troca e devolve a URL só nessa hora), `disableCalendarLink`, `setCalendarHideNames`.
 - Rota `app/api/calendar/[token]/route.ts` (aceita `<token>.ics`; dá 404 igual para inválido, trocado ou desligado; `no-store`, `noindex`; nunca loga o token).
-- UI: `IphoneCalendarCard.tsx` (`/ajustes/calendarios#iphone`), sheet vaul com passo a passo.
+- UI: `IphoneCalendarCard.tsx` (`/ajustes/calendarios#iphone`), sheet vaul com passo a passo. O passo a passo de ligar o Calendário Público (direção 1) é ilustrado: `icloud-guide.tsx` (`ICLOUD_STEPS` no `StepGuide`); o da direção 2 segue em texto.
 
 ## Leitura do iCloud (direção 1)
 

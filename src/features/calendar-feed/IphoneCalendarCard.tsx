@@ -5,7 +5,9 @@ import { Drawer } from "vaul";
 import { SHEET_SCROLL, SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { notify } from "@/components/feedback/toast";
 import { Icon, TileTitle } from "@/components/ui/Icon";
+import { StepGuide } from "@/components/ui/StepGuide";
 import { Switch } from "@/components/ui/Switch";
+import { ICLOUD_STEPS } from "./icloud-guide";
 import {
   createCalendarLink,
   disableCalendarLink,
@@ -13,20 +15,6 @@ import {
   saveIcloudCalendar,
   setCalendarHideNames,
 } from "./actions";
-
-/** Como ligar o Calendário Público no iPhone (iOS 17/18). */
-const IMPORT_STEPS = [
-  <>
-    No iPhone, abra o app <b>Calendário</b> e toque em <b>Calendários</b> (embaixo).
-  </>,
-  <>
-    Toque no <b>(i)</b> ao lado do calendário do iCloud em que você marca as clientes. Dica: use um calendário só para a
-    agenda do salão.
-  </>,
-  <>
-    Ligue <b>Calendário Público</b>, toque em <b>Compartilhar Link</b> › <b>Copiar</b> e cole aqui embaixo.
-  </>,
-];
 
 const STEPS = [
   <>
@@ -223,7 +211,13 @@ export function IphoneCalendarCard({
       </div>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-h-[85dvh] max-w-[520px] rounded-t-3xl pt-4 outline-none", "sheet z-50 flex flex-col")}>
+        <Drawer.Content
+          className={sheetClass(
+            side,
+            "fixed inset-x-0 bottom-0 mx-auto max-h-[85dvh] max-w-[520px] rounded-t-3xl pt-4 outline-none",
+            "sheet z-50 flex flex-col",
+          )}
+        >
           <SidePanelClose />
           <div className={SHEET_SCROLL}>
             <Drawer.Title className="pt-2 text-center text-xl font-bold">Calendário do iPhone</Drawer.Title>
@@ -259,22 +253,7 @@ export function IphoneCalendarCard({
                   </div>
                 ) : (
                   <>
-                    <ol className="grid gap-2">
-                      {IMPORT_STEPS.map((step, i) => (
-                        <li
-                          key={i}
-                          className="glass grid grid-cols-[28px_1fr] items-start gap-3 rounded-2xl px-4 py-3 text-sm font-semibold"
-                        >
-                          <span
-                            className="grid size-7 place-content-center rounded-full bg-soft font-bold text-primary-text"
-                            aria-hidden="true"
-                          >
-                            {i + 1}
-                          </span>
-                          <span className="pt-1">{step}</span>
-                        </li>
-                      ))}
-                    </ol>
+                    <StepGuide steps={ICLOUD_STEPS} label="Como pegar o link no iPhone" />
                     <form
                       className="grid gap-2"
                       onSubmit={(e) => {
@@ -311,8 +290,8 @@ export function IphoneCalendarCard({
                         {icloudBusy === "save" ? "Lendo o calendário…" : "Ligar"}
                       </button>
                       <p className="px-1 text-xs font-semibold text-muted">
-                        Só leitura: o app nunca muda nada no seu iPhone. Quem tiver esse link vê esse calendário, por isso
-                        não envie para ninguém.
+                        Só leitura: o app nunca muda nada no seu iPhone. Quem tiver esse link vê esse calendário, por
+                        isso não envie para ninguém.
                       </p>
                     </form>
                   </>
@@ -325,8 +304,8 @@ export function IphoneCalendarCard({
                   <p className="font-bold">Você usa o Google Agenda</p>
                   <p className="text-muted">
                     Os agendamentos já vão para o Google. No iPhone, adicione a conta Google em Ajustes › Calendário ›
-                    Contas › Adicionar Conta › <b>Google</b>. Use só um dos dois caminhos, senão cada agendamento aparece
-                    duas vezes.
+                    Contas › Adicionar Conta › <b>Google</b>. Use só um dos dois caminhos, senão cada agendamento
+                    aparece duas vezes.
                   </p>
                 </div>
               ) : null}
