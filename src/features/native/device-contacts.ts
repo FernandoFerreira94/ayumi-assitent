@@ -18,24 +18,26 @@ export class ContactsDenied extends Error {
   }
 }
 
+// Devolve o plugin dentro de um objeto: o proxy do Capacitor responde a qualquer método, inclusive `then`, e
+// `return Contacts` direto de uma função async faz o await chamar Contacts.then() ("not implemented").
 async function plugin() {
   const { Contacts } = await import("@capacitor-community/contacts");
   let s = await Contacts.checkPermissions();
   if (s.contacts !== "granted" && s.contacts !== "limited") s = await Contacts.requestPermissions();
   if (s.contacts !== "granted" && s.contacts !== "limited") throw new ContactsDenied();
-  return Contacts;
+  return { Contacts };
 }
 
 /** Lê nome, telefones e e-mail. Nada sai do celular até a prévia (que não grava) e a escolha de quem importar. */
 export async function readDeviceContacts(): Promise<DeviceRaw[]> {
-  const Contacts = await plugin();
+  const { Contacts } = await plugin();
   const { contacts } = await Contacts.getContacts({ projection: { name: true, phones: true, emails: true } });
   return flattenContacts(contacts);
 }
 
 /** Abre a agenda do sistema para escolher uma pessoa. Cancelar devolve null. */
 export async function pickDeviceContact(): Promise<{ name: string; phone: string } | null> {
-  const Contacts = await plugin();
+  const { Contacts } = await plugin();
   try {
     const { contact } = await Contacts.pickContact({ projection: { name: true, phones: true } });
     const phone = contact.phones?.find((p) => p.number?.trim())?.number?.trim() ?? "";
