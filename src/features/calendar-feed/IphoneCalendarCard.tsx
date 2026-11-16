@@ -21,10 +21,6 @@ const STEPS = [
     Toque em <b>Adicionar ao iPhone</b> e depois em <b>Assinar</b>.
   </>,
   <>
-    Se não abrir: toque em <b>Copiar link</b>, vá em Ajustes do iPhone › <b>Calendário</b> › <b>Contas</b> ›{" "}
-    <b>Adicionar Conta</b> › <b>Outra</b> › <b>Adicionar Calendário Assinado</b> e cole o link.
-  </>,
-  <>
     Pronto: os agendamentos aparecem no app Calendário. O iPhone atualiza sozinho de 15 em 15 minutos até 1 hora (em
     Ajustes › Calendário › Contas › <b>Obter Dados</b>).
   </>,
@@ -222,13 +218,143 @@ export function IphoneCalendarCard({
           <div className={SHEET_SCROLL}>
             <Drawer.Title className="pt-2 text-center text-xl font-bold">Calendário do iPhone</Drawer.Title>
             <Drawer.Description className="pb-4 text-center text-sm font-semibold text-muted">
-              Duas direções, cada uma liga separado: trazer o que você já marca no iPhone para o app e mostrar os
-              agendamentos do app no Calendário do iPhone.
+              Duas direções, cada uma liga separado: mostrar os agendamentos do app no Calendário do iPhone e trazer o
+              que você já marca no iPhone para o app.
             </Drawer.Description>
 
             <div className="grid gap-4">
+              <section className="grid gap-3" aria-labelledby="icloud-out">
+                <h3 id="icloud-out" className="px-1 text-sm font-bold">
+                  Ver os agendamentos no Calendário do iPhone
+                </h3>
+                {googleConnected ? (
+                  <div className="glass grid gap-1 rounded-2xl px-4 py-3 text-sm font-semibold" role="note">
+                    <p className="font-bold">Você usa o Google Agenda</p>
+                    <p className="text-muted">
+                      Os agendamentos já vão para o Google. No iPhone, adicione a conta Google em Ajustes › Calendário ›
+                      Contas › Adicionar Conta › <b>Google</b>. Use só um dos dois caminhos, senão cada agendamento
+                      aparece duas vezes.
+                    </p>
+                  </div>
+                ) : null}
+
+                {url ? (
+                  <div className="grid gap-2">
+                    <a
+                      href={url.replace(/^https?:/, "webcal:")}
+                      className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-5 font-bold text-on-primary"
+                    >
+                      <Icon name="calendar" size={20} />
+                      Adicionar ao iPhone
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => void copy()}
+                      className="btn-glass min-h-12 rounded-full px-5 text-sm font-bold"
+                    >
+                      Copiar link
+                    </button>
+                    <p className="px-1 text-xs font-semibold text-muted">
+                      Quem tem este link vê sua agenda. Não envie para ninguém. Por segurança ele só aparece agora.
+                    </p>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void create()}
+                    disabled={busy !== null}
+                    aria-busy={busy === "create"}
+                    className={`flex min-h-12 items-center justify-center gap-2 rounded-full px-5 font-bold disabled:opacity-60 ${
+                      enabled || googleConnected ? "btn-glass text-sm" : "bg-primary text-on-primary"
+                    }`}
+                  >
+                    {busy === "create" ? "Criando…" : enabled ? "Gerar link novo" : "Criar link do calendário"}
+                  </button>
+                )}
+                {enabled && !url ? (
+                  <p className="-mt-2 px-1 text-xs font-semibold text-muted">
+                    O link já está ligado. Para pôr em outro aparelho, gere um novo: o antigo para de funcionar.
+                  </p>
+                ) : null}
+
+                <ol className="grid gap-2">
+                  {STEPS.map((step, i) => (
+                    <li
+                      key={i}
+                      className="glass grid grid-cols-[28px_1fr] items-start gap-3 rounded-2xl px-4 py-3 text-sm font-semibold"
+                    >
+                      <span
+                        className="grid size-7 place-content-center rounded-full bg-soft font-bold text-primary-text"
+                        aria-hidden="true"
+                      >
+                        {i + 1}
+                      </span>
+                      <span className="pt-1">{step}</span>
+                    </li>
+                  ))}
+                </ol>
+                <details className="glass group rounded-2xl px-4 py-3 text-sm font-semibold">
+                  <summary className="flex min-h-7 cursor-pointer list-none items-center justify-between gap-2 font-bold text-primary-text">
+                    Se não abrir, faça manualmente
+                    <span aria-hidden="true" className="transition-transform group-open:rotate-180">
+                      ⌄
+                    </span>
+                  </summary>
+                  <p className="pt-2 text-muted">
+                    Toque em <b>Copiar link</b> (aparece depois de criar o link), vá em Ajustes do iPhone ›{" "}
+                    <b>Calendário</b> › <b>Contas</b> › <b>Adicionar Conta</b> › <b>Outra</b> ›{" "}
+                    <b>Adicionar Calendário Assinado</b> e cole o link.
+                  </p>
+                </details>
+
+                <div className="glass flex items-center justify-between gap-3 rounded-2xl px-4 py-3">
+                  <div>
+                    <p className="text-sm font-bold">Ocultar nome da cliente</p>
+                    <p className="text-xs font-semibold text-muted">Mostra só o serviço, ex.: “Atendimento · Corte”.</p>
+                  </div>
+                  <Switch
+                    checked={hideNames}
+                    onChange={(v) => void toggleHide(v)}
+                    busy={busy === "hide"}
+                    label="Ocultar nome da cliente"
+                  />
+                </div>
+
+                {enabled ? (
+                  confirmOff ? (
+                    <div className="grid grid-cols-2 gap-2" role="alertdialog" aria-label="Desligar o link?">
+                      <button
+                        type="button"
+                        className="btn-glass min-h-11 rounded-full px-4 text-sm font-bold"
+                        onClick={() => setConfirmOff(false)}
+                        disabled={busy === "off"}
+                        autoFocus
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        className="min-h-11 rounded-full bg-fail px-4 text-sm font-bold text-white disabled:opacity-60"
+                        onClick={() => void off()}
+                        disabled={busy === "off"}
+                        aria-busy={busy === "off"}
+                      >
+                        {busy === "off" ? "Desligando…" : "Desligar"}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmOff(true)}
+                      className="min-h-11 px-3 text-sm font-bold text-fail"
+                    >
+                      Desligar link
+                    </button>
+                  )
+                ) : null}
+              </section>
               <section className="grid gap-3" aria-labelledby="icloud-in">
-                <h3 id="icloud-in" className="px-1 text-sm font-bold">
+                <h3 id="icloud-in" className="px-1 pt-2 text-sm font-bold">
                   Trazer a agenda do iPhone para o app
                 </h3>
                 {icloudOn ? (
@@ -297,120 +423,6 @@ export function IphoneCalendarCard({
                   </>
                 )}
               </section>
-
-              <h3 className="px-1 pt-2 text-sm font-bold">Ver os agendamentos no Calendário do iPhone</h3>
-              {googleConnected ? (
-                <div className="glass grid gap-1 rounded-2xl px-4 py-3 text-sm font-semibold" role="note">
-                  <p className="font-bold">Você usa o Google Agenda</p>
-                  <p className="text-muted">
-                    Os agendamentos já vão para o Google. No iPhone, adicione a conta Google em Ajustes › Calendário ›
-                    Contas › Adicionar Conta › <b>Google</b>. Use só um dos dois caminhos, senão cada agendamento
-                    aparece duas vezes.
-                  </p>
-                </div>
-              ) : null}
-
-              {url ? (
-                <div className="grid gap-2">
-                  <a
-                    href={url.replace(/^https?:/, "webcal:")}
-                    className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-5 font-bold text-on-primary"
-                  >
-                    <Icon name="calendar" size={20} />
-                    Adicionar ao iPhone
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => void copy()}
-                    className="btn-glass min-h-12 rounded-full px-5 text-sm font-bold"
-                  >
-                    Copiar link
-                  </button>
-                  <p className="px-1 text-xs font-semibold text-muted">
-                    Quem tem este link vê sua agenda. Não envie para ninguém. Por segurança ele só aparece agora.
-                  </p>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => void create()}
-                  disabled={busy !== null}
-                  aria-busy={busy === "create"}
-                  className={`flex min-h-12 items-center justify-center gap-2 rounded-full px-5 font-bold disabled:opacity-60 ${
-                    enabled || googleConnected ? "btn-glass text-sm" : "bg-primary text-on-primary"
-                  }`}
-                >
-                  {busy === "create" ? "Criando…" : enabled ? "Gerar link novo" : "Criar link do calendário"}
-                </button>
-              )}
-              {enabled && !url ? (
-                <p className="-mt-2 px-1 text-xs font-semibold text-muted">
-                  O link já está ligado. Para pôr em outro aparelho, gere um novo: o antigo para de funcionar.
-                </p>
-              ) : null}
-
-              <ol className="grid gap-2">
-                {STEPS.map((step, i) => (
-                  <li
-                    key={i}
-                    className="glass grid grid-cols-[28px_1fr] items-start gap-3 rounded-2xl px-4 py-3 text-sm font-semibold"
-                  >
-                    <span
-                      className="grid size-7 place-content-center rounded-full bg-soft font-bold text-primary-text"
-                      aria-hidden="true"
-                    >
-                      {i + 1}
-                    </span>
-                    <span className="pt-1">{step}</span>
-                  </li>
-                ))}
-              </ol>
-
-              <div className="glass flex items-center justify-between gap-3 rounded-2xl px-4 py-3">
-                <div>
-                  <p className="text-sm font-bold">Ocultar nome da cliente</p>
-                  <p className="text-xs font-semibold text-muted">Mostra só o serviço, ex.: “Atendimento · Corte”.</p>
-                </div>
-                <Switch
-                  checked={hideNames}
-                  onChange={(v) => void toggleHide(v)}
-                  busy={busy === "hide"}
-                  label="Ocultar nome da cliente"
-                />
-              </div>
-
-              {enabled ? (
-                confirmOff ? (
-                  <div className="grid grid-cols-2 gap-2" role="alertdialog" aria-label="Desligar o link?">
-                    <button
-                      type="button"
-                      className="btn-glass min-h-11 rounded-full px-4 text-sm font-bold"
-                      onClick={() => setConfirmOff(false)}
-                      disabled={busy === "off"}
-                      autoFocus
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      className="min-h-11 rounded-full bg-fail px-4 text-sm font-bold text-white disabled:opacity-60"
-                      onClick={() => void off()}
-                      disabled={busy === "off"}
-                      aria-busy={busy === "off"}
-                    >
-                      {busy === "off" ? "Desligando…" : "Desligar"}
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setConfirmOff(true)}
-                    className="min-h-11 px-3 text-sm font-bold text-fail"
-                  >
-                    Desligar link
-                  </button>
-                )
-              ) : null}
             </div>
           </div>
         </Drawer.Content>
