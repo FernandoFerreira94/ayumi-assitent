@@ -24,6 +24,9 @@ export const ERROR_MESSAGES = {
   ICLOUD_TOO_BIG: "Esse calendário tem eventos demais. Use um calendário só para a agenda do salão.",
   CLIPBOARD: "Não deu para copiar. Segure o texto e escolha Copiar.",
   RATE_LIMITED: "Você enviou muitas mensagens hoje. Tente de novo amanhã.",
+  ADMIN_STEP_UP_INVALID: "Código inválido. Confira o app autenticador e tente de novo.",
+  ADMIN_STEP_UP_LOCKED: "Muitas tentativas. Espere 15 minutos para tentar de novo.",
+  ADMIN_PASSWORD_REQUIRED: "Digite a senha da sua conta para continuar.",
   NETWORK: "Sem conexão. Verifique a internet e tente de novo.",
   UNKNOWN: "Algo deu errado do nosso lado. Tente de novo em instantes.",
 } as const;
