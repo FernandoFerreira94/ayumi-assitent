@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>bubbly · agenda e lembretes no WhatsApp para estúdios de beleza</title>
+<meta name="description" content="Agenda, clientes e lembretes do seu estúdio. O bubbly avisa suas clientes no WhatsApp, recebe a confirmação e te conta quem não respondeu. Teste grátis por 14 dias.">
+<link rel="canonical" href="https://bubbly.app.br/">
+<meta name="theme-color" content="#f8f7fc">
+<meta name="color-scheme" content="light">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:site_name" content="bubbly">
+<meta property="og:url" content="https://bubbly.app.br/">
+<meta property="og:title" content="bubbly · sua agenda cheia, sem cliente esquecida">
+<meta property="og:description" content="Lembretes automáticos no WhatsApp, confirmação com um toque e a agenda do estúdio na palma da mão.">
+<meta property="og:image" content="https://bubbly.app.br/og.png?v=1">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="bubbly: agenda do seu estúdio">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@900&family=Quicksand:wght@500;600;700&display=swap">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"bubbly","applicationCategory":"BusinessApplication","operatingSystem":"iOS, Android, Web","url":"https://bubbly.app.br/","description":"Agenda, clientes e lembretes no WhatsApp para estúdios de beleza.","inLanguage":"pt-BR","publisher":{"@type":"Organization","name":"WebCode"}}
+</script>
+<style>
+:root{
+  --bg:#f8f7fc;--page:#efecf8;--surface:#fff;--fg:#17142b;--muted:#5a5670;--line:#e6e2f3;
+  --primary:#6d4aff;--primary-text:#5535e6;--soft:#eee9ff;--accent:#ff8fb1;--rose:#c8386a;
+  --ink:#3b22b8;--chat-bg:#efeae2;--chat-out:#d9fdd3;--ok:#1c6b48;--ok-bg:#ddf3e7;
+  --glass:rgba(255,255,255,.66);--glass-line:rgba(255,255,255,.8);
+  --shadow:0 12px 32px rgba(40,24,110,.14);--shadow-lg:0 30px 70px rgba(40,24,110,.18);
+  --ease:cubic-bezier(.22,.8,.3,1);--spring:cubic-bezier(.34,1.45,.64,1);
+  --r:22px;--max:1120px;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;scroll-padding-top:84px}
+body{margin:0;background:var(--bg);color:var(--fg);font:500 17px/1.6 Quicksand,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img,svg{display:block;max-width:100%}
+a{color:inherit}
+h1,h2,h3{line-height:1.15;margin:0;letter-spacing:-.02em;font-weight:700}
+p{margin:0}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 20px}
+.skip{position:absolute;left:-999px;top:8px;background:var(--fg);color:#fff;padding:10px 16px;border-radius:12px;z-index:99}
+.skip:focus{left:12px}
+:focus-visible{outline:3px solid var(--primary);outline-offset:3px;border-radius:10px}
+
+/* marca */
+.word{position:relative;display:inline-block;padding-right:.42em;font:900 1em/1 Nunito,Quicksand,sans-serif;letter-spacing:-.03em;color:var(--primary);text-decoration:none}
+.word::before,.word::after{content:"";position:absolute;border-radius:50%}
+.word::before{right:.06em;top:-.28em;width:.2em;height:.2em;border:.035em solid #b9a6ff}
+.word::after{right:.2em;top:-.02em;width:.12em;height:.12em;border:.03em solid #ff8fb1}
+
+/* botões */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 26px;border-radius:999px;font:700 17px/1 Quicksand,sans-serif;text-decoration:none;border:0;cursor:pointer;transition:transform .25s var(--spring),box-shadow .25s var(--ease),background .2s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--primary);color:#fff;box-shadow:0 10px 24px rgba(109,74,255,.35)}
+.btn-primary:hover{box-shadow:0 14px 30px rgba(109,74,255,.45);transform:translateY(-1px)}
+.btn-ghost{background:var(--glass);color:var(--primary-text);box-shadow:inset 0 0 0 1.5px var(--line)}
+.btn-ghost:hover{background:#fff}
+.btn-sm{min-height:44px;padding:0 18px;font-size:16px}
+
+/* topo */
+.top{position:sticky;top:0;z-index:20;background:rgba(248,247,252,.72);backdrop-filter:blur(18px) saturate(1.8);-webkit-backdrop-filter:blur(18px) saturate(1.8);border-bottom:1px solid transparent;transition:border-color .2s}
+.top.scrolled{border-color:var(--line)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;height:68px;gap:16px}
+.top .word{font-size:30px}
+.top nav{display:flex;align-items:center;gap:6px}
+.top nav a.link{display:none;padding:10px 14px;border-radius:999px;text-decoration:none;color:var(--muted);font-weight:600}
+.top nav a.link:hover{color:var(--fg);background:var(--soft)}
+@media (min-width:860px){.top nav a.link{display:inline-block}}
+
+/* hero */
+.hero{position:relative;padding:44px 0 72px;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:-20% -10% auto auto;width:620px;height:620px;border-radius:50%;background:radial-gradient(circle,rgba(185,166,255,.45),transparent 65%);z-index:-1}
+.hero::after{content:"";position:absolute;left:-200px;bottom:-160px;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(255,143,177,.22),transparent 65%);z-index:-1}
+.hero .wrap{display:grid;gap:48px;align-items:center}
+@media (min-width:960px){.hero{padding:72px 0 110px}.hero .wrap{grid-template-columns:1.05fr .95fr}}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;background:var(--soft);color:var(--primary-text);font-weight:700;font-size:14px}
+.hero h1{font-size:clamp(38px,7.4vw,64px);margin:18px 0 18px}
+.hero h1 em{font-style:normal;color:var(--primary)}
+.lead{font-size:clamp(18px,2.3vw,21px);color:var(--muted);max-width:34em}
+.ctas{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+.note{margin-top:16px;color:var(--muted);font-size:15px;display:flex;align-items:center;gap:8px}
+.note svg{flex:none;color:var(--ok)}
+
+/* celular + chat */
+.stage{position:relative;display:flex;justify-content:center;padding:44px 0 0}
+.phone{position:relative;width:min(330px,86vw);border-radius:46px;padding:12px;background:#17142b;box-shadow:var(--shadow-lg),inset 0 0 0 2px #2c2748}
+.screen{border-radius:36px;overflow:hidden;background:var(--chat-bg)}
+.chat-head{display:flex;align-items:center;gap:10px;padding:34px 16px 12px;background:#fff;border-bottom:1px solid #e9e4dc}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--soft);display:grid;place-items:center;flex:none}
+.chat-head b{display:block;font-size:15px;line-height:1.2}
+.chat-head small{color:#667;font-size:12px}
+.msgs{display:flex;flex-direction:column;gap:8px;padding:16px 12px 22px;min-height:360px;font-size:14.5px;line-height:1.45}
+.msg{max-width:84%;padding:8px 11px 6px;border-radius:12px;box-shadow:0 1px 1px rgba(0,0,0,.08);opacity:0;transform:translateY(10px) scale(.98);animation:in .5s var(--ease) forwards}
+.msg time{display:block;text-align:right;font-size:11px;color:#778;margin-top:2px}
+.out{align-self:flex-end;background:var(--chat-out);border-top-right-radius:4px}
+.inn{align-self:flex-start;background:#fff;border-top-left-radius:4px}
+.msg:nth-child(1){animation-delay:.3s}.msg:nth-child(2){animation-delay:1.3s}.msg:nth-child(3){animation-delay:2.1s}
+.toast{position:absolute;left:50%;top:0;transform:translateX(-50%);width:min(320px,88vw);display:flex;gap:10px;align-items:center;padding:10px 14px 10px 10px;border-radius:20px;background:var(--glass);backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8);box-shadow:var(--shadow),inset 0 0 0 1px var(--glass-line);font-size:14px;line-height:1.35;opacity:0;animation:drop .6s var(--spring) 3s forwards}
+.toast b{display:block;font-size:14px}
+.toast .tm{color:var(--muted);font-size:13px}
+.bolha-peek{position:absolute;right:max(-6px,calc(50% - 250px));bottom:-26px;width:132px;filter:drop-shadow(0 14px 22px rgba(109,74,255,.25));animation:float 5s ease-in-out infinite}
+@keyframes in{to{opacity:1;transform:none}}
+@keyframes drop{from{opacity:0;transform:translate(-50%,-14px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+/* seções */
+section{padding:84px 0}
+.sec-head{max-width:640px;margin:0 auto 44px;text-align:center}
+.sec-head h2{font-size:clamp(30px,4.8vw,44px)}
+.sec-head p{margin-top:14px;color:var(--muted);font-size:18px}
+.kicker{display:block;margin-bottom:12px;color:var(--primary-text);font-weight:700;font-size:15px;letter-spacing:.02em}
+.pain{background:var(--surface);border-block:1px solid var(--line)}
+.grid{display:grid;gap:16px}
+@media (min-width:720px){.grid-3{grid-template-columns:repeat(3,1fr)}.grid-2{grid-template-columns:repeat(2,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:26px;transition:transform .3s var(--ease),box-shadow .3s var(--ease)}
+.card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.pain .card{background:var(--bg)}
+.card h3{font-size:20px;margin:16px 0 8px}
+.card p{color:var(--muted)}
+.ico{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:var(--soft);color:var(--primary)}
+.ico.rose{background:#fde8ee;color:var(--rose)}
+.ico.green{background:var(--ok-bg);color:var(--ok)}
+.ico.mel{background:#fdf1dc;color:#7a4f0c}
+.ico.blue{background:#e6effc;color:#1b4a94}
+
+.feat-big{display:grid;gap:16px;margin-bottom:16px}
+@media (min-width:900px){.feat-big{grid-template-columns:1.25fr 1fr}}
+.feat-big .card{padding:32px}
+.feat-big .hl{background:linear-gradient(150deg,#5535e6,#6d4aff 55%,#8160ff);color:#fff;border:0}
+.feat-big .hl p,.feat-big .hl li{color:rgba(255,255,255,.88)}
+.feat-big .hl .ico{background:rgba(255,255,255,.18);color:#fff}
+.ticks{list-style:none;padding:0;margin:18px 0 0;display:grid;gap:10px}
+.ticks li{display:flex;gap:10px;align-items:flex-start}
+.ticks li::before{content:"";flex:none;width:20px;height:20px;margin-top:3px;border-radius:50%;background:rgba(255,255,255,.22) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M6 10.5l2.6 2.6L14.5 7' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/20px}
+.card:not(.hl) .ticks li::before{background-color:var(--soft);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M6 10.5l2.6 2.6L14.5 7' fill='none' stroke='%236d4aff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+.card:not(.hl) .ticks li{color:var(--muted)}
+
+/* passos */
+.steps{counter-reset:s;display:grid;gap:16px}
+@media (min-width:860px){.steps{grid-template-columns:repeat(3,1fr)}}
+.step{position:relative;padding:28px 26px;border-radius:var(--r);background:var(--glass);box-shadow:inset 0 0 0 1px var(--line)}
+.step::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:var(--primary);color:#fff;font:900 20px/1 Nunito,sans-serif;margin-bottom:16px}
+.step h3{font-size:20px;margin-bottom:8px}
+.step p{color:var(--muted)}
+
+/* planos */
+.plan{position:relative;max-width:760px;margin:0 auto;text-align:center;padding:48px 28px;border-radius:32px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden}
+.plan::before{content:"";position:absolute;inset:auto -80px -120px auto;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(185,166,255,.35),transparent 65%)}
+.plan .tag{display:inline-block;padding:6px 14px;border-radius:999px;background:#fde8ee;color:var(--rose);font-weight:700;font-size:14px}
+.plan h2{font-size:clamp(28px,4.4vw,40px);margin:16px 0 12px}
+.plan p{color:var(--muted);max-width:30em;margin:0 auto}
+.plan .ctas{justify-content:center}
+
+/* FAQ */
+.faq{max-width:760px;margin:0 auto;display:grid;gap:12px}
+details{background:var(--surface);border:1px solid var(--line);border-radius:18px;transition:box-shadow .2s}
+details[open]{box-shadow:var(--shadow)}
+summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 22px;font-weight:700;font-size:17px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"";flex:none;width:28px;height:28px;border-radius:50%;background:var(--soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'%3E%3Cpath d='M14 9v10M9 14h10' stroke='%236d4aff' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E") center/28px;transition:transform .3s var(--ease)}
+details[open] summary::after{transform:rotate(45deg)}
+details p{padding:0 22px 22px;color:var(--muted)}
+
+/* final */
+.final{text-align:center;padding:96px 0 104px}
+.final .bolha-big{width:150px;margin:0 auto 18px;animation:float 5s ease-in-out infinite}
+.final h2{font-size:clamp(32px,5.4vw,50px);max-width:16em;margin:0 auto}
+.final p{color:var(--muted);margin:14px auto 0;max-width:30em;font-size:18px}
+.final .ctas{justify-content:center}
+
+footer{border-top:1px solid var(--line);background:var(--surface);padding:36px 0 calc(36px + env(safe-area-inset-bottom))}
+footer .wrap{display:flex;flex-wrap:wrap;gap:18px 32px;align-items:center;justify-content:space-between}
+footer .word{font-size:26px}
+footer nav{display:flex;flex-wrap:wrap;gap:6px 22px}
+footer nav a{color:var(--muted);text-decoration:none;font-weight:600}
+footer nav a:hover{color:var(--primary-text)}
+footer small{color:var(--muted);font-size:14px;width:100%}
+
+/* revelar ao rolar */
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.reveal.on{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+  .reveal{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#conteudo">Pular para o conteúdo</a>
+
+<!-- Bolha: desenhos reaproveitados com <use> (mesmo traço do app, src/components/brand/Mascot.tsx) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="bb" cx=".45" cy=".4" r=".75"><stop offset="0" stop-color="#FDFCFF"/><stop offset="1" stop-color="#E6DEFF"/></radialGradient>
+    <linearGradient id="br" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6D4AFF"/><stop offset=".25" stop-color="#B9A6FF"/><stop offset=".5" stop-color="#FF8FB1"/><stop offset=".75" stop-color="#E5547F"/><stop offset="1" stop-color="#8E73FF"/></linearGradient>
+    <radialGradient id="bc"><stop offset="0" stop-color="#FF8FB1" stop-opacity=".75"/><stop offset="1" stop-color="#FF8FB1" stop-opacity="0"/></radialGradient>
+    <mask id="bm"><g fill="#fff"><circle cx="158.4" cy="274.4" r="81.6"/><circle cx="321.6" cy="281.2" r="74.8"/><circle cx="240" cy="206.4" r="102"/><circle cx="240" cy="308.4" r="81.6"/></g><g fill="#000"><circle cx="158.4" cy="274.4" r="72.6"/><circle cx="321.6" cy="281.2" r="65.8"/><circle cx="240" cy="206.4" r="93"/><circle cx="240" cy="308.4" r="72.6"/></g></mask>
+    <g id="bolha-corpo">
+      <g fill="url(#br)"><circle cx="158.4" cy="274.4" r="81.6"/><circle cx="321.6" cy="281.2" r="74.8"/><circle cx="240" cy="206.4" r="102"/><circle cx="240" cy="308.4" r="81.6"/></g>
+      <g fill="url(#bb)"><circle cx="158.4" cy="274.4" r="72.6"/><circle cx="321.6" cy="281.2" r="65.8"/><circle cx="240" cy="206.4" r="93"/><circle cx="240" cy="308.4" r="72.6"/></g>
+      <rect x="70" y="95" width="340" height="305" fill="url(#br)" mask="url(#bm)" opacity=".35"/>
+      <ellipse cx="185" cy="150" rx="34" ry="13" transform="rotate(-34 185 150)" fill="#fff" opacity=".9"/>
+      <circle cx="228" cy="138" r="6" fill="#fff" opacity=".9"/>
+      <circle cx="172" cy="296" r="24" fill="url(#bc)"/>
+      <circle cx="308" cy="296" r="24" fill="url(#bc)"/>
+    </g>
+  </defs>
+</svg>
+
+<header class="top" id="topo">
+  <div class="wrap">
+    <a class="word" href="#conteudo" aria-label="bubbly, início">bubbly</a>
+    <nav aria-label="Principal">
+      <a class="link" href="#funcionalidades">Funcionalidades</a>
+      <a class="link" href="#como-funciona">Como funciona</a>
+      <a class="link" href="#duvidas">Dúvidas</a>
+      <a class="btn btn-ghost btn-sm" href="https://app.bubbly.app.br/login">Entrar</a>
+    </nav>
+  </div>
+</header>
+
+<main id="conteudo">
+  <section class="hero" aria-labelledby="h-hero">
+    <div class="wrap">
+      <div>
+        <span class="eyebrow">Para estúdios e profissionais da beleza</span>
+        <h1 id="h-hero">Sua agenda cheia, <em>sem cliente esquecida.</em></h1>
+        <p class="lead">O bubbly lembra suas clientes no WhatsApp, recebe a confirmação e te avisa quem não respondeu. Você cuida do atendimento; a agenda se cuida sozinha.</p>
+        <div class="ctas">
+          <a class="btn btn-primary" data-cta href="https://app.bubbly.app.br/login">Testar grátis por 14 dias</a>
+          <a class="btn btn-ghost" href="#como-funciona">Ver como funciona</a>
+        </div>
+        <p class="note"><svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 10.5l2.6 2.6L14.5 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Funciona no iPhone e no Android, direto pelo navegador.</p>
+      </div>
+
+      <div class="stage" aria-label="Exemplo: lembrete enviado pelo bubbly e a cliente confirmando pelo WhatsApp" role="img">
+        <div class="phone">
+          <div class="screen">
+            <div class="chat-head">
+              <div class="avatar"><svg viewBox="70 95 340 305" width="30" aria-hidden="true"><use href="#bolha-corpo"/><g fill="#3B22B8"><ellipse cx="202" cy="254" rx="15" ry="24"/><ellipse cx="278" cy="254" rx="15" ry="24"/></g></svg></div>
+              <div><b>Estúdio da Bia</b><small>online</small></div>
+            </div>
+            <div class="msgs">
+              <div class="msg out">Oi, Carla! Passando para lembrar do seu horário amanhã, terça, às 14h: Design de sobrancelha. Responda <b>1</b> para confirmar, <b>2</b> para cancelar ou <b>3</b> para remarcar.<time>09:00</time></div>
+              <div class="msg inn">1<time>09:12</time></div>
+              <div class="msg out">Prontinho, Carla! Horário confirmado. Até amanhã 💜<time>09:12</time></div>
+            </div>
+          </div>
+        </div>
+        <div class="toast" aria-hidden="true">
+          <svg viewBox="70 95 340 305" width="40"><use href="#bolha-corpo"/><path d="M185.96 255.83A18 18 0 0 1 218.04 255.83M261.96 255.83A18 18 0 0 1 294.04 255.83" fill="none" stroke="#3B22B8" stroke-width="11" stroke-linecap="round"/><path d="M249.7 293.05A12 12 0 0 1 230.3 293.05" fill="none" stroke="#3B22B8" stroke-width="6" stroke-linecap="round"/></svg>
+          <div><b>Carla confirmou ✓</b><span class="tm">Amanhã, 14h · Design de sobrancelha</span></div>
+        </div>
+        <svg class="bolha-peek" viewBox="70 95 340 305" aria-hidden="true"><use href="#bolha-corpo"/><g fill="#3B22B8"><ellipse cx="202" cy="254" rx="15" ry="24"/><ellipse cx="278" cy="254" rx="15" ry="24"/></g><g fill="#fff"><circle cx="197" cy="246" r="5.5"/><circle cx="273" cy="246" r="5.5"/></g><path d="M249.7 293.05A12 12 0 0 1 230.3 293.05" fill="none" stroke="#3B22B8" stroke-width="6" stroke-linecap="round"/></svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="pain" aria-labelledby="h-dor">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="kicker">O dia a dia sem bubbly</span>
+        <h2 id="h-dor">Cliente que esquece é horário vazio e dinheiro que não volta.</h2>
+      </div>
+      <div class="grid grid-3">
+        <article class="card reveal">
+          <div class="ico rose"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+          <h3>Ela esqueceu e não veio</h3>
+          <p>Você reservou a tarde, separou o material e ficou esperando. O horário não volta.</p>
+        </article>
+        <article class="card reveal">
+          <div class="ico mel"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M9 11h6M9 14h4"/></svg></div>
+          <h3>Mensagem uma por uma</h3>
+          <p>Toda noite, copiar e colar lembrete para cada cliente, entre um atendimento e outro.</p>
+        </article>
+        <article class="card reveal">
+          <div class="ico blue"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></div>
+          <h3>Vaga que ninguém viu</h3>
+          <p>Horário livre na agenda e nenhuma cliente sabendo. Divulgar dá trabalho, então fica para depois.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="funcionalidades" aria-labelledby="h-func">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="kicker">Tudo num lugar só</span>
+        <h2 id="h-func">O bubbly faz a parte chata por você.</h2>
+        <p>Feito para quem atende sozinha ou com equipe pequena: sobrancelha, cílios, unhas, cabelo, estética.</p>
+      </div>
+
+      <div class="feat-big">
+        <article class="card hl reveal">
+          <div class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 12l2.2 2.2 4.8-4.7"/></svg></div>
+          <h3>Lembretes automáticos no WhatsApp</h3>
+          <p>Saem do seu próprio número, com o nome da cliente e o seu jeito de escrever.</p>
+          <ul class="ticks">
+            <li>1º aviso um dia antes e 2º aviso no dia, nos horários que você escolher</li>
+            <li>A cliente responde com um número: confirma, cancela ou pede para remarcar</li>
+            <li>Você recebe um aviso no celular quando ela confirma, pede para remarcar ou não responde</li>
+            <li>Sem mensagem de madrugada: os avisos respeitam o horário de silêncio</li>
+          </ul>
+        </article>
+        <article class="card reveal">
+          <div class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M8 14h3M8 17h6"/></svg></div>
+          <h3>Agenda do estúdio</h3>
+          <p>Dia, semana e mês na palma da mão.</p>
+          <ul class="ticks">
+            <li>Vários serviços no mesmo horário, com desconto</li>
+            <li>Pausas, folgas e bloqueios</li>
+            <li>Conversa com o Google Agenda e o calendário do iPhone</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="grid grid-3">
+        <article class="card reveal">
+          <div class="ico green"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5h4"/><path d="M17 3l2 2"/></svg></div>
+          <h3>Vagas prontas para divulgar</h3>
+          <p>O bubbly calcula seus horários livres e monta o texto. Um toque copia, outro cola no status ou no grupo.</p>
+        </article>
+        <article class="card reveal">
+          <div class="ico rose"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M17 11a3 3 0 1 0 0-6M22 21a6 6 0 0 0-4-5.6"/></svg></div>
+          <h3>Suas clientes organizadas</h3>
+          <p>Histórico de cada uma, conversa no mesmo lugar e importação dos contatos do celular ou do Google.</p>
+        </article>
+        <article class="card reveal">
+          <div class="ico mel"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></div>
+          <h3>Finanças sem planilha</h3>
+          <p>Quanto está previsto, quanto já entrou e para onde foram as despesas do mês.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="como-funciona" class="pain" aria-labelledby="h-como">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="kicker">Comece hoje</span>
+        <h2 id="h-como">Pronto para usar em poucos minutos.</h2>
+        <p>Sem instalar nada da loja. Abra no navegador e adicione à tela de início.</p>
+      </div>
+      <ol class="steps" style="list-style:none;padding:0;margin:0">
+        <li class="step reveal"><h3>Conecte seu WhatsApp</h3><p>Com um código, como no WhatsApp Web. As mensagens saem do seu número de sempre.</p></li>
+        <li class="step reveal"><h3>Cadastre serviços e horários</h3><p>Preço, duração e o seu expediente, com pausas e folgas.</p></li>
+        <li class="step reveal"><h3>Agende e pronto</h3><p>Cada agendamento já fica com os lembretes programados. O bubbly te avisa o que precisa de atenção.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="planos" aria-labelledby="h-planos">
+    <div class="wrap">
+      <div class="plan reveal">
+        <span class="tag">Planos em breve</span>
+        <h2 id="h-planos">Experimente tudo por 14 dias.</h2>
+        <p>Todas as funções liberadas durante o teste. Os planos e preços saem em breve, e você fica sabendo antes de qualquer cobrança.</p>
+        <div class="ctas"><a class="btn btn-primary" data-cta href="https://app.bubbly.app.br/login">Começar teste grátis</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="duvidas" class="pain" aria-labelledby="h-faq">
+    <div class="wrap">
+      <div class="sec-head reveal"><span class="kicker">Dúvidas</span><h2 id="h-faq">Perguntas frequentes</h2></div>
+      <div class="faq">
+        <details><summary>Preciso baixar algum aplicativo?</summary><p>Não. O bubbly abre no navegador do celular, do tablet ou do computador. No iPhone e no Android dá para adicionar à tela de início e usar como um app, com notificações.</p></details>
+        <details><summary>As mensagens saem do meu número?</summary><p>Sim. Você conecta o WhatsApp do estúdio com um código, do mesmo jeito que conecta o WhatsApp Web. Suas clientes recebem do número que já conhecem.</p></details>
+        <details><summary>Minhas clientes precisam instalar alguma coisa?</summary><p>Não. Elas só recebem e respondem no WhatsApp, como sempre.</p></details>
+        <details><summary>Posso mudar o texto dos lembretes?</summary><p>Pode. Você edita a mensagem de agendamento, o 1º e o 2º aviso, e escolhe com quantas horas de antecedência cada um sai.</p></details>
+        <details><summary>E se a cliente não quiser receber mensagens?</summary><p>Basta ela responder SAIR. O bubbly para de mandar lembretes para ela, e ela volta quando responder VOLTAR.</p></details>
+        <details><summary>Meus dados e os das minhas clientes ficam seguros?</summary><p>Ficam. Cada estúdio só vê os próprios dados, as conexões com o Google são protegidas e você pode baixar ou excluir sua conta quando quiser, como manda a LGPD.</p></details>
+        <details><summary>Quanto custa?</summary><p>O teste de 14 dias é grátis, com tudo liberado. Os planos estão saindo do forno; você fica sabendo dos preços antes de qualquer cobrança.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="final" aria-labelledby="h-final">
+    <div class="wrap">
+      <svg class="bolha-big" viewBox="70 95 340 305" aria-hidden="true"><use href="#bolha-corpo"/><path d="M185.96 255.83A18 18 0 0 1 218.04 255.83M261.96 255.83A18 18 0 0 1 294.04 255.83" fill="none" stroke="#3B22B8" stroke-width="11" stroke-linecap="round"/><path d="M249.7 293.05A12 12 0 0 1 230.3 293.05" fill="none" stroke="#3B22B8" stroke-width="6" stroke-linecap="round"/></svg>
+      <h2 id="h-final" class="reveal">Menos falta, mais agenda cheia.</h2>
+      <p class="reveal">Deixe a Bolha lembrar suas clientes enquanto você atende.</p>
+      <div class="ctas"><a class="btn btn-primary" data-cta href="https://app.bubbly.app.br/login">Testar grátis por 14 dias</a></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="word" href="#conteudo" aria-label="bubbly, voltar ao início">bubbly</a>
+    <nav aria-label="Rodapé">
+      <a href="https://app.bubbly.app.br/login">Entrar</a>
+      <a href="https://app.bubbly.app.br/privacidade">Privacidade</a>
+      <a href="https://app.bubbly.app.br/termos">Termos de uso</a>
+    </nav>
+    <small>© 2026 bubbly · Feito pela WebCode no Brasil.</small>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var top=document.getElementById("topo");
+  var onScroll=function(){top.classList.toggle("scrolled",window.scrollY>8)};
+  window.addEventListener("scroll",onScroll,{passive:true});onScroll();
+  var els=document.querySelectorAll(".reveal");
+  if(!("IntersectionObserver" in window)){els.forEach(function(e){e.classList.add("on")});return}
+  var io=new IntersectionObserver(function(entries){entries.forEach(function(en){if(en.isIntersecting){en.target.classList.add("on");io.unobserve(en.target)}})},{rootMargin:"0px 0px -8% 0px"});
+  els.forEach(function(e){io.observe(e)});
+})();
+</script>
+</body>
+</html>
