@@ -69,3 +69,13 @@ describe("avisos do dono: regras", () => {
     expect(noticeEndsAt("", now)).toBeNull();
   });
 });
+
+describe("suporte: quando", () => {
+  it("hoje = hora, ontem = Ontem, antes = dia/mês (fuso do Brasil)", async () => {
+    const { whenLabel } = await import("@/features/support/rules");
+    const agora = new Date("2026-11-16T22:00:00Z"); // 19:00 em SP
+    expect(whenLabel(new Date("2026-11-16T15:37:00Z"), agora)).toBe("12:37");
+    expect(whenLabel(new Date("2026-11-16T02:00:00Z"), agora)).toBe("Ontem"); // 23:00 do dia 15 em SP
+    expect(whenLabel(new Date("2026-11-10T15:00:00Z"), agora)).toBe("10/11");
+  });
+});

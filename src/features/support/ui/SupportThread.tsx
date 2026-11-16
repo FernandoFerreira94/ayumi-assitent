@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useState } from "react";
+import { Mascot } from "@/components/brand/Mascot";
 import { formatTime, todayStr } from "@/lib/dates";
 import { messageFor, type ActionResult, type ErrorCode } from "@/lib/errors";
 import { SUPPORT_MAX_LEN } from "../rules";
@@ -31,6 +32,7 @@ export function SupportThread({
   send,
   label,
   empty,
+  suggestions = [],
   className = "",
 }: {
   me: "salon" | "admin";
@@ -38,7 +40,9 @@ export function SupportThread({
   send: (body: string) => Promise<ActionResult>;
   /** Nome acessível do campo. */
   label: string;
-  empty: string;
+  empty: { title: string; text: string };
+  /** Assuntos que começam a mensagem com um toque (só com a conversa vazia). */
+  suggestions?: string[];
   className?: string;
 }) {
   const router = useRouter();
@@ -46,6 +50,7 @@ export function SupportThread({
   const [locals, setLocals] = useState<Local[]>([]);
   const seq = useRef(0);
   const end = useRef<HTMLDivElement>(null);
+  const field = useRef<HTMLTextAreaElement>(null);
   const total = messages.length + locals.length;
 
   useEffect(() => {
@@ -77,27 +82,57 @@ export function SupportThread({
   }
 
   return (
-    <div className={`flex min-h-0 flex-col rounded-[1.4rem] bg-chat-bg ${className}`}>
+    <div className={`flex min-h-0 flex-col rounded-[1.4rem] ${className}`}>
       <div className="flex min-h-40 flex-1 flex-col gap-1.5 overflow-y-auto px-3 py-4" aria-live="polite">
         {messages.length === 0 && locals.length === 0 ? (
-          <p className="mx-auto my-auto max-w-[36ch] rounded-lg bg-surface/80 px-3 py-2 text-center text-sm font-semibold text-muted">
-            {empty}
-          </p>
+          <div className="m-auto grid max-w-[34ch] justify-items-center gap-2 py-2 text-center">
+            <Mascot kind="bolha" mood="happy" size={64} season={null} />
+            <p className="text-balance font-bold">{empty.title}</p>
+            <p className="text-sm font-semibold text-muted">{empty.text}</p>
+            {suggestions.length ? (
+              <div className="mt-1 flex flex-wrap justify-center gap-2">
+                {suggestions.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => {
+                      setText(`${t}: `);
+                      field.current?.focus();
+                    }}
+                    className="btn-glass min-h-11 rounded-full px-4 text-sm font-bold"
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
         ) : null}
         {messages.map((m, i, all) => {
           const day = dayLabel(m.createdAt);
           const sep = i === 0 || day !== dayLabel(all[i - 1]!.createdAt);
           const mine = m.author === me;
+          // Bolha ao lado da 1ª resposta do suporte em sequência (quem fala com o salão é a marca)
+          const avatar = me === "salon" && m.author === "admin" && (i === 0 || all[i - 1]!.author !== "admin" || sep);
           return (
             <div key={m.id} className="contents">
               {sep ? <p className="mx-auto my-1 rounded-lg bg-surface/80 px-2.5 py-0.5 text-xs font-bold text-muted">{day}</p> : null}
-              <div className={`grid max-w-[85%] gap-0.5 ${mine ? "justify-items-end self-end" : "justify-items-start self-start"}`}>
-                {!mine ? (
-                  <span className="px-1 text-xs font-bold text-muted">{m.author === "admin" ? "Suporte Bubbly" : "Salão"}</span>
+              <div
+                className={`grid max-w-[85%] gap-0.5 ${mine ? "justify-items-end self-end" : "justify-items-start self-start"} ${
+                  me === "salon" && !mine ? "pl-9" : ""
+                }`}
+              >
+                {!mine && (avatar || me === "admin") ? (
+                  <span className="relative px-1 text-xs font-bold text-muted">
+                    {avatar ? (
+                      <Mascot kind="bolha" mood="happy" size={28} season={null} className="absolute -left-9 top-3" />
+                    ) : null}
+                    {m.author === "admin" ? "Suporte Bubbly" : "Salão"}
+                  </span>
                 ) : null}
                 <p
                   className={`whitespace-pre-wrap break-words rounded-xl px-3 pb-1 pt-1.5 text-[15px] leading-5 shadow-sm ${
-                    mine ? "rounded-tr-sm bg-chat-out" : "rounded-tl-sm bg-surface"
+                    mine ? "rounded-tr-sm bg-soft" : "rounded-tl-sm bg-surface"
                   }`}
                 >
                   {m.body}
@@ -112,7 +147,7 @@ export function SupportThread({
         {locals.map((b) => (
           <div key={`l${b.id}`} className="grid max-w-[85%] justify-items-end gap-1 self-end">
             <p
-              className={`whitespace-pre-wrap break-words rounded-xl rounded-tr-sm bg-chat-out px-3 pb-1 pt-1.5 text-[15px] leading-5 shadow-sm ${b.failed ? "" : "opacity-70"}`}
+              className={`whitespace-pre-wrap break-words rounded-xl rounded-tr-sm bg-soft px-3 pb-1 pt-1.5 text-[15px] leading-5 shadow-sm ${b.failed ? "" : "opacity-70"}`}
             >
               {b.text}
               <span className="float-right ml-2 mt-1.5 translate-y-0.5 text-xs font-semibold tabular-nums text-muted">
@@ -133,6 +168,7 @@ export function SupportThread({
       </div>
       <form onSubmit={submit} className="flex items-end gap-2 px-2 pb-2 pt-1">
         <textarea
+          ref={field}
           value={text}
           onChange={(e) => {
             setText(e.target.value);
@@ -143,13 +179,13 @@ export function SupportThread({
           maxLength={SUPPORT_MAX_LEN}
           aria-label={label}
           placeholder="Escreva sua mensagem"
-          className="min-h-11 flex-1 resize-none rounded-3xl bg-surface px-4 py-2.5 text-base leading-6 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="min-h-11 flex-1 resize-none rounded-3xl border border-line bg-surface px-4 py-2.5 text-base leading-6 focus:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30"
         />
         <button
           type="submit"
           disabled={!text.trim()}
           aria-label="Enviar"
-          className="grid size-11 shrink-0 place-content-center rounded-full bg-chat-send text-white shadow-sm transition-transform active:scale-95 disabled:opacity-60"
+          className="grid size-11 shrink-0 place-content-center rounded-full bg-primary text-white shadow-sm transition-transform active:scale-95 disabled:bg-line disabled:text-muted motion-reduce:transition-none"
         >
           <svg viewBox="0 0 24 24" className="size-5" fill="currentColor" aria-hidden="true">
             <path d="M3.4 20.4 21 12 3.4 3.6l-.01 6.53L15 12 3.39 13.87z" />

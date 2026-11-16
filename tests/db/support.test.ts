@@ -104,6 +104,12 @@ d("suporte e avisos (Postgres real)", () => {
     ).rejects.toThrow();
     expect(await write.endNotice(imp)).toBe(true);
     expect(await write.endNotice(imp)).toBe(false);
+    // Desfazer devolve ao ar; depois encerra de novo
+    expect(await write.reopenNotice(imp)).toBe(true);
+    expect((await client.withTenant(B, (tx) => core.liveNoticesFor(tx, BIA))).map((n) => n.title)).toContain("Importante");
+    expect(await write.endNotice(imp)).toBe(true);
+    await db`update platform_notices set ended_at = now() - interval '1 hour' where id = ${imp}`;
+    expect(await write.reopenNotice(imp)).toBe(false);
     expect((await client.withTenant(B, (tx) => core.liveNoticesFor(tx, BIA))).map((n) => n.title)).toEqual(["Manutenção"]);
   });
 });

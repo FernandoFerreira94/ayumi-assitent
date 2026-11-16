@@ -6,6 +6,8 @@ import { SUPPORT_EMAIL } from "@/features/legal/LegalPage";
 import { markSupportRead, sendSupport } from "@/features/support/actions";
 import { listSupportMessages, unreadSupportReplies } from "@/features/support/core";
 import { FAQ } from "@/features/support/ui/faq";
+import { Icon } from "@/components/ui/Icon";
+import { PushHint } from "@/features/support/ui/PushHint";
 import { MarkRead, SupportThread } from "@/features/support/ui/SupportThread";
 import { requireTenant } from "@/lib/tenant";
 
@@ -32,10 +34,15 @@ export default async function SuportePage() {
           me="salon"
           label="Mensagem para o suporte"
           send={sendSupport}
-          empty="Conte o que aconteceu ou o que você precisa. A resposta chega aqui e no seu celular."
+          empty={{
+            title: "Como podemos ajudar?",
+            text: "Conte o que aconteceu ou o que você precisa. Quem responde é a equipe do Bubbly.",
+          }}
+          suggestions={["Lembretes", "WhatsApp", "Agenda", "Sugestão"]}
           messages={messages.map((m) => ({ id: m.id, author: m.author, body: m.body, createdAt: m.createdAt.toISOString() }))}
           className="glass max-h-[60dvh]"
         />
+        <PushHint />
       </section>
 
       <section aria-labelledby="duvidas" className="mt-7 grid gap-2">
@@ -79,9 +86,11 @@ export default async function SuportePage() {
         </h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <a href={WHATSAPP} target="_blank" rel="noopener noreferrer" className="btn-glass flex min-h-12 items-center justify-center gap-2 rounded-2xl px-4 font-bold">
+            <Icon name="chat" size={20} />
             WhatsApp do suporte
           </a>
           <a href={`mailto:${SUPPORT_EMAIL}`} className="btn-glass flex min-h-12 items-center justify-center gap-2 rounded-2xl px-4 font-bold">
+            <Icon name="message" size={20} />
             Mandar e-mail
           </a>
         </div>

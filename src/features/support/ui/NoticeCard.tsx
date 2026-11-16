@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { notify } from "@/components/feedback/toast";
+import { IconTile } from "@/components/ui/Icon";
 import { dismissPlatformNotice } from "../actions";
 
 /** Aviso do Bubbly no Painel. "Fechar" some na hora e grava; se falhar, volta e mostra o erro. */
@@ -25,10 +26,13 @@ export function NoticeCard({ id, title, body, tone }: { id: string; title: strin
   return (
     <section
       aria-label={`Aviso do Bubbly: ${title}`}
-      className={`glass flex items-start gap-3 rounded-2xl py-3 pl-4 pr-1 ${important ? "border-l-4 border-l-wait" : ""}`}
+      className="glass flex items-start gap-3 rounded-[1.4rem] py-3 pl-4 pr-1"
     >
+      <IconTile name={important ? "alert" : "bell"} tint={important ? "orange" : "lavender"} />
       <div className="min-w-0 flex-1 pt-0.5">
-        <p className="text-xs font-bold uppercase tracking-wide text-primary-text">{important ? "Importante" : "Aviso do Bubbly"}</p>
+        <p className={`text-xs font-bold uppercase tracking-wide ${important ? "text-wait" : "text-primary-text"}`}>
+          {important ? "Importante" : "Aviso do Bubbly"}
+        </p>
         <h2 className="font-bold leading-tight">{title}</h2>
         <p className="whitespace-pre-line text-sm font-semibold text-muted">{body}</p>
       </div>

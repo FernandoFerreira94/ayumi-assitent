@@ -51,9 +51,9 @@ export function SupportSheet({
                 me="admin"
                 label={`Resposta para ${salonName}`}
                 send={send}
-                empty="Sem mensagens."
+                empty={{ title: "Sem mensagens", text: "Este salão ainda não escreveu." }}
                 messages={messages}
-                className="mx-3 mb-[max(env(safe-area-inset-bottom),12px)] flex-1 md:mx-0"
+                className="mx-3 mb-[max(env(safe-area-inset-bottom),12px)] flex-1 bg-bg md:mx-0"
               />
             </>
           ) : null}

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { notify } from "@/components/feedback/toast";
-import { createPlatformNotice, endPlatformNotice } from "../admin-actions";
+import { createPlatformNotice, endPlatformNotice, reopenPlatformNotice } from "../admin-actions";
 
 const FIELD = "min-h-12 w-full rounded-xl border border-line bg-bg px-3 py-2.5 text-base font-semibold";
 
@@ -108,7 +108,10 @@ export function EndNoticeButton({ id, title }: { id: string; title: string }) {
   function end() {
     start(async () => {
       const res = await endPlatformNotice(id).catch(() => null);
-      if (res?.ok) notify.success("Aviso encerrado", "Saiu do Painel dos salões.");
+      if (res?.ok)
+        notify.undoable("Aviso encerrado", () => {
+          void reopenPlatformNotice(id).then((r) => (r.ok ? notify.success("Aviso de volta ao ar") : notify.error(r.code)));
+        }, "Saiu do Painel dos salões.");
       else notify.error(res && !res.ok ? res.code : "NETWORK", end);
     });
   }

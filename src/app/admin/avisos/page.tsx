@@ -9,6 +9,8 @@ import { EndNoticeButton, NoticeComposer } from "@/features/support/ui/NoticeCom
 
 export const metadata: Metadata = { title: "Avisos" };
 
+const closedLabel = (n: number) => (n === 0 ? "Ninguém fechou ainda" : n === 1 ? "1 pessoa fechou" : `${n} pessoas fecharam`);
+
 /** Avisos: o que aparece como cartão no Painel de todos os salões. */
 export default async function AdminNoticesPage() {
   const { userId } = await requireAdmin();
@@ -39,7 +41,7 @@ export default async function AdminNoticesPage() {
                 <p className="whitespace-pre-line text-sm font-semibold text-muted">{n.body}</p>
                 <div className="mt-1 flex items-center justify-between gap-3">
                   <span className="text-xs font-semibold text-muted">
-                    {dismissed[n.id] ?? 0} {(dismissed[n.id] ?? 0) === 1 ? "pessoa fechou" : "pessoas fecharam"}
+                    {closedLabel(dismissed[n.id] ?? 0)}
                   </span>
                   <EndNoticeButton id={n.id} title={n.title} />
                 </div>
@@ -54,7 +56,7 @@ export default async function AdminNoticesPage() {
                   <li key={n.id} className="px-4 py-3">
                     <p className="font-bold">{n.title}</p>
                     <p className="text-xs font-semibold text-muted">
-                      {fmtDate(n.createdAt)} até {fmtDate(n.endedAt ?? n.endsAt)} · {dismissed[n.id] ?? 0} fecharam
+                      {fmtDate(n.createdAt)} até {fmtDate(n.endedAt ?? n.endsAt)} · {closedLabel(dismissed[n.id] ?? 0)}
                     </p>
                   </li>
                 ))}

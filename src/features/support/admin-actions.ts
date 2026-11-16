@@ -9,7 +9,7 @@ import { sendToAll } from "@/features/push/core";
 import { pushFromEnv } from "@/features/push/webpush";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { errCode, log } from "@/lib/log";
-import { endNotice, insertAdminReply, insertNotice, markSalonMessagesRead } from "./admin-write";
+import { endNotice, reopenNotice, insertAdminReply, insertNotice, markSalonMessagesRead } from "./admin-write";
 import { noticeInput, supportBody, supportReplyAlert } from "./rules";
 
 const tenantIdSchema = z.string().uuid();
@@ -73,6 +73,15 @@ export async function endPlatformNotice(id: string): Promise<ActionResult> {
   const p = z.string().uuid().safeParse(id);
   if (!p.success || !(await endNotice(p.data))) return fail("NOT_FOUND");
   await logAdminAccess({ userId, action: "notice_ended", target: p.data });
+  revalidatePath("/admin/avisos");
+  return ok();
+}
+
+export async function reopenPlatformNotice(id: string): Promise<ActionResult> {
+  const { userId } = await requireAdmin();
+  const p = z.string().uuid().safeParse(id);
+  if (!p.success || !(await reopenNotice(p.data))) return fail("NOT_FOUND");
+  await logAdminAccess({ userId, action: "notice_reopened", target: p.data });
   revalidatePath("/admin/avisos");
   return ok();
 }

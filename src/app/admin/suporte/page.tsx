@@ -3,9 +3,8 @@ import Link from "next/link";
 import { logAdminAccess } from "@/features/admin/audit";
 import { requireAdmin } from "@/features/admin/guard";
 import { AdminShell } from "@/features/admin/ui/AdminShell";
-import { fmtDate } from "@/features/admin/ui/format";
 import { getConversation, listConversations } from "@/features/support/admin";
-import { preview, sortConversations } from "@/features/support/rules";
+import { preview, sortConversations, whenLabel } from "@/features/support/rules";
 import { SupportSheet } from "@/features/support/ui/SupportSheet";
 
 export const metadata: Metadata = { title: "Suporte" };
@@ -18,6 +17,7 @@ export default async function AdminSupportPage({ searchParams }: PageProps<"/adm
   const [rows, open] = await Promise.all([listConversations(), salao ? getConversation(salao) : null]);
   await logAdminAccess({ userId, action: "view_support", target: open ? salao! : undefined });
   const list = sortConversations(rows);
+  const now = new Date();
   const waiting = list.filter((c) => c.lastAuthor === "salon").length;
 
   return (
@@ -41,7 +41,7 @@ export default async function AdminSupportPage({ searchParams }: PageProps<"/adm
                 <span className="min-w-0 flex-1">
                   <span className="flex items-baseline gap-2">
                     <span className="truncate font-bold">{c.salonName}</span>
-                    <span className="ml-auto shrink-0 text-xs font-semibold text-muted">{fmtDate(c.lastAt)}</span>
+                    <span className="ml-auto shrink-0 text-xs font-semibold tabular-nums text-muted">{whenLabel(c.lastAt, now)}</span>
                   </span>
                   <span className="block truncate text-sm font-semibold text-muted">
                     {c.lastAuthor === "admin" ? "Você: " : ""}
