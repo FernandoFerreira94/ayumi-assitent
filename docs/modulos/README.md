@@ -19,6 +19,7 @@ Atualizado em 12/11/2026 (main em #104). Ache o módulo da task, leia a coluna "
 | Marca e UI | [marca-ui.md](marca-ui.md) | `components/*`, `app/globals.css` | Mascote/temas, toasts, nav (barra, menu, sino), componentes base | Toda tela; mascote também no push |
 | Painel do dono | [admin.md](admin.md) | `features/admin`, telas `admin/*` | Painel só do dono do produto: 2FA, step-up de 7 dias, registro de acesso; visão geral, assinantes e pagamentos (dados de exemplo até a cobrança chegar) | Auth (`twoFactor`, login por senha), retenção (worker), cabeçalhos (`next.config.ts`), `proxy.ts`, privacidade |
 | Suporte e avisos do dono | [suporte.md](suporte.md) | `features/support`, telas `ajustes/suporte`, `admin/suporte`, `admin/avisos` | Conversa salão ↔ dono, avisos do dono no Painel de todos os salões | Painel (cartões no topo), Ajustes (linha Ajuda), admin (menu, registro), push (`notifyAdmins`, `sendToAll`) |
+| Apps da loja | [apps-loja.md](apps-loja.md) | `mobile/`, `codemagic.yaml`, `features/native`, `app/.well-known` | Casca Capacitor do Android e iPhone que carrega o app web; links do domínio abrem o app | Domínio do app (`server.url`), instalar PWA (`isNativeShell`), login Google e push no app, regras de loja (sem venda no app) |
 | Plataforma | [plataforma.md](plataforma.md) | `db`, `lib`, `worker`, `proxy.ts`, `api/*`, `scripts` | Auth, estúdio/RLS, migrations, worker, deploy, backup | Tudo |
 
 ## Matriz de ligações (imports entre features)
