@@ -6,9 +6,11 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 
 type Item = { href: string; label: string; icon: IconName };
 
-/** Itens do painel do dono. Assinantes ({ icon: "users" }) e Pagamentos ({ icon: "wallet" }) entram no Bloco 3. */
+/** Itens do painel do dono. */
 export const ADMIN_NAV: Item[] = [
   { href: "/admin", label: "Visão geral", icon: "compass" },
+  { href: "/admin/assinantes", label: "Assinantes", icon: "users" },
+  { href: "/admin/pagamentos", label: "Pagamentos", icon: "wallet" },
   { href: "/admin/seguranca", label: "Segurança", icon: "shield" },
 ];
 

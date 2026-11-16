@@ -72,3 +72,50 @@ test("admin com código confirmado abre o painel, sem cache e fora do Google", a
   await expect(page.getByRole("heading", { name: "Últimos acessos" })).toBeVisible();
   await expect(page.getByText("Abriu a visão geral").first()).toBeVisible();
 });
+
+test("telas do painel: visão geral, assinantes (com detalhe), pagamentos e CSV", async ({ page, context }) => {
+  await loginAsAdmin(context, { twoFactor: true, stepUp: true });
+
+  await page.goto("/admin");
+  await expect(page.getByText("Dados de exemplo.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "MRR em 12 meses" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Em atraso", level: 2 })).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+  await page.goto("/admin/assinantes");
+  await expect(page.getByRole("heading", { name: "Assinantes" })).toBeVisible();
+  await page.getByRole("tab", { name: /Em atraso/ }).click();
+  await expect(page.getByText("3 salões")).toBeVisible();
+  await page.getByRole("searchbox", { name: "Buscar salão ou dona" }).fill("violeta");
+  await expect(page.getByText("1 salão")).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.getByRole("link", { name: /Studio Violeta/ }).filter({ visible: true }).first().click();
+  await expect(page).toHaveURL(/salao=demo-08/);
+  const sheet = page.getByRole("dialog");
+  await expect(sheet.getByRole("heading", { name: "Studio Violeta" })).toBeVisible();
+  await expect(sheet.getByText("Pagamentos recentes")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page).toHaveURL(/\/admin\/assinantes$/);
+
+  await page.goto("/admin/pagamentos?mes=lixo");
+  await expect(page.getByRole("heading", { name: "Pagamentos", level: 1 })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Mês anterior/ })).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
+  const res = await page.request.get("/admin/pagamentos/export?mes=2026-10");
+  expect(res.status()).toBe(200);
+  expect(res.headers()["content-disposition"]).toContain('filename="bubbly-pagamentos-2026-10.csv"');
+  expect(res.headers()["cache-control"]).toContain("no-store");
+  expect(await res.text()).toMatch(/^﻿Data;Salão;Plano;Método;Status;Valor;Taxa;Líquido;Id MP\r\n/);
+
+  await page.goto("/admin/seguranca");
+  await expect(page.getByText("Exportou pagamentos").first()).toBeVisible();
+  await expect(page.getByText("Abriu um salão").first()).toBeVisible();
+});
+
+test("sem código confirmado, o CSV não sai", async ({ page, context }) => {
+  await loginAsAdmin(context, { twoFactor: true, stepUp: false });
+  const res = await page.request.get("/admin/pagamentos/export?mes=2026-10", { maxRedirects: 0 });
+  expect(res.status()).not.toBe(200);
+  expect(await res.text()).not.toContain("Salão;Plano");
+});

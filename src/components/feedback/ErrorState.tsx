@@ -9,6 +9,7 @@ type Props = {
   message?: string;
   onRetry?: () => void;
   homeHref?: string;
+  homeLabel?: string;
 };
 
 export function ErrorState({
@@ -16,6 +17,7 @@ export function ErrorState({
   message = "Tivemos um problema do nosso lado. Seus dados estão salvos.",
   onRetry,
   homeHref = "/agenda",
+  homeLabel = "Voltar para a agenda",
 }: Props) {
   return (
     <div role="alert" className="mx-auto grid max-w-xs justify-items-center gap-2 px-4 py-14 text-center">
@@ -29,7 +31,7 @@ export function ErrorState({
           </button>
         ) : null}
         <Link href={homeHref} className="grid min-h-11 place-items-center font-bold text-primary-text">
-          Voltar para a agenda
+          {homeLabel}
         </Link>
       </div>
     </div>

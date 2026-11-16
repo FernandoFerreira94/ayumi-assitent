@@ -1,20 +1,27 @@
 # Painel do dono (admin)
 
-**Finalidade:** painel pessoal do dono do produto (só ele) para acompanhar assinaturas, pagamentos e receita do Bubbly. Plano: `docs/superpowers/plans/2026-11-15-dashboard-dono.md`. Bloco 1 (este) = acesso seguro; Bloco 2 = views de leitura; Bloco 3 = telas com dados.
+**Finalidade:** painel pessoal do dono do produto (só ele) para acompanhar assinaturas, pagamentos e receita do Bubbly. Plano: `docs/superpowers/plans/2026-11-15-dashboard-dono.md`. Bloco 1 = acesso seguro (feito); Bloco 3 = telas (feito, com **dados de exemplo**); Bloco 2 = views de leitura reais (espera as tabelas de cobrança chegarem na main).
 
 ## Arquivos
 - Regras puras: `features/admin/access.ts` (`isPlatformAdmin`, lê `ADMIN_USER_IDS`), `features/admin/step-up-rules.ts` (janela de 7 dias, trava de 5 erros em 15 min).
 - Banco: `features/admin/step-up.ts` (`admin_step_up`), `features/admin/audit.ts` (`admin_audit_log`, rótulos pt-BR).
 - Porta única: `features/admin/guard.ts` (`requireAdmin`: sessão → admin? senão `notFound()` → 2FA ligado? senão `/admin/ativar-2fa` → step-up válido? senão `/admin/verificar`). `requireAdminWithoutTwoFactor` só para a ativação.
 - Actions: `features/admin/actions.ts` (`verifyAdminCode`, `startTwoFactorSetup`, `confirmTwoFactorSetup`, `regenerateBackupCodes`).
-- Telas: `app/admin/layout.tsx` (sem banco, sem menu; `robots: noindex`), `app/admin/page.tsx` (casca da visão geral), `verificar`, `ativar-2fa`, `seguranca`. UI em `features/admin/ui/*` (`AdminNav` no visual do `SideNav`, `AdminShell`, `CodeForm`, `TwoFactorSetup`, `BackupCodes`, `RegenerateCodes`).
+- Telas: `app/admin/layout.tsx` (sem banco, sem menu; `robots: noindex`), `app/admin/page.tsx` (visão geral), `assinantes` (`?salao=<id>` abre o detalhe), `pagamentos` (`?mes=YYYY-MM`) + `pagamentos/export/route.ts` (CSV), `error.tsx`, `verificar`, `ativar-2fa`, `seguranca`. UI em `features/admin/ui/*` (`AdminNav` no visual do `SideNav`, `AdminShell`, `CodeForm`, `TwoFactorSetup`, `BackupCodes`, `RegenerateCodes`).
 - Auth: `lib/auth.ts` (plugin `twoFactor` + hook que deixa `/two-factor/*` só para admin), `lib/auth-client.ts` (`twoFactorClient`), `app/login/LoginForm.tsx` (passo "Código" quando o login por senha volta com `twoFactorRedirect`).
 - Cabeçalhos: `next.config.ts` (`/admin` e `/admin/:path*`: `Cache-Control: no-store`, `X-Robots-Tag: noindex, nofollow`, `Referrer-Policy: no-referrer`). `proxy.ts`: sem login, `/admin*` vira 404 (não manda para o login).
+
+## Telas e dados (Bloco 3)
+- Contrato das linhas: `features/admin/types.ts` (camelCase das views do plano). Contas puras e testadas: `metrics.ts` (`summarize`, `delinquencyBuckets`, `upcomingDue`, `receivedInMonth`, `trialConversion`, `healthLevel`, `cancellations`, `trialsEnding`), `filters.ts` (abas, busca sem acento, ordem), `csv.ts` (`;`, BOM, CRLF, anti-fórmula), `month.ts` (`?mes=` com zod; inválido ou futuro = mês atual em UTC-3).
+- Leitura: `queries.ts` (`server-only`; cada função chama `requireAdmin()`). **Hoje devolve `demo-data.ts`** (24 salões inventados, `@exemplo.test`, determinístico a partir de `now`) e `IS_DEMO = true` mostra a faixa "Dados de exemplo". O Bloco 2 troca só o corpo dessas funções por SQL nas views (`withAdmin`) e põe `IS_DEMO = false`; telas não mudam.
+- UI: `KpiCard`, `MrrChart` (barras HTML, uma série na cor da marca, dica no hover/foco, tabela `sr-only` dentro de `<div class="sr-only">` porque `<table>` não encolhe e alargava a página no celular), `HealthBar`, `OverviewLists`, `SubscribersView` (cartões < 1024 px, tabela acima), `SubscriberSheet` (vaul: folha no celular, painel à direita no desktop), `PaymentsView`, `StatusBadge`/`PaymentBadge` (sempre com texto).
+- Registro: visão geral `view_overview`; assinantes `view_subscribers` ou `view_subscriber` (target = id do salão); pagamentos `view_payments`; CSV `export_payments` (target = mês).
+- Link "Abrir no Mercado Pago": ainda não; o detalhe só mostra o id da assinatura. Entra no Bloco 2 com a URL real.
 
 ## Tabelas (migration `0041_admin_access.sql`, sem GRANT para `app_user`)
 - `user."twoFactorEnabled"` e `"twoFactor"` (plugin do Better Auth; segredo e códigos cifrados pelo próprio plugin com o `BETTER_AUTH_SECRET`). Apagar o usuário apaga o 2FA (cascade).
 - `admin_step_up(session_id → session.id ON DELETE CASCADE, user_id, verified_at)`: logout apaga a verificação.
-- `admin_audit_log(user_id, action, target, ip, created_at)`: `view_overview`, `view_security`, `step_up_ok`, `step_up_failed`, `2fa_enabled`, `backup_codes_regenerated` (e no Bloco 3 `view_subscribers`, `view_subscriber`, `view_payments`, `export_payments`).
+- `admin_audit_log(user_id, action, target, ip, created_at)`: `view_overview`, `view_security`, `step_up_ok`, `step_up_failed`, `2fa_enabled`, `backup_codes_regenerated` `view_subscribers`, `view_subscriber`, `view_payments`, `export_payments`.
 - Retenção (`features/retention/run.ts`, worker diário): `admin_audit_log` > 365 dias e `admin_step_up` > 7 dias.
 
 ## 2FA (resultado da Task 0, Better Auth 1.7.18, lido no código do plugin)
