@@ -28,9 +28,20 @@ const SECURITY_HEADERS = [
   { key: "Content-Security-Policy-Report-Only", value: CSP },
 ];
 
+// Painel do dono: nunca em cache, nunca indexado e sem mandar o endereço para outro site (somam aos de cima).
+const ADMIN_HEADERS = [
+  { key: "Cache-Control", value: "no-store" },
+  { key: "X-Robots-Tag", value: "noindex, nofollow" },
+  { key: "Referrer-Policy", value: "no-referrer" },
+];
+
 const nextConfig: NextConfig = {
   async headers() {
-    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+    return [
+      { source: "/:path*", headers: SECURITY_HEADERS },
+      { source: "/admin", headers: ADMIN_HEADERS },
+      { source: "/admin/:path*", headers: ADMIN_HEADERS },
+    ];
   },
   env: { NEXT_PUBLIC_BUILD_ID: BUILD_ID },
   cacheComponents: true,
