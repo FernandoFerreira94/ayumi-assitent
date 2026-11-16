@@ -122,6 +122,8 @@ export const services = pgTable("services", {
   bookable: boolean("bookable").notNull().default(true),
   showInSlots: boolean("show_in_slots").notNull().default(true),
   notes: text("notes"),
+  /** Retorno aproximado em dias (ex.: unha 15); null = serviço sem retorno */
+  returnDays: integer("return_days"),
 });
 
 export const appointmentStatus = pgEnum("appointment_status", [
@@ -173,6 +175,10 @@ export const appointments = pgTable(
     discountCents: integer("discount_cents").notNull().default(0),
     /** Observação livre (ex.: motivo do desconto), até 300 caracteres */
     notes: text("notes"),
+    /** Data prevista do retorno, gravada ao concluir (menor retorno entre os serviços); null = sem retorno */
+    returnDueOn: date("return_due_on"),
+    /** "Não precisa": a dona dispensou o retorno deste atendimento */
+    returnSkippedAt: timestamp("return_skipped_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("appointments_tenant_start").on(t.tenantId, t.startsAt)],

@@ -1,20 +1,37 @@
 # Painel do dono (admin)
 
-**Finalidade:** painel pessoal do dono do produto (só ele) para acompanhar assinaturas, pagamentos e receita do Bubbly. Plano: `docs/superpowers/plans/2026-11-15-dashboard-dono.md`. Bloco 1 (este) = acesso seguro; Bloco 2 = views de leitura; Bloco 3 = telas com dados.
+**Finalidade:** painel pessoal do dono do produto (só ele) para acompanhar assinaturas, pagamentos e receita do Bubbly. Plano: `docs/superpowers/plans/2026-11-15-dashboard-dono.md`. Bloco 1 = acesso seguro (feito); Bloco 3 = telas (feito, com **dados de exemplo**); Bloco 2 = views de leitura reais (espera as tabelas de cobrança chegarem na main).
 
 ## Arquivos
 - Regras puras: `features/admin/access.ts` (`isPlatformAdmin`, lê `ADMIN_USER_IDS`), `features/admin/step-up-rules.ts` (janela de 7 dias, trava de 5 erros em 15 min).
-- Banco: `features/admin/step-up.ts` (`admin_step_up`), `features/admin/audit.ts` (`admin_audit_log`, rótulos pt-BR).
+- Banco: `features/admin/step-up.ts` (`admin_step_up`; `withStepUpSlot` = uma tentativa de código por vez por admin, com `pg_try_advisory_xact_lock`: tentativas em paralelo voltam `ADMIN_STEP_UP_BUSY` em vez de furar a trava; `countOtherSessions`/`deleteOtherSessions`), `features/admin/audit.ts` (`admin_audit_log`, rótulos pt-BR).
 - Porta única: `features/admin/guard.ts` (`requireAdmin`: sessão → admin? senão `notFound()` → 2FA ligado? senão `/admin/ativar-2fa` → step-up válido? senão `/admin/verificar`). `requireAdminWithoutTwoFactor` só para a ativação.
-- Actions: `features/admin/actions.ts` (`verifyAdminCode`, `startTwoFactorSetup`, `confirmTwoFactorSetup`, `regenerateBackupCodes`).
-- Telas: `app/admin/layout.tsx` (sem banco, sem menu; `robots: noindex`), `app/admin/page.tsx` (casca da visão geral), `verificar`, `ativar-2fa`, `seguranca`. UI em `features/admin/ui/*` (`AdminNav` no visual do `SideNav`, `AdminShell`, `CodeForm`, `TwoFactorSetup`, `BackupCodes`, `RegenerateCodes`).
+- Actions: `features/admin/actions.ts` (`verifyAdminCode`, `startTwoFactorSetup`, `confirmTwoFactorSetup`, `regenerateBackupCodes` (exige o código do app na hora: com 7 dias de acesso, sessão roubada não gera códigos novos), `endOtherSessions` (Segurança → Aparelhos conectados; derruba também as sessões do app do salão da mesma conta)).
+- Telas: `app/admin/layout.tsx` (sem banco, sem menu; `robots: noindex`), `app/admin/page.tsx` (visão geral), `assinantes` (`?salao=<id>` abre o detalhe), `pagamentos` (`?mes=YYYY-MM`) + `pagamentos/export/route.ts` (CSV), `error.tsx`, `verificar`, `ativar-2fa`, `seguranca`. UI em `features/admin/ui/*` (`AdminNav` no visual do `SideNav`, `AdminShell`, `CodeForm`, `TwoFactorSetup`, `BackupCodes`, `RegenerateCodes`).
 - Auth: `lib/auth.ts` (plugin `twoFactor` + hook que deixa `/two-factor/*` só para admin), `lib/auth-client.ts` (`twoFactorClient`), `app/login/LoginForm.tsx` (passo "Código" quando o login por senha volta com `twoFactorRedirect`).
 - Cabeçalhos: `next.config.ts` (`/admin` e `/admin/:path*`: `Cache-Control: no-store`, `X-Robots-Tag: noindex, nofollow`, `Referrer-Policy: no-referrer`). `proxy.ts`: sem login, `/admin*` vira 404 (não manda para o login).
+
+## Telas e dados (Bloco 3)
+- Contrato das linhas: `features/admin/types.ts` (camelCase das views do plano). Contas puras e testadas: `metrics.ts` (`summarize`, `delinquencyBuckets`, `upcomingDue`, `receivedInMonth`, `trialConversion`, `healthLevel`, `cancellations`, `trialsEnding`), `filters.ts` (abas, busca sem acento, ordem), `csv.ts` (`;`, BOM, CRLF, anti-fórmula), `month.ts` (`?mes=` com zod; inválido ou futuro = mês atual em UTC-3).
+- Leitura: `queries.ts` (`server-only`; cada função chama `requireAdmin()`). **Hoje devolve `demo-data.ts`** (24 salões inventados, `@exemplo.test`, determinístico a partir de `now`) e `IS_DEMO = true` mostra a faixa "Dados de exemplo". O Bloco 2 troca só o corpo dessas funções por SQL nas views (`withAdmin`) e põe `IS_DEMO = false`; telas não mudam.
+- UI: `KpiCard`, `MrrChart` (barras HTML, uma série na cor da marca, dica no hover/foco, tabela `sr-only` dentro de `<div class="sr-only">` porque `<table>` não encolhe e alargava a página no celular), `HealthBar`, `OverviewLists`, `SubscribersView` (cartões < 1024 px, tabela acima), `SubscriberSheet` (vaul: folha no celular, painel à direita no desktop), `PaymentsView`, `StatusBadge`/`PaymentBadge` (sempre com texto).
+- Tela **Uso** (`app/admin/uso`, dados REAIS, não depende da cobrança): `usage.ts` (SQL como dono do banco, igual ao worker; por salão: último uso = sessão/login de membros, WhatsApp ligado, clientes, agendamentos 30 dias sem cancelados, mensagens enviadas/recebidas 30 dias) e `usage-rules.ts` (`summarizeUsage`: ativos 7 dias, mensagens por salão ativo = base do custo).
+- Registro: telas `view_*` não repetem a mesma linha (mesma ação e alvo) em 2 min; ações sempre gravam. Visão geral `view_overview`; uso `view_usage`; desconectar `sessions_revoked` (target = quantas); assinantes `view_subscribers` ou `view_subscriber` (target = id do salão); pagamentos `view_payments`; CSV `export_payments` (target = mês).
+- Link "Abrir no Mercado Pago": ainda não; o detalhe só mostra o id da assinatura. Entra no Bloco 2 com a URL real.
+
+## Avisos para o dono (push)
+- `alerts.ts` (plataforma, sem requireAdmin): `notifyAdmins` manda para as inscrições de push (`push_subscriptions`) de quem está em `ADMIN_USER_IDS` e apaga as vencidas; `collectDigest` junta os números de ontem (UTC-3) e confere na Evolution os salões com WhatsApp caído. Textos em `alerts-text.ts` (sem nome de salão/pessoa: o push passa pela Apple/Google).
+- Cadastro novo: `lib/auth.ts` (hook `user.create.after`, depois do commit) chama `alertSignup()` sem esperar; falha não afeta o cadastro.
+- Resumo da manhã: fila `admin-digest` no worker, 09:00 BRT. **Precisa de `ADMIN_USER_IDS` também no serviço do worker** e do push ligado no celular do dono (no app, com a conta dele).
+- Futuro: aviso de pagamento recusado / cobrança parada entra quando a cobrança chegar (mesmo `notifyAdmins`).
+
+## Suporte e avisos
+- Telas `admin/suporte` e `admin/avisos`, e o número de conversas esperando no menu: ver [suporte.md](suporte.md).
 
 ## Tabelas (migration `0041_admin_access.sql`, sem GRANT para `app_user`)
 - `user."twoFactorEnabled"` e `"twoFactor"` (plugin do Better Auth; segredo e códigos cifrados pelo próprio plugin com o `BETTER_AUTH_SECRET`). Apagar o usuário apaga o 2FA (cascade).
 - `admin_step_up(session_id → session.id ON DELETE CASCADE, user_id, verified_at)`: logout apaga a verificação.
-- `admin_audit_log(user_id, action, target, ip, created_at)`: `view_overview`, `view_security`, `step_up_ok`, `step_up_failed`, `2fa_enabled`, `backup_codes_regenerated` (e no Bloco 3 `view_subscribers`, `view_subscriber`, `view_payments`, `export_payments`).
+- `admin_audit_log(user_id, action, target, ip, created_at)`: `view_overview`, `view_security`, `step_up_ok`, `step_up_failed`, `2fa_enabled`, `backup_codes_regenerated` `view_subscribers`, `view_subscriber`, `view_payments`, `export_payments`.
 - Retenção (`features/retention/run.ts`, worker diário): `admin_audit_log` > 365 dias e `admin_step_up` > 7 dias.
 
 ## 2FA (resultado da Task 0, Better Auth 1.7.18, lido no código do plugin)

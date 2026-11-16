@@ -1,0 +1,37 @@
+# Site de apresentação (bubbly.app.br). Estático, servido pelo Caddy na porta que o Railway passa em $PORT.
+# HTTPS fica com o Railway; aqui só HTTP.
+{
+	admin off
+	auto_https off
+}
+
+:{$PORT:8080} {
+	root * /srv
+	encode zstd gzip
+
+	@www host www.bubbly.app.br
+	redir @www https://bubbly.app.br{uri} permanent
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "DENY"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		-Server
+	}
+
+	@html path / *.html
+	header @html Cache-Control "public, max-age=300, must-revalidate"
+	@img path *.png *.svg *.ico
+	header @img Cache-Control "public, max-age=604800"
+
+	try_files {path} {path}.html
+	file_server
+
+	handle_errors {
+		rewrite * /404.html
+		file_server
+	}
+}

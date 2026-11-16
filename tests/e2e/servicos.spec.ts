@@ -22,10 +22,24 @@ test("cadastra, edita e remove serviço com desfazer", async ({ page }) => {
   await expect(sheet.getByRole("textbox", { name: "Nome", exact: true })).toHaveValue("Manicure");
   await sheet.getByRole("button", { name: "Diminuir 15 minutos" }).click();
   await sheet.getByRole("textbox", { name: /Preço/ }).fill("55,00");
+  await sheet.getByRole("button", { name: "15 dias" }).click();
   await sheet.getByRole("button", { name: "Salvar", exact: true }).click();
   await expect(page.getByText("Salvo", { exact: true })).toBeVisible();
   await expect(item).toContainText("45 min");
   await expect(item).toContainText("R$ 55,00");
+  await expect(item).toContainText("volta em ~15 dias");
+
+  // Retorno "Outro": valor livre; reabrir mostra o número
+  await row.click();
+  await sheet.getByRole("button", { name: "Outro" }).click();
+  await sheet.getByRole("spinbutton", { name: "Dias até o retorno" }).fill("25");
+  await sheet.getByRole("button", { name: "Salvar", exact: true }).click();
+  await expect(item).toContainText("volta em ~25 dias");
+  await row.click();
+  await expect(sheet.getByRole("spinbutton", { name: "Dias até o retorno" })).toHaveValue("25");
+  await sheet.getByRole("button", { name: "Sem retorno" }).click();
+  await sheet.getByRole("button", { name: "Salvar", exact: true }).click();
+  await expect(item).not.toContainText("volta em");
 
   // Excluir pede um segundo toque
   await row.click();

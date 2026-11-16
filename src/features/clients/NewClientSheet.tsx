@@ -6,20 +6,38 @@ import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/Adapti
 import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import { messageFor, type ActionResult } from "@/lib/errors";
-import { maskPhone } from "@/lib/phone";
+import { maskPhone, toE164 } from "@/lib/phone";
+import { useDeviceContacts, ContactsDenied, pickDeviceContact } from "@/features/native/device-contacts";
 import { createClient } from "./actions";
 
 const input = "min-h-13 w-full rounded-2xl border px-4 text-base font-semibold";
 
 export function NewClientSheet() {
   const side = useSheetSide();
+  const device = useDeviceContacts();
   const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+
+  async function fromAgenda() {
+    try {
+      const c = await pickDeviceContact();
+      if (!c) return;
+      if (c.name) setName(c.name.slice(0, 80));
+      const e164 = toE164(c.phone);
+      setPhone(maskPhone(e164 ? e164.replace(/^\+55/, "") : c.phone));
+    } catch (e) {
+      if (e instanceof ContactsDenied) {
+        notify.warning("Sem acesso aos contatos", "Libere em Ajustes do celular → Bubbly → Contatos.");
+      } else notify.error("UNKNOWN");
+    }
+  }
   const [state, action] = useActionState(async (prev: ActionResult<{ id: string }> | null, fd: FormData) => {
     const res = await createClient(prev, fd);
     if (res.ok) {
       notify.success("Cliente cadastrada");
       setOpen(false);
+      setName("");
       setPhone("");
     } else if (res.code !== "VALIDATION" && res.code !== "PHONE_EXISTS") {
       notify.error(res.code);
@@ -48,18 +66,35 @@ export function NewClientSheet() {
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
-<SidePanelClose />
+        <Drawer.Content
+          className={sheetClass(
+            side,
+            "fixed inset-x-0 bottom-0 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none",
+            "sheet z-50",
+          )}
+        >
+          <SidePanelClose />
           <Drawer.Title className="pb-1 text-xl font-bold">Nova cliente</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
             Nome e WhatsApp são suficientes.
           </Drawer.Description>
+          {device && (
+            <button
+              type="button"
+              onClick={() => void fromAgenda()}
+              className="btn-glass mb-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl px-4 text-sm font-bold"
+            >
+              Escolher da agenda do celular
+            </button>
+          )}
           <form action={action} className="grid gap-3">
             <label className="grid gap-1 text-sm font-bold">
               Nome
               <input
                 name="name"
                 required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 autoComplete="off"
                 placeholder="Ex.: Maria Souza"
                 className={input}

@@ -6,6 +6,7 @@ import { dayBriefing } from "@/features/appointments/briefing";
 import { forecastCents, listDay, receivedCents } from "@/features/appointments/core";
 import { DaySchedule } from "@/features/appointments/DaySchedule";
 import { DayHero } from "@/features/appointments/DayHero";
+import { PlatformNotices } from "@/features/support/ui/PlatformNotices";
 import { dayRange, formatDayTitle, greeting, isDateStr, todayStr } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
 
@@ -17,12 +18,13 @@ export default async function PainelPage({ searchParams }: PageProps<"/agenda">)
   const { d } = await searchParams;
   const today = todayStr();
   const date = typeof d === "string" && isDateStr(d) ? d : today;
-  const { tenantId, userName } = await requireTenant();
+  const { tenantId, userId, userName } = await requireTenant();
   const rows = await withTenant(tenantId, (tx) => listDay(tx, dayRange(date)));
   const label = formatDayTitle(date);
 
   return (
     <PageShell title={greeting(new Date(), userName)} subtitle={label.charAt(0).toUpperCase() + label.slice(1)}>
+      {date === today ? <PlatformNotices tenantId={tenantId} userId={userId} /> : null}
       <DayHero
         briefing={dayBriefing(rows, new Date(), date === today)}
         isToday={date === today}
