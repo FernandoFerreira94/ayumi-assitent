@@ -1,7 +1,10 @@
 import "server-only";
 import { APIError, betterAuth } from "better-auth";
+import { createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
+import { twoFactor } from "better-auth/plugins/two-factor";
 import { Pool } from "pg";
+import { isPlatformAdmin } from "@/features/admin/access";
 import { isEmailAllowed } from "./allowed-emails";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -76,5 +79,25 @@ export const auth = betterAuth({
       },
     },
   },
-  plugins: [nextCookies()],
+  // 2FA só existe para o painel do dono (ADMIN_USER_IDS). Sem sessão, só as rotas de conferir o código do login por
+  // senha ficam abertas (quem chega nelas já passou pela senha e tem o cookie de 2FA assinado).
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (!ctx.path.startsWith("/two-factor/")) return;
+      const session = await getSessionFromCtx(ctx);
+      if (session) {
+        if (!isPlatformAdmin(session.user.id)) throw new APIError("NOT_FOUND");
+        return;
+      }
+      if (ctx.path !== "/two-factor/verify-totp" && ctx.path !== "/two-factor/verify-backup-code") {
+        throw new APIError("UNAUTHORIZED");
+      }
+    }),
+  },
+  plugins: [
+    // Painel do dono: TOTP no app autenticador + 10 códigos de recuperação. Quem entrou pelo Google não tem senha,
+    // por isso allowPasswordless (quem tem senha continua tendo que digitá-la para ativar ou gerar códigos).
+    twoFactor({ issuer: "Bubbly Admin", allowPasswordless: true }),
+    nextCookies(),
+  ],
 });
