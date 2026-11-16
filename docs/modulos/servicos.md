@@ -19,3 +19,4 @@
 - Mudar preço não altera agendamentos já feitos (valor guardado no agendamento).
 - Limite de valor < R$ 100.000 (`lib/money.ts` casa com o schema).
 - Testes: `tests/e2e/servicos.spec.ts`.
+- Layout: lista no celular, grade de 2 colunas a partir de `md` e de 3 a partir de `lg`. Arrastar para reordenar mira o cartão sob o cursor (`elementsFromPoint`), então vale nas duas grades. Editar e criar abrem o painel lateral padrão (`AdaptiveSheet`, 440 px) a partir de `md`.
