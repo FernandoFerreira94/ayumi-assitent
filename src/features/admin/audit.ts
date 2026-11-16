@@ -11,6 +11,8 @@ export type AdminAction =
   | "view_payments"
   | "export_payments"
   | "view_security"
+  | "view_usage"
+  | "sessions_revoked"
   | "step_up_ok"
   | "step_up_failed"
   | "2fa_enabled"
@@ -23,6 +25,8 @@ export const ADMIN_ACTION_LABEL: Record<AdminAction, string> = {
   view_payments: "Abriu pagamentos",
   export_payments: "Exportou pagamentos",
   view_security: "Abriu segurança",
+  view_usage: "Abriu uso",
+  sessions_revoked: "Encerrou outras sessões",
   step_up_ok: "Código confirmado",
   step_up_failed: "Código errado",
   "2fa_enabled": "Ativou o 2FA",
@@ -42,10 +46,25 @@ async function clientIp(): Promise<string | null> {
 export async function logAdminAccess(input: { userId: string; action: AdminAction; target?: string }): Promise<void> {
   try {
     const ip = await clientIp();
-    await getDb().execute(
-      sql`insert into admin_audit_log (user_id, action, target, ip)
-          values (${input.userId}, ${input.action}, ${input.target ?? null}, ${ip})`,
-    );
+    const target = input.target ?? null;
+    // Abrir a mesma tela de novo em 2 min (voltar, fechar o detalhe, recarregar) não vira linha nova:
+    // o registro fica legível. Ações (código, 2FA, exportar, encerrar sessões) sempre gravam.
+    if (input.action.startsWith("view_")) {
+      await getDb().execute(
+        sql`insert into admin_audit_log (user_id, action, target, ip)
+            select ${input.userId}, ${input.action}, ${target}, ${ip}
+            where not exists (
+              select 1 from admin_audit_log
+              where user_id = ${input.userId} and action = ${input.action}
+                and target is not distinct from ${target} and created_at > now() - interval '2 minutes'
+            )`,
+      );
+    } else {
+      await getDb().execute(
+        sql`insert into admin_audit_log (user_id, action, target, ip)
+            values (${input.userId}, ${input.action}, ${target}, ${ip})`,
+      );
+    }
   } catch (e) {
     log("warn", "admin_audit_failed", { action: input.action, ...errCode(e) });
   }

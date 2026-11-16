@@ -11,6 +11,7 @@ export const ADMIN_NAV: Item[] = [
   { href: "/admin", label: "Visão geral", icon: "compass" },
   { href: "/admin/assinantes", label: "Assinantes", icon: "users" },
   { href: "/admin/pagamentos", label: "Pagamentos", icon: "wallet" },
+  { href: "/admin/uso", label: "Uso", icon: "chat" },
   { href: "/admin/seguranca", label: "Segurança", icon: "shield" },
 ];
 

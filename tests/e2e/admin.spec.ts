@@ -28,7 +28,7 @@ async function loginAsAdmin(context: BrowserContext, opts: { twoFactor: boolean;
 }
 
 test("quem não é admin vê 404 em todo o painel", async ({ page }) => {
-  for (const path of ["/admin", "/admin/verificar", "/admin/ativar-2fa", "/admin/seguranca"]) {
+  for (const path of ["/admin", "/admin/verificar", "/admin/ativar-2fa", "/admin/seguranca", "/admin/assinantes", "/admin/pagamentos", "/admin/uso"]) {
     await page.goto(path);
     await expect(page.getByRole("heading", { name: "Não encontramos isto" })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Painel do dono" })).toHaveCount(0);
@@ -108,7 +108,16 @@ test("telas do painel: visão geral, assinantes (com detalhe), pagamentos e CSV"
   expect(res.headers()["cache-control"]).toContain("no-store");
   expect(await res.text()).toMatch(/^﻿Data;Salão;Plano;Método;Status;Valor;Taxa;Líquido;Id MP\r\n/);
 
+  await page.goto("/admin/uso");
+  await expect(page.getByRole("heading", { name: "Uso", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Por salão" })).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+
   await page.goto("/admin/seguranca");
+  await expect(page.getByRole("heading", { name: "Aparelhos conectados" })).toBeVisible();
+  await page.getByRole("button", { name: "Gerar novos códigos de recuperação" }).click();
+  await expect(page.getByLabel("Código do app autenticador")).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   await expect(page.getByText("Exportou pagamentos").first()).toBeVisible();
   await expect(page.getByText("Abriu um salão").first()).toBeVisible();
 });

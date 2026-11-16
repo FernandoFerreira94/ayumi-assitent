@@ -8,7 +8,7 @@ import { fail, ok, type ActionResult } from "@/lib/errors";
 import { errCode, log } from "@/lib/log";
 import { logAdminAccess } from "./audit";
 import { requireAdmin, requireAdminWithoutTwoFactor } from "./guard";
-import { recentFailures, recordStepUp, stepUpLockedUntil } from "./step-up";
+import { deleteOtherSessions, recentFailures, recordStepUp, stepUpLockedUntil, withStepUpSlot } from "./step-up";
 
 const TOTP = /^\d{6}$/;
 // Código de recuperação do Better Auth: 10 caracteres com hífen no meio (ex.: AbCde-FgHij)
@@ -32,23 +32,25 @@ export async function verifyAdminCode(input: { code: string }): Promise<ActionRe
   const { userId, sessionId } = await requireAdmin({ stepUp: false });
   const p = codeSchema.safeParse(input);
   if (!p.success) return fail("ADMIN_STEP_UP_INVALID", "code");
-  if (await isLocked(userId)) return fail("ADMIN_STEP_UP_LOCKED");
   // Código de recuperação sem o hífen também vale (o app guarda com hífen no meio)
   const code = TOTP.test(p.data.code) || p.data.code.includes("-") ? p.data.code : `${p.data.code.slice(0, 5)}-${p.data.code.slice(5)}`;
-  try {
-    const h = await headers();
-    if (TOTP.test(code)) await auth.api.verifyTOTP({ body: { code }, headers: h });
-    else await auth.api.verifyBackupCode({ body: { code, disableSession: true }, headers: h });
-  } catch (e) {
-    await logAdminAccess({ userId, action: "step_up_failed" });
-    const c = apiCode(e);
-    if (c.startsWith("INVALID")) return fail("ADMIN_STEP_UP_INVALID", "code");
-    log("warn", "admin_step_up_error", errCode(e));
-    return fail("UNKNOWN");
-  }
-  await recordStepUp(sessionId, userId);
-  await logAdminAccess({ userId, action: "step_up_ok" });
-  return ok();
+  const r = await withStepUpSlot(userId, async (): Promise<ActionResult> => {
+    if (await isLocked(userId)) return fail("ADMIN_STEP_UP_LOCKED");
+    try {
+      const h = await headers();
+      if (TOTP.test(code)) await auth.api.verifyTOTP({ body: { code }, headers: h });
+      else await auth.api.verifyBackupCode({ body: { code, disableSession: true }, headers: h });
+    } catch (e) {
+      await logAdminAccess({ userId, action: "step_up_failed" });
+      if (apiCode(e).startsWith("INVALID")) return fail("ADMIN_STEP_UP_INVALID", "code");
+      log("warn", "admin_step_up_error", errCode(e));
+      return fail("UNKNOWN");
+    }
+    await recordStepUp(sessionId, userId);
+    await logAdminAccess({ userId, action: "step_up_ok" });
+    return ok();
+  });
+  return r ?? fail("ADMIN_STEP_UP_BUSY");
 }
 
 /** Passo 1 da ativação: gera o segredo (QR) e os códigos de recuperação, ainda sem ligar o 2FA. */
@@ -84,36 +86,70 @@ export async function confirmTwoFactorSetup(input: { code: string }): Promise<Ac
   if (enabled) return ok();
   const p = codeSchema.safeParse(input);
   if (!p.success || !TOTP.test(p.data.code)) return fail("ADMIN_STEP_UP_INVALID", "code");
-  if (await isLocked(userId)) return fail("ADMIN_STEP_UP_LOCKED");
-  try {
-    await auth.api.verifyTOTP({ body: { code: p.data.code }, headers: await headers() });
-  } catch (e) {
-    await logAdminAccess({ userId, action: "step_up_failed" });
-    if (apiCode(e).startsWith("INVALID")) return fail("ADMIN_STEP_UP_INVALID", "code");
-    log("warn", "admin_2fa_confirm_error", errCode(e));
-    return fail("UNKNOWN");
-  }
-  await logAdminAccess({ userId, action: "2fa_enabled" });
-  return ok();
+  const code = p.data.code;
+  const r = await withStepUpSlot(userId, async (): Promise<ActionResult> => {
+    if (await isLocked(userId)) return fail("ADMIN_STEP_UP_LOCKED");
+    try {
+      await auth.api.verifyTOTP({ body: { code }, headers: await headers() });
+    } catch (e) {
+      await logAdminAccess({ userId, action: "step_up_failed" });
+      if (apiCode(e).startsWith("INVALID")) return fail("ADMIN_STEP_UP_INVALID", "code");
+      log("warn", "admin_2fa_confirm_error", errCode(e));
+      return fail("UNKNOWN");
+    }
+    await logAdminAccess({ userId, action: "2fa_enabled" });
+    return ok();
+  });
+  return r ?? fail("ADMIN_STEP_UP_BUSY");
 }
 
-/** Troca os 10 códigos de recuperação (os antigos deixam de valer). */
+/**
+ * Troca os 10 códigos de recuperação (os antigos deixam de valer). Pede o código do app na hora: com o
+ * acesso valendo 7 dias, quem pegasse a sessão aberta conseguiria gerar códigos novos e ficar com o painel.
+ */
 export async function regenerateBackupCodes(input: {
+  code: string;
   password?: string;
 }): Promise<ActionResult<{ backupCodes: string[] }>> {
   const { userId } = await requireAdmin();
-  const p = passwordSchema.safeParse(input);
+  const p = passwordSchema.safeParse({ password: input.password });
   if (!p.success) return fail("VALIDATION", "password");
+  const c = codeSchema.safeParse({ code: input.code });
+  if (!c.success || !TOTP.test(c.data.code)) return fail("ADMIN_STEP_UP_INVALID", "code");
+  const code = c.data.code;
+  const r = await withStepUpSlot(userId, async (): Promise<ActionResult<{ backupCodes: string[] }>> => {
+    if (await isLocked(userId)) return fail("ADMIN_STEP_UP_LOCKED");
+    const h = await headers();
+    try {
+      await auth.api.verifyTOTP({ body: { code }, headers: h });
+    } catch (e) {
+      await logAdminAccess({ userId, action: "step_up_failed" });
+      if (apiCode(e).startsWith("INVALID")) return fail("ADMIN_STEP_UP_INVALID", "code");
+      log("warn", "admin_backup_verify_error", errCode(e));
+      return fail("UNKNOWN");
+    }
+    try {
+      const g = await auth.api.generateBackupCodes({ body: { password: p.data.password || undefined }, headers: h });
+      await logAdminAccess({ userId, action: "backup_codes_regenerated" });
+      return ok({ backupCodes: g.backupCodes });
+    } catch (e) {
+      if (apiCode(e) === "INVALID_PASSWORD") return fail("ADMIN_PASSWORD_REQUIRED", "password");
+      log("warn", "admin_backup_codes_error", errCode(e));
+      return fail("UNKNOWN");
+    }
+  });
+  return r ?? fail("ADMIN_STEP_UP_BUSY");
+}
+
+/** Encerra todas as outras sessões desta conta (outros aparelhos e navegadores). A atual continua. */
+export async function endOtherSessions(): Promise<ActionResult<{ ended: number }>> {
+  const { userId, sessionId } = await requireAdmin();
   try {
-    const r = await auth.api.generateBackupCodes({
-      body: { password: p.data.password || undefined },
-      headers: await headers(),
-    });
-    await logAdminAccess({ userId, action: "backup_codes_regenerated" });
-    return ok({ backupCodes: r.backupCodes });
+    const ended = await deleteOtherSessions(userId, sessionId);
+    await logAdminAccess({ userId, action: "sessions_revoked", target: String(ended) });
+    return ok({ ended });
   } catch (e) {
-    if (apiCode(e) === "INVALID_PASSWORD") return fail("ADMIN_PASSWORD_REQUIRED", "password");
-    log("warn", "admin_backup_codes_error", errCode(e));
+    log("warn", "admin_end_sessions_error", errCode(e));
     return fail("UNKNOWN");
   }
 }

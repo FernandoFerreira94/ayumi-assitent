@@ -4,6 +4,8 @@ import { Icon } from "@/components/ui/Icon";
 import { ADMIN_ACTION_LABEL, logAdminAccess, recentAdminAccess } from "@/features/admin/audit";
 import { requireAdmin } from "@/features/admin/guard";
 import { AdminShell } from "@/features/admin/ui/AdminShell";
+import { countOtherSessions } from "@/features/admin/step-up";
+import { EndSessions } from "@/features/admin/ui/EndSessions";
 import { RegenerateCodes } from "@/features/admin/ui/RegenerateCodes";
 import { adminCard } from "@/features/admin/ui/styles";
 
@@ -20,12 +22,13 @@ const when = new Intl.DateTimeFormat("pt-BR", {
 });
 
 export default async function AdminSecurityPage() {
-  const { userId } = await requireAdmin();
+  const { userId, sessionId } = await requireAdmin();
   await logAdminAccess({ userId, action: "view_security" });
-  const rows = await recentAdminAccess(50);
+  const [rows, others] = await Promise.all([recentAdminAccess(50), countOtherSessions(userId, sessionId)]);
   return (
     <AdminShell title="Segurança" subtitle="2FA e quem entrou no painel">
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-start">
+        <div className="grid gap-5">
         <section className={adminCard} aria-labelledby="sec-2fa">
           <h2 id="sec-2fa" className="flex items-center gap-2 text-lg font-bold">
             <Icon name="shield" /> 2FA
@@ -35,6 +38,13 @@ export default async function AdminSecurityPage() {
           </p>
           <RegenerateCodes />
         </section>
+        <section className={adminCard} aria-labelledby="sec-sessions">
+          <h2 id="sec-sessions" className="text-lg font-bold">
+            Aparelhos conectados
+          </h2>
+          <EndSessions others={others} />
+        </section>
+        </div>
         <section className={adminCard} aria-labelledby="sec-log">
           <h2 id="sec-log" className="text-lg font-bold">
             Últimos acessos
