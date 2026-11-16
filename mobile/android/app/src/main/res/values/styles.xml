@@ -18,5 +18,8 @@
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <!-- Android 12+: o sistema desenha o splash com esta cor (roxo do primeiro quadro do splash do app web) -->
+        <item name="windowSplashScreenBackground">#6D4AFF</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>
