@@ -17,6 +17,7 @@ Atualizado em 12/11/2026 (main em #104). Ache o módulo da task, leia a coluna "
 | Perfil, Ajustes e casca | [perfil-ajustes.md](perfil-ajustes.md) | `features/salon`, `features/tour`, `features/install`, `features/update`, `features/shell`, `features/settings`, telas `perfil`, `ajustes` (lista) e `ajustes/<secao>` | Dados do salão/pessoa, mascote/tema, IA, lista de Ajustes e seções, tour (só em Ajustes), instalar PWA, atualização e o que mudou (no Painel) | As seções de Ajustes mostram cartões de outros módulos |
 | Marca e UI | [marca-ui.md](marca-ui.md) | `components/*`, `app/globals.css` | Mascote/temas, toasts, nav (barra, menu, sino), componentes base | Toda tela; mascote também no push |
 | Painel do dono | [admin.md](admin.md) | `features/admin`, telas `admin/*` | Painel só do dono do produto: 2FA, step-up de 7 dias, registro de acesso; depois assinaturas e receita | Auth (`twoFactor`, login por senha), retenção (worker), cabeçalhos (`next.config.ts`), `proxy.ts`, privacidade |
+| Apps da loja | [apps-loja.md](apps-loja.md) | `mobile/`, `codemagic.yaml`, `features/native`, `app/.well-known` | Casca Capacitor do Android e iPhone que carrega o app web; links do domínio abrem o app | Domínio do app (`server.url`), instalar PWA (`isNativeShell`), login Google e push no app, regras de loja (sem venda no app) |
 | Plataforma | [plataforma.md](plataforma.md) | `db`, `lib`, `worker`, `proxy.ts`, `api/*`, `scripts` | Auth, estúdio/RLS, migrations, worker, deploy, backup | Tudo |
 
 ## Matriz de ligações (imports entre features)

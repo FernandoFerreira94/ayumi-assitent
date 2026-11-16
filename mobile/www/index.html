@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bubbly</title>
+<style>
+  html,body{margin:0;height:100%;background:#F8F7FC;color:#2A2140;font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif}
+  main{min-height:100%;display:grid;place-items:center;text-align:center;padding:24px;box-sizing:border-box}
+  h1{font-size:20px;margin:16px 0 8px}
+  p{font-size:16px;line-height:1.5;margin:0 0 24px;color:#5B5470}
+  button{font:inherit;font-size:16px;font-weight:600;color:#fff;background:#6D4AFF;border:0;border-radius:14px;padding:14px 28px}
+  .dot{width:72px;height:72px;border-radius:50%;margin:0 auto;background:radial-gradient(circle at 35% 30%,#fff 0 12%,#C9B8FF 40%,#8E6BFF 100%)}
+</style>
+</head>
+<body>
+<main>
+  <div>
+    <div class="dot" aria-hidden="true"></div>
+    <h1>Você está sem internet</h1>
+    <p>O Bubbly precisa de conexão para abrir.<br>Assim que voltar, toque em tentar de novo.</p>
+    <button type="button" onclick="location.replace(document.documentElement.dataset.app)">Tentar de novo</button>
+  </div>
+</main>
+<script>
+  // Endereço do app: o mesmo de server.url do capacitor.config.json
+  document.documentElement.dataset.app = "https://ayumi-assitent-production.up.railway.app";
+  addEventListener("online", function () { location.replace(document.documentElement.dataset.app); });
+</script>
+</body>
+</html>

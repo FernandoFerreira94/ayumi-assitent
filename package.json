@@ -14,7 +14,8 @@
     "db:migrate": "node scripts/migrate.mjs",
     "worker": "tsx --conditions=react-server src/worker/index.ts",
     "backup": "tsx scripts/backup.ts",
-    "icons": "tsx scripts/icons.tsx"
+    "icons": "tsx scripts/icons.tsx",
+    "icons:app": "tsx scripts/app-icons.tsx"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.7.0",
