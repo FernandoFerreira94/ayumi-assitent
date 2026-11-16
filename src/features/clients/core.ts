@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, ilike, inArray, isNull, lt, ne, or, sum } from "drizzle-orm";
+import { and, asc, between, count, desc, eq, gte, ilike, inArray, isNull, lt, ne, or, sql, sum } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { appointments, clients, messages, services } from "@/db/schema";
 import { serviceLabel } from "@/features/appointments/core";
@@ -81,6 +81,41 @@ export async function deleteClientRow(tx: Tx, id: string): Promise<ActionResult>
 }
 
 /** Resumo do cartão da cliente: próximo horário, última visita, quantas vezes veio, quanto gastou e faltas. */
+/**
+ * "Para chamar": clientes cujo retorno da última visita vence entre `from` e `to` (datas do estúdio),
+ * sem "Não precisa" e sem nenhum horário marcado daqui para frente. Mais atrasada primeiro.
+ */
+export function listDueReturns(tx: Tx, from: string, to: string, now = new Date()) {
+  return tx
+    .select({
+      appointmentId: appointments.id,
+      clientId: clients.id,
+      name: clients.name,
+      phoneE164: clients.phoneE164,
+      due: appointments.returnDueOn,
+      service: serviceLabel,
+    })
+    .from(appointments)
+    .innerJoin(clients, eq(clients.id, appointments.clientId))
+    .innerJoin(services, eq(services.id, appointments.serviceId))
+    .where(
+      and(
+        eq(appointments.status, "done"),
+        between(appointments.returnDueOn, from, to),
+        isNull(appointments.returnSkippedAt),
+        isNull(clients.anonymizedAt),
+        // é a visita concluída mais recente dela
+        sql`not exists (select 1 from appointments x where x.client_id = ${appointments.clientId}
+          and x.status = 'done' and x.starts_at > ${appointments.startsAt})`,
+        // e não tem nada marcado daqui para frente
+        sql`not exists (select 1 from appointments y where y.client_id = ${appointments.clientId}
+          and y.status <> 'cancelled' and y.starts_at > ${now.toISOString()}::timestamptz)`,
+      ),
+    )
+    .orderBy(asc(appointments.returnDueOn), asc(clients.name))
+    .limit(50);
+}
+
 /** Quantas visitas o cartão da cliente mostra no histórico. */
 export const HISTORY = 5;
 

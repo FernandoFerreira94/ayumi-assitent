@@ -109,3 +109,37 @@ test("cartão da cliente mostra o retorno previsto, o histórico e abre os horá
   await expect(ask.getByText("Atendimento concluído")).toHaveCount(0);
   await sql.end();
 });
+
+test("Para chamar lista quem passou do retorno e não marcou, com convite pronto", async ({ page, context }) => {
+  const { sql, id } = await seed(await context.cookies());
+  // Atendida há 20 dias num serviço de 15: passou 5 dias
+  const d20 = addDays(todayStr(), -20);
+  await sql`update appointments set status = 'done', starts_at = ${toInstant(d20, "10:00")},
+    ends_at = ${toInstant(d20, "11:00")}, return_due_on = ${addDays(d20, 15)} where id = ${id}`;
+  // Outra cliente com retorno vencido, mas já com horário marcado: não aparece
+  const [a] = await sql`select tenant_id, service_id from appointments where id = ${id}`;
+  const [{ id: bia }] = await sql`insert into clients (tenant_id,name,phone_e164)
+    values (${a.tenant_id},'Bia Lima','+5511987650022') returning id`;
+  await sql`insert into appointments (tenant_id,client_id,service_id,starts_at,ends_at,price_cents,status,return_due_on) values
+    (${a.tenant_id},${bia},${a.service_id},${toInstant(d20, "14:00")},${toInstant(d20, "15:00")},5000,'done',${addDays(d20, 15)}),
+    (${a.tenant_id},${bia},${a.service_id},${toInstant(addDays(todayStr(), 3), "14:00")},${toInstant(addDays(todayStr(), 3), "15:00")},5000,'confirmed',null)`;
+
+  await page.goto("/clientes");
+  const lista = page.getByRole("region", { name: "Para chamar" });
+  await expect(lista.getByText("Ana Souza")).toBeVisible();
+  await expect(lista.getByText("Unha · passou 5 dias")).toBeVisible();
+  await expect(lista.getByText("Bia Lima")).toHaveCount(0);
+
+  await expect(async () => {
+    await lista.getByRole("button", { name: "Chamar Ana Souza no WhatsApp" }).click({ timeout: 1000 });
+    await expect(page.getByRole("textbox", { name: /mensagem/i })).toBeVisible({ timeout: 1000 });
+  }).toPass();
+  await expect(page.getByRole("textbox", { name: /mensagem/i })).toHaveValue(
+    /Oi, Ana! Está chegando a hora do retorno/,
+  );
+  await page.keyboard.press("Escape");
+
+  await lista.getByRole("button", { name: "Horários para o retorno de Ana Souza" }).click();
+  await expect(page.getByRole("dialog", { name: "Marcar o retorno de Ana?" })).toBeVisible();
+  await sql.end();
+});

@@ -26,6 +26,10 @@
 - `clients/core.clientSummary` traz `history` (últimas `HISTORY` = 5 visitas concluídas + 1 para o intervalo) e `ret` (retorno da visita mais recente, se tem `return_due_on` e não tem "Não precisa"). `actions.loadClientCard` monta o texto com `returns/rules.visitHistory` ("após N dias", "1ª visita", média "volta a cada ~N dias") e só mostra o retorno se a cliente não tem próximo horário.
 - "Ver horários" fecha o cartão e abre `returns/ReturnPrompt` (sem o "Atendimento concluído"/Desfazer). O cartão agora rola (`max-h` + `overflow-y-auto`).
 
+## Para chamar (16/11)
+- Topo de `/clientes` (só sem busca): `clients/core.listDueReturns` = última visita concluída de cada cliente com `return_due_on` de hoje−30 a hoje+7, sem "Não precisa", sem horário futuro e sem anonimizada; mais atrasada primeiro (até 50). `returns/DueReturns.tsx` mostra 4 e "Ver todas".
+- Balão abre a `ChatSheet` com `initialText` (convite pronto, a dona edita e envia: nada sai sozinho). "Horários" abre o `ReturnPrompt`.
+
 ## Exclusão (LGPD, 13/11)
 - `clients/core.deleteClientRow`: sem agendamento apaga; com histórico **anonimiza** (`name = "Cliente removida"`, `phone_e164 = anon:<id>`, sem e-mail/observações, conversa apagada, `anonymized_at`). Atendimentos ficam para o financeiro.
 - `searchClients` esconde anonimizadas (lista e seletores). A porta da Evolution recusa telefone que não seja `+dígitos`, então ninguém recebe mensagem para `anon:`.
