@@ -4,7 +4,7 @@
 
 ## Arquivos
 - `mobile/`: projeto Capacitor com dependências próprias (npm, fora do pnpm, do tsconfig e do eslint da raiz).
-  - `capacitor.config.json`: `appId` **br.app.bubbly** (não muda depois de publicado), `server.url` = endereço do app (trocar para app.bubbly.app.br quando o domínio ativar), `appendUserAgent: "BubblyApp/<versão>"`, splash roxo, barras do sistema.
+  - `capacitor.config.json`: `appId` **br.app.bubbly** (não muda depois de publicado), `server.url` = **https://app.bubbly.app.br** (tem de ser o host de `BETTER_AUTH_URL`: o Google só volta para lá; `/api/native-auth/start` no endereço antigo do Railway redireciona para o oficial), `appendUserAgent: "BubblyApp/<versão>"`, splash roxo, barras do sistema.
   - `www/offline.html` (e `index.html`): tela de sem internet ao abrir; o endereço do app está repetido nela.
   - `assets/`: imagens-fonte de ícone e splash, geradas por `pnpm icons:app` (`scripts/app-icons.tsx`). Depois `npm run assets` em `mobile/` gera os tamanhos nativos.
   - `android/`, `ios/` (SPM, sem CocoaPods): projetos nativos gerados por `npx cap add`; refaça `npx cap sync` após mudar config ou plugin.

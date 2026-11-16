@@ -120,6 +120,17 @@ d("login do Google no app da loja: troca de sessão (Postgres real)", () => {
     expect(await bad.text()).toContain("br.app.bubbly://auth?error=INVALID_REQUEST");
   });
 
+  it("no endereço antigo do Railway, manda o início para o domínio oficial (o Google volta para lá)", async () => {
+    const path = `/api/native-auth/start?challenge=${core.challengeOf(VERIFIER)}`;
+    const res = await handoff.startNativeGoogle(
+      new Request(`https://ayumi-assitent-production.up.railway.app${path}`, {
+        headers: { host: "ayumi-assitent-production.up.railway.app" },
+      }),
+    );
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe(new URL(path, process.env.BETTER_AUTH_URL).toString());
+  });
+
   it("as rotas de token de uso único não existem pela rede", async () => {
     const res = await auth.handler(
       new Request("http://localhost:3000/api/auth/one-time-token/generate", { headers: { cookie: browserCookie } }),

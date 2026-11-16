@@ -1,6 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
+import { canonicalRedirect } from "@/lib/canonical-host";
 import { errCode, log } from "@/lib/log";
 import {
   CHALLENGE_COOKIE,
@@ -33,7 +34,11 @@ function cookieNames(req: Request): string[] {
 
 /** Passo 1 (navegador do sistema): guarda o challenge num cookie curto e segue para o Google. */
 export async function startNativeGoogle(req: Request): Promise<Response> {
-  const challenge = new URL(req.url).searchParams.get("challenge");
+  const url = new URL(req.url);
+  // O Google volta para o domínio oficial (BETTER_AUTH_URL): o cookie de state tem de nascer lá também
+  const canonical = canonicalRedirect(req.headers.get("x-forwarded-host") ?? req.headers.get("host"), url);
+  if (canonical) return Response.redirect(canonical, 302);
+  const challenge = url.searchParams.get("challenge");
   if (!isChallenge(challenge)) return backToApp({ error: "INVALID_REQUEST" });
   const res = await auth.api.signInSocial({
     body: { provider: "google", callbackURL: FINISH, errorCallbackURL: FINISH, disableRedirect: true },

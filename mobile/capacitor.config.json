@@ -5,7 +5,7 @@
   "backgroundColor": "#6D4AFF",
   "appendUserAgent": "BubblyApp/0.1",
   "server": {
-    "url": "https://ayumi-assitent-production.up.railway.app",
+    "url": "https://app.bubbly.app.br",
     "errorPath": "offline.html"
   },
   "android": {
