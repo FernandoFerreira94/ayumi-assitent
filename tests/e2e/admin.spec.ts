@@ -2,7 +2,6 @@ import AxeBuilder from "@axe-core/playwright";
 import { createHmac, randomUUID } from "node:crypto";
 import type { BrowserContext } from "@playwright/test";
 import postgres from "postgres";
-import { CURRENT_VERSION, SEEN_VERSION_KEY } from "../../src/features/update/changelog";
 import { expect, test } from "./fixtures";
 
 // O servidor de teste sobe com ADMIN_USER_IDS=e2e-admin (playwright.config.ts).
@@ -145,15 +144,6 @@ test("suporte: o salão escreve, o dono responde e o salão vê a resposta no Pa
   await sql`insert into memberships (user_id, tenant_id, tour_done_at) values (${uid}, ${tid}, now())`;
   await sql.end();
   const sig = createHmac("sha256", process.env.BETTER_AUTH_SECRET!).update(token).digest("base64");
-  // Sem o diálogo "App atualizado" por cima do Painel (como na fixture)
-  await salon.addInitScript(
-    ([k, v]) => {
-      try {
-        localStorage.setItem(k, v);
-      } catch {}
-    },
-    [SEEN_VERSION_KEY, CURRENT_VERSION] as const,
-  );
   await salon.addCookies([{ name: "better-auth.session_token", value: encodeURIComponent(`${token}.${sig}`), domain: "localhost", path: "/" }]);
 
   await sp.goto("/ajustes/suporte");

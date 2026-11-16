@@ -6,7 +6,7 @@ import { notify } from "@/components/feedback/toast";
 import { applyUpdate, fetchServerBuild } from "@/lib/update-check";
 
 const CURRENT = process.env.NEXT_PUBLIC_BUILD_ID ?? "";
-/** Atualização manual: só acontece quando a pessoa toca no botão. Depois de atualizar abre o Painel, que mostra o que mudou. */
+/** Atualização manual (o app já se atualiza sozinho ao abrir; isto força a conferência na hora). */
 export function UpdateButton() {
   const [busy, setBusy] = useState(false);
 
@@ -22,7 +22,7 @@ export function UpdateButton() {
       return notify.success("Você já está na versão mais recente");
     }
     notify.loading("Nova versão encontrada", "Atualizando…");
-    await applyUpdate("/agenda");
+    await applyUpdate();
   }
 
   return (
