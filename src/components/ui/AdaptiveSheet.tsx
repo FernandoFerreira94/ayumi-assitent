@@ -10,6 +10,15 @@ export type SheetSide = "bottom" | "right";
 export const SIDE_PANEL =
   "fixed inset-y-0 right-0 flex h-dvh w-[min(440px,100vw)] flex-col overflow-y-auto rounded-l-3xl px-6 pb-6 pt-[max(env(safe-area-inset-top),24px)] outline-none";
 
+/**
+ * Miolo que rola dentro da folha (a folha fica com `flex flex-col` e sem overflow).
+ * O vaul põe `touch-action: none` no [data-vaul-drawer]: se a própria folha rolar, o iPhone trava a rolagem.
+ * Num filho, a rolagem é nativa (com inércia) e o vaul ainda fecha arrastando quando o miolo está no topo.
+ * No painel lateral o padding já vem do SIDE_PANEL.
+ */
+export const SHEET_SCROLL =
+  "min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[max(env(safe-area-inset-bottom),20px)] md:px-0 md:pb-0";
+
 /** Celular: folha que sobe de baixo (como sempre). Tablet e desktop: painel à direita, que deixa a tela visível. */
 export function useSheetSide(): SheetSide {
   return useIsWide() ? "right" : "bottom";

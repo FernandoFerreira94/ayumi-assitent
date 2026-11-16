@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Drawer } from "vaul";
-import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
+import { SHEET_SCROLL, SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { notify } from "@/components/feedback/toast";
 import { Icon } from "@/components/ui/Icon";
 import type { PickerOption } from "@/components/ui/LetterPicker";
@@ -83,69 +83,71 @@ export function EditAppointmentSheet({
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
-        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
-<SidePanelClose />
-          <Drawer.Title className="pb-1 text-xl font-bold">Editar {clientName.split(/\s+/)[0]}</Drawer.Title>
-          <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
-            Mudou o horário? Ela recebe um lembrete novo para confirmar.
-          </Drawer.Description>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              submit(new FormData(e.currentTarget));
-            }}
-            className="grid gap-3"
-          >
-            <label className="grid gap-1 text-sm font-bold">
-              Serviço
-              {services ? (
-                <select name="serviceId" required defaultValue={multi ? "keep" : serviceId} className={input}>
-                  {multi ? <option value="keep">{serviceName}</option> : null}
-                  {services.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.label}
-                      {s.hint ? ` · ${s.hint}` : ""}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <div className="skel h-13 rounded-2xl" aria-label="Carregando serviços" />
-              )}
-            </label>
-            <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] gap-3">
-              <label className="grid min-w-0 gap-1 text-sm font-bold">
-                Dia
-                <input name="date" type="date" required defaultValue={date} className={pair} />
-              </label>
-              <label className="grid min-w-0 gap-1 text-sm font-bold">
-                Horário
-                <select
-                  name="time"
-                  required
-                  defaultValue={start}
-                  className={pair}
-                  aria-invalid={error === "SLOT_TAKEN"}
-                >
-                  {timeOptions({ include: start }).map((t) => (
-                    <option key={t}>{t}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            {error ? (
-              <p role="alert" className="rounded-2xl bg-fail-bg px-4 py-3 text-sm font-semibold text-fail">
-                {messageFor(error)}
-              </p>
-            ) : null}
-            <button
-              type="submit"
-              disabled={pending || !services}
-              className="btn-tint mt-1 flex min-h-13 items-center justify-center gap-2 rounded-full px-5 font-bold disabled:opacity-70"
+        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] rounded-t-3xl pt-4 outline-none", "sheet z-50 flex flex-col")}>
+          <SidePanelClose />
+          <div className={SHEET_SCROLL}>
+            <Drawer.Title className="pb-1 text-xl font-bold">Editar {clientName.split(/\s+/)[0]}</Drawer.Title>
+            <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
+              Mudou o horário? Ela recebe um lembrete novo para confirmar.
+            </Drawer.Description>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                submit(new FormData(e.currentTarget));
+              }}
+              className="grid gap-3"
             >
-              {pending ? <span className="spin" aria-hidden="true" /> : null}
-              {pending ? "Salvando…" : "Salvar"}
-            </button>
-          </form>
+              <label className="grid gap-1 text-sm font-bold">
+                Serviço
+                {services ? (
+                  <select name="serviceId" required defaultValue={multi ? "keep" : serviceId} className={input}>
+                    {multi ? <option value="keep">{serviceName}</option> : null}
+                    {services.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.label}
+                        {s.hint ? ` · ${s.hint}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="skel h-13 rounded-2xl" aria-label="Carregando serviços" />
+                )}
+              </label>
+              <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] gap-3">
+                <label className="grid min-w-0 gap-1 text-sm font-bold">
+                  Dia
+                  <input name="date" type="date" required defaultValue={date} className={pair} />
+                </label>
+                <label className="grid min-w-0 gap-1 text-sm font-bold">
+                  Horário
+                  <select
+                    name="time"
+                    required
+                    defaultValue={start}
+                    className={pair}
+                    aria-invalid={error === "SLOT_TAKEN"}
+                  >
+                    {timeOptions({ include: start }).map((t) => (
+                      <option key={t}>{t}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              {error ? (
+                <p role="alert" className="rounded-2xl bg-fail-bg px-4 py-3 text-sm font-semibold text-fail">
+                  {messageFor(error)}
+                </p>
+              ) : null}
+              <button
+                type="submit"
+                disabled={pending || !services}
+                className="btn-tint mt-1 flex min-h-13 items-center justify-center gap-2 rounded-full px-5 font-bold disabled:opacity-70"
+              >
+                {pending ? <span className="spin" aria-hidden="true" /> : null}
+                {pending ? "Salvando…" : "Salvar"}
+              </button>
+            </form>
+          </div>
         </Drawer.Content>
       </Drawer.Portal>
     </Root>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Drawer } from "vaul";
-import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
+import { SHEET_SCROLL, SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import type { CatalogService } from "./catalog";
 import { ServiceForm } from "./ServiceForm";
 
@@ -35,20 +35,22 @@ export function NewServiceSheet({
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
-<SidePanelClose />
+        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] rounded-t-3xl pt-4 outline-none", "sheet z-50 flex flex-col")}>
+          <SidePanelClose />
           <Drawer.Handle className="mb-3 md:hidden" />
-          <Drawer.Title className="pb-1 text-xl font-bold">Novo serviço</Drawer.Title>
-          <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
-            Preencha nome, duração e preço. Mudar depois vale só para os próximos agendamentos.
-          </Drawer.Description>
-          <ServiceForm
-            key={key}
-            services={services}
-            onSaved={() => setOpen(false)}
-            onDuplicate={() => undefined}
-            onDelete={() => undefined}
-          />
+          <div className={SHEET_SCROLL}>
+            <Drawer.Title className="pb-1 text-xl font-bold">Novo serviço</Drawer.Title>
+            <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
+              Preencha nome, duração e preço. Mudar depois vale só para os próximos agendamentos.
+            </Drawer.Description>
+            <ServiceForm
+              key={key}
+              services={services}
+              onSaved={() => setOpen(false)}
+              onDuplicate={() => undefined}
+              onDelete={() => undefined}
+            />
+          </div>
         </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>
