@@ -146,7 +146,7 @@ export const ICLOUD_STEPS: GuideStep[] = [
     art: <OpenCalendars />,
     text: (
       <>
-        No iPhone, abra o app <b>Calendário</b> e toque em <b>Calendários</b> (embaixo).
+        Abra o <b>Calendário</b> e toque em <b>Calendários</b>.
       </>
     ),
   },
@@ -154,8 +154,7 @@ export const ICLOUD_STEPS: GuideStep[] = [
     art: <InfoButton />,
     text: (
       <>
-        Toque no <b>(i)</b> ao lado do calendário do iCloud em que você marca as clientes. Dica: use um calendário só
-        para a agenda do salão.
+        Toque no <b>(i)</b> do calendário do salão.
       </>
     ),
   },
@@ -163,7 +162,7 @@ export const ICLOUD_STEPS: GuideStep[] = [
     art: <PublicLink />,
     text: (
       <>
-        Ligue <b>Calendário Público</b>, toque em <b>Compartilhar Link</b> › <b>Copiar</b> e cole aqui embaixo.
+        Ligue <b>Calendário Público</b> › <b>Compartilhar Link</b> › <b>Copiar</b>.
       </>
     ),
   },

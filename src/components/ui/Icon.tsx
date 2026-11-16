@@ -174,6 +174,37 @@ const PATHS = {
     </>
   ),
   plus: <path d="M12 5v14M5 12h14" />,
+  copy: (
+    <>
+      <rect x="8.5" y="8.5" width="12" height="12" rx="3" />
+      <path d="M15.5 5.5v-.5a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h.5" />
+    </>
+  ),
+  paste: (
+    <>
+      <rect x="5" y="4.5" width="14" height="17" rx="3" />
+      <path d="M9 4.5V3.8a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v.7a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1ZM9 12h6M9 16h4" />
+    </>
+  ),
+  link: (
+    <>
+      <path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1" />
+      <path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1" />
+    </>
+  ),
+  external: (
+    <>
+      <path d="M14 4h6v6M20 4l-9 9" />
+      <path d="M18 14v3.5a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 4 17.5v-9A2.5 2.5 0 0 1 6.5 6H10" />
+    </>
+  ),
+  arrowRight: <path d="M4.5 12h15M14 6.5l5.5 5.5-5.5 5.5" />,
+  lock: (
+    <>
+      <rect x="4.5" y="10.5" width="15" height="10" rx="3" />
+      <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+    </>
+  ),
   alert: (
     <>
       <circle cx="12" cy="12" r="9" />
@@ -230,14 +261,16 @@ const TILE = {
 export type Tint = keyof typeof TILE;
 
 /** Quadradinho colorido com o desenho branco dentro (título dos cartões de Ajustes). */
-export function IconTile({ name, tint }: { name: IconName; tint: Tint }) {
+export function IconTile({ name, tint, size = "md" }: { name: IconName; tint: Tint; size?: "md" | "lg" }) {
   return (
     <span
       aria-hidden="true"
-      className="grid size-8 shrink-0 place-content-center rounded-[9px] text-white shadow-[0_2px_6px_-2px_rgba(23,20,43,0.35)]"
+      className={`grid shrink-0 place-content-center text-white shadow-[0_2px_6px_-2px_rgba(23,20,43,0.35)] ${
+        size === "lg" ? "size-12 rounded-[14px]" : "size-8 rounded-[9px]"
+      }`}
       style={{ background: TILE[tint] }}
     >
-      <Icon name={name} size={18} />
+      <Icon name={name} size={size === "lg" ? 26 : 18} />
     </span>
   );
 }

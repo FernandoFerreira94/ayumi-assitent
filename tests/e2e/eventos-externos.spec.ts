@@ -55,12 +55,13 @@ test("Ajustes: o interruptor abre o passo a passo e recusa link que não é do i
   await expect(sw).not.toBeChecked();
   await sw.click();
   const sheet = page.getByRole("dialog", { name: "Calendário do iPhone" });
-  await expect(sheet.getByText("Trazer a agenda do iPhone para o app")).toBeVisible();
-  await expect(sheet.getByText("Ver os agendamentos no Calendário do iPhone")).toBeVisible();
+  await expect(sheet.getByRole("heading", { name: "Trazer a agenda do iPhone para o app" })).toBeVisible();
+  await expect(sheet.getByRole("tab", { name: "Ver no iPhone" })).toBeVisible();
   await sheet.getByLabel("Link do calendário").fill("https://exemplo.com/agenda.ics");
   await sheet.getByRole("button", { name: "Ligar", exact: true }).click();
   await expect(page.getByText(/não é um link de Calendário Público do iCloud/)).toBeVisible();
   await expect(sheet.getByLabel("Link do calendário")).toHaveAttribute("aria-invalid", "true");
+  await expect(sheet.getByText("Use o link do Compartilhar Link do iCloud.")).toBeVisible();
 });
 
 test("Calendário (mês): eventos de fora aparecem cinza todos os dias e o toque abre o dia", async ({ page, context }) => {
