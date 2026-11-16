@@ -1,12 +1,12 @@
 # Clientes (cadastro e importação)
 
-**Finalidade:** lista das clientes do estúdio com busca enquanto digita, cartão com histórico/resumo e conversa, e importação de contatos (Google Contatos ou arquivo `.vcf`/`.csv`, iCloud via vCard exportado).
+**Finalidade:** lista das clientes do estúdio com busca enquanto digita, cartão com histórico/resumo e conversa, e importação de contatos (Google Contatos, arquivo `.vcf`/`.csv`, iCloud via vCard exportado e, no app da loja, a agenda do celular).
 
 ## Arquivos
 - `features/clients/actions.ts`: `createClient`, `updateClient`, `deleteClient`, `loadClientCard`.
 - `features/clients/core.ts`: `insertClient`, `searchClients`, `updateClientRow`, `deleteClientRow`, `clientSummary`.
 - UI: `ClientRow.tsx` (cartão grande, abre conversa), `ClientSearch.tsx` (troca `?q=` sem Enter/reload), `NewClientSheet.tsx`.
-- `features/contacts/*`: `parse.ts` (vCard/CSV, dedup por telefone), `google.ts` (People API; 401/403 = reconectar), `core.markExisting`/`importClients`, `actions.previewFromFile`/`previewFromGoogle`/`importSelected`, `ImportSheet.tsx`.
+- `features/contacts/*`: `parse.ts` (vCard/CSV, dedup por telefone), `google.ts` (People API; 401/403 = reconectar), `core.markExisting`/`importClients`, `actions.previewFromFile`/`previewFromGoogle`/`previewFromDevice`/`importSelected`, `ImportSheet.tsx`. Agenda do celular: `features/native/device-contacts*` (plugin `@capacitor-community/contacts`; botão só aparece com o plugin no APK); `NewClientSheet` tem "Escolher da agenda do celular".
 - Tela: `app/(app)/clientes`.
 
 ## Dados
