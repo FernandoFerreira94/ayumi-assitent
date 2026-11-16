@@ -19,6 +19,12 @@
 - Registro: telas `view_*` não repetem a mesma linha (mesma ação e alvo) em 2 min; ações sempre gravam. Visão geral `view_overview`; uso `view_usage`; desconectar `sessions_revoked` (target = quantas); assinantes `view_subscribers` ou `view_subscriber` (target = id do salão); pagamentos `view_payments`; CSV `export_payments` (target = mês).
 - Link "Abrir no Mercado Pago": ainda não; o detalhe só mostra o id da assinatura. Entra no Bloco 2 com a URL real.
 
+## Avisos para o dono (push)
+- `alerts.ts` (plataforma, sem requireAdmin): `notifyAdmins` manda para as inscrições de push (`push_subscriptions`) de quem está em `ADMIN_USER_IDS` e apaga as vencidas; `collectDigest` junta os números de ontem (UTC-3) e confere na Evolution os salões com WhatsApp caído. Textos em `alerts-text.ts` (sem nome de salão/pessoa: o push passa pela Apple/Google).
+- Cadastro novo: `lib/auth.ts` (hook `user.create.after`, depois do commit) chama `alertSignup()` sem esperar; falha não afeta o cadastro.
+- Resumo da manhã: fila `admin-digest` no worker, 09:00 BRT. **Precisa de `ADMIN_USER_IDS` também no serviço do worker** e do push ligado no celular do dono (no app, com a conta dele).
+- Futuro: aviso de pagamento recusado / cobrança parada entra quando a cobrança chegar (mesmo `notifyAdmins`).
+
 ## Tabelas (migration `0041_admin_access.sql`, sem GRANT para `app_user`)
 - `user."twoFactorEnabled"` e `"twoFactor"` (plugin do Better Auth; segredo e códigos cifrados pelo próprio plugin com o `BETTER_AUTH_SECRET`). Apagar o usuário apaga o 2FA (cascade).
 - `admin_step_up(session_id → session.id ON DELETE CASCADE, user_id, verified_at)`: logout apaga a verificação.

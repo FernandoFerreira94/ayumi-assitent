@@ -9,6 +9,20 @@ import { isEmailAllowed } from "./allowed-emails";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
+async function alertSignup() {
+  try {
+    const [{ pushFromEnv }, { notifyAdmins }, { signupAlert }] = await Promise.all([
+      import("@/features/push/webpush"),
+      import("@/features/admin/alerts"),
+      import("@/features/admin/alerts-text"),
+    ]);
+    const push = pushFromEnv();
+    if (push) await notifyAdmins(push, signupAlert());
+  } catch {
+    // aviso é extra: falhar aqui não pode afetar o primeiro acesso
+  }
+}
+
 export const auth = betterAuth({
   database: pool,
   baseURL: process.env.BETTER_AUTH_URL,
@@ -69,6 +83,8 @@ export const auth = betterAuth({
               t.rows[0].id,
             ]);
             await client.query("commit");
+            // Aviso no celular do dono do produto (sem nome: o texto passa pela Apple/Google). Nunca derruba o cadastro.
+            void alertSignup();
           } catch (e) {
             await client.query("rollback");
             throw e;
