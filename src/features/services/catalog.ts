@@ -14,6 +14,10 @@ export type ServiceColor = keyof typeof SERVICE_COLORS;
 /** Intervalo depois do serviço, para limpar e preparar. */
 export const BUFFER_OPTIONS = [0, 10, 15, 30] as const;
 
+/** Atalhos do "Retorno sugerido"; qualquer valor de 1 a 365 vale pelo "Outro". */
+export const RETURN_OPTIONS = [7, 15, 21, 30, 45, 60] as const;
+export const RETURN_MAX_DAYS = 365;
+
 export type CatalogService = {
   id: string;
   name: string;
@@ -25,6 +29,8 @@ export type CatalogService = {
   notes: string | null;
   bookable: boolean;
   showInSlots: boolean;
+  /** retorno aproximado em dias; null = sem retorno */
+  returnDays: number | null;
   /** atendimentos marcados daqui para frente (avisados ao excluir) */
   upcoming: number;
 };

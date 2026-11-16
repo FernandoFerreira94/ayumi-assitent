@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
-import { searchClients } from "@/features/clients/core";
+import { listDueReturns, searchClients } from "@/features/clients/core";
+import { DueReturns, type DueReturn } from "@/features/returns/DueReturns";
+import { daysBetween } from "@/features/returns/rules";
+import { addDays, formatShortDate, todayStr } from "@/lib/dates";
 import { ImportSheet } from "@/features/contacts/ImportSheet";
 import { NewClientSheet } from "@/features/clients/NewClientSheet";
 import { ClientRow } from "@/features/clients/ClientRow";
@@ -17,7 +20,21 @@ export default async function ClientesPage({ searchParams }: PageProps<"/cliente
   const { q: raw } = await searchParams;
   const q = typeof raw === "string" ? raw : "";
   const { tenantId } = await requireTenant();
-  const list = await withTenant(tenantId, (tx) => searchClients(tx, q));
+  const today = todayStr();
+  const { list, due } = await withTenant(tenantId, async (tx) => ({
+    list: await searchClients(tx, q),
+    // na busca, só a lista: "Para chamar" é para quem abre Clientes sem procurar ninguém
+    due: q ? [] : await listDueReturns(tx, addDays(today, -30), addDays(today, 7)),
+  }));
+  const dueItems: DueReturn[] = due.map((r) => ({
+    appointmentId: r.appointmentId,
+    clientId: r.clientId,
+    name: r.name,
+    phone: maskPhone(r.phoneE164.replace(/^\+55/, "")),
+    service: r.service,
+    dayLabel: formatShortDate(r.due!),
+    lateDays: daysBetween(r.due!, today),
+  }));
 
   return (
     <PageShell title="Clientes">
@@ -26,6 +43,7 @@ export default async function ClientesPage({ searchParams }: PageProps<"/cliente
         <ImportSheet />
         <NewClientSheet />
       </div>
+      <DueReturns items={dueItems} />
       {list.length === 0 ? (
         q ? (
           <EmptyState

@@ -6,7 +6,15 @@ import { notify } from "@/components/feedback/toast";
 import type { ActionResult } from "@/lib/errors";
 import { maskMoney } from "@/lib/money";
 import { saveService } from "./actions";
-import { BUFFER_OPTIONS, formatDuration, nameTaken, SERVICE_COLORS, type CatalogService } from "./catalog";
+import {
+  BUFFER_OPTIONS,
+  formatDuration,
+  nameTaken,
+  RETURN_MAX_DAYS,
+  RETURN_OPTIONS,
+  SERVICE_COLORS,
+  type CatalogService,
+} from "./catalog";
 
 const label = "grid gap-1.5 text-xs font-bold uppercase tracking-wide text-muted";
 const field =
@@ -26,6 +34,7 @@ const blank = (preset: Partial<Draft>): Draft => ({
   notes: null,
   bookable: true,
   showInSlots: true,
+  returnDays: null,
   ...preset,
 });
 
@@ -57,6 +66,10 @@ export function ServiceForm({
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setD((x) => ({ ...x, [k]: v }));
   const [local, setLocal] = useState<{ field: string; text: string } | null>(null);
   const [askDelete, setAskDelete] = useState(false);
+  // "Outro" aberto: valor fora dos atalhos (ou a dona tocou em Outro)
+  const [otherReturn, setOtherReturn] = useState(
+    () => d.returnDays !== null && !(RETURN_OPTIONS as readonly number[]).includes(d.returnDays),
+  );
 
   const [state, action] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
     const res = await saveService(prev, fd);
@@ -87,7 +100,9 @@ export function ServiceForm({
           ? { field: "name", text: `Já existe "${name}" na lista.` }
           : !d.price.trim()
             ? { field: "price", text: "Digite o preço. Use 0 se for cortesia." }
-            : null;
+            : otherReturn && d.returnDays === null
+              ? { field: "returnDaysOther", text: `Digite de 1 a ${RETURN_MAX_DAYS} dias, ou escolha "Sem retorno".` }
+              : null;
     setLocal(err);
     if (err) {
       e.preventDefault();
@@ -98,6 +113,7 @@ export function ServiceForm({
   const end = 14 * 60 + d.durationMin;
   const nameError = errorFor("name");
   const priceError = errorFor("price");
+  const returnError = errorFor("returnDays") ?? errorFor("returnDaysOther");
 
   return (
     <form action={action} onSubmit={check} noValidate className="grid gap-4">
@@ -105,6 +121,7 @@ export function ServiceForm({
       <input type="hidden" name="durationMin" value={d.durationMin} />
       <input type="hidden" name="bufferMin" value={d.bufferMin} />
       <input type="hidden" name="color" value={d.color} />
+      <input type="hidden" name="returnDays" value={d.returnDays ?? ""} />
       {(["priceFrom", "bookable", "showInSlots"] as const).map((k) =>
         d[k] ? <input key={k} type="hidden" name={k} value="on" /> : null,
       )}
@@ -213,6 +230,79 @@ export function ServiceForm({
         </div>
         <span className="text-xs font-semibold normal-case tracking-normal">
           O calendário bloqueia esse tempo para limpar e preparar.
+        </span>
+      </div>
+
+      <div className={label}>
+        <span id="svc-return">Retorno sugerido</span>
+        <div role="group" aria-labelledby="svc-return" className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            aria-pressed={d.returnDays === null && !otherReturn}
+            onClick={() => {
+              setOtherReturn(false);
+              set("returnDays", null);
+            }}
+            className={`${pill} ${pressed}`}
+          >
+            Sem retorno
+          </button>
+          {RETURN_OPTIONS.map((n) => (
+            <button
+              key={n}
+              type="button"
+              aria-pressed={!otherReturn && d.returnDays === n}
+              onClick={() => {
+                setOtherReturn(false);
+                set("returnDays", n);
+              }}
+              className={`${pill} ${pressed}`}
+            >
+              {n} dias
+            </button>
+          ))}
+          <button
+            type="button"
+            aria-pressed={otherReturn}
+            onClick={() => setOtherReturn(true)}
+            className={`${pill} ${pressed}`}
+          >
+            Outro
+          </button>
+        </div>
+        {otherReturn ? (
+          <label className="flex items-center gap-2 normal-case tracking-normal">
+            <input
+              name="returnDaysOther"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={RETURN_MAX_DAYS}
+              placeholder="Ex.: 25"
+              aria-label="Dias até o retorno"
+              aria-invalid={Boolean(returnError)}
+              aria-describedby={returnError ? "svc-return-err" : undefined}
+              value={d.returnDays ?? ""}
+              onChange={(e) => {
+                const n = Number.parseInt(e.target.value, 10);
+                set("returnDays", Number.isFinite(n) && n >= 1 && n <= RETURN_MAX_DAYS ? n : null);
+              }}
+              className={`${field} max-w-28`}
+            />
+            <span className="text-sm font-semibold">dias</span>
+          </label>
+        ) : null}
+        {returnError ? (
+          <span
+            id="svc-return-err"
+            role="alert"
+            className="text-xs font-semibold normal-case tracking-normal text-fail"
+          >
+            {returnError}
+          </span>
+        ) : null}
+        <span className="text-xs font-semibold normal-case tracking-normal">
+          Ao concluir, o app sugere marcar a volta da cliente perto dessa data.
         </span>
       </div>
 

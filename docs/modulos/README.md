@@ -8,6 +8,7 @@ Atualizado em 12/11/2026 (main em #104). Ache o módulo da task, leia a coluna "
 | Clientes | [clientes.md](clientes.md) | `features/clients`, `features/contacts`, tela `clientes` | Cadastro, busca, cartão da cliente, importar contatos | Agenda (cliente do agendamento), WhatsApp (telefone/conversa), Google Contatos |
 | Serviços | [servicos.md](servicos.md) | `features/services`, tela `servicos` | Catálogo: valor, duração, cor, ordem, pausar | Agenda (preço/duração), vagas (duração), financeiro (pizza), cores `--svc-*` |
 | Vagas e expediente | [vagas.md](vagas.md) | `features/hours`, tela `vagas`, Ajustes > Expediente | Expediente/pausa por dia, horários livres, texto para divulgar | Agenda e bloqueios (ocupado), Google importado, avisos do dia (folga/fim do expediente) |
+| Retorno da cliente | [agenda.md](agenda.md) (seção Retorno) e [servicos.md](servicos.md) | `features/returns` | Retorno aproximado por serviço, data prevista ao concluir, pergunta "Marcar o retorno?" com vagas | Serviços (`return_days`), agenda (`setStatus`), vagas (`freeSlots`), QuickBook |
 | Financeiro | [financeiro.md](financeiro.md) | `features/finance`, tela `financeiro` | Previsto/recebido por período, despesas, pizza por serviço | Agenda (valores, desconto, status), serviços |
 | WhatsApp e conversas | [whatsapp.md](whatsapp.md) | `features/messaging`, `features/whatsapp`, `features/notifications`, `api/whatsapp/webhook` | Conectar número (Evolution), receber/enviar, IA lê respostas, sino | Lembretes, agenda (status muda), push, Ajustes |
 | Lembretes | [lembretes.md](lembretes.md) | `features/reminders`, worker | 1º/2º aviso, "não respondeu", textos editáveis | WhatsApp (porta de envio), push, agenda (status), worker |
@@ -16,7 +17,8 @@ Atualizado em 12/11/2026 (main em #104). Ache o módulo da task, leia a coluna "
 | Calendário do iPhone | [calendario-iphone.md](calendario-iphone.md) | `features/calendar-feed`, rota `api/calendar/[token]` | Link assinado (webcal/ICS) com os agendamentos e leitura do calendário público do iCloud (eventos cinza, "Transformar em agendamento") | Agenda (bloqueios `icloud`, `fromBlockId`), Google (dedup), Vagas (ocupado), Ajustes > Calendários |
 | Perfil, Ajustes e casca | [perfil-ajustes.md](perfil-ajustes.md) | `features/salon`, `features/tour`, `features/install`, `features/update`, `features/shell`, `features/settings`, telas `perfil`, `ajustes` (lista) e `ajustes/<secao>` | Dados do salão/pessoa, mascote/tema, IA, lista de Ajustes e seções, tour (só em Ajustes), instalar PWA, atualização e o que mudou (no Painel) | As seções de Ajustes mostram cartões de outros módulos |
 | Marca e UI | [marca-ui.md](marca-ui.md) | `components/*`, `app/globals.css` | Mascote/temas, toasts, nav (barra, menu, sino), componentes base | Toda tela; mascote também no push |
-| Painel do dono | [admin.md](admin.md) | `features/admin`, telas `admin/*` | Painel só do dono do produto: 2FA, step-up de 7 dias, registro de acesso; depois assinaturas e receita | Auth (`twoFactor`, login por senha), retenção (worker), cabeçalhos (`next.config.ts`), `proxy.ts`, privacidade |
+| Painel do dono | [admin.md](admin.md) | `features/admin`, telas `admin/*` | Painel só do dono do produto: 2FA, step-up de 7 dias, registro de acesso; visão geral, assinantes e pagamentos (dados de exemplo até a cobrança chegar) | Auth (`twoFactor`, login por senha), retenção (worker), cabeçalhos (`next.config.ts`), `proxy.ts`, privacidade |
+| Suporte e avisos do dono | [suporte.md](suporte.md) | `features/support`, telas `ajustes/suporte`, `admin/suporte`, `admin/avisos` | Conversa salão ↔ dono, avisos do dono no Painel de todos os salões | Painel (cartões no topo), Ajustes (linha Ajuda), admin (menu, registro), push (`notifyAdmins`, `sendToAll`) |
 | Apps da loja | [apps-loja.md](apps-loja.md) | `mobile/`, `codemagic.yaml`, `features/native`, `app/.well-known` | Casca Capacitor do Android e iPhone que carrega o app web; links do domínio abrem o app | Domínio do app (`server.url`), instalar PWA (`isNativeShell`), login Google e push no app, regras de loja (sem venda no app) |
 | Plataforma | [plataforma.md](plataforma.md) | `db`, `lib`, `worker`, `proxy.ts`, `api/*`, `scripts` | Auth, estúdio/RLS, migrations, worker, deploy, backup | Tudo |
 
@@ -31,6 +33,7 @@ Gerada por varredura de `@/features/*`. "Usa" = depende de; "Usado por" = quem q
 | calendar | appointments, hours | appointments | appointments |
 | clients | appointments, messaging | appointments | clients, appointments |
 | contacts | google | — | clients |
+| returns | appointments, blocks, hours | appointments (AppointmentCard, setStatus) | appointments (return_due_on, return_skipped_at), services (return_days) |
 | finance | appointments | — | appointments, expenses |
 | google | appointments | appointments, contacts, shell | tenants, appointments, blocks, clients |
 | calendar-feed | appointments | ajustes, appointments (DaySchedule), vagas | tenants (calendar_token_hash, calendar_hide_names, icloud_calendar_url), appointments, blocks (source icloud, external_uid, converted_at), clients, services |
@@ -44,6 +47,7 @@ Gerada por varredura de `@/features/*`. "Usa" = depende de; "Usado por" = quem q
 | services | — | appointments, hours | services, service_categories |
 | shell | appointments, google, messaging, whatsapp | nav, ajustes | — |
 | tour / install / update | — | layout, ajustes, login | — |
+| support | admin (guard, audit, alerts), push | telas agenda, ajustes, admin | support_messages, platform_notices, platform_notice_dismissals |
 | whatsapp | messaging | appointments, shell | tenants (instância) |
 
 ## Fluxos que cruzam módulos
