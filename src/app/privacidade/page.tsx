@@ -136,6 +136,11 @@ export default function PrivacidadePage() {
           <li>Autoridades, apenas quando a lei exigir.</li>
         </ul>
         <p>
+          A equipe do Bubbly vê, num painel interno protegido por senha e segundo fator, só o nome do salão, o nome e o
+          e-mail da dona da conta e o histórico da assinatura (plano, valor, pagamentos e cancelamentos), para gerir as
+          assinaturas. Esse painel não mostra clientes, agenda nem mensagens, e cada acesso a ele fica registrado.
+        </p>
+        <p>
           Alguns desses serviços ficam fora do Brasil. Nesses casos a transferência segue as regras da LGPD (art. 33).
         </p>
       </LegalSection>

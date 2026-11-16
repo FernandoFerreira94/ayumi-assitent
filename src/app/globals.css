@@ -2626,3 +2626,45 @@ textarea {
     filter: brightness(0.97);
   }
 }
+
+/* Passo a passo ilustrado (StepGuide): um passo por encaixe, sem barra de rolagem */
+.guide-scroll {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  border-radius: 1.5rem;
+}
+.guide-scroll::-webkit-scrollbar {
+  display: none;
+}
+.guide-slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+/* Anel que pulsa no ponto onde tocar: guia o olho para o alvo do passo */
+.guide-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: guide-pulse 1.8s var(--ease) infinite;
+}
+@keyframes guide-pulse {
+  0% {
+    opacity: 0.55;
+    transform: scale(0.9);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .guide-pulse {
+    animation: none;
+    opacity: 0;
+  }
+}

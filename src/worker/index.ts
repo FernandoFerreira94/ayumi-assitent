@@ -5,6 +5,9 @@ import { runReminders } from "@/features/reminders/run";
 import { pushFromEnv } from "@/features/push/webpush";
 import { runOwnerNotices } from "@/features/owner-notices/run";
 import { runRetention } from "@/features/retention/run";
+import { collectDigest, notifyAdmins } from "@/features/admin/alerts";
+import { digestAlert } from "@/features/admin/alerts-text";
+import { adminIds } from "@/features/admin/access";
 import { log as jlog, errCode } from "@/lib/log";
 import { adminFromEnv } from "@/features/messaging/evolution-admin";
 import { ensureWebhook } from "@/features/whatsapp/webhook";
@@ -16,6 +19,7 @@ const QUEUE = "send-reminders";
 const PUSH_QUEUE = "push-pendencias";
 const NOTICES_QUEUE = "owner-notices";
 const RETENTION_QUEUE = "retention";
+const ADMIN_DIGEST_QUEUE = "admin-digest";
 const log = ({
   level,
   msg,
@@ -60,6 +64,18 @@ async function main() {
   await boss.work(RETENTION_QUEUE, async () => {
     const r = await runRetention();
     log({ level: "info", msg: "retention_run", ...r });
+  });
+  // Resumo da manhã para o dono do produto (uso de ontem e salões com WhatsApp caído). Precisa de
+  // ADMIN_USER_IDS também no serviço do worker e do push ligado no celular do dono.
+  await boss.createQueue(ADMIN_DIGEST_QUEUE);
+  await boss.schedule(ADMIN_DIGEST_QUEUE, "0 12 * * *"); // 09:00 BRT
+  await boss.work(ADMIN_DIGEST_QUEUE, async () => {
+    const push = pushFromEnv();
+    if (!push || !adminIds().length)
+      return log({ level: "warn", msg: "admin_digest_skipped", reason: push ? "ADMIN_USER_IDS vazio" : "VAPID não configurado" });
+    const d = await collectDigest(new Date(), adminFromEnv());
+    const r = await notifyAdmins(push, digestAlert(d));
+    log({ level: r.failed ? "warn" : "info", msg: "admin_digest_run", ...r });
   });
   // O resumo diário de pendências saiu: a dona só quer saber de confirmou, cancelar, remarcar e não respondeu
   await boss.unschedule(PUSH_QUEUE).catch(() => undefined);

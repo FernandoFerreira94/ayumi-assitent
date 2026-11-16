@@ -1,0 +1,34 @@
+{
+  "appId": "br.app.bubbly",
+  "appName": "Bubbly",
+  "webDir": "www",
+  "backgroundColor": "#6D4AFF",
+  "appendUserAgent": "BubblyApp/0.1",
+  "server": {
+    "url": "https://ayumi-assitent-production.up.railway.app",
+    "errorPath": "offline.html"
+  },
+  "android": {
+    "allowMixedContent": false
+  },
+  "ios": {
+    "contentInset": "never"
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "initialViewportFitValueHint": "cover",
+      "style": "DARK"
+    },
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "launchAutoHide": true,
+      "backgroundColor": "#6D4AFF",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP"
+    },
+    "StatusBar": {
+      "style": "DARK"
+    }
+  }
+}

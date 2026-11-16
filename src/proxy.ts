@@ -24,6 +24,11 @@ export function proxy(request: NextRequest) {
     }
     return res;
   }
+  // Painel do dono: sem login, a rota nem existe (404, sem mandar para o login). Quem está logado e não é admin
+  // recebe o 404 do requireAdmin na própria página.
+  if (!logged && (pathname === "/admin" || pathname.startsWith("/admin/"))) {
+    return NextResponse.rewrite(new URL("/_admin-nao-existe", request.url));
+  }
   if (!logged && !pathname.startsWith("/login")) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
@@ -35,6 +40,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|icons|manifest.webmanifest|sw.js|offline|icon.png|apple-icon.png|og.png).*)",
+    "/((?!api|\\.well-known|_next/static|_next/image|icons|manifest.webmanifest|sw.js|offline|icon.png|apple-icon.png|og.png).*)",
   ],
 };

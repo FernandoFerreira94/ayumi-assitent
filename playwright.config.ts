@@ -46,7 +46,7 @@ export default defineConfig({
     url: "http://localhost:3100/login",
     // e-mails liberados para os testes de cadastro
     // DATABASE_URL do processo vence o .env.local: o servidor de teste usa o mesmo banco _test dos testes
-    env: { ALLOWED_EMAILS: "novo@e2e.test", DATABASE_URL: process.env.DATABASE_URL ?? "" },
+    env: { ALLOWED_EMAILS: "novo@e2e.test", ADMIN_USER_IDS: "e2e-admin", DATABASE_URL: process.env.DATABASE_URL ?? "" },
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
   },

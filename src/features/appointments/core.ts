@@ -2,7 +2,8 @@ import { and, asc, eq, gte, inArray, lt, ne, sql } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { appointmentServices, appointments, clients, services } from "@/db/schema";
 import { lockTenant, overlapsBlock } from "@/features/blocks/core";
-import { toInstant } from "@/lib/dates";
+import { returnDue } from "@/features/returns/rules";
+import { toInstant, todayStr } from "@/lib/dates";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { applyDiscount, type Discount } from "./pricing";
 import type { Status } from "./schema";
@@ -122,10 +123,39 @@ export async function insertAppointment(
   }
 }
 
+/**
+ * Data prevista do retorno de um atendimento: o menor retorno entre os serviços dele (os de
+ * `appointment_services` e o principal), contado do dia do atendimento no fuso do estúdio.
+ */
+async function returnDueFor(tx: Tx, id: string): Promise<string | null> {
+  const [row] = await tx
+    .select({ startsAt: appointments.startsAt, serviceId: appointments.serviceId })
+    .from(appointments)
+    .where(eq(appointments.id, id));
+  if (!row) return null;
+  const list = await tx
+    .select({ returnDays: services.returnDays })
+    .from(services)
+    .where(
+      sql`${services.id} = ${row.serviceId} or ${services.id} in (select ${appointmentServices.serviceId} from ${appointmentServices} where ${appointmentServices.appointmentId} = ${id})`,
+    );
+  return returnDue(todayStr(row.startsAt), list);
+}
+
+/**
+ * Muda o status. Concluir grava a data prevista do retorno (se algum serviço tem retorno);
+ * qualquer outro status (inclusive o Desfazer) limpa a data e o "Não precisa".
+ */
 export async function setStatus(tx: Tx, id: string, status: Status): Promise<ActionResult> {
   try {
+    const returnFields =
+      status === "done" ? { returnDueOn: await returnDueFor(tx, id) } : { returnDueOn: null, returnSkippedAt: null };
     const rows = await tx.transaction((sp) =>
-      sp.update(appointments).set({ status }).where(eq(appointments.id, id)).returning({ id: appointments.id }),
+      sp
+        .update(appointments)
+        .set({ status, ...returnFields })
+        .where(eq(appointments.id, id))
+        .returning({ id: appointments.id }),
     );
     return rows.length ? ok() : fail("NOT_ALLOWED");
   } catch (e) {

@@ -1,10 +1,28 @@
 import "server-only";
 import { APIError, betterAuth } from "better-auth";
+import { createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
+import { oneTimeToken } from "better-auth/plugins/one-time-token";
+import { twoFactor } from "better-auth/plugins/two-factor";
 import { Pool } from "pg";
+import { isPlatformAdmin } from "@/features/admin/access";
 import { isEmailAllowed } from "./allowed-emails";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+async function alertSignup() {
+  try {
+    const [{ pushFromEnv }, { notifyAdmins }, { signupAlert }] = await Promise.all([
+      import("@/features/push/webpush"),
+      import("@/features/admin/alerts"),
+      import("@/features/admin/alerts-text"),
+    ]);
+    const push = pushFromEnv();
+    if (push) await notifyAdmins(push, signupAlert());
+  } catch {
+    // aviso é extra: falhar aqui não pode afetar o primeiro acesso
+  }
+}
 
 export const auth = betterAuth({
   database: pool,
@@ -66,6 +84,8 @@ export const auth = betterAuth({
               t.rows[0].id,
             ]);
             await client.query("commit");
+            // Aviso no celular do dono do produto (sem nome: o texto passa pela Apple/Google). Nunca derruba o cadastro.
+            void alertSignup();
           } catch (e) {
             await client.query("rollback");
             throw e;
@@ -76,5 +96,33 @@ export const auth = betterAuth({
       },
     },
   },
-  plugins: [nextCookies()],
+  // 2FA só existe para o painel do dono (ADMIN_USER_IDS). Sem sessão, só as rotas de conferir o código do login por
+  // senha ficam abertas (quem chega nelas já passou pela senha e tem o cookie de 2FA assinado).
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      // Token de uso único só existe para o login do app da loja (features/native/handoff.ts), chamado pelo servidor.
+      // Pela rede essas rotas não existem: o token nunca sai do servidor.
+      if (ctx.path.startsWith("/one-time-token/")) {
+        if (ctx.request) throw new APIError("NOT_FOUND");
+        return;
+      }
+      if (!ctx.path.startsWith("/two-factor/")) return;
+      const session = await getSessionFromCtx(ctx);
+      if (session) {
+        if (!isPlatformAdmin(session.user.id)) throw new APIError("NOT_FOUND");
+        return;
+      }
+      if (ctx.path !== "/two-factor/verify-totp" && ctx.path !== "/two-factor/verify-backup-code") {
+        throw new APIError("UNAUTHORIZED");
+      }
+    }),
+  },
+  plugins: [
+    // Painel do dono: TOTP no app autenticador + 10 códigos de recuperação. Quem entrou pelo Google não tem senha,
+    // por isso allowPasswordless (quem tem senha continua tendo que digitá-la para ativar ou gerar códigos).
+    twoFactor({ issuer: "Bubbly Admin", allowPasswordless: true }),
+    // Login do Google no app da loja: a sessão do navegador do sistema passa para a WebView (features/native)
+    oneTimeToken({ disableClientRequest: true, expiresIn: 3, storeToken: "hashed" }),
+    nextCookies(),
+  ],
 });

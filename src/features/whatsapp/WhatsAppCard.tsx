@@ -1,15 +1,23 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useSyncExternalStore, useTransition } from "react";
 import { notify } from "@/components/feedback/toast";
 import { maskPhone } from "@/lib/phone";
 import { QrImage } from "./QrImage";
 import { disconnectWhatsapp, startWhatsappPairing, whatsappStatus } from "./actions";
 import { TileTitle } from "@/components/ui/Icon";
+import { StepGuide } from "@/components/ui/StepGuide";
 import { Switch } from "@/components/ui/Switch";
+import { detectPlatform } from "@/features/install/platform";
+import { pairingSteps, type PhoneOs } from "./pairing-guide";
 
 type View = "connected" | "disconnected" | "pairing" | "unavailable";
+
+/** O sistema do aparelho não muda com a página aberta: nada a assinar. No servidor vale iPhone. */
+const noSubscribe = () => () => {};
+const detectOs = (): PhoneOs =>
+  detectPlatform(navigator.userAgent, navigator.maxTouchPoints) === "android" ? "android" : "ios";
 
 const POLL_MS = 3000;
 const POLL_MAX = 60; // ~3 minutos
@@ -36,6 +44,10 @@ export function WhatsAppCard({
   const [expired, setExpired] = useState(false);
   /** Interruptor ligado antes de conectar: mostra o campo do número e o botão que gera o código. */
   const [wantsOn, setWantsOn] = useState(false);
+  /** Sistema do celular do WhatsApp: vem do aparelho em uso, mas dá para trocar (o WhatsApp do estúdio pode estar em outro). */
+  const [picked, setOs] = useState<PhoneOs | null>(null);
+  const detected = useSyncExternalStore(noSubscribe, detectOs, () => "ios" as const);
+  const os = picked ?? detected;
 
   // Já conectado ao abrir: confere uma vez em silêncio. whatsappStatus religa o webhook se faltar (número
   // conectado antes de existir o webhook), para as respostas das clientes chegarem ao app.
@@ -168,11 +180,32 @@ export function WhatsAppCard({
         >
           Copiar código
         </button>
-        <ol className="list-decimal pl-5 text-sm font-semibold text-muted">
-          <li>Abra o WhatsApp deste número.</li>
-          <li>Toque em Configurações &gt; Aparelhos conectados &gt; Conectar um aparelho.</li>
-          <li>Escaneie o QR code ou escolha &quot;Conectar com número de telefone&quot; e digite o código.</li>
-        </ol>
+        <div
+          className="grid grid-cols-2 gap-1 rounded-full bg-soft p-1"
+          role="radiogroup"
+          aria-label="Celular do WhatsApp"
+        >
+          {(
+            [
+              ["ios", "iPhone"],
+              ["android", "Android"],
+            ] as const
+          ).map(([value, name]) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={os === value}
+              onClick={() => setOs(value)}
+              className={`min-h-10 rounded-full text-sm font-bold transition-colors ${
+                os === value ? "bg-surface text-primary-text shadow-sm" : "text-muted"
+              }`}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+        <StepGuide key={os} steps={pairingSteps(code, os)} label="Como conectar o WhatsApp" />
         <p className="text-sm font-semibold text-muted">Aguardando a conexão…</p>
         <button type="button" className={btn} onClick={() => setView("disconnected")}>
           Cancelar

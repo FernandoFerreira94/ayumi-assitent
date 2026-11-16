@@ -1,0 +1,25 @@
+{
+  "name": "bubbly-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Casca nativa (Capacitor) do Bubbly para Google Play e App Store. Carrega o app web publicado.",
+  "scripts": {
+    "sync": "cap sync",
+    "assets": "capacitor-assets generate --assetPath assets --iconBackgroundColor #EDE7FF --splashBackgroundColor #6D4AFF --splashBackgroundColorDark #6D4AFF",
+    "android:debug": "cap sync android && cd android && gradlew.bat assembleDebug",
+    "open:android": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.6.2",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/browser": "8.0.5",
+    "@capacitor/core": "8.6.2",
+    "@capacitor/ios": "8.6.2",
+    "@capacitor/splash-screen": "8.0.2",
+    "@capacitor/status-bar": "8.0.4"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "4.0.0",
+    "@capacitor/cli": "8.6.2"
+  }
+}

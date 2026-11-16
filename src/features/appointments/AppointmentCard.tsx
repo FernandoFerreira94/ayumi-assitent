@@ -5,6 +5,7 @@ import { notify } from "@/components/feedback/toast";
 import { Icon } from "@/components/ui/Icon";
 import type { SyncResult } from "@/features/google/sync";
 import { CHAT_BUTTON, ChatGlyph, ChatSheet } from "@/features/messaging/ChatSheet";
+import { cancelReturnPrompt, openReturnPrompt } from "@/features/returns/ReturnPrompt";
 import type { ActionResult } from "@/lib/errors";
 import { updateStatus } from "./actions";
 import { EditAppointmentSheet } from "./EditAppointmentSheet";
@@ -74,7 +75,13 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
       // Cancelar, Faltou e Concluir valem na hora e trazem Desfazer (6 s), sem pedir segundo toque
       if (undoTo && UNDO_TEXT[next]) {
         onSettled?.();
-        notify.undoable(UNDO_TEXT[next], () => change(undoTo), undefined, next === "done" ? "success" : "warning");
+        const undo = () => {
+          cancelReturnPrompt(id);
+          change(undoTo);
+        };
+        const toastId = notify.undoable(UNDO_TEXT[next], undo, undefined, next === "done" ? "success" : "warning");
+        // Concluiu: pergunta se já marca o retorno (só abre se o serviço tem retorno)
+        if (next === "done") openReturnPrompt({ appointmentId: id, undo, toastId });
       } else {
         notify.success(LABEL[next]);
       }
