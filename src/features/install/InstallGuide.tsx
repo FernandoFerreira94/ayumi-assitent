@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Drawer } from "vaul";
-import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
+import { SHEET_SCROLL, SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { notify } from "@/components/feedback/toast";
 import { Mascot } from "@/components/brand/Mascot";
 import { Icon } from "@/components/ui/Icon";
@@ -76,57 +76,59 @@ export function InstallSheet({
       {children}
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-h-[85dvh] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
-<SidePanelClose />
-          <Mascot mood="happy" size={72} className="mx-auto" />
-          <Drawer.Title className="pt-2 text-center text-xl font-bold">Instalar na tela de início</Drawer.Title>
-          <Drawer.Description className="pb-4 text-center text-sm font-semibold text-muted">
-            {platform === "other"
-              ? "Abra este endereço no celular e siga os passos."
-              : "Fica como um app: abre direto na agenda, em tela cheia."}
-          </Drawer.Description>
-          <div className="grid gap-4">
-            {canPrompt ? (
-              <button
-                type="button"
-                onClick={() => {
-                  void prompt();
-                  onOpenChange?.(false);
-                }}
-                className="flex min-h-12 bg-primary text-on-primary items-center justify-center gap-2 rounded-full px-5 font-bold"
-              >
-                <Icon name="download" size={20} />
-                Instalar agora
-              </button>
-            ) : null}
-            {guides.map((g) => (
-              <section key={g} aria-label={STEPS[g].title} className="grid gap-2">
-                {guides.length > 1 ? (
-                  <h3 className="px-1 text-sm font-bold uppercase tracking-wide text-muted">{STEPS[g].title}</h3>
-                ) : null}
-                <ol className="grid gap-2">
-                  {STEPS[g].steps.map((step, i) => (
-                    <li
-                      key={i}
-                      className="glass grid grid-cols-[28px_1fr] items-start gap-3 rounded-2xl px-4 py-3 text-sm font-semibold"
-                    >
-                      <span
-                        className="grid size-7 place-content-center rounded-full bg-soft font-bold text-primary-text"
-                        aria-hidden="true"
+        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-h-[85dvh] max-w-[520px] rounded-t-3xl pt-4 outline-none", "sheet z-50 flex flex-col")}>
+          <SidePanelClose />
+          <div className={SHEET_SCROLL}>
+            <Mascot mood="happy" size={72} className="mx-auto" />
+            <Drawer.Title className="pt-2 text-center text-xl font-bold">Instalar na tela de início</Drawer.Title>
+            <Drawer.Description className="pb-4 text-center text-sm font-semibold text-muted">
+              {platform === "other"
+                ? "Abra este endereço no celular e siga os passos."
+                : "Fica como um app: abre direto na agenda, em tela cheia."}
+            </Drawer.Description>
+            <div className="grid gap-4">
+              {canPrompt ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    void prompt();
+                    onOpenChange?.(false);
+                  }}
+                  className="flex min-h-12 bg-primary text-on-primary items-center justify-center gap-2 rounded-full px-5 font-bold"
+                >
+                  <Icon name="download" size={20} />
+                  Instalar agora
+                </button>
+              ) : null}
+              {guides.map((g) => (
+                <section key={g} aria-label={STEPS[g].title} className="grid gap-2">
+                  {guides.length > 1 ? (
+                    <h3 className="px-1 text-sm font-bold uppercase tracking-wide text-muted">{STEPS[g].title}</h3>
+                  ) : null}
+                  <ol className="grid gap-2">
+                    {STEPS[g].steps.map((step, i) => (
+                      <li
+                        key={i}
+                        className="glass grid grid-cols-[28px_1fr] items-start gap-3 rounded-2xl px-4 py-3 text-sm font-semibold"
                       >
-                        {i + 1}
-                      </span>
-                      <span className="pt-1">{step}</span>
-                    </li>
-                  ))}
-                </ol>
-              </section>
-            ))}
-            {platform !== "android" ? (
-              <p className="px-1 text-xs font-semibold text-muted">
-                Abriu o link pelo Instagram ou WhatsApp? Toque em ••• e escolha abrir no Safari antes.
-              </p>
-            ) : null}
+                        <span
+                          className="grid size-7 place-content-center rounded-full bg-soft font-bold text-primary-text"
+                          aria-hidden="true"
+                        >
+                          {i + 1}
+                        </span>
+                        <span className="pt-1">{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              ))}
+              {platform !== "android" ? (
+                <p className="px-1 text-xs font-semibold text-muted">
+                  Abriu o link pelo Instagram ou WhatsApp? Toque em ••• e escolha abrir no Safari antes.
+                </p>
+              ) : null}
+            </div>
           </div>
         </Drawer.Content>
       </Drawer.Portal>
