@@ -8,6 +8,7 @@ Atualizado em 12/11/2026 (main em #104). Ache o módulo da task, leia a coluna "
 | Clientes | [clientes.md](clientes.md) | `features/clients`, `features/contacts`, tela `clientes` | Cadastro, busca, cartão da cliente, importar contatos | Agenda (cliente do agendamento), WhatsApp (telefone/conversa), Google Contatos |
 | Serviços | [servicos.md](servicos.md) | `features/services`, tela `servicos` | Catálogo: valor, duração, cor, ordem, pausar | Agenda (preço/duração), vagas (duração), financeiro (pizza), cores `--svc-*` |
 | Vagas e expediente | [vagas.md](vagas.md) | `features/hours`, tela `vagas`, Ajustes > Expediente | Expediente/pausa por dia, horários livres, texto para divulgar | Agenda e bloqueios (ocupado), Google importado, avisos do dia (folga/fim do expediente) |
+| Retorno da cliente | [agenda.md](agenda.md) (seção Retorno) e [servicos.md](servicos.md) | `features/returns` | Retorno aproximado por serviço, data prevista ao concluir, pergunta "Marcar o retorno?" com vagas | Serviços (`return_days`), agenda (`setStatus`), vagas (`freeSlots`), QuickBook |
 | Financeiro | [financeiro.md](financeiro.md) | `features/finance`, tela `financeiro` | Previsto/recebido por período, despesas, pizza por serviço | Agenda (valores, desconto, status), serviços |
 | WhatsApp e conversas | [whatsapp.md](whatsapp.md) | `features/messaging`, `features/whatsapp`, `features/notifications`, `api/whatsapp/webhook` | Conectar número (Evolution), receber/enviar, IA lê respostas, sino | Lembretes, agenda (status muda), push, Ajustes |
 | Lembretes | [lembretes.md](lembretes.md) | `features/reminders`, worker | 1º/2º aviso, "não respondeu", textos editáveis | WhatsApp (porta de envio), push, agenda (status), worker |
@@ -30,6 +31,7 @@ Gerada por varredura de `@/features/*`. "Usa" = depende de; "Usado por" = quem q
 | calendar | appointments, hours | appointments | appointments |
 | clients | appointments, messaging | appointments | clients, appointments |
 | contacts | google | — | clients |
+| returns | appointments, blocks, hours | appointments (AppointmentCard, setStatus) | appointments (return_due_on, return_skipped_at), services (return_days) |
 | finance | appointments | — | appointments, expenses |
 | google | appointments | appointments, contacts, shell | tenants, appointments, blocks, clients |
 | calendar-feed | appointments | ajustes, appointments (DaySchedule), vagas | tenants (calendar_token_hash, calendar_hide_names, icloud_calendar_url), appointments, blocks (source icloud, external_uid, converted_at), clients, services |

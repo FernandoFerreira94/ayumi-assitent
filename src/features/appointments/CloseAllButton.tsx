@@ -18,7 +18,10 @@ export function CloseAllButton({ items }: { items: { id: string; status: Status 
         return;
       }
       warnSync(res.data.sync);
-      if (undo) notify.undoable(`${next.length} atendimentos concluídos`, () => run(undo));
+      const n = res.data.returns;
+      // Em lote não abre uma pergunta por cliente: só avisa quantos retornos ficaram previstos
+      const returns = n ? (n === 1 ? "1 retorno previsto" : `${n} retornos previstos`) : undefined;
+      if (undo) notify.undoable(`${next.length} atendimentos concluídos`, () => run(undo), returns);
       else notify.success("Desfeito");
     });
   }
