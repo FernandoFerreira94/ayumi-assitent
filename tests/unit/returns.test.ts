@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { returnDaysOf, returnDue } from "@/features/returns/rules";
+import {
+  daysBetween,
+  pickReturnDays,
+  spread,
+  visitHistory,
+  returnDaysOf,
+  returnDue,
+  returnWindow,
+} from "@/features/returns/rules";
 import { serviceInput } from "@/features/services/schema";
 
 describe("retorno da cliente", () => {
@@ -34,5 +42,82 @@ describe("campo Retorno sugerido do serviço", () => {
 
   it("recusa zero, negativo, quebrado e acima de um ano", () => {
     for (const v of ["0", "-3", "7.5", "366", "abc"]) expect(parse(v).success).toBe(false);
+  });
+});
+
+describe("dias sugeridos para o retorno", () => {
+  it("conta dias corridos", () => {
+    expect(daysBetween("2026-11-28", "2026-12-01")).toBe(3);
+    expect(daysBetween("2026-12-01", "2026-11-28")).toBe(-3);
+  });
+
+  it("vai de 2 antes a 5 depois da data prevista, começando pela mais perto", () => {
+    const w = returnWindow("2026-12-01", "2026-11-16");
+    expect(w[0]).toBe("2026-12-01");
+    expect(w.slice(1, 3)).toEqual(["2026-11-30", "2026-12-02"]);
+    expect([...w].sort()).toEqual([
+      "2026-11-29",
+      "2026-11-30",
+      "2026-12-01",
+      "2026-12-02",
+      "2026-12-03",
+      "2026-12-04",
+      "2026-12-05",
+      "2026-12-06",
+    ]);
+  });
+
+  it("retorno atrasado ou muito perto começa amanhã, nunca hoje", () => {
+    const w = returnWindow("2026-11-10", "2026-11-16");
+    expect(w[0]).toBe("2026-11-17");
+    expect(w).not.toContain("2026-11-16");
+    expect([...w].sort()[0]).toBe("2026-11-17");
+  });
+
+  it("pega até 4 dias com vaga, mais perto da data, em ordem de data e com 3 horários", () => {
+    const window = returnWindow("2026-12-01", "2026-11-16");
+    const full = ["09:00", "10:00", "11:00", "14:00"];
+    // 01/12 lotado; domingo 29/11 fechado
+    const slotsOf = (d: string) => (d === "2026-12-01" || d === "2026-11-29" ? [] : full);
+    const days = pickReturnDays(window, slotsOf);
+    expect(days.map((d) => d.date)).toEqual(["2026-11-30", "2026-12-02", "2026-12-03", "2026-12-04"]);
+    expect(days[0].slots).toEqual(["09:00", "11:00", "14:00"]);
+  });
+
+  it("espalha os horários pelo dia: primeiro, meio e último", () => {
+    const day = ["09:00", "09:30", "10:00", "10:30", "11:00", "14:00", "16:30"];
+    expect(spread(day, 3)).toEqual(["09:00", "10:30", "16:30"]);
+    expect(spread(["09:00", "10:00"], 3)).toEqual(["09:00", "10:00"]);
+  });
+
+  it("sem vaga nenhuma volta vazio", () => {
+    expect(pickReturnDays(returnWindow("2026-12-01", "2026-11-16"), () => [])).toEqual([]);
+  });
+});
+
+describe("histórico do cartão da cliente", () => {
+  const desc = [
+    { date: "2026-11-10", service: "Unha" },
+    { date: "2026-10-25", service: "Unha" },
+    { date: "2026-10-05", service: "Unha + Escova" },
+  ];
+
+  it("cada visita mostra quantos dias depois da anterior ela voltou", () => {
+    const { visits, averageGap } = visitHistory(desc, 5);
+    expect(visits.map((v) => v.gapDays)).toEqual([16, 20, null]);
+    expect(averageGap).toBe(18);
+  });
+
+  it("a visita a mais só serve para o intervalo da última mostrada", () => {
+    const { visits } = visitHistory(desc, 2);
+    expect(visits).toHaveLength(2);
+    expect(visits[1].gapDays).toBe(20);
+  });
+
+  it("uma visita só não tem média", () => {
+    expect(visitHistory(desc.slice(0, 1), 5)).toEqual({
+      visits: [{ date: "2026-11-10", service: "Unha", gapDays: null }],
+      averageGap: null,
+    });
   });
 });

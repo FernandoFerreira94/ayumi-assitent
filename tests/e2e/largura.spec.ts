@@ -15,7 +15,10 @@ test("menu lateral no lugar da barra do rodapé", async ({ page }) => {
 
 test("a coluna não fica presa nos 520 px do celular", async ({ page }) => {
   await page.goto("/ajustes");
-  const box = await page.locator("main").first().boundingBox();
+  // boundingBox não espera: sem isto, pegar o <main> no meio da troca do loading dá null
+  const main = page.locator("main").first();
+  await expect(main).toBeVisible();
+  const box = await main.boundingBox();
   expect(box!.width).toBeGreaterThan(600);
 });
 

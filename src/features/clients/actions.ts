@@ -3,9 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { withTenant } from "@/db/client";
 import { fail, ok, type ActionResult } from "@/lib/errors";
-import { formatDayTitle, formatTime, todayStr } from "@/lib/dates";
+import { visitHistory } from "@/features/returns/rules";
+import { formatDayTitle, formatShortDate, formatTime, todayStr } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
-import { clientSummary, deleteClientRow, insertClient, updateClientRow } from "./core";
+import { clientSummary, deleteClientRow, HISTORY, insertClient, updateClientRow } from "./core";
 import { clientInput } from "./schema";
 
 export async function createClient(_prev: ActionResult<{ id: string }> | null, formData: FormData) {
@@ -60,6 +61,12 @@ export type ClientCard = {
   visits: number;
   spentCents: number;
   noShows: number;
+  /** últimas visitas concluídas, a mais recente primeiro */
+  history: { day: string; service: string; gapDays: number | null }[];
+  /** média de dias entre as visitas do histórico */
+  averageGap: number | null;
+  /** retorno previsto da última visita (sem horário marcado e sem "Não precisa") */
+  ret: { appointmentId: string; day: string; service: string; late: boolean } | null;
 };
 
 /** Dados do cartão da cliente, já em texto para a tela (o fuso é o do servidor, igual à agenda). */
@@ -69,12 +76,28 @@ export async function loadClientCard(id: string): Promise<ActionResult<ClientCar
   try {
     const s = await withTenant(tenantId, (tx) => clientSummary(tx, id));
     const day = (d: Date) => formatDayTitle(todayStr(d));
+    const { visits, averageGap } = visitHistory(
+      s.history.map((v) => ({ date: todayStr(v.startsAt), service: v.service })),
+      HISTORY,
+    );
     return ok({
       next: s.next ? { when: `${day(s.next.startsAt)} às ${formatTime(s.next.startsAt)}`, service: s.next.service } : null,
       last: s.last ? day(s.last.startsAt) : null,
       visits: s.visits,
       spentCents: s.spentCents,
       noShows: s.noShows,
+      history: visits.map((v) => ({ day: formatShortDate(v.date), service: v.service, gapDays: v.gapDays })),
+      averageGap,
+      // com horário marcado, o retorno já está resolvido
+      ret:
+        s.ret && !s.next
+          ? {
+              appointmentId: s.ret.appointmentId,
+              day: formatShortDate(s.ret.due),
+              service: s.ret.service,
+              late: s.ret.due < todayStr(),
+            }
+          : null,
     });
   } catch {
     return fail("UNKNOWN");
