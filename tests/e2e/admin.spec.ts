@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { createHmac, randomUUID } from "node:crypto";
 import type { BrowserContext } from "@playwright/test";
 import postgres from "postgres";
+import { CURRENT_VERSION, SEEN_VERSION_KEY } from "../../src/features/update/changelog";
 import { expect, test } from "./fixtures";
 
 // O servidor de teste sobe com ADMIN_USER_IDS=e2e-admin (playwright.config.ts).
@@ -28,7 +29,7 @@ async function loginAsAdmin(context: BrowserContext, opts: { twoFactor: boolean;
 }
 
 test("quem não é admin vê 404 em todo o painel", async ({ page }) => {
-  for (const path of ["/admin", "/admin/verificar", "/admin/ativar-2fa", "/admin/seguranca", "/admin/assinantes", "/admin/pagamentos", "/admin/uso"]) {
+  for (const path of ["/admin", "/admin/verificar", "/admin/ativar-2fa", "/admin/seguranca", "/admin/assinantes", "/admin/pagamentos", "/admin/uso", "/admin/suporte", "/admin/avisos"]) {
     await page.goto(path);
     await expect(page.getByRole("heading", { name: "Não encontramos isto" })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Painel do dono" })).toHaveCount(0);
@@ -127,4 +128,88 @@ test("sem código confirmado, o CSV não sai", async ({ page, context }) => {
   const res = await page.request.get("/admin/pagamentos/export?mes=2026-10", { maxRedirects: 0 });
   expect(res.status()).not.toBe(200);
   expect(await res.text()).not.toContain("Salão;Plano");
+});
+
+test("suporte: o salão escreve, o dono responde e o salão vê a resposta no Painel", async ({ page, context, browser }) => {
+  test.setTimeout(90_000);
+  // Salão (outro contexto, celular) manda a mensagem
+  const salon = await browser.newContext({ viewport: { width: 393, height: 660 }, isMobile: true, hasTouch: true });
+  const sp = await salon.newPage();
+  const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+  const uid = randomUUID();
+  const token = randomUUID().replace(/-/g, "");
+  await sql`insert into "user" (id, name, email, "emailVerified") values (${uid}, 'Ana', ${uid + "@e2e.test"}, true)`;
+  await sql`insert into session (id, "expiresAt", token, "userId") values (${randomUUID()}, now() + interval '1 day', ${token}, ${uid})`;
+  const salonName = `Salão Suporte ${uid.slice(0, 6)}`;
+  const [{ id: tid }] = await sql`insert into tenants (name) values (${salonName}) returning id`;
+  await sql`insert into memberships (user_id, tenant_id, tour_done_at) values (${uid}, ${tid}, now())`;
+  await sql.end();
+  const sig = createHmac("sha256", process.env.BETTER_AUTH_SECRET!).update(token).digest("base64");
+  // Sem o diálogo "App atualizado" por cima do Painel (como na fixture)
+  await salon.addInitScript(
+    ([k, v]) => {
+      try {
+        localStorage.setItem(k, v);
+      } catch {}
+    },
+    [SEEN_VERSION_KEY, CURRENT_VERSION] as const,
+  );
+  await salon.addCookies([{ name: "better-auth.session_token", value: encodeURIComponent(`${token}.${sig}`), domain: "localhost", path: "/" }]);
+
+  await sp.goto("/ajustes/suporte");
+  await expect(sp.getByRole("heading", { level: 1, name: "Ajuda e suporte" })).toBeVisible();
+  expect((await new AxeBuilder({ page: sp }).analyze()).violations).toEqual([]);
+  await sp.getByLabel("Mensagem para o suporte").fill("Os lembretes não saíram hoje");
+  await sp.getByRole("button", { name: "Enviar" }).click();
+  await expect(sp.getByText("Os lembretes não saíram hoje")).toBeVisible();
+  await expect(sp.getByText("Enviando…")).toHaveCount(0);
+
+  // Dono vê a conversa esperando, abre e responde
+  await loginAsAdmin(context, { twoFactor: true, stepUp: true });
+  await page.goto("/admin/suporte");
+  await expect(page.getByRole("heading", { name: "Suporte", level: 1 })).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.getByRole("link", { name: new RegExp(salonName) }).click();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet.getByText("Os lembretes não saíram hoje")).toBeVisible();
+  await sheet.getByLabel(`Resposta para ${salonName}`).fill("Já conferi: o WhatsApp estava desconectado.");
+  await sheet.getByRole("button", { name: "Enviar" }).click();
+  await expect(sheet.getByText("Já conferi: o WhatsApp estava desconectado.")).toBeVisible();
+  await expect(sheet.getByText("Enviando…")).toHaveCount(0);
+
+  // Salão: cartão no Painel e selo em Ajustes; ao abrir, zera
+  await sp.goto("/agenda");
+  await expect(sp.getByRole("link", { name: /O suporte respondeu/ })).toBeVisible();
+  await sp.goto("/ajustes");
+  await expect(sp.getByText("1 nova")).toBeVisible();
+  await sp.getByRole("link", { name: /^Ajuda e suporte/ }).click();
+  await expect(sp.getByText("Já conferi: o WhatsApp estava desconectado.")).toBeVisible();
+  await expect.poll(async () => {
+    await sp.goto("/agenda");
+    return sp.getByRole("link", { name: /O suporte respondeu/ }).count();
+  }).toBe(0);
+
+  // Aviso do dono: publica, aparece no Painel, o salão fecha; o dono encerra
+  await page.goto("/admin/avisos");
+  await expect(page.getByRole("heading", { name: "Novo aviso" })).toBeVisible();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  const title = `Manutenção ${uid.slice(0, 6)}`;
+  await page.getByLabel("Título").fill(title);
+  await page.getByLabel("Texto").fill("O app fica fora do ar das 23h às 23h30.");
+  await page.getByRole("button", { name: "Publicar para todos" }).click();
+  await expect(page.getByRole("button", { name: `Encerrar aviso: ${title}` })).toBeVisible();
+
+  await sp.goto("/agenda");
+  const card = sp.getByRole("region", { name: `Aviso do Bubbly: ${title}` });
+  await expect(card).toBeVisible();
+  // Só o cartão (a faixa da semana do Painel tem a sua própria checagem)
+  expect((await new AxeBuilder({ page: sp }).include('section[aria-label^="Aviso do Bubbly"]').analyze()).violations).toEqual([]);
+  await card.getByRole("button", { name: `Fechar aviso: ${title}` }).click();
+  await expect(card).toHaveCount(0);
+  await sp.reload();
+  await expect(sp.getByRole("region", { name: `Aviso do Bubbly: ${title}` })).toHaveCount(0);
+
+  await page.getByRole("button", { name: `Encerrar aviso: ${title}` }).click();
+  await expect(page.getByRole("heading", { name: "Encerrados" })).toBeVisible();
+  await salon.close();
 });

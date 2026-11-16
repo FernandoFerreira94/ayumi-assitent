@@ -12,6 +12,11 @@ export type AdminAction =
   | "export_payments"
   | "view_security"
   | "view_usage"
+  | "view_support"
+  | "support_reply"
+  | "view_notices"
+  | "notice_created"
+  | "notice_ended"
   | "sessions_revoked"
   | "step_up_ok"
   | "step_up_failed"
@@ -26,6 +31,11 @@ export const ADMIN_ACTION_LABEL: Record<AdminAction, string> = {
   export_payments: "Exportou pagamentos",
   view_security: "Abriu segurança",
   view_usage: "Abriu uso",
+  view_support: "Abriu o suporte",
+  support_reply: "Respondeu no suporte",
+  view_notices: "Abriu avisos",
+  notice_created: "Publicou um aviso",
+  notice_ended: "Encerrou um aviso",
   sessions_revoked: "Encerrou outras sessões",
   step_up_ok: "Código confirmado",
   step_up_failed: "Código errado",
