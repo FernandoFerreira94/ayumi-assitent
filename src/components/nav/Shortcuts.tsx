@@ -5,9 +5,11 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { openNewAppointment } from "@/features/appointments/QuickBook";
 import { isDateStr, todayStr } from "@/lib/dates";
+import { neighborId } from "@/features/clients/neighbor";
 import { shiftDay, shortcutFor } from "@/lib/shortcuts";
+import { DESKTOP_QUERY } from "@/lib/use-media";
 
-/** Atalhos das pranchas: N novo agendamento, / busca, ← → dia anterior/seguinte e T hoje no Painel. */
+/** Atalhos das pranchas: N novo agendamento, / busca, ← → dia anterior/seguinte e T hoje no Painel, J/K entre clientes. */
 export function Shortcuts() {
   const router = useRouter();
   const pathname = usePathname();
@@ -30,6 +32,19 @@ export function Shortcuts() {
           e.preventDefault();
           box.focus();
         }
+        return;
+      }
+      if (s === "proxima" || s === "anterior-item") {
+        // Só no desktop, onde a ficha fica fixa ao lado; a ordem é a da lista na tela (já filtrada)
+        if (pathname !== "/clientes" || !window.matchMedia(DESKTOP_QUERY).matches) return;
+        const ids = [...document.querySelectorAll<HTMLElement>("[data-client-id]")].map((el) => el.dataset.clientId!);
+        const id = neighborId(ids, params.get("id"), s === "proxima" ? 1 : -1);
+        if (!id || id === params.get("id")) return;
+        e.preventDefault();
+        const next = new URLSearchParams(params.toString());
+        next.set("id", id);
+        router.replace(`/clientes?${next}`, { scroll: false });
+        document.querySelector(`[data-client-id="${CSS.escape(id)}"]`)?.scrollIntoView({ block: "nearest" });
         return;
       }
       if (pathname !== "/agenda") return;

@@ -22,3 +22,8 @@ export function useMediaQuery(query: string): boolean {
 }
 
 export const useIsWide = () => useMediaQuery(WIDE_QUERY);
+
+/** Desktop (lg do Tailwind): telas ganham coluna fixa ao lado, em vez de folha por cima. */
+export const DESKTOP_QUERY = "(min-width: 64rem)";
+
+export const useIsDesktop = () => useMediaQuery(DESKTOP_QUERY);

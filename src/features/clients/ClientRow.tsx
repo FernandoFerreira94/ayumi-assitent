@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Drawer } from "vaul";
 import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { SubmitButton } from "@/components/feedback/SubmitButton";
@@ -9,6 +10,7 @@ import { openNewAppointment } from "@/features/appointments/QuickBook";
 import { ChatGlyph, ChatSheet } from "@/features/messaging/ChatSheet";
 import { messageFor, type ActionResult } from "@/lib/errors";
 import { maskPhone } from "@/lib/phone";
+import { useIsDesktop } from "@/lib/use-media";
 import { deleteClient, loadClientCard, updateClient, type ClientCard } from "./actions";
 import { formatBRL } from "@/lib/dates";
 
@@ -21,7 +23,7 @@ const RIGHT_W = BTN * 2; // Editar + Excluir
 const SNAP = 36;
 const CLOSE_EVENT = "ayumi:swipe-close";
 
-type Client = { id: string; name: string; phone: string; email: string | null; optedOut?: boolean };
+export type Client = { id: string; name: string; phone: string; email: string | null; optedOut?: boolean };
 
 const icon = {
   viewBox: "0 0 24 24",
@@ -39,7 +41,11 @@ const icon = {
  * para a direita revela Agendar. Tocar no nome abre o cartão dela; o balão ao lado abre a conversa.
  * Com a linha aberta, o toque só fecha.
  */
-export function ClientRow({ client }: { client: Client }) {
+export function ClientRow({ client, active = false }: { client: Client; active?: boolean }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const desktop = useIsDesktop();
   const [x, setX] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -104,10 +110,19 @@ export function ClientRow({ client }: { client: Client }) {
   }
 
   const close = () => move(0);
+
+  // Desktop: a ficha fica na coluna fixa, guiada pelo ?id= (sem empilhar histórico). Abaixo disso, a folha de sempre.
+  function openCard() {
+    if (!desktop) return setCard(true);
+    const next = new URLSearchParams(params.toString());
+    next.set("id", client.id);
+    router.replace(`${pathname}?${next}`, { scroll: false });
+  }
+
   const ease = dragging ? "none" : "transform 0.32s var(--spring), width 0.32s var(--spring)";
 
   return (
-    <li ref={self} className="relative overflow-hidden rounded-2xl">
+    <li ref={self} data-client-id={client.id} className="relative overflow-hidden rounded-2xl">
       {/* Agendar (revelado ao arrastar para a direita) */}
       <div
         className="absolute inset-y-0 left-0 flex overflow-hidden rounded-l-2xl"
@@ -185,11 +200,12 @@ export function ClientRow({ client }: { client: Client }) {
           }
         }}
         style={{ transform: `translateX(${x}px)`, transition: ease, touchAction: "pan-y" }}
-        className="glass relative flex items-center gap-2 rounded-2xl pr-2"
+        className={`glass relative flex items-center gap-2 rounded-2xl pr-2 ${active ? "ring-2 ring-primary" : ""}`}
       >
         <button
           type="button"
-          onClick={() => setCard(true)}
+          onClick={openCard}
+          aria-current={active ? "true" : undefined}
           className="min-w-0 flex-1 rounded-2xl py-3 pl-4 text-left transition-transform active:scale-[0.99]"
         >
           <span className="block truncate font-bold">{client.name}</span>
@@ -225,7 +241,7 @@ export function ClientRow({ client }: { client: Client }) {
   );
 }
 
-function EditSheet({
+export function EditSheet({
   client,
   open,
   onOpenChange,
@@ -319,7 +335,7 @@ function EditSheet({
   );
 }
 
-function DeleteSheet({
+export function DeleteSheet({
   client,
   open,
   onOpenChange,
@@ -402,15 +418,65 @@ function CardSheet({
   onDelete: () => void;
 }) {
   const side = useSheetSide();
+  return (
+    <Drawer.Root direction={side} open={open} onOpenChange={onOpenChange}>
+      <Drawer.Portal>
+        <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
+        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
+<SidePanelClose />
+          <Drawer.Title className="text-xl font-bold">{client.name}</Drawer.Title>
+          <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
+            {client.phone}
+            {client.email ? ` · ${client.email}` : ""}
+          </Drawer.Description>
+          {/* Montado só aberto: cada abertura busca de novo, e um agendamento novo já aparece */}
+          {open ? (
+            <ClientCardBody
+              client={client}
+              nested
+              onBook={() => onOpenChange(false)}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          ) : null}
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.Root>
+  );
+}
+
+/**
+ * Miolo do cartão (histórico e ações), o mesmo na folha do celular e na coluna fixa do desktop.
+ * Busca o histórico ao montar e ao trocar de cliente.
+ */
+export function ClientCardBody({
+  client,
+  nested = false,
+  onBook,
+  onEdit,
+  onDelete,
+}: {
+  client: Client;
+  /** Dentro de outra folha, a conversa abre aninhada. */
+  nested?: boolean;
+  onBook?: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
   const [data, setData] = useState<ClientCard | null>(null);
   const [failed, setFailed] = useState(false);
-  /** Muda a cada abertura ou "Tentar de novo" e dispara a busca. */
+  /** Muda a cada "Tentar de novo" e dispara a busca. */
   const [attempt, setAttempt] = useState(0);
+  const [loadedFor, setLoadedFor] = useState(client.id);
 
-  // A cada abertura busca de novo: um agendamento novo já aparece no cartão.
-  // (A folha abre pelo estado do pai; o onOpenChange do vaul só avisa o que ela mesma muda.)
+  // Trocou de cliente (j/k ou clique na lista): esquece o histórico da anterior já na mesma pintura
+  if (loadedFor !== client.id) {
+    setLoadedFor(client.id);
+    setData(null);
+    setFailed(false);
+  }
+
   useEffect(() => {
-    if (!open) return;
     let alive = true;
     loadClientCard(client.id)
       .catch(() => null)
@@ -422,7 +488,7 @@ function CardSheet({
     return () => {
       alive = false;
     };
-  }, [open, attempt, client.id]);
+  }, [attempt, client.id]);
 
   const load = () => {
     setFailed(false);
@@ -431,102 +497,88 @@ function CardSheet({
 
   const action = "flex min-h-13 items-center justify-center gap-2 rounded-2xl px-4 font-bold";
   return (
-    <Drawer.Root direction={side}
-      open={open}
-      onOpenChange={onOpenChange}
-    >
-      <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
-<SidePanelClose />
-          <Drawer.Title className="text-xl font-bold">{client.name}</Drawer.Title>
-          <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
-            {client.phone}
-            {client.email ? ` · ${client.email}` : ""}
-          </Drawer.Description>
-          {client.optedOut ? (
-            <p className="-mt-2 mb-4 text-sm font-semibold text-muted">
-              Não recebe lembretes automáticos (respondeu SAIR; volta se responder VOLTAR).
-            </p>
+    <>
+      {client.optedOut ? (
+        <p className="-mt-2 mb-4 text-sm font-semibold text-muted">
+          Não recebe lembretes automáticos (respondeu SAIR; volta se responder VOLTAR).
+        </p>
+      ) : null}
+
+      {failed ? (
+        <div role="alert" className="mb-3 flex items-center justify-between gap-3 rounded-2xl bg-fail-bg px-4 py-3 text-sm font-semibold text-fail">
+          Não deu para carregar o histórico.
+          <button type="button" onClick={load} className="min-h-11 px-2 font-bold underline">
+            Tentar de novo
+          </button>
+        </div>
+      ) : data === null ? (
+        <div className="mb-3 grid gap-2" aria-busy="true" aria-label="Carregando histórico">
+          <div className="skel h-16 rounded-2xl" />
+          <div className="skel h-16 rounded-2xl" />
+        </div>
+      ) : (
+        <div className="mb-4 grid gap-2">
+          <p className="glass rounded-2xl px-4 py-3">
+            <span className="block text-xs font-bold uppercase tracking-wide text-muted">Próximo horário</span>
+            {data.next ? (
+              <span className="block font-bold first-letter:uppercase">
+                {data.next.when} <span className="font-semibold text-muted">· {data.next.service}</span>
+              </span>
+            ) : (
+              <span className="block font-semibold text-muted">Nenhum marcado</span>
+            )}
+          </p>
+          <dl className="grid grid-cols-3 gap-2 text-center">
+            {(
+              [
+                [String(data.visits), data.visits === 1 ? "visita" : "visitas"],
+                [formatBRL(data.spentCents), "gastou"],
+                [String(data.noShows), data.noShows === 1 ? "falta" : "faltas"],
+              ] as const
+            ).map(([value, label]) => (
+              // dt antes do dd (ordem do HTML); o valor aparece em cima pelo flex invertido
+              <div key={label} className="glass flex flex-col-reverse rounded-2xl px-2 py-3">
+                <dt className="text-xs font-semibold text-muted">{label}</dt>
+                <dd className="font-bold">{value}</dd>
+              </div>
+            ))}
+          </dl>
+          {data.last ? (
+            <p className="px-1 text-xs font-semibold text-muted first-letter:uppercase">Última visita: {data.last}</p>
           ) : null}
+        </div>
+      )}
 
-          {failed ? (
-            <div role="alert" className="mb-3 flex items-center justify-between gap-3 rounded-2xl bg-fail-bg px-4 py-3 text-sm font-semibold text-fail">
-              Não deu para carregar o histórico.
-              <button type="button" onClick={load} className="min-h-11 px-2 font-bold underline">
-                Tentar de novo
-              </button>
-            </div>
-          ) : data === null ? (
-            <div className="mb-3 grid gap-2" aria-busy="true" aria-label="Carregando histórico">
-              <div className="skel h-16 rounded-2xl" />
-              <div className="skel h-16 rounded-2xl" />
-            </div>
-          ) : (
-            <div className="mb-4 grid gap-2">
-              <p className="glass rounded-2xl px-4 py-3">
-                <span className="block text-xs font-bold uppercase tracking-wide text-muted">Próximo horário</span>
-                {data.next ? (
-                  <span className="block font-bold first-letter:uppercase">
-                    {data.next.when} <span className="font-semibold text-muted">· {data.next.service}</span>
-                  </span>
-                ) : (
-                  <span className="block font-semibold text-muted">Nenhum marcado</span>
-                )}
-              </p>
-              <dl className="grid grid-cols-3 gap-2 text-center">
-                {(
-                  [
-                    [String(data.visits), data.visits === 1 ? "visita" : "visitas"],
-                    [formatBRL(data.spentCents), "gastou"],
-                    [String(data.noShows), data.noShows === 1 ? "falta" : "faltas"],
-                  ] as const
-                ).map(([value, label]) => (
-                  // dt antes do dd (ordem do HTML); o valor aparece em cima pelo flex invertido
-                  <div key={label} className="glass flex flex-col-reverse rounded-2xl px-2 py-3">
-                    <dt className="text-xs font-semibold text-muted">{label}</dt>
-                    <dd className="font-bold">{value}</dd>
-                  </div>
-                ))}
-              </dl>
-              {data.last ? (
-                <p className="px-1 text-xs font-semibold text-muted first-letter:uppercase">Última visita: {data.last}</p>
-              ) : null}
-            </div>
-          )}
-
-          <div className="grid gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                onOpenChange(false);
-                openNewAppointment({ clientId: client.id });
-              }}
-              className={`btn-tint ${action}`}
-            >
-              Agendar
-            </button>
-            <ChatSheet
-              clientId={client.id}
-              clientName={client.name}
-              phone={client.phone}
-              nested
-              triggerClassName={`btn-glass w-full ${action}`}
-            >
-              <ChatGlyph />
-              Conversar
-            </ChatSheet>
-            <div className="grid grid-cols-2 gap-2">
-              <button type="button" onClick={onEdit} className={`btn-glass ${action}`}>
-                Editar
-              </button>
-              <button type="button" onClick={onDelete} className={`btn-glass ${action} text-fail`}>
-                Excluir
-              </button>
-            </div>
-          </div>
-        </Drawer.Content>
-      </Drawer.Portal>
-    </Drawer.Root>
+      <div className="grid gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            onBook?.();
+            openNewAppointment({ clientId: client.id });
+          }}
+          className={`btn-tint ${action}`}
+        >
+          Agendar
+        </button>
+        <ChatSheet
+          clientId={client.id}
+          clientName={client.name}
+          phone={client.phone}
+          nested={nested}
+          triggerClassName={`btn-glass w-full ${action}`}
+        >
+          <ChatGlyph />
+          Conversar
+        </ChatSheet>
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" onClick={onEdit} className={`btn-glass ${action}`}>
+            Editar
+          </button>
+          <button type="button" onClick={onDelete} className={`btn-glass ${action} text-fail`}>
+            Excluir
+          </button>
+        </div>
+      </div>
+    </>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 /** Espera a pessoa parar de digitar antes de buscar. */
@@ -10,6 +10,7 @@ const DEBOUNCE_MS = 250;
 export function ClientSearch({ initial }: { initial: string }) {
   const router = useRouter();
   const pathname = usePathname();
+  const params = useSearchParams();
   const [value, setValue] = useState(initial);
   const [pending, startTransition] = useTransition();
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -18,7 +19,11 @@ export function ClientSearch({ initial }: { initial: string }) {
 
   function go(q: string) {
     clearTimeout(timer.current);
-    const url = q.trim() ? `${pathname}?q=${encodeURIComponent(q.trim())}` : pathname;
+    // Mantém a ficha aberta (?id=) enquanto busca
+    const next = new URLSearchParams(params.toString());
+    if (q.trim()) next.set("q", q.trim());
+    else next.delete("q");
+    const url = next.size ? `${pathname}?${next}` : pathname;
     startTransition(() => router.replace(url, { scroll: false }));
   }
 

@@ -1,5 +1,5 @@
 // src/lib/shortcuts.ts
-export type Shortcut = "novo" | "buscar" | "hoje" | "anterior" | "proximo";
+export type Shortcut = "novo" | "buscar" | "hoje" | "anterior" | "proximo" | "proxima" | "anterior-item";
 
 type KeyInfo = { key: string; ctrlKey: boolean; metaKey: boolean; altKey: boolean; target: EventTarget | null };
 
@@ -19,6 +19,13 @@ export function shortcutFor(e: KeyInfo): Shortcut | null {
     case "t":
     case "T":
       return "hoje";
+    // j/k andam pela lista (Clientes); não usam ← → para não brigar com a troca de dia
+    case "j":
+    case "J":
+      return "proxima";
+    case "k":
+    case "K":
+      return "anterior-item";
     case "ArrowLeft":
       return "anterior";
     case "ArrowRight":
