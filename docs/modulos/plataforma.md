@@ -21,6 +21,7 @@ Painel do dono (`admin_step_up`, `admin_audit_log`, `"twoFactor"`): ver [admin.m
 `access_log` (sem tenant, sem GRANT para `app_user`): registro de acesso do Marco Civil, gravado no `databaseHooks.session.create.after` do `auth.ts` (user_id, ip, user_agent). Guardado 6 meses; sobrevive à exclusão da conta.
 
 ## Cuidados
+- Domínio (16/11): app em `app.bubbly.app.br` (`BETTER_AUTH_URL`). `lib/canonical-host.ts` redireciona páginas do endereço antigo `*.up.railway.app` para ele no `proxy.ts`; `/api` (webhook, calendários, convites) segue respondendo no antigo, então NÃO apagar o domínio do Railway. Rollback: `BETTER_AUTH_URL` de volta ao antigo desliga o redirect. Site de apresentação em `site/` (serviço `bubbly-site`, ver `site/README.md`).
 - Tabela nova: `tenant_id` + `ENABLE ROW LEVEL SECURITY` + policy `tenant_isolation` (ver `0001_init.sql`); teste em `tests/db/tenancy.test.ts`.
 - Migration nova: próximo número livre (`0029_...` em 12/11; existem dois `0026`). Web roda `pnpm db:migrate` no start.
 - Deploy Railway: web `ayumi-assitent` e worker `distinguished-acceptance`; Redeploy é clicado pelo Fernando.
