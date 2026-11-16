@@ -60,3 +60,24 @@ export function pickReturnDays(
   }
   return out.sort((a, b) => a.date.localeCompare(b.date));
 }
+
+export type Visit = {
+  date: string;
+  service: string;
+  /** dias desde a visita anterior; null na primeira */ gapDays: number | null;
+};
+
+/**
+ * Histórico do cartão: visitas da mais recente para a mais antiga (`desc`), cada uma com quantos
+ * dias depois da anterior ela voltou. A lista chega com uma visita a mais só para o último intervalo.
+ * `averageGap` é a média de dias entre as visitas mostradas (null com menos de 2).
+ */
+export function visitHistory(desc: { date: string; service: string }[], limit: number) {
+  const visits: Visit[] = desc.slice(0, limit).map((v, i) => {
+    const prev = desc[i + 1];
+    return { ...v, gapDays: prev ? daysBetween(prev.date, v.date) : null };
+  });
+  const gaps = visits.map((v) => v.gapDays).filter((n): n is number => n !== null);
+  const averageGap = gaps.length ? Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length) : null;
+  return { visits, averageGap };
+}

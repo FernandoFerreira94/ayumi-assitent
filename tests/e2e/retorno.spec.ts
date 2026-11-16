@@ -77,3 +77,35 @@ test("serviço sem retorno conclui só com o toast", async ({ page, context }) =
   await expect(page.getByRole("dialog", { name: /Marcar o retorno/ })).toHaveCount(0);
   await sql.end();
 });
+
+test("cartão da cliente mostra o retorno previsto, o histórico e abre os horários", async ({ page, context }) => {
+  const { sql, id } = await seed(await context.cookies());
+  // Uma visita anterior, 20 dias antes, para o intervalo do histórico
+  const [a] = await sql`select tenant_id, client_id, service_id, starts_at from appointments where id = ${id}`;
+  await sql`insert into appointments (tenant_id,client_id,service_id,starts_at,ends_at,price_cents,status)
+    values (${a.tenant_id},${a.client_id},${a.service_id},${a.starts_at}::timestamptz - interval '20 days',
+            ${a.starts_at}::timestamptz - interval '20 days' + interval '1 hour',5000,'done')`;
+  await concluir(page);
+  await page
+    .getByRole("dialog", { name: "Marcar o retorno de Ana?" })
+    .getByRole("button", { name: "Agora não" })
+    .click();
+
+  await page.goto("/clientes");
+  const cartao = page.getByRole("dialog", { name: "Ana Souza" });
+  await expect(async () => {
+    await page.getByRole("button", { name: /^Ana Souza/ }).click({ timeout: 1000 });
+    await expect(cartao).toBeVisible({ timeout: 1000 });
+  }).toPass();
+  await expect(cartao.getByText("Retorno previsto")).toBeVisible();
+  const historico = cartao.getByRole("region", { name: "Histórico" });
+  await expect(historico.getByText("após 20 dias")).toBeVisible();
+  await expect(historico.getByText("1ª visita")).toBeVisible();
+
+  await cartao.getByRole("button", { name: "Ver horários" }).click();
+  const ask = page.getByRole("dialog", { name: "Marcar o retorno de Ana?" });
+  await expect(ask).toBeVisible();
+  // Pelo cartão não houve Concluir: sem o aviso nem o Desfazer
+  await expect(ask.getByText("Atendimento concluído")).toHaveCount(0);
+  await sql.end();
+});

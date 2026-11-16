@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { daysBetween, pickReturnDays, spread, returnDaysOf, returnDue, returnWindow } from "@/features/returns/rules";
+import {
+  daysBetween,
+  pickReturnDays,
+  spread,
+  visitHistory,
+  returnDaysOf,
+  returnDue,
+  returnWindow,
+} from "@/features/returns/rules";
 import { serviceInput } from "@/features/services/schema";
 
 describe("retorno da cliente", () => {
@@ -84,5 +92,32 @@ describe("dias sugeridos para o retorno", () => {
 
   it("sem vaga nenhuma volta vazio", () => {
     expect(pickReturnDays(returnWindow("2026-12-01", "2026-11-16"), () => [])).toEqual([]);
+  });
+});
+
+describe("histórico do cartão da cliente", () => {
+  const desc = [
+    { date: "2026-11-10", service: "Unha" },
+    { date: "2026-10-25", service: "Unha" },
+    { date: "2026-10-05", service: "Unha + Escova" },
+  ];
+
+  it("cada visita mostra quantos dias depois da anterior ela voltou", () => {
+    const { visits, averageGap } = visitHistory(desc, 5);
+    expect(visits.map((v) => v.gapDays)).toEqual([16, 20, null]);
+    expect(averageGap).toBe(18);
+  });
+
+  it("a visita a mais só serve para o intervalo da última mostrada", () => {
+    const { visits } = visitHistory(desc, 2);
+    expect(visits).toHaveLength(2);
+    expect(visits[1].gapDays).toBe(20);
+  });
+
+  it("uma visita só não tem média", () => {
+    expect(visitHistory(desc.slice(0, 1), 5)).toEqual({
+      visits: [{ date: "2026-11-10", service: "Unha", gapDays: null }],
+      averageGap: null,
+    });
   });
 });

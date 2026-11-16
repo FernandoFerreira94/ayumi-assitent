@@ -6,6 +6,7 @@ import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/Adapti
 import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import { openNewAppointment } from "@/features/appointments/QuickBook";
+import { openReturnPrompt } from "@/features/returns/ReturnPrompt";
 import { ChatGlyph, ChatSheet } from "@/features/messaging/ChatSheet";
 import { messageFor, type ActionResult } from "@/lib/errors";
 import { maskPhone } from "@/lib/phone";
@@ -437,7 +438,7 @@ function CardSheet({
     >
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
+        <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] overflow-y-auto overscroll-contain rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
 <SidePanelClose />
           <Drawer.Title className="text-xl font-bold">{client.name}</Drawer.Title>
           <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
@@ -489,8 +490,50 @@ function CardSheet({
                   </div>
                 ))}
               </dl>
-              {data.last ? (
-                <p className="px-1 text-xs font-semibold text-muted first-letter:uppercase">Última visita: {data.last}</p>
+              {data.ret ? (
+                <div className="glass flex items-center gap-3 rounded-2xl px-4 py-3">
+                  <p className="min-w-0 flex-1">
+                    <span className="block text-xs font-bold uppercase tracking-wide text-muted">Retorno previsto</span>
+                    <span className="block font-bold first-letter:uppercase">
+                      {data.ret.day}{" "}
+                      <span className="font-semibold text-muted">· {data.ret.service}</span>
+                    </span>
+                    {data.ret.late ? <span className="block text-xs font-bold text-wait">Já passou da data</span> : null}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onOpenChange(false);
+                      openReturnPrompt({ appointmentId: data.ret!.appointmentId });
+                    }}
+                    className="btn-tint min-h-11 shrink-0 rounded-full px-4 text-sm font-bold"
+                  >
+                    Ver horários
+                  </button>
+                </div>
+              ) : null}
+              {data.history.length ? (
+                <section aria-label="Histórico" className="glass rounded-2xl px-4 py-3">
+                  <h3 className="flex items-baseline justify-between gap-2 pb-1 text-xs font-bold uppercase tracking-wide text-muted">
+                    Histórico
+                    {data.averageGap !== null ? (
+                      <span className="normal-case tracking-normal">volta a cada ~{data.averageGap} dias</span>
+                    ) : null}
+                  </h3>
+                  <ul className="divide-y divide-line">
+                    {data.history.map((v, i) => (
+                      <li key={i} className="flex items-baseline justify-between gap-3 py-2 text-sm">
+                        <span className="min-w-0 font-semibold">
+                          <span className="first-letter:uppercase inline-block">{v.day}</span>
+                          <span className="text-muted"> · {v.service}</span>
+                        </span>
+                        <span className="shrink-0 text-xs font-semibold text-muted">
+                          {v.gapDays === null ? "1ª visita" : `após ${v.gapDays} ${v.gapDays === 1 ? "dia" : "dias"}`}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               ) : null}
             </div>
           )}

@@ -81,6 +81,9 @@ export async function deleteClientRow(tx: Tx, id: string): Promise<ActionResult>
 }
 
 /** Resumo do cartão da cliente: próximo horário, última visita, quantas vezes veio, quanto gastou e faltas. */
+/** Quantas visitas o cartão da cliente mostra no histórico. */
+export const HISTORY = 5;
+
 export async function clientSummary(tx: Tx, clientId: string, now = new Date()) {
   const label = (where: ReturnType<typeof and>, order: "asc" | "desc") =>
     tx
@@ -91,7 +94,7 @@ export async function clientSummary(tx: Tx, clientId: string, now = new Date()) 
       .orderBy(order === "asc" ? asc(appointments.startsAt) : desc(appointments.startsAt))
       .limit(1);
   const mine = eq(appointments.clientId, clientId);
-  const [[next], [last], [totals], [faltas]] = await Promise.all([
+  const [[next], [last], [totals], [faltas], visits] = await Promise.all([
     label(and(mine, gte(appointments.startsAt, now), ne(appointments.status, "cancelled")), "asc"),
     label(and(mine, lt(appointments.startsAt, now), eq(appointments.status, "done")), "desc"),
     tx
@@ -102,12 +105,34 @@ export async function clientSummary(tx: Tx, clientId: string, now = new Date()) 
       .select({ n: count() })
       .from(appointments)
       .where(and(mine, inArray(appointments.status, ["no_show"]))),
+    // Histórico: as últimas visitas concluídas, a mais recente primeiro (uma a mais para o intervalo da última)
+    tx
+      .select({
+        id: appointments.id,
+        startsAt: appointments.startsAt,
+        service: serviceLabel,
+        returnDueOn: appointments.returnDueOn,
+        returnSkippedAt: appointments.returnSkippedAt,
+      })
+      .from(appointments)
+      .innerJoin(services, eq(services.id, appointments.serviceId))
+      .where(and(mine, lt(appointments.startsAt, now), eq(appointments.status, "done")))
+      .orderBy(desc(appointments.startsAt))
+      .limit(HISTORY + 1),
   ]);
+  // Retorno: o da visita mais recente, se ela tem data e não foi dispensado
+  const latest = visits[0];
+  const ret =
+    latest?.returnDueOn && !latest.returnSkippedAt
+      ? { appointmentId: latest.id, due: latest.returnDueOn, service: latest.service }
+      : null;
   return {
     next: next ?? null,
     last: last ?? null,
     visits: totals?.visits ?? 0,
     spentCents: Number(totals?.spent ?? 0),
     noShows: faltas?.n ?? 0,
+    history: visits.map((v) => ({ startsAt: v.startsAt, service: v.service })),
+    ret,
   };
 }

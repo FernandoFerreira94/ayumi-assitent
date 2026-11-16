@@ -15,8 +15,8 @@ const CANCEL = "ayumi:retorno-cancelar";
 type Ask = { appointmentId: string; undo?: () => void; toastId?: string | number };
 
 /**
- * Depois do Concluir: pergunta se já marca o retorno. Só abre se algum serviço tem retorno e a
- * cliente não tem horário marcado; senão o toast com Desfazer continua sozinho.
+ * Pergunta se já marca o retorno (depois do Concluir, ou pelo cartão da cliente). Só abre se algum
+ * serviço tem retorno e a cliente não tem horário marcado; senão o toast com Desfazer continua sozinho.
  */
 export function openReturnPrompt(ask: Ask) {
   window.dispatchEvent(new CustomEvent<Ask>(OPEN, { detail: ask }));
@@ -112,15 +112,16 @@ export function ReturnPrompt() {
           <SidePanelClose />
           <Drawer.Handle className="mb-3 md:hidden" />
           <div className={SHEET_SCROLL}>
-            <p className="flex items-center gap-1.5 pb-2 text-sm font-semibold text-ok">
-              <Icon name="checkCircle" size={16} />
-              Atendimento concluído
-              {shown.undo ? (
+            {/* Veio do Concluir: confirma e traz o Desfazer (o toast fica por baixo da folha) */}
+            {shown.undo ? (
+              <p className="flex items-center gap-1.5 pb-2 text-sm font-semibold text-ok">
+                <Icon name="checkCircle" size={16} />
+                Atendimento concluído
                 <button type="button" onClick={undo} className="ml-auto min-h-11 px-2 font-bold text-primary-text">
                   Desfazer
                 </button>
-              ) : null}
-            </p>
+              </p>
+            ) : null}
             <Drawer.Title className="pb-1 text-xl font-bold">Marcar o retorno de {name}?</Drawer.Title>
             <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
               {data.serviceLabel} · retorno previsto para <b className="text-fg">{formatShortDate(data.due)}</b>
