@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Entrar", ...shareMeta("bubbly · age
 export default function LoginPage() {
   return (
     // Login sempre com a Bolha e as cores da marca, qualquer que seja o mascote escolhido
-    <main data-mascot="bolha" className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 pb-[max(env(safe-area-inset-bottom),24px)] pt-[max(env(safe-area-inset-top),24px)]">
+    <main data-mascot="bolha" className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 pb-[max(env(safe-area-inset-bottom),24px)] pt-[max(env(safe-area-inset-top),24px)] lg:me-0 lg:ms-[50vw] lg:w-1/2 lg:max-w-none lg:items-center lg:px-12 lg:[&>*]:w-full lg:[&>*]:max-w-md">
       <MascotSync value="bolha" persist={false} />
       <Suspense fallback={<div className="skel h-13 rounded-2xl" aria-hidden="true" />}>
         <LoginForm />

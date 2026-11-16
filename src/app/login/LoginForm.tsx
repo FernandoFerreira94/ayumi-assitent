@@ -8,6 +8,7 @@ import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
 import { InstallGuide } from "@/features/install/InstallGuide";
 import { authClient } from "@/lib/auth-client";
+import { useMediaQuery } from "@/lib/use-media";
 import { ERROR_MESSAGES } from "@/lib/errors";
 
 /** E-mail fora da lista de acesso (piloto): explica o que fazer, em vez de só "sem acesso". */
@@ -78,6 +79,8 @@ function GoogleG() {
 }
 
 export function LoginForm() {
+  // Tela larga: a Bolha fica sozinha na metade esquerda, então cresce e não muda de tamanho entre as vistas
+  const wide = useMediaQuery("(min-width: 64rem)");
   const router = useRouter();
   const params = useSearchParams();
   const [view, setView] = useState<View>("start");
@@ -274,6 +277,8 @@ export function LoginForm() {
   return (
     <div className="grid gap-5">
       <div className="grid justify-items-center gap-0.5 text-center">
+        {/* Desktop: a Bolha e o nome ganham a metade esquerda da tela (prancha login); o formulário fica na direita */}
+        <div className="login-half grid justify-items-center gap-0.5">
         <div className="relative">
           <button
             type="button"
@@ -286,7 +291,7 @@ export function LoginForm() {
                 kind="bolha"
                 mood={mood}
                 look={look}
-                size={view === "start" ? 148 : 104}
+                size={wide ? 260 : view === "start" ? 148 : 104}
                 className="transition-[width,height] duration-300"
               />
             </span>
@@ -304,9 +309,11 @@ export function LoginForm() {
             </span>
           ) : null}
         </div>
-        <h1 className="mt-1 text-[2.25rem]" aria-label="bubbly">
+        <h1 className="mt-1 text-[2.25rem] lg:text-[3.25rem]" aria-label="bubbly">
           <Wordmark />
         </h1>
+        <p className="hidden text-base font-semibold text-muted lg:block">sua agenda com carinho</p>
+        </div>
         <h2 className="mt-1.5 text-xl font-bold">{HEAD[view][0]}</h2>
         <p className="text-sm font-semibold text-muted">{HEAD[view][1]}</p>
       </div>
