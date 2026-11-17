@@ -53,6 +53,8 @@ export const tenants = pgTable("tenants", {
   calendarTokenHash: text("calendar_token_hash").unique(),
   /** No link do calendário, título sem o nome da cliente (só o serviço) */
   calendarHideNames: boolean("calendar_hide_names").notNull().default(false),
+  /** Última leitura do link pelo calendário (iPhone); null = link novo ainda não assinado */
+  calendarFetchedAt: timestamp("calendar_fetched_at", { withTimezone: true }),
   /** Link público (webcal/https) de um calendário do iCloud, lido só para trazer eventos; null = desligado. Nunca logar. */
   icloudCalendarUrl: text("icloud_calendar_url"),
   /** Horas antes do horário do segundo aviso (para quem não respondeu); null = só um aviso */

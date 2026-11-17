@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, gte, lt, ne } from "drizzle-orm";
+import { and, asc, eq, gte, isNull, lt, ne, or, sql } from "drizzle-orm";
 import { getDb, withTenant } from "@/db/client";
 import { appointments, blocks, clients, services, tenants } from "@/db/schema";
 import { serviceLabel } from "@/features/appointments/core";
@@ -17,6 +17,22 @@ export async function tenantByTokenHash(hash: string) {
     .where(eq(tenants.calendarTokenHash, hash))
     .limit(1);
   return t ?? null;
+}
+
+/**
+ * Marca que o calendário leu o link (o iPhone assinou). Grava no máximo a cada 10 min para não escrever
+ * a cada atualização do iPhone. Nunca derruba o feed.
+ */
+export async function markCalendarFetched(tenantId: string) {
+  await getDb()
+    .update(tenants)
+    .set({ calendarFetchedAt: sql`now()` })
+    .where(
+      and(
+        eq(tenants.id, tenantId),
+        or(isNull(tenants.calendarFetchedAt), lt(tenants.calendarFetchedAt, sql`now() - interval '10 minutes'`)),
+      ),
+    );
 }
 
 /** ICS do estúdio: agendamentos não cancelados e bloqueios do app. Eventos vindos do Google ficam de fora. */

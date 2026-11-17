@@ -11,6 +11,7 @@ import { ICLOUD_STEPS } from "./icloud-guide";
 import { detectPlatform } from "@/features/install/platform";
 import { normalizeIcloudUrl } from "./icloud-url";
 import {
+  calendarLinkStatus,
   createCalendarLink,
   disableCalendarLink,
   removeIcloudCalendar,
@@ -117,6 +118,27 @@ function Path({ parts }: { parts: string[] }) {
   );
 }
 
+/** Esperando o iPhone assinar: confere sozinho; o botão confere na hora. */
+function WaitSubscribe({ checking, onCheck }: { checking: boolean; onCheck: () => void }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-2xl bg-soft px-4 py-2.5" role="status">
+      <span className="flex items-center gap-2 text-sm font-bold text-primary-text">
+        <span className="spin" aria-hidden="true" />
+        Esperando o iPhone assinar…
+      </span>
+      <button
+        type="button"
+        onClick={onCheck}
+        disabled={checking}
+        aria-busy={checking}
+        className="min-h-11 shrink-0 rounded-full bg-white px-3 text-sm font-bold text-primary-text disabled:opacity-60"
+      >
+        {checking ? "Conferindo…" : "Já assinei"}
+      </button>
+    </div>
+  );
+}
+
 const OUT_STEPS: { icon: IconName; label: string }[] = [
   { icon: "link", label: "Criar link" },
   { icon: "plus", label: "Adicionar" },
@@ -132,10 +154,13 @@ export function IphoneCalendarCard({
   hideNames: initialHide,
   googleConnected,
   icloudOn: initialIcloud,
+  subscribed: initialSubscribed = false,
 }: {
   enabled: boolean;
   hideNames: boolean;
   googleConnected: boolean;
+  /** O iPhone já leu o link atual (assinou). */
+  subscribed?: boolean;
   /** Já lê um calendário do iCloud (o link em si nunca vem para a tela). */
   icloudOn: boolean;
 }) {
@@ -156,11 +181,47 @@ export function IphoneCalendarCard({
   // Abre na direção que já está ligada; sem nada ligado, trazer do iPhone (o uso mais comum).
   const [tab, setTab] = useState<Tab>(initialEnabled && !initialIcloud ? "out" : "in");
   const [copied, setCopied] = useState(false);
+  const [subscribed, setSubscribed] = useState(initialSubscribed);
+  const [added, setAdded] = useState(false);
+  const [checking, setChecking] = useState(false);
   const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const inputRef = useRef<HTMLInputElement>(null);
   const ios = useIsIos();
   const icloudValid = !!normalizeIcloudUrl(icloudUrl);
   useEffect(() => () => clearTimeout(copiedTimer.current), []);
+
+  /** Pergunta se o iPhone já leu o link. `manual`: toque em "Já assinei" (mostra o resultado). */
+  async function checkSubscribed(manual = false) {
+    if (manual) setChecking(true);
+    const res = await calendarLinkStatus().catch(() => null);
+    if (manual) setChecking(false);
+    if (!res?.ok) return manual ? notify.error(res ? res.code : "NETWORK") : undefined;
+    if (res.data.subscribed) {
+      setSubscribed(true);
+      notify.success("Assinado no iPhone", "Os agendamentos já aparecem no app Calendário.");
+    } else if (manual) {
+      notify.info("O iPhone ainda não leu o link", "Toque em Adicionar ao iPhone e depois em Assinar.");
+    }
+  }
+  const checkRef = useRef(checkSubscribed);
+  useEffect(() => {
+    checkRef.current = checkSubscribed;
+  });
+
+  // Esperando a assinatura: confere a cada 4 s com o sheet aberto (até 15 min) e na volta do app Calendário.
+  useEffect(() => {
+    if (!open || !enabled || subscribed) return;
+    const started = Date.now();
+    const tick = () => {
+      if (document.visibilityState === "visible" && Date.now() - started < 15 * 60_000) void checkRef.current();
+    };
+    const id = setInterval(tick, 4000);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, [open, enabled, subscribed]);
 
   async function create() {
     setBusy("create");
@@ -168,6 +229,8 @@ export function IphoneCalendarCard({
     setBusy(null);
     if (!res?.ok) return notify.error(res ? res.code : "NETWORK", create);
     setUrl(res.data.url);
+    setSubscribed(false);
+    setAdded(false);
     setEnabled(true);
     notify.success(
       enabled ? "Link novo criado" : "Link criado",
@@ -182,6 +245,7 @@ export function IphoneCalendarCard({
     if (!res?.ok) return notify.error(res ? res.code : "NETWORK", off);
     setEnabled(false);
     setUrl(null);
+    setSubscribed(false);
     setConfirmOff(false);
     notify.success("Link desligado", "Apague a assinatura no iPhone se ela ainda aparecer.");
   }
@@ -396,20 +460,40 @@ export function IphoneCalendarCard({
                   </div>
                 ) : null}
 
-                <Steps items={OUT_STEPS} current={url ? 1 : enabled ? 3 : 0} />
+                <Steps items={OUT_STEPS} current={subscribed ? 3 : url ? (added ? 2 : 1) : enabled ? 2 : 0} />
 
-                {url ? (
+                {subscribed ? (
+                  <div
+                    className="flex items-center gap-3 rounded-2xl bg-ok-bg px-4 py-3 text-sm font-semibold text-ok"
+                    role="status"
+                  >
+                    <span className="grid size-9 shrink-0 place-content-center rounded-full bg-[#25B864] text-white">
+                      <Icon name="check" size={20} />
+                    </span>
+                    <span>
+                      <span className="block font-bold">Assinado no iPhone</span>
+                      Atualiza sozinho. Os agendamentos já aparecem no Calendário.
+                    </span>
+                  </div>
+                ) : null}
+
+                {url && !subscribed ? (
                   <div className="grid gap-2">
                     <a
                       href={url.replace(/^https?:/, "webcal:")}
+                      onClick={() => setAdded(true)}
                       className="flex min-h-13 items-center justify-center gap-2 rounded-full bg-primary px-5 font-bold text-on-primary shadow-[0_8px_20px_-8px_var(--primary)]"
                     >
                       <Icon name="plus" size={20} />
                       Adicionar ao iPhone
                     </a>
-                    <p className="text-center text-sm font-semibold text-muted">
-                      Depois toque em <b className="text-fg">Assinar</b>.
-                    </p>
+                    {added ? (
+                      <WaitSubscribe checking={checking} onCheck={() => void checkSubscribed(true)} />
+                    ) : (
+                      <p className="text-center text-sm font-semibold text-muted">
+                        Depois toque em <b className="text-fg">Assinar</b>.
+                      </p>
+                    )}
                     <button
                       type="button"
                       onClick={() => void copy()}
@@ -423,15 +507,11 @@ export function IphoneCalendarCard({
                     </button>
                     <Note icon="lock">Link pessoal: não envie para ninguém. Ele só aparece agora.</Note>
                   </div>
-                ) : enabled ? (
+                ) : enabled && !url ? (
                   <div className="grid gap-2">
-                    <div
-                      className="flex items-center gap-2 rounded-2xl bg-ok-bg px-3 py-3 text-sm font-bold text-ok"
-                      role="status"
-                    >
-                      <Icon name="checkCircle" size={20} />
-                      Ligado. Atualiza sozinho no iPhone.
-                    </div>
+                    {subscribed ? null : (
+                      <WaitSubscribe checking={checking} onCheck={() => void checkSubscribed(true)} />
+                    )}
                     <button
                       type="button"
                       onClick={() => void create()}
@@ -448,7 +528,7 @@ export function IphoneCalendarCard({
                     </button>
                     <Note icon="phone">Para outro aparelho, gere um novo. O antigo para de funcionar.</Note>
                   </div>
-                ) : (
+                ) : !enabled ? (
                   <button
                     type="button"
                     onClick={() => void create()}
@@ -461,9 +541,9 @@ export function IphoneCalendarCard({
                     {busy === "create" ? <span className="spin" aria-hidden="true" /> : <Icon name="link" size={20} />}
                     {busy === "create" ? "Criando…" : "Criar link do calendário"}
                   </button>
-                )}
+                ) : null}
 
-                {url ? (
+                {url && !subscribed ? (
                   <details className="glass group rounded-2xl px-4 py-3 text-sm font-semibold">
                     <summary className="flex min-h-7 cursor-pointer list-none items-center justify-between gap-2 font-bold text-primary-text">
                       Não abriu? Cole à mão
