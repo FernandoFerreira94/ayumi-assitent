@@ -58,6 +58,15 @@ describe("permissões por papel (can)", () => {
       for (const a of SALAO) expect(can(role, a, {}), `${role} ${a}`).toBe(true);
   });
 
+  it("profissional gerencia só o próprio calendário; equipe é de dona e gerente", () => {
+    expect(can("professional", "calendar.own", { ownProfessionalId: ANA, targetProfessionalId: ANA })).toBe(true);
+    expect(can("professional", "calendar.own", { ownProfessionalId: ANA, targetProfessionalId: BIA })).toBe(false);
+    expect(can("professional", "calendar.own", { ownProfessionalId: null, targetProfessionalId: ANA })).toBe(false);
+    expect(can("professional", "team.manage", { ownProfessionalId: ANA })).toBe(false);
+    expect(can("admin", "team.manage", {})).toBe(true);
+    expect(can("owner", "team.manage", {})).toBe(true);
+  });
+
   it("papel desconhecido não pode nada", () => {
     for (const a of ACTIONS)
       expect(can("staff" as Role, a, { ownProfessionalId: ANA, targetProfessionalId: ANA })).toBe(false);

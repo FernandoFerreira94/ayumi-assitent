@@ -2,9 +2,29 @@ import "server-only";
 import { APIError, betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
 import { Pool } from "pg";
+import { cookies } from "next/headers";
+import { INVITE_COOKIE, hashInviteToken, isInviteToken } from "@/features/team/invite";
 import { isEmailAllowed } from "./allowed-emails";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+/** Token do convite que a página /convite/<token> deixou no cookie; null se não há ou não tem o formato. */
+async function inviteTokenFromCookie(): Promise<string | null> {
+  try {
+    const v = (await cookies()).get(INVITE_COOKIE)?.value;
+    return v && isInviteToken(v) ? v : null;
+  } catch {
+    // Fora de um pedido (ex.: script): sem cookie
+    return null;
+  }
+}
+
+/** Convite que ainda vale: libera o cadastro mesmo fora da lista de e-mails do piloto. */
+async function hasValidInvite(token: string | null): Promise<boolean> {
+  if (!token) return false;
+  const r = await pool.query("select state from team_invite_preview($1)", [hashInviteToken(token)]);
+  return r.rows[0]?.state === "valid";
+}
 
 export const auth = betterAuth({
   database: pool,
@@ -49,11 +69,26 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (user) => {
-          if (!isEmailAllowed(user.email)) {
+          if (!isEmailAllowed(user.email) && !(await hasValidInvite(await inviteTokenFromCookie()))) {
             throw new APIError("FORBIDDEN", { message: "NOT_ALLOWED" });
           }
         },
         after: async (user) => {
+          // Veio por um convite: entra no salão de quem convidou (papel e profissional do convite), sem criar estúdio.
+          // O aceite é atômico no banco; se falhar (usado, expirado), a conta recém-criada é desfeita.
+          const invite = await inviteTokenFromCookie();
+          if (invite) {
+            try {
+              await pool.query("select accept_team_invite($1, $2)", [hashInviteToken(invite), user.id]);
+              (await cookies()).delete(INVITE_COOKIE);
+              return;
+            } catch (e) {
+              const msg = e instanceof Error ? e.message : "";
+              const code = /INVITE_(USED|EXPIRED|INVALID)/.exec(msg)?.[0] ?? "INVITE_INVALID";
+              await pool.query('delete from "user" where id = $1', [user.id]).catch(() => undefined);
+              throw new APIError("FORBIDDEN", { message: code });
+            }
+          }
           // Primeiro acesso: cria o estúdio do usuário e o vínculo de dono.
           const client = await pool.connect();
           try {

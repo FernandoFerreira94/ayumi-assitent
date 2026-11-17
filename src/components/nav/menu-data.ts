@@ -8,12 +8,13 @@ import { requireTenant } from "@/lib/tenant";
 
 /** Dados do menu do avatar (celular) e do menu lateral (tablet/desktop). `cache`: uma consulta por pedido. */
 export const getMenuData = cache(async () => {
-  const { tenantId, userName, professionalId } = await requireTenant();
+  const { tenantId, userName, professionalId, role } = await requireTenant();
   const [{ whatsapp, pendencias }, [tenant]] = await Promise.all([
     shellStatus(tenantId, professionalId),
     getDb().select({ name: tenants.name, ownerName: tenants.ownerName }).from(tenants).where(eq(tenants.id, tenantId)),
   ]);
   return {
+    role,
     userName: tenant?.ownerName || userName,
     studioName: tenant?.name ?? null,
     whatsapp,

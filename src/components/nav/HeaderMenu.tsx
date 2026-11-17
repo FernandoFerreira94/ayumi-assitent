@@ -8,6 +8,7 @@ async function MenuWithData() {
   const m = await getMenuData();
   return (
     <AppMenu
+      role={m.role}
       userName={m.userName}
       studioName={m.studioName}
       whatsapp={m.whatsapp}

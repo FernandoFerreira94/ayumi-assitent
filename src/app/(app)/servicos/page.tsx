@@ -4,12 +4,14 @@ import { withTenant } from "@/db/client";
 import type { CatalogService } from "@/features/services/catalog";
 import { listServices, upcomingByService } from "@/features/services/core";
 import { ServicesCatalog } from "@/features/services/ServicesCatalog";
+import { canEditServices } from "@/features/team/access";
 import { requireTenant } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Serviços" };
 
 export default async function ServicosPage({ searchParams }: PageProps<"/servicos">) {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  const { tenantId } = me;
   const { novo } = await searchParams;
   const services = await withTenant(tenantId, async (tx) => {
     const [rows, upcoming] = await Promise.all([listServices(tx), upcomingByService(tx)]);
@@ -35,7 +37,7 @@ export default async function ServicosPage({ searchParams }: PageProps<"/servico
       title="Serviços"
       subtitle={services.length ? `${services.length} ${services.length === 1 ? "serviço" : "serviços"}` : undefined}
     >
-      <ServicesCatalog services={services} startWithNew={novo === "1"} />
+      <ServicesCatalog services={services} startWithNew={novo === "1"} readOnly={!canEditServices(me.role)} />
     </PageShell>
   );
 }

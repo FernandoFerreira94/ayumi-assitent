@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLayoutEffect, useRef } from "react";
 import { openNewAppointment } from "@/features/appointments/QuickBook";
+import { canOpenPath } from "@/features/team/access";
+import type { Role } from "@/features/team/permissions";
 import { isNavActive } from "./nav-items";
 
 const svg = (d: React.ReactNode, filled = false) => (
@@ -99,7 +101,7 @@ const TABS = [
  * desliza com mola até a aba atual, que mostra o nome embaixo do ícone; o + fica num botão redondo à parte (é ação, não aba).
  * O menu lateral continua no avatar do topo. Tocar de novo na aba atual sobe ao topo.
  */
-export function TabBar() {
+export function TabBar({ role = "owner" }: { role?: Role }) {
   const pathname = usePathname();
   const pill = useRef<HTMLDivElement>(null);
 
@@ -124,14 +126,14 @@ export function TabBar() {
     place();
     window.addEventListener("resize", place);
     return () => window.removeEventListener("resize", place);
-  }, [pathname]);
+  }, [pathname, role]);
 
   return (
     <nav className="tabbar" aria-label="Navegação">
       <div ref={pill} className="tab-pill">
         <span className="tab-lens" aria-hidden="true" />
         <ul>
-          {TABS.map((t) => {
+          {TABS.filter((t) => canOpenPath(role, t.href)).map((t) => {
             const on = isNavActive(pathname, t.href);
             return (
               <li key={t.href}>

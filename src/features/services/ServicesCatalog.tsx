@@ -14,7 +14,16 @@ import { ServiceForm } from "./ServiceForm";
 type Sheet = { kind: "service"; service?: CatalogService; preset?: { name?: string } };
 
 /** Lista de serviços, com busca, reordenar e a folha de criar/editar. */
-export function ServicesCatalog({ services, startWithNew }: { services: CatalogService[]; startWithNew: boolean }) {
+export function ServicesCatalog({
+  services,
+  startWithNew,
+  readOnly = false,
+}: {
+  services: CatalogService[];
+  startWithNew: boolean;
+  /** Profissional só visualiza: sem criar, editar nem reordenar (o servidor também barra). */
+  readOnly?: boolean;
+}) {
   const side = useSheetSide();
   const router = useRouter();
   // Cópia local: reordenar e excluir aparecem na hora; o servidor manda a lista nova depois
@@ -28,11 +37,12 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
 
   const [query, setQuery] = useState("");
   // Vagas manda para cá com ?novo=1 para criar o primeiro serviço: a folha já nasce aberta
-  const [sheet, setSheet] = useState<Sheet | null>(startWithNew ? { kind: "service" } : null);
-  const [open, setOpen] = useState(startWithNew);
+  const [sheet, setSheet] = useState<Sheet | null>(startWithNew && !readOnly ? { kind: "service" } : null);
+  const [open, setOpen] = useState(startWithNew && !readOnly);
   const [sheetKey, setSheetKey] = useState(0);
 
   const openSheet = (s: Sheet) => {
+    if (readOnly) return;
     setSheet(s);
     setSheetKey((k) => k + 1);
     setOpen(true);
@@ -155,13 +165,15 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
           title="Nenhum serviço cadastrado"
           description="Cadastre o que você atende, com duração e valor, para agendar e mostrar vagas."
           action={
-            <button
-              type="button"
-              onClick={() => openSheet({ kind: "service", preset: newPreset() })}
-              className="btn-tint inline-flex min-h-11 items-center rounded-full px-5 text-sm font-bold"
-            >
-              Criar serviço
-            </button>
+            readOnly ? undefined : (
+              <button
+                type="button"
+                onClick={() => openSheet({ kind: "service", preset: newPreset() })}
+                className="btn-tint inline-flex min-h-11 items-center rounded-full px-5 text-sm font-bold"
+              >
+                Criar serviço
+              </button>
+            )
           }
         />
       ) : (
@@ -203,6 +215,7 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
             />
           </label>
 
+          {readOnly ? null : (
           <button
             type="button"
             onClick={() => openSheet({ kind: "service", preset: newPreset() })}
@@ -222,17 +235,20 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
             </svg>
             Criar serviço
           </button>
+          )}
 
           {visible.length === 0 ? (
             <div className="grid justify-items-center gap-3 px-3 py-8 text-center text-sm font-semibold text-muted">
               {query.trim() ? `Nenhum serviço com "${query.trim()}".` : "Nenhum serviço ainda."}
-              <button
-                type="button"
-                onClick={() => openSheet({ kind: "service", preset: newPreset(query.trim()) })}
-                className="min-h-11 rounded-full bg-soft px-4 font-bold text-primary-text"
-              >
-                {query.trim() ? `Criar "${query.trim()}"` : "Criar serviço"}
-              </button>
+              {readOnly ? null : (
+                <button
+                  type="button"
+                  onClick={() => openSheet({ kind: "service", preset: newPreset(query.trim()) })}
+                  className="min-h-11 rounded-full bg-soft px-4 font-bold text-primary-text"
+                >
+                  {query.trim() ? `Criar "${query.trim()}"` : "Criar serviço"}
+                </button>
+              )}
             </div>
           ) : (
             <>
@@ -243,7 +259,7 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
                     <li
                       key={s.id}
                       style={lifted ? { transform: `translateY(${dragging.dy}px) scale(1.02)` } : undefined}
-                      className={`relative grid grid-cols-[10px_minmax(0,1fr)_auto_44px_28px] items-center gap-2.5 border-t border-line bg-surface py-2.5 pl-3 pr-1 first:border-t-0 ${
+                      className={`relative grid ${readOnly ? "grid-cols-[10px_minmax(0,1fr)_auto]" : "grid-cols-[10px_minmax(0,1fr)_auto_44px_28px]"} items-center gap-2.5 border-t border-line bg-surface py-2.5 pl-3 pr-1 first:border-t-0 ${
                         lifted
                           ? "z-10 rounded-2xl shadow-[0_14px_30px_-12px_rgba(23,20,43,0.4)]"
                           : "transition-transform"
@@ -257,6 +273,7 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
                       <button
                         type="button"
                         onClick={() => openSheet({ kind: "service", service: s })}
+                        disabled={readOnly}
                         className={`flex min-w-0 flex-col text-left ${s.bookable ? "" : "opacity-45"}`}
                       >
                         <b className="truncate text-[15px]">{s.name}</b>
@@ -272,6 +289,8 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
                         ) : null}
                         {formatBRL(s.priceCents)}
                       </span>
+                      {readOnly ? null : (
+                        <>
                       <button
                         type="button"
                         onClick={() => openSheet({ kind: "service", service: s })}
@@ -310,6 +329,8 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
                           )}
                         </svg>
                       </button>
+                        </>
+                      )}
                     </li>
                   );
                 })}

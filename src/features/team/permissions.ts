@@ -5,7 +5,7 @@
  * - owner: tudo, inclusive plano/cobrança e excluir o salão.
  * - admin: tudo, menos plano/cobrança e excluir o salão.
  * - professional (D5): edita só a própria agenda (atendimentos, bloqueios, expediente), vê e edita os clientes
- *   do salão, vê só o próprio faturamento; sem serviços, Ajustes do salão, financeiro do salão nem plano.
+ *   do salão, vê só o próprio faturamento; só visualiza serviços; sem Ajustes do salão, financeiro do salão, equipe nem plano. Gerencia o próprio calendário (calendar.own).
  */
 
 export const ROLES = ["owner", "admin", "professional"] as const;
@@ -22,6 +22,10 @@ export const ACTIONS = [
   "finance.own",
   /** Ajustes do salão: perfil, WhatsApp, calendários, mensagens, avisos, IA, Google, exportar dados. */
   "salon.settings",
+  /** Link do calendário, iCloud e Google de UMA profissional (alvo = ela): a profissional gerencia o próprio. */
+  "calendar.own",
+  /** Equipe: criar/editar/desativar profissionais e convidar. */
+  "team.manage",
   "billing.manage",
   "salon.delete",
 ] as const;
@@ -46,6 +50,7 @@ export function can(role: Role, action: Action, ctx: Context = {}): boolean {
       return true;
     case "agenda.edit":
     case "finance.own":
+    case "calendar.own":
       // Só o que é dela: sem profissional ligada ao login, ou alvo do salão todo/de outra, nega.
       return ctx.ownProfessionalId != null && ctx.targetProfessionalId === ctx.ownProfessionalId;
     default:

@@ -25,10 +25,10 @@ async function baseUrl() {
 /** Gera o link (ou troca por um novo: o antigo para na hora). O link só é mostrado agora. */
 export async function createCalendarLink(): Promise<ActionResult<{ url: string }>> {
   const me = await requireTenant();
-  if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
   const { tenantId } = me;
   try {
     const professionalId = await calendarProfessionalId(me);
+    if (!canAs(me, "calendar.own", professionalId)) return fail("FORBIDDEN");
     const token = newToken();
     await withTenant(tenantId, (tx) =>
       tx
@@ -44,10 +44,10 @@ export async function createCalendarLink(): Promise<ActionResult<{ url: string }
 
 export async function disableCalendarLink(): Promise<ActionResult> {
   const me = await requireTenant();
-  if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
   const { tenantId } = me;
   try {
     const professionalId = await calendarProfessionalId(me);
+    if (!canAs(me, "calendar.own", professionalId)) return fail("FORBIDDEN");
     await withTenant(tenantId, (tx) =>
       tx.update(professionals).set({ calendarTokenHash: null }).where(eq(professionals.id, professionalId)),
     );
@@ -61,10 +61,10 @@ export async function setCalendarHideNames(hide: boolean): Promise<ActionResult>
   const parsed = z.boolean().safeParse(hide);
   if (!parsed.success) return fail("VALIDATION");
   const me = await requireTenant();
-  if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
   const { tenantId } = me;
   try {
     const professionalId = await calendarProfessionalId(me);
+    if (!canAs(me, "calendar.own", professionalId)) return fail("FORBIDDEN");
     await withTenant(tenantId, (tx) =>
       tx.update(professionals).set({ calendarHideNames: parsed.data }).where(eq(professionals.id, professionalId)),
     );
@@ -87,10 +87,10 @@ export async function saveIcloudCalendar(raw: string): Promise<ActionResult<{ co
   const url = p.success ? normalizeIcloudUrl(p.data) : null;
   if (!url) return fail("ICLOUD_LINK_INVALID", "url");
   const me = await requireTenant();
-  if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
   const { tenantId } = me;
   try {
     const professionalId = await calendarProfessionalId(me);
+    if (!canAs(me, "calendar.own", professionalId)) return fail("FORBIDDEN");
     const count = await syncIcloud(tenantId, professionalId, url);
     await withTenant(tenantId, (tx) =>
       tx.update(professionals).set({ icloudCalendarUrl: url }).where(eq(professionals.id, professionalId)),
@@ -108,10 +108,10 @@ export async function saveIcloudCalendar(raw: string): Promise<ActionResult<{ co
 /** Para de ler o Calendário do iPhone e tira da agenda o que veio de lá. */
 export async function removeIcloudCalendar(): Promise<ActionResult> {
   const me = await requireTenant();
-  if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
   const { tenantId } = me;
   try {
     const professionalId = await calendarProfessionalId(me);
+    if (!canAs(me, "calendar.own", professionalId)) return fail("FORBIDDEN");
     await withTenant(tenantId, async (tx) => {
       await tx.update(professionals).set({ icloudCalendarUrl: null }).where(eq(professionals.id, professionalId));
       await clearIcloudEvents(tx, professionalId);

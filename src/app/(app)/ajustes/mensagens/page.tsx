@@ -6,13 +6,13 @@ import { tenants } from "@/db/schema";
 import { getMessageSettings } from "@/features/reminders/core";
 import { MessagesForm } from "@/features/reminders/MessagesForm";
 import { AiRepliesForm } from "@/features/salon/AiRepliesForm";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenantFor } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Mensagens para a cliente" };
 
 /** Ajustes > Mensagens: textos do agendamento e dos avisos no WhatsApp, e a leitura das respostas pela IA. */
 export default async function MensagensPage() {
-  const { tenantId } = await requireTenant();
+  const { tenantId } = await requireTenantFor("/ajustes/mensagens");
   const [messages, [salon]] = await Promise.all([
     withTenant(tenantId, (tx) => getMessageSettings(tx)),
     getDb().select({ name: tenants.name }).from(tenants).where(eq(tenants.id, tenantId)),

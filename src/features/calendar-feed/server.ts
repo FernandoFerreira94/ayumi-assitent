@@ -1,7 +1,7 @@
 import "server-only";
-import { and, asc, eq, gte, isNull, lt, ne, or } from "drizzle-orm";
+import { and, asc, eq, gte, isNull, lt, ne, or, sql } from "drizzle-orm";
 import { getDb, withTenant } from "@/db/client";
-import { appointments, blocks, clients, professionals, services, tenants } from "@/db/schema";
+import { appointments, blocks, clients, professionals, services } from "@/db/schema";
 import { serviceLabel } from "@/features/appointments/core";
 import { buildIcs, eventTitle, type FeedEvent } from "./ics";
 
@@ -13,22 +13,15 @@ export const FEED_WINDOW = { pastDays: 30, futureDays: 180 } as const;
 export type FeedOwner = { id: string; tenantId: string; tenantName: string; hideNames: boolean };
 
 /**
- * Profissional dona do hash. Roda como dono do banco, sem estúdio ativo (o link é anônimo): professionals tem
- * FORCE RLS, então isto depende de o papel de conexão ignorar RLS, como a limpeza de retenção e a exclusão de conta.
+ * Profissional dona do hash. Roda sem estúdio ativo (o link é anônimo) e `professionals` tem FORCE RLS, então a
+ * leitura passa por `feed_owner_by_token_hash` (SECURITY DEFINER, só as colunas do feed).
  */
 export async function professionalByTokenHash(hash: string): Promise<FeedOwner | null> {
-  const [p] = await getDb()
-    .select({
-      id: professionals.id,
-      tenantId: professionals.tenantId,
-      tenantName: tenants.name,
-      hideNames: professionals.calendarHideNames,
-    })
-    .from(professionals)
-    .innerJoin(tenants, eq(tenants.id, professionals.tenantId))
-    .where(eq(professionals.calendarTokenHash, hash))
-    .limit(1);
-  return p ?? null;
+  const rows = await getDb().execute<{ id: string; tenant_id: string; tenant_name: string; hide_names: boolean }>(
+    sql`select * from feed_owner_by_token_hash(${hash})`,
+  );
+  const r = rows[0];
+  return r ? { id: r.id, tenantId: r.tenant_id, tenantName: r.tenant_name, hideNames: r.hide_names } : null;
 }
 
 /** Estado do que a profissional liga em Ajustes > Calendários (nunca o link nem o hash). */

@@ -6,13 +6,13 @@ import { tenants } from "@/db/schema";
 import { shellStatus } from "@/features/shell/status";
 import { WhatsAppCard } from "@/features/whatsapp/WhatsAppCard";
 import { maskPhone } from "@/lib/phone";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenantFor } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "WhatsApp" };
 
 /** Ajustes > WhatsApp: conectar o número do salão (por onde saem confirmações e avisos). */
 export default async function WhatsAppPage() {
-  const { tenantId, professionalId } = await requireTenant();
+  const { tenantId, professionalId } = await requireTenantFor("/ajustes/whatsapp");
   const [{ whatsapp }, [t]] = await Promise.all([
     shellStatus(tenantId, professionalId),
     getDb().select({ phone: tenants.businessPhone }).from(tenants).where(eq(tenants.id, tenantId)),

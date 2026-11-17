@@ -21,9 +21,10 @@ import { professionalGoogleAccount, syncAppointmentSafe } from "./server";
  */
 export async function disconnectGoogle(): Promise<ActionResult<{ onlyLogin?: boolean }>> {
   const me = await requireTenant();
-  if (!canAs(me, "salon.settings")) return fail("FORBIDDEN");
   try {
-    const acc = await professionalGoogleAccount(await calendarProfessionalId(me));
+    const professionalId = await calendarProfessionalId(me);
+    if (!canAs(me, "calendar.own", professionalId)) return fail("FORBIDDEN");
+    const acc = await professionalGoogleAccount(professionalId);
     if (!acc) return ok();
     const [{ others }] = await getDb().execute<{ others: number }>(
       sql`select count(*)::int as others from account o where o."userId" = ${acc.userId} and o.id <> ${acc.id}`,

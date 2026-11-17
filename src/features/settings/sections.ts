@@ -9,6 +9,7 @@ export const SECTIONS = {
   calendarios: { href: "/ajustes/calendarios", title: "Calendários", icon: "calendar", tint: "blue" },
   notificacoes: { href: "/ajustes/notificacoes", title: "Notificações", icon: "bell", tint: "red" },
   mensagens: { href: "/ajustes/mensagens", title: "Mensagens para a cliente", icon: "message", tint: "lavender" },
+  equipe: { href: "/ajustes/equipe", title: "Equipe", icon: "users", tint: "teal" },
   expediente: { href: "/ajustes/expediente", title: "Expediente", icon: "clock", tint: "orange" },
 } as const satisfies Record<string, { href: string; title: string; icon: IconName; tint: Tint }>;
 

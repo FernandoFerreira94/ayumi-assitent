@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { useRef } from "react";
 import { Mascot } from "@/components/brand/Mascot";
 import type { WhatsAppState } from "@/features/shell/status";
+import { canOpenPath } from "@/features/team/access";
+import type { Role } from "@/features/team/permissions";
 import { NAV_ICONS } from "./nav-icons";
 import { SignOutButton } from "./SignOutButton";
 
@@ -50,12 +52,14 @@ export function initials(name: string | null | undefined): string {
  * <dialog> modal dá foco preso, Esc e fundo inerte de graça.
  */
 export function AppMenu({
+  role,
   userName,
   studioName,
   whatsapp,
   pendencias,
   version,
 }: {
+  role: Role;
   userName: string | null;
   studioName: string | null;
   whatsapp: WhatsAppState;
@@ -149,7 +153,7 @@ export function AppMenu({
             </Link>
           ) : null}
           <ul className="grid grid-cols-3 gap-2 [&>li]:min-w-0">
-            {ITEMS.map((item) => {
+            {ITEMS.filter((i) => canOpenPath(role, i.href)).map((item) => {
               const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
               const badge = item.href === "/pendencias" && pendencias > 0 ? pendencias : 0;
               return (

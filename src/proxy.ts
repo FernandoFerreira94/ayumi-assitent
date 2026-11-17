@@ -11,6 +11,8 @@ export function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   // Páginas públicas (exigidas pelo Google OAuth): abertas com ou sem login
   if (PUBLIC_PATHS.has(pathname)) return NextResponse.next();
+  // Convite: a pessoa ainda não tem conta; a página mostra o convite e leva ao Google
+  if (pathname.startsWith("/convite/")) return NextResponse.next();
   if (pathname.startsWith("/login") && searchParams.get("sessao") === "invalida") {
     const res = NextResponse.next();
     for (const { name } of request.cookies.getAll()) {

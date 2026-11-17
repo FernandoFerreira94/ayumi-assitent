@@ -363,3 +363,22 @@ export const ownerNotices = pgTable(
   },
   (t) => [unique().on(t.tenantId, t.kind, t.day)],
 );
+
+/** Convite para entrar no salão (profissional ou gerente). Só o hash do token fica aqui; vale 7 dias. */
+export const teamInvites = pgTable(
+  "team_invites",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull().unique(),
+    role: text("role").notNull().$type<"admin" | "professional">(),
+    professionalId: uuid("professional_id").references(() => professionals.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdBy: text("created_by"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("team_invites_tenant").on(t.tenantId, t.createdAt)],
+);

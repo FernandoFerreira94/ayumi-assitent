@@ -4,6 +4,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { openNewAppointment } from "@/features/appointments/QuickBook";
+import { canOpenPath } from "@/features/team/access";
+import type { Role } from "@/features/team/permissions";
 import { NAV_ICONS } from "./nav-icons";
 import { NAV_ITEMS, isNavActive, type NavIconKey, type NavItem } from "./nav-items";
 
@@ -28,7 +30,15 @@ function NavIcon({ name }: { name: NavIconKey }) {
  * Navegação do tablet e do desktop. De 768 a 1279 px é um trilho de ícones (76 px; o nome fica no title e no leitor
  * de tela); a partir de 1280 px mostra os nomes (248 px). No celular fica escondida: quem navega é a barra do rodapé.
  */
-export function SideNav({ studioName, pendencias }: { studioName: string | null; pendencias: number }) {
+export function SideNav({
+  role = "owner",
+  studioName,
+  pendencias,
+}: {
+  role?: Role;
+  studioName: string | null;
+  pendencias: number;
+}) {
   const pathname = usePathname();
   const salon = studioName ?? "Meu salão";
 
@@ -64,9 +74,9 @@ export function SideNav({ studioName, pendencias }: { studioName: string | null;
           N
         </kbd>
       </button>
-      <ul className="sidenav-list">{NAV_ITEMS.filter((i) => i.group === "main").map(link)}</ul>
+      <ul className="sidenav-list">{NAV_ITEMS.filter((i) => i.group === "main" && canOpenPath(role, i.href)).map(link)}</ul>
       <hr className="sidenav-sep" />
-      <ul className="sidenav-list">{NAV_ITEMS.filter((i) => i.group === "more").map(link)}</ul>
+      <ul className="sidenav-list">{NAV_ITEMS.filter((i) => i.group === "more" && canOpenPath(role, i.href)).map(link)}</ul>
       <Link
         href="/perfil"
         title="Perfil e conta"

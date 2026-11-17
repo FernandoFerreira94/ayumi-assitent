@@ -17,6 +17,9 @@ export const LOGIN_NOT_ALLOWED =
 export function authErrorText(code: string | null | undefined): string | null {
   if (!code) return null;
   const c = code.toUpperCase();
+  if (c.includes("INVITE_EXPIRED")) return ERROR_MESSAGES.INVITE_EXPIRED;
+  if (c.includes("INVITE_USED")) return ERROR_MESSAGES.INVITE_USED;
+  if (c.includes("INVITE_INVALID")) return ERROR_MESSAGES.INVITE_INVALID;
   if (c.includes("NOT_ALLOWED") || c === "UNABLE_TO_CREATE_USER") return LOGIN_NOT_ALLOWED;
   if (c.includes("INVALID_EMAIL_OR_PASSWORD") || c.includes("INVALID_PASSWORD")) return "E-mail ou senha incorretos.";
   if (c.includes("USER_ALREADY_EXISTS")) return "Este e-mail já tem conta. Entre com a senha.";
@@ -54,7 +57,7 @@ function passwordStrength(v: string) {
 }
 
 /** O "G" oficial do Google, nas quatro cores da marca. */
-function GoogleG() {
+export function GoogleG() {
   return (
     <svg viewBox="0 0 48 48" className="size-[18px]" aria-hidden="true">
       <path

@@ -30,6 +30,7 @@
 ## Dados
 
 - Desde a A4 o link, "ocultar nomes" e a URL do iCloud moram em `professionals` (`calendar_token_hash`, `calendar_hide_names`, `icloud_calendar_url`; migration 0036). As colunas de `tenants` (0031/0032) ficam paradas até a limpeza.
+- Desde a A6 o feed anônimo acha a dona do hash por `feed_owner_by_token_hash` (função SECURITY DEFINER da 0038) e as ações do calendário exigem `calendar.own`.
 - `tenants.calendar_token_hash` (unique, null = desligado) e `tenants.calendar_hide_names` (migration `0031_calendar_feed.sql`, legado).
 - `tenants.icloud_calendar_url` (legado), `blocks.external_uid` (único por estúdio), `blocks.converted_at`, check de `blocks.source` com `'icloud'` (migration `0032_icloud_calendar.sql`).
 

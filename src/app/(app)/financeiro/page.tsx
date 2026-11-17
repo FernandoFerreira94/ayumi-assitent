@@ -13,7 +13,7 @@ import { isMonth, monthRange, shiftMonth } from "@/features/finance/period";
 import { ServicePie } from "@/features/finance/ServicePie";
 import { summarize } from "@/features/finance/summary";
 import { formatBRL, todayStr } from "@/lib/dates";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenantFor } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Financeiro" };
 
@@ -41,7 +41,7 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
   const today = todayStr();
   const ym = isMonth(m) ? m : today.slice(0, 7);
   const { range, dates, label } = monthRange(ym);
-  const { tenantId } = await requireTenant();
+  const { tenantId } = await requireTenantFor("/financeiro");
   const { rows, spent } = await withTenant(tenantId, async (tx) => ({
     rows: await listDay(tx, range),
     spent: await listExpenses(tx, dates[0], dates[1]),

@@ -10,6 +10,8 @@ import { PushStatusText } from "@/features/settings/PushStatusText";
 import { hoursSummary } from "@/features/settings/sections";
 import { SettingsGroup, SettingsRow } from "@/features/settings/SettingsList";
 import { shellStatus } from "@/features/shell/status";
+import { listProfessionals } from "@/features/team/core";
+import { canAs, ownAgendaId } from "@/features/team/permissions";
 import { calendarProfessionalId } from "@/features/team/professional";
 import { ReplayTourButton } from "@/features/tour/ReplayTourButton";
 import { UpdateButton } from "@/features/update/UpdateButton";
@@ -22,10 +24,14 @@ export const metadata: Metadata = { title: "Ajustes" };
  * Aqui só se lê o resumo; o que cada seção edita (e carrega) fica na tela dela.
  */
 export default async function AjustesPage() {
-  const { tenantId, professionalId } = await requireTenant();
-  const [{ whatsapp, google }, { week, reminders }, calendar] = await Promise.all([
+  const me = await requireTenant();
+  const { tenantId, professionalId } = me;
+  const manager = canAs(me, "team.manage");
+  const [{ whatsapp, google }, { week, reminders, team }, calendar] = await Promise.all([
     shellStatus(tenantId, professionalId),
-    withTenant(tenantId, async (tx) => ({ week: await getHours(tx), reminders: await getReminderSettings(tx) })),
+    withTenant(tenantId, async (tx) => ({ week: await getHours(tx, ownAgendaId(me)), reminders: await getReminderSettings(tx),
+      team: manager ? (await listProfessionals(tx)).filter((p) => p.active).length : 0,
+    })),
     calendarProfessionalId({ tenantId, professionalId }).then((id) => calendarSettings(tenantId, id)),
   ]);
   const iphone = calendar.feedOn || calendar.icloudOn;
@@ -39,13 +45,15 @@ export default async function AjustesPage() {
     <PageShell title="Ajustes">
       <LegacyHashRedirect />
       <SettingsGroup title="Conexões">
-        <SettingsRow
-          section="whatsapp"
-          status={
-            whatsapp === "open" ? "Conectado" : whatsapp === "unavailable" ? "Sem resposta agora" : "Desconectado"
-          }
-          todo={whatsapp === "other" ? "Conectar" : undefined}
-        />
+        {manager ? (
+          <SettingsRow
+            section="whatsapp"
+            status={
+              whatsapp === "open" ? "Conectado" : whatsapp === "unavailable" ? "Sem resposta agora" : "Desconectado"
+            }
+            todo={whatsapp === "other" ? "Conectar" : undefined}
+          />
+        ) : null}
         <SettingsRow
           section="calendarios"
           status={calendars.length ? calendars.join(" · ") : "Google e iPhone"}
@@ -54,8 +62,13 @@ export default async function AjustesPage() {
         <SettingsRow section="notificacoes" status={<PushStatusText />} />
       </SettingsGroup>
       <SettingsGroup title="Clientes e agenda">
-        <SettingsRow section="mensagens" status={avisos.length ? avisos.join(" · ") : "Avisos desligados"} />
+        {manager ? (
+          <SettingsRow section="mensagens" status={avisos.length ? avisos.join(" · ") : "Avisos desligados"} />
+        ) : null}
         <SettingsRow section="expediente" status={hoursSummary(week)} />
+        {manager ? (
+          <SettingsRow section="equipe" status={team === 1 ? "1 profissional" : `${team} profissionais`} />
+        ) : null}
       </SettingsGroup>
       <div className="mt-7 grid gap-3">
         <h2 className="px-3 text-xs font-bold uppercase tracking-wide text-muted">Este aparelho</h2>

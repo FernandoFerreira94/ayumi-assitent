@@ -7,7 +7,7 @@ import { OfflineBanner } from "@/components/feedback/OfflineBanner";
 import { NavHistory } from "@/components/nav/BackButton";
 import { Shortcuts } from "@/components/nav/Shortcuts";
 import { SideNavSlot } from "@/components/nav/SideNavSlot";
-import { TabBar } from "@/components/nav/TabBar";
+import { TabBarSlot } from "@/components/nav/TabBarSlot";
 import { QuickBook } from "@/features/appointments/QuickBook";
 import { ConversationHost } from "@/features/messaging/ConversationHost";
 import { NoticeHost } from "@/features/owner-notices/NoticeHost";
@@ -51,7 +51,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
           </Suspense>
         </div>
       </div>
-      <TabBar />
+      <TabBarSlot />
       <NavHistory />
       <Suspense fallback={null}>
         <Shortcuts />

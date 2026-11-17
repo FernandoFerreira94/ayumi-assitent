@@ -26,7 +26,7 @@ type AccountRow = {
  * Conta Google da profissional: a do login ligado a ela (`memberships.professional_id`). Profissional sem login,
  * ou com login sem Google, devolve null (não sincroniza, sem erro). Dona sem profissional ligada (cadastro novo)
  * vale para a profissional padrão do salão, a mesma que recebe a agenda quando ninguém escolhe.
- * Lê `professionals` como dono do banco só para achar a padrão (mesma regra de `default_professional_id`).
+ * A padrão vem de `first_professional_of` (SECURITY DEFINER, só leitura), pois isto roda sem salão ativo e `professionals` tem FORCE RLS.
  */
 export async function professionalGoogleAccount(professionalId: string): Promise<AccountRow | null> {
   const rows = await getDb().execute<AccountRow>(sql`
@@ -35,8 +35,7 @@ export async function professionalGoogleAccount(professionalId: string): Promise
     from account a join memberships m on m.user_id = a."userId"
     where a."providerId" = 'google' and (
       m.professional_id = ${professionalId}
-      or (m.professional_id is null and m.role = 'owner' and ${professionalId}::uuid = (
-        select p.id from professionals p where p.tenant_id = m.tenant_id order by p.position, p.created_at limit 1))
+      or (m.professional_id is null and m.role = 'owner' and ${professionalId}::uuid = first_professional_of(m.tenant_id))
     )
     order by (m.professional_id is not null) desc
     limit 1`);
@@ -101,8 +100,7 @@ export async function isGoogleConnected(professionalId: string): Promise<boolean
 /** Profissionais do salão com Google ligado (quem tem login com conta Google; a dona sem vínculo vale pela padrão). */
 export async function connectedProfessionalIds(tenantId: string): Promise<string[]> {
   const rows = await getDb().execute<{ id: string }>(sql`
-    select distinct coalesce(m.professional_id, (
-      select p.id from professionals p where p.tenant_id = m.tenant_id order by p.position, p.created_at limit 1)) as id
+    select distinct coalesce(m.professional_id, first_professional_of(m.tenant_id)) as id
     from memberships m join account a on a."userId" = m.user_id
     where m.tenant_id = ${tenantId} and a."providerId" = 'google'
       and (m.professional_id is not null or m.role = 'owner')`);

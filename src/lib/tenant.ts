@@ -1,5 +1,6 @@
 import "server-only";
 import { redirect } from "next/navigation";
+import { canOpenPath } from "@/features/team/access";
 import { membershipOf } from "@/features/team/membership";
 import { requireSession } from "./session";
 
@@ -18,4 +19,11 @@ export async function requireTenant() {
     role: m.role,
     professionalId: m.professionalId,
   };
+}
+
+/** `requireTenant` para uma tela que o papel pode não abrir: sem permissão, volta ao painel. */
+export async function requireTenantFor(pathname: string) {
+  const me = await requireTenant();
+  if (!canOpenPath(me.role, pathname)) redirect("/agenda");
+  return me;
 }
