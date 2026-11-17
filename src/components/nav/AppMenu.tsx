@@ -8,6 +8,7 @@ import type { WhatsAppState } from "@/features/shell/status";
 import { NAV_ICONS } from "./nav-icons";
 import { ADMIN_NAV_ITEM } from "./nav-items";
 import { SignOutButton } from "./SignOutButton";
+import { useCloseOnHide } from "@/lib/use-close-on-hide";
 
 const icon = (d: React.ReactNode) => (
   <svg
@@ -68,6 +69,7 @@ export function AppMenu({
   isAdmin?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  useCloseOnHide(ref);
   const dragFrom = useRef<number | null>(null);
   const pathname = usePathname();
   const abbr = initials(userName);

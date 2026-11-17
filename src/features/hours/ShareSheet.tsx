@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { notify } from "@/components/feedback/toast";
 import { Icon, TileTitle, type IconName, type Tint } from "@/components/ui/Icon";
 import { buildShareBody, composeShareText, markKey, shareFooters, shareTitles, type ShareFormat } from "./share-text";
+import { useCloseOnHide } from "@/lib/use-close-on-hide";
 
 type Day = { date: string; label: string; slots: string[] };
 
@@ -98,6 +99,7 @@ export function ShareSheet({
   onClose?: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  useCloseOnHide(ref);
   const [opened, setOpened] = useState(defaultOpen);
   const [busy, setBusy] = useState(false);
   const [format, setFormat] = useState<ShareFormat>("padrao");
