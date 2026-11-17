@@ -1,6 +1,6 @@
 # Mapa de módulos
 
-Atualizado em 12/11/2026 (main em #104). Ache o módulo da task, leia a coluna "Mexeu aqui? Confira" e abra **só** a ficha dele (e a do vizinho com ligação forte).
+Atualizado em 17/11/2026 (main em #162, auditoria completa). Ache o módulo da task, leia a coluna "Mexeu aqui? Confira" e abra **só** a ficha dele (e a do vizinho com ligação forte).
 
 | Módulo | Ficha | Pastas | Finalidade | Mexeu aqui? Confira |
 | --- | --- | --- | --- | --- |
@@ -20,7 +20,7 @@ Atualizado em 12/11/2026 (main em #104). Ache o módulo da task, leia a coluna "
 | Painel do dono | [admin.md](admin.md) | `features/admin`, telas `admin/*` | Painel só do dono do produto: 2FA, step-up de 7 dias, registro de acesso; visão geral, assinantes e pagamentos (dados de exemplo até a cobrança chegar) | Auth (`twoFactor`, login por senha), retenção (worker), cabeçalhos (`next.config.ts`), `proxy.ts`, privacidade |
 | Suporte e avisos do dono | [suporte.md](suporte.md) | `features/support`, telas `ajustes/suporte`, `admin/suporte`, `admin/avisos` | Conversa salão ↔ dono, avisos do dono no Painel de todos os salões | Painel (cartões no topo), Ajustes (linha Ajuda), admin (menu, registro), push (`notifyAdmins`, `sendToAll`) |
 | Apps da loja | [apps-loja.md](apps-loja.md) | `mobile/`, `codemagic.yaml`, `features/native`, `app/.well-known` | Casca Capacitor do Android e iPhone que carrega o app web; links do domínio abrem o app | Domínio do app (`server.url`), instalar PWA (`isNativeShell`), login Google e push no app, regras de loja (sem venda no app) |
-| Plataforma | [plataforma.md](plataforma.md) | `db`, `lib`, `worker`, `proxy.ts`, `api/*`, `scripts` | Auth, estúdio/RLS, migrations, worker, deploy, backup | Tudo |
+| Plataforma | [plataforma.md](plataforma.md) | `db`, `lib`, `worker`, `proxy.ts`, `api/*`, `scripts`, `features/auth` (esqueci a senha), `features/retention`, `features/legal` | Auth, estúdio/RLS, migrations, worker, retenção LGPD, privacidade/termos, deploy, backup | Tudo |
 
 ## Matriz de ligações (imports entre features)
 
@@ -49,6 +49,10 @@ Gerada por varredura de `@/features/*`. "Usa" = depende de; "Usado por" = quem q
 | tour / install / update | — | layout, ajustes, login | — |
 | support | admin (guard, audit, alerts), push | telas agenda, ajustes, admin | support_messages, platform_notices, platform_notice_dismissals |
 | whatsapp | messaging | appointments, shell | tenants (instância) |
+| admin | messaging, push, support | telas admin, nav (`isAdmin`), `lib/auth` (2FA), retention, support, worker | admin_step_up, admin_audit_log, "twoFactor", leitura de todas as tabelas como dono do banco |
+| native | install | layout, login, `.well-known`, `api/native-auth`, clients, contacts | verification (código de uso único do Better Auth) |
+| retention | admin | worker | access_log, messages, admin_audit_log, admin_step_up |
+| auth | — | `lib/auth`, tela `redefinir-senha` | tabelas do Better Auth |
 
 ## Fluxos que cruzam módulos
 
@@ -57,3 +61,41 @@ Gerada por varredura de `@/features/*`. "Usa" = depende de; "Usado por" = quem q
 - **Resposta da cliente**: Evolution → `api/whatsapp/webhook` (segredo na URL, `messaging/webhook-url`) → `messaging/inbound.handleInbound` → `replies.parseIntent` / IA `classify` + `ai-policy.planAiReply` → muda status do agendamento → push + sino (`notifications/core`).
 - **Avisos do dia**: worker (5 min) → `owner-notices/run` → `plan.dueNotices` (regra pura) → `core.runTenantNotices` (textos/IA/clima) → `push/webpush`; `owner_notices` garante uma vez por dia.
 - **Vagas**: `hours/slots` (expediente − agendamentos − bloqueios − eventos Google) → `ShareSheet`/`CustomSheet` → texto `share-text`.
+- **Retorno da cliente**: Concluir → `appointments/core.setStatus` grava `return_due_on` → `returns/ReturnPrompt` sugere dias/horários (`freeSlots`) → agendar normal; "Para chamar" em Clientes lista quem está no prazo.
+- **Suporte**: salão escreve em Ajustes > Ajuda → `support/core.sendSupportMessage` → push ao dono (`notifyAdmins`) → resposta em `/admin/suporte` → push ao salão (`sendToAll`).
+- **Login no app da loja**: `api/native-auth/start` (challenge) → Google no navegador do sistema → `finish` (código de uso único, 2 min) → `br.app.bubbly://auth` → `exchange` confere o segredo e abre a sessão na WebView.
+- **Atualização do app**: `AutoUpdate` compara `api/version` ao abrir/voltar ao app; recarrega só sem sheet/diálogo/campo em foco; depois só o toast "App atualizado".
+
+## Jobs do worker (pg-boss)
+
+| Fila | Quando | Faz |
+| --- | --- | --- |
+| `send-reminders` | a cada 5 min | 1º e 2º aviso, respostas guardadas da noite, "não respondeu" (push) |
+| `owner-notices` | a cada 5 min | avisos do dia no celular da dona (bom dia, folga, fim do expediente, semana, feriados) |
+| `retention` | 04:15 BRT | apaga `access_log` > 200 dias, `messages` > 365, `admin_audit_log` > 365, `admin_step_up` > 7 dias |
+| `admin-digest` | 09:00 BRT | resumo do dia anterior ao dono (precisa `ADMIN_USER_IDS` no worker) |
+
+Partida do worker: desagenda `push-pendencias` (antiga) e reaponta o webhook de todas as instâncias.
+
+## Fora da main (17/11/2026)
+
+- **Pagamentos, planos e papéis (Empresa)**: só na branch local `claude/pagamentos-planos` (pasta `Projetos\ayumi-pagamentos`). Na main não há `role` em `memberships`, `professionals`, `professional_id`, planos nem gateway. O painel do dono mostra números de exemplo (`admin/demo-data.ts`) em Visão geral, Assinantes e Pagamentos.
+- **Desktop/tablet Fases 2, 3a e 3b**: PRs rascunho #135, #136, #143. **Revisão de UX do suporte**: PR rascunho #153.
+
+## Dívidas e furos conhecidos (auditoria 17/11)
+
+| Item | Onde | Risco |
+| --- | --- | --- |
+| Token antigo (único) do webhook ainda aceito | `messaging/webhook-url.isLegacyWebhookToken` | Médio: um token vazado vale para qualquer instância. Era para sair 1 semana após 13/11; conferir o log `whatsapp_webhook_legacy` e remover |
+| CSP só em modo relatório | `next.config.ts` (`Content-Security-Policy-Report-Only`) | Médio: não bloqueia script injetado. Trocar para enforce se o Sentry não mostra violação |
+| IA recebe texto cortado em 500 de mensagens até 1.000 | `messaging/quota.AI_TEXT_MAX` × `ai-policy.AI_MAX_CHARS` | Baixo: classificação com metade da mensagem |
+| Fuso fixo UTC-3 | `lib/dates.ts` | Baixo hoje; quebra salão fora de Brasília (AM, MT, AC, Fernando de Noronha) |
+| `support_messages` sem retenção própria | `retention/run.ts` | Baixo: LGPD pede prazo |
+| `sendTestNotice` sem tela | `owner-notices/actions.ts` | Código morto |
+| Log com `console.error(JSON.stringify(...))` fora de `lib/log` | `reminders/run.ts` | Baixo: foge do padrão de log |
+| Migrations repetidas (`0026`, `0029`) e buracos | `db/migrations` | Ordem por nome; risco de conflito com a branch de pagamentos |
+| ~100 branches remotas antigas (`f*`, `feat/*`, `claude/project-thread-*`) | GitHub | Ruído; apagar só com pedido escrito do usuário |
+| Push nativo (FCM/APNs) inexistente | `apps-loja.md` | App da loja no iPhone sem notificação |
+| Cobrança híbrida (IAP + site) decidida em 16/11 × regra "app não vende nada" | `apps-loja.md` | Rever ao implementar billing |
+| Problema antigo "Google pede reconectar sempre" | `google.md` | Sem confirmação de que foi resolvido |
+

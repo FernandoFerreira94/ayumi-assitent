@@ -38,7 +38,7 @@
 
 - `core.setStatus`: virar `done` grava `appointments.return_due_on` (menor `services.return_days` entre os serviços do atendimento, contado do dia no fuso do estúdio; `returns/rules.returnDue`). Qualquer outro status (inclusive Desfazer) limpa `return_due_on` e `return_skipped_at`. Vale para um e para o lote (`updateStatuses`, que devolve `returns` = quantos ganharam data; o toast do "Concluir todos" mostra "N retornos previstos").
 - `AppointmentCard` → Concluir → `returns/ReturnPrompt.openReturnPrompt` (folha global no layout, como o `QuickBook`). Ela chama `returns/actions.loadReturnSuggestions` e só abre se há data, sem "Não precisa" e a cliente **não** tem horário futuro; aí some o toast e a folha traz o próprio Desfazer. Sugere até 4 dias perto da data (2 antes a 5 depois, nunca hoje) com 3 horários espalhados (`freeSlots` com a duração dos serviços + maior intervalo, ocupados = agendamentos + bloqueios + Google/iCloud). Tocar no horário abre `openNewAppointment` preenchido (fluxo normal). "Não precisa" = `skipReturn` (`return_skipped_at`).
-- Profissional (plano Empresa): quando `appointments.professional_id` existir, passe a profissional do atendimento para os ocupados e o expediente.
+- Profissional (plano Empresa, **ainda não existe na main** em 17/11; está na branch local de pagamentos): quando `appointments.professional_id` existir, passe a profissional do atendimento para os ocupados e o expediente.
 
 ## Cuidados
 

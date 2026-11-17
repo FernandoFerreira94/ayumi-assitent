@@ -22,3 +22,10 @@
 - Mudou aqui: Redeploy do **worker** também.
 - Testes: `tests/db/nudge.test.ts`, `tests/unit/reminder-text.test.ts`, `nudge.test.ts`, `booking-text.test.ts`.
 - Opt-out: cliente que responde só `SAIR`/`PARAR`/`PARE`/`STOP` ganha `clients.opted_out_at` (`replies.parseOptOut`, tratado no `inbound.ts` antes da IA) e sai da confirmação (`booking-send`) e do 1º/2º aviso (`claimDue`/`claimNudges` filtram); `VOLTAR` desfaz. Resposta automática uma vez, fora do silêncio 21h–6h. Mensagem manual da dona continua saindo.
+
+## Regras de tempo (conferidas no código em 17/11)
+- 1º aviso: `tenants.reminder_hours` (padrão 24 h antes); pode ser desligado (`tenants.first_reminder`, migration `0030`). Sem 1º aviso, o 2º vira o único lembrete.
+- 2º aviso: `tenants.second_reminder_hours` (padrão 3 h; null = desligado). Só sai para quem recebeu o 1º há pelo menos 2 h e antes da janela do 2º (ou, sem 1º aviso, para agendamento criado antes da janela). Confirmadas recebem só lembrete; pendentes recebem pedido de confirmação (`nudge.claimNudges`).
+- Silêncio: 21h–6h no fuso do estúdio (`reminders/quiet.ts`), vale para 2º aviso e respostas automáticas.
+- Não respondeu (push à dona): 60 min depois do 2º aviso, ou 120 min depois do 1º quando não há 2º (`no-reply.ts`).
+- Respostas da noite: a resposta automática para quem escreveu no silêncio fica em `appointments.pending_reply` (migration `0029_pending_reply`) e sai na primeira rodada depois das 6h (`messaging/pending.sendPendingReplies`, chamada pelo `runReminders`).
