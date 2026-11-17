@@ -17,3 +17,10 @@ export const NAV_ITEMS: readonly NavItem[] = [
 
 /** A tela atual é a do item ou uma filha dela (/clientes/123 acende Clientes). */
 export const isNavActive = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
+
+/**
+ * Atalho do painel do dono: só aparece quando o servidor diz `isAdmin` (lista ADMIN_USER_IDS, nunca enviada ao
+ * cliente). Esconder aqui é só conforto: quem barra é o `requireAdmin` do /admin (404, 2FA e step-up de 7 dias).
+ * Sem prefetch: o /admin registra cada visita no `admin_audit_log`.
+ */
+export const ADMIN_NAV_ITEM = { href: "/admin", label: "Admin", icon: "admin" } as const;

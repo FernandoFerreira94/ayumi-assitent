@@ -5,7 +5,7 @@
 ## Arquivos
 - Marca: `components/brand/mascots.ts` (registro dos mascotes → `mascot-themes.css`), `Mascot.tsx`/`MascotBodies.tsx` (SVG), `moods.ts` (tipo de retorno → expressão: `FEEDBACK_MOOD`), `season.ts` + `SeasonAccessory.tsx`, `Splash.tsx`, `applyMascot.ts`, `MascotSync.tsx`, `Wordmark.tsx` ("bubbly").
 - Feedback: `components/feedback/toast.tsx` (`notify`, 5 tipos), `ErrorState`, `EmptyState`, `OfflineBanner`, `SubmitButton`.
-- Nav: `components/nav/TabBar.tsx` (aba atual mostra nome; Financeiro = "Finanças"), `AppMenu`/`HeaderMenu` (avatar: não mexer sem pedido), `NotificationBell`, `BackButton`, `AutoUpdate` (sem banner, só toast), `nav-icons.tsx`, `ServiceWorkerRegister`.
+- Nav: `components/nav/TabBar.tsx` (aba atual mostra nome; Financeiro = "Finanças"), `AppMenu`/`HeaderMenu` (avatar: não mexer sem pedido; item Admin só com `isAdmin`, ver [admin.md](admin.md)), `NotificationBell`, `BackButton`, `AutoUpdate` (sem banner, só toast), `nav-icons.tsx`, `ServiceWorkerRegister`.
 - UI: `components/ui/Icon.tsx` (único conjunto de ícones), `LetterPicker.tsx`, `MultiSelect.tsx`, `Switch.tsx` (estilo iPhone), `PageShell.tsx`, `Skeleton.tsx`.
 - Passo a passo ilustrado: `components/ui/StepGuide.tsx` (carrossel com encaixe nativo, botões e pontos, texto sempre embaixo, ilustração `aria-hidden`, `data-vaul-no-drag`) + `GuideArt.tsx` (peças SVG: `Phone`, `Ring` que pulsa, `Callout`, `Arrow`, `Badge`, `Toggle`; área 320×190). Guias: `whatsapp/pairing-guide.tsx`, `calendar-feed/icloud-guide.tsx`.
 - Estilos: `src/app/globals.css` (tokens, `--svc-*`, splash, glass).

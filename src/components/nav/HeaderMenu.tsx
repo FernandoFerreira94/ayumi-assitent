@@ -12,6 +12,7 @@ async function MenuWithData() {
       studioName={m.studioName}
       whatsapp={m.whatsapp}
       pendencias={m.pendencias}
+      isAdmin={m.isAdmin}
       version={pkg.version}
     />
   );
