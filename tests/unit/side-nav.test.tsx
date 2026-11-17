@@ -26,4 +26,12 @@ describe("SideNav", () => {
     expect(openNewAppointment).toHaveBeenCalledOnce();
     expect(screen.getByRole("link", { name: "Pendências" })).toBeInTheDocument();
   });
+
+  it("atalho do Admin só para quem o servidor marcou como admin", () => {
+    const { unmount } = render(<SideNav studioName={null} pendencias={0} />);
+    expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
+    unmount();
+    render(<SideNav studioName={null} pendencias={0} isAdmin />);
+    expect(screen.getByRole("link", { name: "Admin" })).toHaveAttribute("href", "/admin");
+  });
 });

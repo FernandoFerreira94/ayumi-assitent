@@ -26,6 +26,7 @@
 - Futuro: aviso de pagamento recusado / cobrança parada entra quando a cobrança chegar (mesmo `notifyAdmins`).
 
 ## Suporte e avisos
+- Atalho no app do salão: `components/nav/menu-data.ts` devolve só `isAdmin` (de `isPlatformAdmin`); com ele o menu do avatar (`AppMenu`) e o menu lateral (`SideNav`) mostram o item **Admin** (`ADMIN_NAV_ITEM` em `nav-items.ts`, ícone escudo `admin`), com `prefetch={false}` porque cada visita ao `/admin` entra no registro. É só conforto: quem barra continua sendo o `requireAdmin`.
 - Telas `admin/suporte` e `admin/avisos`, e o número de conversas esperando no menu: ver [suporte.md](suporte.md).
 
 ## Tabelas (migration `0041_admin_access.sql`, sem GRANT para `app_user`)
