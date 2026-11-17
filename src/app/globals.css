@@ -1299,6 +1299,22 @@ button {
   display: inline-block;
   transform-origin: 50% 100%;
 }
+/* Desktop: metade esquerda fixa com a Bolha, no mesmo degradê do fim do splash, para a passagem não pular */
+@media (min-width: 64rem) {
+  .login-half {
+    position: fixed;
+    inset: 0 50% 0 0;
+    align-content: center;
+    background: radial-gradient(120% 80% at 50% 40%, #ffffff 0%, var(--soft) 55%, var(--m-body-1) 100%);
+  }
+  /* Splash no /login: tudo acontece na metade esquerda e termina onde a Bolha do login está */
+  [data-splash-half] .splash {
+    grid-template-columns: 1fr 1fr;
+  }
+  [data-splash-half] .splash-flood {
+    right: 50%;
+  }
+}
 .login-shadow {
   width: 62%;
   height: 10px;

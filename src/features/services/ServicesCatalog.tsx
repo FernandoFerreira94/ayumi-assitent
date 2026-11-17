@@ -47,7 +47,7 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
   const visible = filterServices(shown, query);
   const newPreset = (name = "") => ({ name });
 
-  /* reordenar: arrastar pela alça (ou setas do teclado). No celular é lista; no desktop, grade de 3 colunas.
+  /* reordenar: arrastar pela alça (ou setas do teclado). No celular é lista; no tablet, grade de 2 colunas; no desktop, de 3.
      Por isso o alvo é o cartão sob o cursor (elementsFromPoint), não "meia altura de linha para cima/baixo". */
   const listRef = useRef(list);
   listRef.current = list;
@@ -260,7 +260,7 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
             <>
               <ul
                 ref={ulRef}
-                className="relative overflow-hidden rounded-2xl border border-line bg-surface lg:col-span-3 lg:grid lg:grid-cols-3 lg:gap-3 lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent"
+                className="relative overflow-hidden rounded-2xl border border-line bg-surface md:grid md:grid-cols-2 md:gap-3 md:overflow-visible md:rounded-none md:border-0 md:bg-transparent lg:col-span-3 lg:grid-cols-3"
               >
                 {visible.map((s) => {
                   const lifted = dragging?.id === s.id;
@@ -268,7 +268,7 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
                     <li
                       key={s.id}
                       data-svc={s.id}
-                      className={`relative grid grid-cols-[10px_minmax(0,1fr)_auto_44px_28px] items-center gap-2.5 border-t border-line bg-surface py-2.5 pl-3 pr-1 first:border-t-0 lg:rounded-2xl lg:border lg:first:border-t ${
+                      className={`relative grid grid-cols-[10px_minmax(0,1fr)_auto_44px_28px] items-center gap-2.5 border-t border-line bg-surface py-2.5 pl-3 pr-1 first:border-t-0 md:rounded-2xl md:border md:first:border-t ${
                         lifted
                           ? "z-10 rounded-2xl shadow-[0_14px_30px_-12px_rgba(23,20,43,0.4)]"
                           : "transition-transform"

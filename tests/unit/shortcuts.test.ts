@@ -13,6 +13,16 @@ describe("shortcutFor", () => {
     ["t", "hoje"],
     ["ArrowLeft", "anterior"],
     ["ArrowRight", "proximo"],
+    ["j", "proxima"],
+    ["J", "proxima"],
+    ["k", "anterior-item"],
+    ["K", "anterior-item"],
+    ["d", "dia"],
+    ["D", "dia"],
+    ["s", "semana"],
+    ["S", "semana"],
+    ["m", "mes"],
+    ["M", "mes"],
     ["x", null],
   ])("%s → %s", (k, expected) => {
     expect(key(k)).toBe(expected);

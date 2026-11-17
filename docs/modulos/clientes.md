@@ -5,7 +5,8 @@
 ## Arquivos
 - `features/clients/actions.ts`: `createClient`, `updateClient`, `deleteClient`, `loadClientCard`.
 - `features/clients/core.ts`: `insertClient`, `searchClients`, `updateClientRow`, `deleteClientRow`, `clientSummary`.
-- UI: `ClientRow.tsx` (cartão grande, abre conversa), `ClientSearch.tsx` (troca `?q=` sem Enter/reload), `NewClientSheet.tsx`.
+- UI: `ClientRow.tsx` (linha que desliza, `ClientCardBody` = miolo da ficha), `ClientPanel.tsx` (ficha fixa do desktop), `ClientSearch.tsx` (troca `?q=` sem Enter/reload, mantém `?id=`), `NewClientSheet.tsx`.
+- Desktop (≥1024 px): a página vira `1fr 420px`; a cliente aberta vem de `?id=` (trocado com `router.replace`, linha ativa com `aria-current`). J/K andam pela lista na tela (`neighbor.ts`, atalhos em `components/nav/Shortcuts.tsx`). Abaixo de 1024 px a ficha continua em folha.
 - `features/contacts/*`: `parse.ts` (vCard/CSV, dedup por telefone), `google.ts` (People API; 401/403 = reconectar), `core.markExisting`/`importClients`, `actions.previewFromFile`/`previewFromGoogle`/`importSelected`, `ImportSheet.tsx`.
 - Tela: `app/(app)/clientes`.
 

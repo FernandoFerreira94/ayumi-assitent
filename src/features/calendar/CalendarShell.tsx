@@ -13,19 +13,22 @@ import { MonthStream } from "./MonthStream";
 import { MonthGrid } from "./MonthView";
 import { CalendarNavContext, type CalendarNav } from "./nav";
 import { Pager, type PagerHandle } from "./Pager";
+import { ViewSwitch } from "./ViewSwitch";
 import { YearGrid } from "./YearView";
 
 type YearState = { days?: YearDays; status: "ok" | "error"; stale?: boolean };
 type Pending = { target: string; ghost: Ghost; anchor: DOMRect | null; anchorSel?: string; dir: "in" | "out" | "fade" };
 
 const keyOf = (v: CalendarView) =>
-  v.kind === "year" ? `y${v.year}` : v.kind === "month" ? `m${v.month}` : `d${v.date}`;
+  v.kind === "year" ? `y${v.year}` : v.kind === "month" ? `m${v.month}` : v.kind === "week" ? `w${v.date}` : `d${v.date}`;
 const hrefOf = (v: CalendarView) =>
   v.kind === "year"
     ? `/calendario?v=ano&y=${v.year}`
     : v.kind === "month"
       ? `/calendario?v=mes&m=${v.month}`
-      : `/calendario?d=${v.date}`;
+      : v.kind === "week"
+        ? `/calendario?v=semana&d=${v.date}`
+        : `/calendario?d=${v.date}`;
 
 /**
  * O Calendário inteiro como um componente só: ano e mês são desenhados aqui, sem ida ao servidor,
@@ -234,7 +237,8 @@ export function CalendarShell({
   };
 
   let content: React.ReactNode;
-  if (view.kind === "day") {
+  // Dia e semana vêm prontos do servidor (a página)
+  if (view.kind === "day" || view.kind === "week") {
     content = children;
   } else if (view.kind === "month") {
     const m = view.month;
@@ -265,6 +269,9 @@ export function CalendarShell({
     const nm = shiftMonth(m, 1);
     content = (
       <>
+        <div className="mb-1 hidden justify-end lg:flex">
+          <ViewSwitch current="month" date={today.startsWith(m) ? today : `${m}-01`} />
+        </div>
         <CalendarBar
           back={{ label: m.slice(0, 4), aria: `Voltar para o ano de ${m.slice(0, 4)}`, onClick: () => toYear(m) }}
           onPrev={() => pager.current?.go(-1)}
