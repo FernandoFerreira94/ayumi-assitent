@@ -23,7 +23,7 @@
 - Sino/push só para: confirmou, pediu cancelar, pediu remarcar, não respondeu (e WhatsApp desconectado).
 
 ## Cuidados
-- Webhook não é assinado pela Evolution: o token da URL é **por instância** (`HMAC(BETTER_AUTH_SECRET, "whatsapp-webhook:<instância>")`) e a rota só aceita se bater com o `instance` do corpo. O worker reaponta todas as instâncias ao iniciar. O token antigo (único) ainda é aceito com log `whatsapp_webhook_legacy`: remover `isLegacyWebhookToken` depois de um deploy do worker. Trocar o `BETTER_AUTH_SECRET` troca todos os tokens (reiniciar o worker reaponta).
+- Webhook não é assinado pela Evolution: o token da URL é **por instância** (`HMAC(BETTER_AUTH_SECRET, "whatsapp-webhook:<instância>")`) e a rota só aceita se bater com o `instance` do corpo. O worker reaponta todas as instâncias ao iniciar. O token antigo (único para todas) foi removido em 17/11: sem token da própria instância, 401. Trocar o `BETTER_AUTH_SECRET` troca todos os tokens (reiniciar o worker reaponta).
 - Nunca logue texto de mensagem nem telefone completo.
 - Erros da porta: 401/403/404 = `MessagingOfflineError` (reconectar); 400 = `MessagingRejectedError` (número recusado, não repetir; avulsa mostra `WHATSAPP_INVALID_NUMBER`); rede/5xx = `MessagingTransientError` (tentar de novo). Para log use `sendFailReason(e)`.
 - Web e worker precisam de `EVOLUTION_URL` e `EVOLUTION_API_KEY`.
