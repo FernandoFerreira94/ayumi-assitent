@@ -36,7 +36,7 @@ O Google não deixa entrar dentro da WebView. Fluxo (`features/native/handoff-co
 - iPhone só no Codemagic (sem Mac).
 
 ## Cuidados
-- Regra de loja: o app **não vende nada** (sem preço, botão de assinar ou link de pagamento) quando `isNativeShell`; assinatura só no site (Apple 3.1.3(f)).
+- Regra de loja: o app **não vende nada** (sem preço, botão de assinar ou link de pagamento) quando `isNativeShell`; assinatura só no site (Apple 3.1.3(f)). **Atenção (17/11):** a decisão de 16/11 de cobrança híbrida (compra dentro do app pela Apple/Google, mais cara, + site com Mercado Pago) muda esta regra quando o billing chegar; até lá ela vale como está.
 - Push no app precisa de FCM/APNs (Bloco 3); Web Push não funciona na WebView do iPhone.
 - Teclado: a WebView não é o Safari; conferir as regras de teclado do iPhone (`KeyboardWatcher`) no TestFlight antes de mexer.
 - Segredos de assinatura (.p8, keystore) só no Codemagic; `.gitignore` de `mobile/` barra `*.jks`, `*.p8`, `*.p12`.

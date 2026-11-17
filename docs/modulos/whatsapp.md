@@ -30,3 +30,11 @@
 - Testes: `tests/db/whatsapp-inbound.test.ts`, `tests/e2e/mensagem.spec.ts`, `tests/unit/whatsapp-replies.test.ts`, `ai-policy.test.ts`, `evolution.test.ts`, `send-direct.test.ts`, `notifications.test.ts`.
 - SAIR/VOLTAR no webhook: ver `lembretes.md` (opt-out). Cartão da cliente mostra "Não recebe lembretes automáticos".
 - Limites (`messaging/quota.ts`): 150 mensagens manuais por dia por estúdio (`sendClientMessage` → `RATE_LIMITED`); texto da cliente para a IA cortado em 500 caracteres e regras da dona em 1.000. Constantes viram limite por plano na cobrança.
+
+## Limites da IA nas respostas (`messaging/ai-policy.ts`, 17/11)
+- Só aplica a intenção sozinha com confiança ≥ 0,9 (`AI_MIN_CONFIDENCE`); abaixo disso, atraso ou "outro assunto" passa para a profissional (`handoff`).
+- Dona escreveu para a cliente nas últimas 12 h (`OWNER_QUIET_HOURS`): a IA fica quieta.
+- No máximo 3 respostas automáticas por cliente em 24 h (`AI_MAX_REPLIES_24H`); correção de intenção vale por 2 h (`CORRECTION_HOURS`).
+- Mídia ou texto acima de 1.000 caracteres (`AI_MAX_CHARS`) vai direto para a dona, sem chamar o modelo.
+- Mapeamento: 1 = confirma (`confirmed`); 2 = cancelar e 3 = remarcar viram `reschedule_requested` (nunca cancela sozinho). O número só vale sozinho ("2", "opção 2").
+- Dívida: texto de 501 a 1.000 caracteres chega ao modelo cortado em 500 (`quota.AI_TEXT_MAX`), então a IA pode decidir com metade da mensagem. Alinhar os dois limites.

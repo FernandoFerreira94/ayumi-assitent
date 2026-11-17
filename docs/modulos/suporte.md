@@ -24,4 +24,4 @@
 ## Cuidados
 - Push nunca leva nome de salão nem trecho da conversa (passa pela Apple/Google).
 - Mensagens somem junto com o salão (cascade). Ainda sem retenção própria: entra com a política de LGPD.
-- 0043-0044 ficaram livres para o retorno da cliente.
+- O retorno da cliente usou só a `0042`; 0043-0044 seguem vagos (não reaproveitar, ver AGENTS.md).

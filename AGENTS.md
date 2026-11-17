@@ -26,7 +26,7 @@ Este arquivo **roteia**. O detalhe de cada módulo fica em `docs/modulos/`.
 
 **Durante**
 - Siga as regras permanentes abaixo. Toda ação mostra carregando, erro e sucesso.
-- Mudou banco: nova migration `src/db/migrations/00NN_nome.sql` (próximo número livre; já existem dois `0026`, não repita) + `src/db/schema.ts` + policy RLS se for tabela nova.
+- Mudou banco: nova migration `src/db/migrations/00NN_nome.sql` (próximo número livre: hoje **0047** (já existem dois `0026` e dois `0029`; 0036–0040 e 0043–0044 estão vagos na main e a branch local de pagamentos usa números nessa faixa, então não reaproveite buracos)) + `src/db/schema.ts` + policy RLS se for tabela nova.
 - Mudou algo que o worker usa (`reminders`, `owner-notices`, `push`, `messaging`): lembre que web e worker precisam de Redeploy.
 
 **Depois**
@@ -37,7 +37,7 @@ Este arquivo **roteia**. O detalhe de cada módulo fica em `docs/modulos/`.
 
 ## Regras permanentes
 
-- **Só mobile/iPhone**, o mais perto de app iOS nativo. Tema sempre claro, marca Lavanda Digital + Quicksand, vidro (glass).
+- **iPhone primeiro**, o mais perto de app iOS nativo; desde 13/11 também tablet e desktop com o mesmo design system (Fase 1 mergeada no #133: menu lateral, painel lateral, atalhos; Fases 2, 3a e 3b em PRs rascunho #135, #136, #143). Toda tela nova precisa funcionar nos três tamanhos. Tema sempre claro, marca Lavanda Digital + Quicksand, vidro (glass).
 - **Nunca página/navegação para ação**: tudo em sheet/diálogo por cima da tela (vaul). Seletores de cliente/serviço = `components/ui/LetterPicker.tsx`. Navegação sem reload; tela abre no topo.
 - **Ajustes = lista + seções** (estilo Ajustes do iPhone): `/ajustes` só lista e resume o estado; cada assunto mora em `/ajustes/<secao>` (whatsapp, calendarios, notificacoes, mensagens, expediente), registrada em `features/settings/sections.ts`. Página nova só para organizar um assunto; ação continua em sheet/diálogo. O tour fica todo em Ajustes e segue a ordem da lista. Detalhes em `docs/modulos/perfil-ajustes.md`.
 - Ícones só de `components/ui/Icon.tsx`. Toasts via `components/feedback/toast.tsx` (`notify`, Sonner no topo; mascote por tipo em `components/brand/moods.ts`). Animação Órbita só no agendar (`BookingOverlay`).
