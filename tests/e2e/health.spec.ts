@@ -12,5 +12,6 @@ test("respostas trazem cabeçalhos de segurança", async ({ request }) => {
   expect(h["x-content-type-options"]).toBe("nosniff");
   expect(h["referrer-policy"]).toBe("strict-origin-when-cross-origin");
   expect(h["strict-transport-security"]).toContain("max-age=");
-  expect(h["content-security-policy-report-only"]).toContain("frame-ancestors 'none'");
+  expect(h["content-security-policy"]).toContain("frame-ancestors 'none'");
+  expect(h["content-security-policy-report-only"]).toBeUndefined();
 });
