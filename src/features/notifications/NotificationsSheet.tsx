@@ -8,6 +8,7 @@ import { initials } from "@/components/nav/AppMenu";
 import { Icon, IconTile, type Tint } from "@/components/ui/Icon";
 import { markAllAvisosRead, markClientAvisoRead } from "./actions";
 import { avatarColor, type Aviso, type AvisoTone } from "./core";
+import { useCloseOnHide } from "@/lib/use-close-on-hide";
 
 const READ_KEY = "mimo:avisos-lidos";
 /** Quanto arrastar para o lado (px) para o aviso contar como visto. */
@@ -42,6 +43,7 @@ function writeSeen(keys: string[]) {
 export function NotificationsSheet({ avisos }: { avisos: Aviso[] }) {
   const router = useRouter();
   const ref = useRef<HTMLDialogElement>(null);
+  useCloseOnHide(ref);
   const [seen, setSeen] = useState<string[]>([]);
   const [gone, setGone] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);

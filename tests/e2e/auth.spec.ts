@@ -74,6 +74,44 @@ test.describe("login por e-mail e senha", () => {
   });
 });
 
+test.describe("sair e entrar de novo", () => {
+  const email = `sair@e2e.test`;
+
+  test.beforeAll(async () => {
+    const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+    await sql`delete from "user" where email = ${email}`;
+    const uid = randomUUID();
+    await sql`insert into "user" (id, name, email, "emailVerified") values (${uid}, 'Yumi', ${email}, true)`;
+    await sql`insert into account (id, "accountId", "providerId", "userId", password)
+      values (${randomUUID()}, ${uid}, 'credential', ${uid}, ${await hashPassword("senha-segura-123")})`;
+    const [{ id: tid }] = await sql`insert into tenants (name) values ('Estúdio Sair') returning id`;
+    await sql`insert into memberships (user_id, tenant_id, tour_done_at) values (${uid}, ${tid}, now())`;
+    await sql.end();
+  });
+
+  async function entrar(page: import("@playwright/test").Page) {
+    await page.getByRole("button", { name: "Continuar com e-mail" }).click();
+    await page.getByLabel("E-mail").fill(email);
+    await page.getByLabel("Senha", { exact: true }).fill("senha-segura-123");
+    await page.getByRole("button", { name: "Entrar", exact: true }).click();
+    await expect(page).toHaveURL(/\/agenda/);
+  }
+
+  // Bug: sair com o menu aberto deixava o <dialog> modal vivo na tela escondida e o login não respondia ao toque
+  test("sai pelo menu e entra com outra conta sem fechar o app", async ({ page }) => {
+    await page.goto("/login");
+    await entrar(page);
+    await page.getByRole("button", { name: "Abrir menu" }).click();
+    await page.getByRole("button", { name: "Sair da conta" }).click();
+    await page.getByRole("button", { name: "Sair", exact: true }).click();
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByRole("heading", { name: "Que bom te ver!" })).toBeVisible();
+    // Nenhum diálogo modal sobrando por trás do login
+    await expect.poll(() => page.evaluate(() => document.querySelectorAll("dialog:modal").length)).toBe(0);
+    await entrar(page);
+  });
+});
+
 test.describe("esqueci a senha", () => {
   // Cada teste com um IP próprio: o limite por IP (3 pedidos de link a cada 10 min) não vaza entre testes e retries
   test.beforeEach(async ({ page }) => {

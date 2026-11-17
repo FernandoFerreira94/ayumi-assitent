@@ -17,6 +17,7 @@ import {
 } from "./custom-slots";
 import { Part, ShareSheet } from "./ShareSheet";
 import { toRanges } from "./share-text";
+import { useCloseOnHide } from "@/lib/use-close-on-hide";
 
 type Service = { id: string; name: string };
 type Kind = CustomConfig["period"]["kind"];
@@ -78,6 +79,7 @@ export function CustomSheet({
   today: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  useCloseOnHide(ref);
   const [opened, setOpened] = useState(false);
   const [config, setConfig] = useState<CustomConfig>({ ...DEFAULT_CONFIG, serviceId: services[0]?.id ?? null });
   const [viewOffset, setViewOffset] = useState(0); // mês exibido no seletor de dias
