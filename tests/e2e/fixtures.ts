@@ -25,7 +25,13 @@ export const test = base.extend<{ tourDone: boolean }>({
         path: "/",
       },
     ]);
+    // CSP em vigor: qualquer violação acusada pelo navegador derruba o teste (recurso externo fora da lista)
+    const cspViolations: string[] = [];
+    context.on("console", (m) => {
+      if (m.text().includes("Content Security Policy")) cspViolations.push(m.text());
+    });
     await use(context);
+    expect(cspViolations, "violação de CSP (next.config.ts)").toEqual([]);
   },
 });
 export { expect };

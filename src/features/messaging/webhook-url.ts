@@ -26,13 +26,3 @@ export function isValidWebhookToken(given: string | null, instance: string, env 
   const t = token(instance, env);
   return !!t && !!given && same(given, t);
 }
-
-/**
- * Token antigo (um só para todas as instâncias). Aceito só até o worker reapontar cada instância para a
- * URL nova (feito ao iniciar); remover no PR seguinte.
- */
-export function isLegacyWebhookToken(given: string | null, env = process.env): boolean {
-  const secret = env.BETTER_AUTH_SECRET;
-  if (!secret || !given) return false;
-  return same(given, createHmac("sha256", secret).update("whatsapp-webhook").digest("hex").slice(0, 40));
-}

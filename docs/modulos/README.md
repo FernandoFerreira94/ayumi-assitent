@@ -86,8 +86,6 @@ Partida do worker: desagenda `push-pendencias` (antiga) e reaponta o webhook de 
 
 | Item | Onde | Risco |
 | --- | --- | --- |
-| Token antigo (único) do webhook ainda aceito | `messaging/webhook-url.isLegacyWebhookToken` | Médio: um token vazado vale para qualquer instância. Era para sair 1 semana após 13/11; conferir o log `whatsapp_webhook_legacy` e remover |
-| CSP só em modo relatório | `next.config.ts` (`Content-Security-Policy-Report-Only`) | Médio: não bloqueia script injetado. Trocar para enforce se o Sentry não mostra violação |
 | IA recebe texto cortado em 500 de mensagens até 1.000 | `messaging/quota.AI_TEXT_MAX` × `ai-policy.AI_MAX_CHARS` | Baixo: classificação com metade da mensagem |
 | Fuso fixo UTC-3 | `lib/dates.ts` | Baixo hoje; quebra salão fora de Brasília (AM, MT, AC, Fernando de Noronha) |
 | `support_messages` sem retenção própria | `retention/run.ts` | Baixo: LGPD pede prazo |
