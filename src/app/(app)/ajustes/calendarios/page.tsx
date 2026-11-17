@@ -21,6 +21,7 @@ export default async function CalendariosPage({ searchParams }: PageProps<"/ajus
       .select({
         calendarOn: tenants.calendarTokenHash,
         calendarHideNames: tenants.calendarHideNames,
+        calendarFetchedAt: tenants.calendarFetchedAt,
         icloudOn: tenants.icloudCalendarUrl,
       })
       .from(tenants)
@@ -42,6 +43,7 @@ export default async function CalendariosPage({ searchParams }: PageProps<"/ajus
           <IphoneCalendarCard
             enabled={!!salon?.calendarOn}
             hideNames={salon?.calendarHideNames ?? false}
+            subscribed={!!salon?.calendarOn && !!salon.calendarFetchedAt}
             googleConnected={google}
             icloudOn={!!salon?.icloudOn}
           />
