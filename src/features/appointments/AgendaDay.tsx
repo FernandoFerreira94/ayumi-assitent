@@ -19,6 +19,7 @@ import { formatDayTitle, formatShortDate, todayStr } from "@/lib/dates";
 import { AppointmentCard } from "./AppointmentCard";
 import { rescheduleAppointment } from "./actions";
 import {
+  canDrag,
   conflictReason,
   dragSpan,
   layoutColumns,
@@ -112,7 +113,6 @@ const CONFIRM_CHIP: Partial<Record<Status, { st: "ok" | "wait"; text: string }>>
   pending_confirmation: { st: "wait", text: "Pendente" },
   reschedule_requested: { st: "wait", text: "Remarcar" },
 };
-const canDrag = (s: Status) => s === "pending_confirmation" || s === "confirmed" || s === "reschedule_requested";
 const firstName = (n: string) => n.trim().split(/\s+/)[0];
 const range = (s: Span) => `${hhmm(s.start)}–${hhmm(s.end)}`;
 const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -611,15 +611,22 @@ export function AgendaDay({
         }}
       />
 
-      <Drawer.Root direction={side}
+      <Drawer.Root
+        direction={side}
         repositionInputs={false}
         open={Boolean(detailAppt || detailBlock)}
         onOpenChange={(open) => !open && setDetailId(null)}
       >
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
-          <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
-<SidePanelClose />
+          <Drawer.Content
+            className={sheetClass(
+              side,
+              "fixed inset-x-0 bottom-0 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none",
+              "sheet z-50",
+            )}
+          >
+            <SidePanelClose />
             <Drawer.Title className="pb-1 text-xl font-bold">
               {detailAppt
                 ? detailAppt.clientName
@@ -683,8 +690,8 @@ export function AgendaDay({
                   baixo para mudar a duração.
                 </span>
                 <span className="only-mouse">
-                  Dica: na agenda, arraste o atendimento para remarcar, ou puxe a bolinha de cima ou de baixo para
-                  mudar a duração.
+                  Dica: na agenda, arraste o atendimento para remarcar, ou puxe a bolinha de cima ou de baixo para mudar
+                  a duração.
                 </span>
               </p>
             ) : null}
