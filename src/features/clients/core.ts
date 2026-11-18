@@ -171,3 +171,20 @@ export async function clientSummary(tx: Tx, clientId: string, now = new Date()) 
     ret,
   };
 }
+
+/** Números de cada cliente para a lista do desktop e os filtros: visitas, última visita, gasto e se tem horário marcado. */
+export function clientStats(tx: Tx, now = new Date()) {
+  const at = now.toISOString();
+  return tx
+    .select({
+      clientId: appointments.clientId,
+      visits: sql<number>`count(*) filter (where ${appointments.status} = 'done')`.mapWith(Number),
+      lastVisit: sql<Date | null>`max(${appointments.startsAt}) filter (where ${appointments.status} = 'done')`.mapWith(
+        (v) => (v ? new Date(v) : null),
+      ),
+      spentCents: sql<number>`coalesce(sum(${appointments.priceCents}) filter (where ${appointments.status} = 'done'), 0)`.mapWith(Number),
+      hasNext: sql<boolean>`bool_or(${appointments.status} <> 'cancelled' and ${appointments.startsAt} > ${at}::timestamptz)`.mapWith(Boolean),
+    })
+    .from(appointments)
+    .groupBy(appointments.clientId);
+}

@@ -34,3 +34,9 @@
 - `clients/core.deleteClientRow`: sem agendamento apaga; com histórico **anonimiza** (`name = "Cliente removida"`, `phone_e164 = anon:<id>`, sem e-mail/observações, conversa apagada, `anonymized_at`). Atendimentos ficam para o financeiro.
 - `searchClients` esconde anonimizadas (lista e seletores). A porta da Evolution recusa telefone que não seja `+dígitos`, então ninguém recebe mensagem para `anon:`.
 - Migration `0033_client_anonymize.sql`.
+
+## Desktop (18/11)
+
+- `/clientes` com `PageShell wide`. A partir de 1024 px (`ClientsDesk`, `useIsDesk`): tocar no nome **escolhe** a cliente e a ficha fica aberta ao lado (`ClientPanel`, mesmo miolo da folha: `ClientCardContent` + `useClientCard` exportados de `ClientRow.tsx`); sem ninguém escolhida, o lado mostra o resumo (total, sumidas, novas, para chamar). Abaixo de 1024 px nada muda (folha como antes).
+- Filtros `?f=sumidas|fieis|novas` (`clients/filters.ts`, puro e testado): sumidas = 60+ dias sem vir e sem horário marcado; mais fiéis = top 20 por visitas; novas = cadastro nos últimos 30 dias. Números por cliente em `core.clientStats` (um `group by` em `appointments`); a linha mostra "N visitas · última há X dias" só no desktop.
+- Aniversariantes ficou de fora: `clients` não tem data de nascimento (precisaria de migration).
