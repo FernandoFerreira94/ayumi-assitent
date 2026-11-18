@@ -65,6 +65,22 @@ export function WeekStrip({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date, weeks]);
 
+  // A largura muda depois de pintar (barra de rolagem, caixas do Painel no desktop chegando): volta para a semana escolhida
+  useLayoutEffect(() => {
+    const el = scroller.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    let width = el.clientWidth;
+    const ro = new ResizeObserver(() => {
+      if (!el.clientWidth || el.clientWidth === width) return;
+      width = el.clientWidth;
+      const i = weekIdx(sel);
+      if (i >= 0) el.scrollLeft = i * el.clientWidth;
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sel, weeks]);
+
   const onScroll = () => {
     clearTimeout(timer.current);
     timer.current = setTimeout(() => {

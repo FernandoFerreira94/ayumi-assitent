@@ -40,6 +40,14 @@
 - `AppointmentCard` → Concluir → `returns/ReturnPrompt.openReturnPrompt` (folha global no layout, como o `QuickBook`). Ela chama `returns/actions.loadReturnSuggestions` e só abre se há data, sem "Não precisa" e a cliente **não** tem horário futuro; aí some o toast e a folha traz o próprio Desfazer. Sugere até 4 dias perto da data (2 antes a 5 depois, nunca hoje) com 3 horários espalhados (`freeSlots` com a duração dos serviços + maior intervalo, ocupados = agendamentos + bloqueios + Google/iCloud). Tocar no horário abre `openNewAppointment` preenchido (fluxo normal). "Não precisa" = `skipReturn` (`return_skipped_at`).
 - Profissional (plano Empresa, **ainda não existe na main** em 17/11; está na branch local de pagamentos): quando `appointments.professional_id` existir, passe a profissional do atendimento para os ocupados e o expediente.
 
+## Painel no tablet/desktop (18/11)
+
+- `/agenda` com `PageShell wide`. Celular igual a antes: a página detecta o aparelho (`userAgent().device.type === "mobile"`) e **não monta nem consulta** as caixas do desktop.
+- Tablet/desktop (`md`/`lg`): faixa de números (DayHero + `PeriodCards`: semana, mês com % vs. o mesmo período do mês anterior e saldo, confirmações de hoje), `NextClient` (atendendo agora/próxima; em outro dia, a primeira; visitas, última visita, faltas, observação da ficha + do atendimento, Conversa e Remarcar em folha), agenda com abas Dia/Semana (`AgendaTabs`, escolha em localStorage `bubbly:painel-visao`; Semana = `WeekGlance`) e coluna lateral: `MiniMonth` (setas trocam o mês; outro ano via `calendar/actions.calendarYear`; clique leva a `/agenda?d=`), pendências (resumo de `listPendencias`), Para chamar (`DueReturns`), vagas de hoje/amanhã do 1º serviço de Vagas (`freeSlots`) e atalhos (Agendar, Bloquear, Nova cliente, Lançar gasto).
+- Dados: `features/dashboard/data.ts` → `loadDashboard` com `cache()` do React (as caixas chamam separado, o banco é lido uma vez por pedido). Regras puras em `dashboard/rules.ts` (testes em `tests/unit/dashboard-rules.test.ts`). Cada caixa tem esqueleto (Suspense) e erro com "Tentar de novo" (`DeskError`).
+- Valores respeitam o olhinho (`useValuesHidden`); a Semana mostra só contagem (é componente do servidor).
+- `WeekStrip` ganhou `ResizeObserver`: se a largura muda depois de pintar, volta para a semana escolhida.
+
 ## Cuidados
 
 - Toda criação/edição/remarcação passa por `lockTenant` + `overlapsBlock`; não pule.
