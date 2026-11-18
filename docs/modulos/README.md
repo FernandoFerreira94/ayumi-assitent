@@ -20,6 +20,7 @@ Atualizado em 17/11/2026 (main em #162, auditoria completa). Ache o módulo da t
 | Painel do dono | [admin.md](admin.md) | `features/admin`, telas `admin/*` | Painel só do dono do produto: 2FA, step-up de 7 dias, registro de acesso; visão geral, assinantes e pagamentos (dados de exemplo até a cobrança chegar) | Auth (`twoFactor`, login por senha), retenção (worker), cabeçalhos (`next.config.ts`), `proxy.ts`, privacidade |
 | Suporte e avisos do dono | [suporte.md](suporte.md) | `features/support`, telas `ajustes/suporte`, `admin/suporte`, `admin/avisos` | Conversa salão ↔ dono, avisos do dono no Painel de todos os salões | Painel (cartões no topo), Ajustes (linha Ajuda), admin (menu, registro), push (`notifyAdmins`, `sendToAll`) |
 | Apps da loja | [apps-loja.md](apps-loja.md) | `mobile/`, `codemagic.yaml`, `features/native`, `app/.well-known` | Casca Capacitor do Android e iPhone que carrega o app web; links do domínio abrem o app | Domínio do app (`server.url`), instalar PWA (`isNativeShell`), login Google e push no app, regras de loja (sem venda no app) |
+| Siri e Atalhos | [atalhos.md](atalhos.md) | `features/atalhos`, rotas `api/v1/atalhos/*`, tela `ajustes/siri` | Chave pessoal só leitura; a Siri lê agenda de hoje/amanhã, próxima cliente e resumo do dia | Agenda (`listDay`), tabela `api_tokens`, Ajustes (seção `siri`) |
 | Plataforma | [plataforma.md](plataforma.md) | `db`, `lib`, `worker`, `proxy.ts`, `api/*`, `scripts`, `features/auth` (esqueci a senha), `features/retention`, `features/legal` | Auth, estúdio/RLS, migrations, worker, retenção LGPD, privacidade/termos, deploy, backup | Tudo |
 
 ## Matriz de ligações (imports entre features)
@@ -52,6 +53,7 @@ Gerada por varredura de `@/features/*`. "Usa" = depende de; "Usado por" = quem q
 | admin | messaging, push, support | telas admin, nav (`isAdmin`), `lib/auth` (2FA), retention, support, worker | admin_step_up, admin_audit_log, "twoFactor", leitura de todas as tabelas como dono do banco |
 | native | install | layout, login, `.well-known`, `api/native-auth`, clients, contacts | verification (código de uso único do Better Auth) |
 | retention | admin | worker | access_log, messages, admin_audit_log, admin_step_up |
+| atalhos | appointments, dashboard (rules) | telas ajustes | api_tokens, appointments (leitura) |
 | auth | — | `lib/auth`, tela `redefinir-senha` | tabelas do Better Auth |
 
 ## Fluxos que cruzam módulos

@@ -330,3 +330,22 @@ export const ownerNotices = pgTable(
   },
   (t) => [unique().on(t.tenantId, t.kind, t.day)],
 );
+
+/**
+ * Chaves pessoais da API (Siri e Atalhos do iPhone). Só o hash fica aqui; `last4` identifica na tela.
+ * Fase 1: escopo `read` (consulta a agenda). Desligada = `revoked_at` preenchido.
+ */
+export const apiTokens = pgTable("api_tokens", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  userId: text("user_id"),
+  name: text("name").notNull(),
+  tokenHash: text("token_hash").notNull().unique(),
+  scope: text("scope").notNull().default("read").$type<"read">(),
+  last4: text("last4").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+});
