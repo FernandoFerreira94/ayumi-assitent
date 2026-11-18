@@ -96,3 +96,12 @@ test("Clientes no desktop: a ficha abre ao lado da lista e os filtros trocam a l
   await page.getByRole("navigation", { name: "Filtrar clientes" }).getByRole("link", { name: "Sumidas" }).click();
   await expect(page.getByText('Nenhuma cliente em "Sumidas"')).toBeVisible();
 });
+
+test("Financeiro de tela larga: 6 meses, quem mais trouxe e faltas", async ({ page }) => {
+  await page.goto("/financeiro");
+  await expect(page.getByRole("heading", { name: "Últimos 6 meses" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Recebido e gastos dos últimos meses" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Quem mais trouxe no mês" })).toBeVisible();
+  await expect(page.getByText("Nenhum atendimento concluído nesse mês.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Faltas no mês" })).toBeVisible();
+});

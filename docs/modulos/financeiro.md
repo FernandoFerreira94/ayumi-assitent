@@ -14,6 +14,10 @@
 - **Usa:** appointments (status e valores com desconto), services.
 - Sem uso por outros módulos.
 
+## Tablet/desktop (18/11)
+- `PageShell wide`; no `lg` duas colunas. Coluna nova (só `md+`): **Últimos 6 meses** (`MonthlyBars.tsx`, recebido x gastos, um eixo, hover com saldo, clique abre o mês, tabela sr-only), **Quem mais trouxe no mês** (top 5 concluídos) e **Faltas no mês** (% sobre concluído + faltou, valor perdido). Regras puras em `insights.ts` (`monthsUpTo`, `byMonth`, `topClients`, `noShows`; testes em `tests/unit/finance-insights.test.ts`). Ganhos mostra "mês anterior" no `md+`.
+- Celular igual (as caixas novas ficam `hidden md:grid`).
+
 ## Cuidados
 - Previsto = tudo que não foi cancelado nem faltou (`no_show`); recebido = só `done` (`appointments/core.forecastCents`/`receivedCents`). Remarcado transfere sem duplicar. Mudança em status ou desconto mexe aqui.
 - Dinheiro sempre em centavos.
