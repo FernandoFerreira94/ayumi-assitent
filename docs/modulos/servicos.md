@@ -20,3 +20,7 @@
 - Limite de valor < R$ 100.000 (`lib/money.ts` casa com o schema).
 - Retorno sugerido (16/11, migration `0042_client_return`): chips Sem retorno/7/15/21/30/45/60 dias/Outro (1–365) no `ServiceForm`; a lista mostra "volta em ~N dias". Regra pura em `features/returns/rules.ts` (`returnDue` = menor retorno entre os serviços do atendimento). Plano completo (pergunta ao concluir, histórico, Para chamar): `docs/superpowers/plans/2026-11-16-retorno-cliente.md`.
 - Testes: `tests/e2e/servicos.spec.ts`, `tests/unit/returns.test.ts`.
+
+## Desktop (18/11)
+- `/servicos` com `PageShell wide` (loading também). No `lg` a lista vira tabela com cabeçalho: duração, preço, feitos no mês e receita do mês; no `xl` também retorno e marcados. Números do topo ganham "atendimentos no mês" e "receita do mês". Celular igual.
+- Dados: `core.doneInRange` (concluídos do mês, partes por id do serviço) + `stats.salesByService` (divide o valor como a pizza do Financeiro). Teste: `tests/unit/service-sales.test.ts`.

@@ -11,6 +11,10 @@ import { duplicateService, reorderServices, setServiceActive } from "./actions";
 import { averagePrice, filterServices, formatDuration, moveService, type CatalogService } from "./catalog";
 import { ServiceForm } from "./ServiceForm";
 
+/** Colunas da tabela no desktop (cabeçalho e linhas iguais); no celular a linha segue compacta. */
+const COLS =
+  "lg:grid-cols-[10px_minmax(0,1fr)_96px_96px_72px_112px_44px_28px] xl:grid-cols-[10px_minmax(0,1fr)_96px_84px_96px_72px_112px_80px_44px_28px]";
+
 type Sheet = { kind: "service"; service?: CatalogService; preset?: { name?: string } };
 
 /** Lista de serviços, com busca, reordenar e a folha de criar/editar. */
@@ -45,6 +49,8 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
   const shown = list.filter((s) => !hidden.has(s.id));
   const active = shown.filter((s) => s.bookable);
   const visible = filterServices(shown, query);
+  const monthCount = shown.reduce((n, s) => n + (s.month?.count ?? 0), 0);
+  const monthCents = shown.reduce((n, s) => n + (s.month?.cents ?? 0), 0);
   const newPreset = (name = "") => ({ name });
 
   /* reordenar: arrastar pela alça (ou setas do teclado) dentro do grupo */
@@ -166,62 +172,67 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
         />
       ) : (
         <div className="grid gap-3">
-          <dl className="grid grid-cols-2 gap-2">
+          <dl className="grid grid-cols-2 gap-2 lg:grid-cols-4">
             {[
-              [String(active.length), active.length === 1 ? "ativo" : "ativos"],
-              [formatBRL(averagePrice(shown)), "preço médio"],
-            ].map(([value, name]) => (
-              <div key={name} className="glass flex flex-col-reverse rounded-2xl px-3 py-2">
+              [String(active.length), active.length === 1 ? "ativo" : "ativos", ""],
+              [formatBRL(averagePrice(shown)), "preço médio", ""],
+              // Desktop: o que o catálogo rendeu no mês (concluídos)
+              [String(monthCount), "atendimentos no mês", "hidden lg:flex"],
+              [formatBRL(monthCents), "receita do mês", "hidden lg:flex"],
+            ].map(([value, name, extra]) => (
+              <div key={name} className={`glass flex flex-col-reverse rounded-2xl px-3 py-2 ${extra}`}>
                 <dt className="text-xs font-bold text-muted">{name}</dt>
                 <dd className="truncate text-[17px] font-bold tabular-nums">{value}</dd>
               </div>
             ))}
           </dl>
 
-          <label className="flex min-h-11 items-center gap-2 rounded-full border border-line bg-surface px-3.5 text-muted focus-within:border-primary">
-            <svg
-              viewBox="0 0 24 24"
-              width="18"
-              height="18"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              aria-hidden="true"
-            >
-              <circle cx="11" cy="11" r="7" />
-              <path d="M20 20l-4-4" />
-            </svg>
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar serviço"
-              aria-label="Buscar serviço"
-              autoComplete="off"
-              className="min-w-0 flex-1 bg-transparent text-base text-fg outline-none"
-            />
-          </label>
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+            <label className="flex min-h-11 items-center gap-2 rounded-full border border-line bg-surface px-3.5 text-muted focus-within:border-primary">
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path d="M20 20l-4-4" />
+              </svg>
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar serviço"
+                aria-label="Buscar serviço"
+                autoComplete="off"
+                className="min-w-0 flex-1 bg-transparent text-base text-fg outline-none"
+              />
+            </label>
 
-          <button
-            type="button"
-            onClick={() => openSheet({ kind: "service", preset: newPreset() })}
-            className="btn-tint flex min-h-12 items-center justify-center gap-2 rounded-full font-bold"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              width="18"
-              height="18"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.6"
-              strokeLinecap="round"
-              aria-hidden="true"
+            <button
+              type="button"
+              onClick={() => openSheet({ kind: "service", preset: newPreset() })}
+              className="btn-tint flex min-h-12 items-center justify-center gap-2 rounded-full font-bold lg:px-6"
             >
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Criar serviço
-          </button>
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.6"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Criar serviço
+            </button>
+          </div>
 
           {visible.length === 0 ? (
             <div className="grid justify-items-center gap-3 px-3 py-8 text-center text-sm font-semibold text-muted">
@@ -235,15 +246,31 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
               </button>
             </div>
           ) : (
-            <>
-              <ul className="overflow-hidden rounded-2xl border border-line bg-surface">
+            <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+              {/* Desktop: vira tabela, com cabeçalho */}
+              <div
+                aria-hidden="true"
+                className={`hidden items-center gap-2.5 border-b border-line bg-soft/40 py-2 pl-3 pr-1 text-xs font-bold text-muted lg:grid ${COLS}`}
+              >
+                <span />
+                <span>Serviço</span>
+                <span>Duração</span>
+                <span className="hidden xl:block">Retorno</span>
+                <span className="text-right">Preço</span>
+                <span className="text-right">No mês</span>
+                <span className="text-right">Receita do mês</span>
+                <span className="hidden text-right xl:block">Marcados</span>
+                <span />
+                <span />
+              </div>
+              <ul>
                 {visible.map((s) => {
                   const lifted = dragging?.id === s.id;
                   return (
                     <li
                       key={s.id}
                       style={lifted ? { transform: `translateY(${dragging.dy}px) scale(1.02)` } : undefined}
-                      className={`relative grid grid-cols-[10px_minmax(0,1fr)_auto_44px_28px] items-center gap-2.5 border-t border-line bg-surface py-2.5 pl-3 pr-1 first:border-t-0 ${
+                      className={`relative grid grid-cols-[10px_minmax(0,1fr)_auto_44px_28px] items-center ${COLS} gap-2.5 border-t border-line bg-surface py-2.5 pl-3 pr-1 first:border-t-0 ${
                         lifted
                           ? "z-10 rounded-2xl shadow-[0_14px_30px_-12px_rgba(23,20,43,0.4)]"
                           : "transition-transform"
@@ -260,18 +287,40 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
                         className={`flex min-w-0 flex-col text-left ${s.bookable ? "" : "opacity-45"}`}
                       >
                         <b className="truncate text-[15px]">{s.name}</b>
-                        <span className="text-xs font-semibold text-muted">
+                        <span className="text-xs font-semibold text-muted lg:hidden">
                           {formatDuration(s.durationMin)}
                           {s.bufferMin ? ` + ${s.bufferMin} min de intervalo` : ""}
                           {s.returnDays ? ` · volta em ~${s.returnDays} dias` : ""}
                           {s.bookable ? "" : <span className="text-accent"> · pausado</span>}
                         </span>
+                        {s.bookable ? null : (
+                          <span className="hidden text-xs font-semibold text-accent lg:block">pausado</span>
+                        )}
                       </button>
+                      <span className={`hidden text-sm font-semibold lg:block ${s.bookable ? "" : "opacity-45"}`}>
+                        {formatDuration(s.durationMin)}
+                        {s.bufferMin ? <small className="block text-xs text-muted">+ {s.bufferMin} min</small> : null}
+                      </span>
+                      <span className="hidden text-sm font-semibold text-muted xl:block">
+                        {s.returnDays ? `~${s.returnDays} dias` : "—"}
+                      </span>
                       <span className={`text-right text-sm font-bold tabular-nums ${s.bookable ? "" : "opacity-45"}`}>
                         {s.priceFrom ? (
                           <small className="block text-xs font-semibold text-muted">a partir de</small>
                         ) : null}
                         {formatBRL(s.priceCents)}
+                      </span>
+                      <span className="hidden text-right text-sm font-semibold tabular-nums lg:block">
+                        <span className="sr-only">Feitos no mês: </span>
+                        {s.month?.count ?? 0}
+                      </span>
+                      <span className="hidden text-right text-sm font-bold tabular-nums lg:block">
+                        <span className="sr-only">Receita do mês: </span>
+                        {formatBRL(s.month?.cents ?? 0)}
+                      </span>
+                      <span className="hidden text-right text-sm font-semibold tabular-nums text-muted xl:block">
+                        <span className="sr-only">Marcados: </span>
+                        {s.upcoming}
                       </span>
                       <button
                         type="button"
@@ -315,7 +364,7 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
                   );
                 })}
               </ul>
-            </>
+            </div>
           )}
         </div>
       )}
@@ -323,7 +372,13 @@ export function ServicesCatalog({ services, startWithNew }: { services: CatalogS
       <Drawer.Root direction={side} repositionInputs={false} open={open} onOpenChange={setOpen}>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-          <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] rounded-t-3xl pt-4 outline-none", "sheet z-50 flex flex-col")}>
+          <Drawer.Content
+            className={sheetClass(
+              side,
+              "fixed inset-x-0 bottom-0 mx-auto max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] rounded-t-3xl pt-4 outline-none",
+              "sheet z-50 flex flex-col",
+            )}
+          >
             <SidePanelClose />
             <Drawer.Handle className="mb-3 md:hidden" />
             <div className={SHEET_SCROLL}>

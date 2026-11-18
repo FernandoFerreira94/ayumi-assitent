@@ -3,7 +3,7 @@ import { LoadingRegion, Skeleton } from "@/components/ui/Skeleton";
 
 export default function Loading() {
   return (
-    <main className={pageMainClass()}>
+    <main className={pageMainClass(true)}>
       <LoadingRegion label="Carregando os serviços">
         <Skeleton className="mb-3 mt-2 h-9 w-9 rounded-full" />
         <Skeleton className="mb-4 ml-1 h-9 w-40" />
