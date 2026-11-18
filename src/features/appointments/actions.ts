@@ -2,13 +2,16 @@
 
 import { and, count, inArray, isNotNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { z } from "zod";
 import { withTenant } from "@/db/client";
 import { appointments } from "@/db/schema";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
 import { mayEditAppointments } from "@/features/team/guard";
-import { canAs, ownAgendaId } from "@/features/team/permissions";
+import { canAs } from "@/features/team/permissions";
+import { AGENDA_FILTER_COOKIE, bookingProfessionalId } from "@/features/team/agenda-scope";
+import { loadAgendaScope } from "@/features/team/agenda-scope-server";
 import { syncAppointmentSafe } from "@/features/google/server";
 import { sendBookingMessage } from "@/features/messaging/booking-send";
 import type { SyncResult } from "@/features/google/sync";
@@ -32,13 +35,20 @@ class RollbackWith extends Error {
 
 /** Opções da folha aberta pelo "Novo" do nav, que pode estar em qualquer tela. */
 export async function loadBookingOptions(): Promise<ActionResult<BookingOptions>> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
   try {
+    const scope = await loadAgendaScope(me);
     const [clients, services, hours] = await withTenant(
-      tenantId,
-      async (tx) => [await searchClients(tx, ""), await listBookable(tx), await getHours(tx)] as const,
+      me.tenantId,
+      async (tx) =>
+        [await searchClients(tx, ""), await listBookable(tx), await getHours(tx, scope.defaultId)] as const,
     );
-    return ok({ ...bookingOptions(clients, services), week: hours });
+    return ok({
+      ...bookingOptions(clients, services),
+      week: hours,
+      professionals: scope.choices,
+      professionalId: scope.defaultId,
+    });
   } catch {
     return fail("UNKNOWN");
   }
@@ -46,12 +56,16 @@ export async function loadBookingOptions(): Promise<ActionResult<BookingOptions>
 
 /** Versão atual da agenda do dia, para a tela saber se outro aparelho (ou o WhatsApp) mexeu nela. */
 export async function agendaVersion(date: string): Promise<ActionResult<string>> {
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
   if (!isDateStr(date)) return fail("VALIDATION");
   try {
     const range = dayRange(date);
+    // Mesma agenda que a tela mostra (filtrada por profissional), senão o aviso de "mudou" nunca some
+    const prof = (await loadAgendaScope(me)).filterId;
     return ok(
-      await withTenant(tenantId, async (tx) => dayVersion(await listDay(tx, range), await listBlocks(tx, range))),
+      await withTenant(me.tenantId, async (tx) =>
+        dayVersion(await listDay(tx, range, prof), await listBlocks(tx, range, prof)),
+      ),
     );
   } catch {
     return fail("UNKNOWN");
@@ -72,8 +86,8 @@ export async function refreshAgenda(): Promise<ActionResult> {
 export async function createAppointment(_prev: ActionResult<{ id: string }> | null, formData: FormData) {
   const me = await requireTenant();
   const { tenantId } = me;
-  // Profissional agenda na própria agenda; dona e gerente seguem a profissional padrão do salão
-  const professionalId = ownAgendaId(me);
+  // Profissional agenda na própria agenda; dona e gerente escolhem entre as ativas (com uma só, a padrão do salão)
+  const professionalId = bookingProfessionalId(await loadAgendaScope(me), formData.get("professionalId"));
   if (!canAs(me, "agenda.edit", professionalId)) return fail("FORBIDDEN");
   const parsed = appointmentInput.safeParse({
     clientId: formData.get("clientId") ?? "",
@@ -112,6 +126,19 @@ export async function createAppointment(_prev: ActionResult<{ id: string }> | nu
   } catch {
     return fail("UNKNOWN");
   }
+}
+
+/** Filtro "Todas / por profissional" da agenda; null = Todas. Fica num cookie para valer em Painel, Calendário e no "Novo". */
+export async function setAgendaFilter(professionalId: string | null): Promise<ActionResult> {
+  await requireTenant();
+  const jar = await cookies();
+  if (professionalId === null) jar.delete(AGENDA_FILTER_COOKIE);
+  else if (z.string().uuid().safeParse(professionalId).success)
+    jar.set(AGENDA_FILTER_COOKIE, professionalId, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 365 });
+  else return fail("VALIDATION");
+  revalidatePath("/agenda");
+  revalidatePath("/calendario");
+  return ok();
 }
 
 /** Remarca pelo arraste: novo começo (HH:MM) e duração em minutos, de 15 em 15. */

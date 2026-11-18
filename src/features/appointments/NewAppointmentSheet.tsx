@@ -15,6 +15,7 @@ import { BookingOverlay, type Booking, type Step } from "./BookingOverlay";
 import { BookingServices } from "./BookingServices";
 import { daySpan, OUTSIDE_HOURS, outsideHours } from "./agenda-grid";
 import type { ServiceOption } from "./options";
+import type { ProfessionalOption } from "@/features/team/agenda-scope";
 import { warnSync } from "./sync-warning";
 import { createAppointment } from "./actions";
 
@@ -57,6 +58,8 @@ export function NewAppointmentSheet({
   fromBlockId,
   week,
   onClosed,
+  professionals,
+  professionalId,
 }: {
   date: string;
   /** null enquanto as opções chegam (a folha do "Novo" do nav busca na hora de abrir). */
@@ -76,6 +79,10 @@ export function NewAppointmentSheet({
   week?: Day[] | null;
   /** Avisa quando a folha fecha, para a agenda tirar o bloco provisório. */
   onClosed?: () => void;
+  /** 2+ profissionais ativas: escolha de quem atende. Vazio/ausente: nada muda na folha. */
+  professionals?: ProfessionalOption[];
+  /** Profissional já marcada (a do filtro da agenda ou a do login). */
+  professionalId?: string;
 }) {
   const side = useSheetSide();
   const [open, setOpen] = useState(false);
@@ -99,7 +106,7 @@ export function NewAppointmentSheet({
   const formDomId = useId();
   const working = booking !== null && booking.result === null;
   const times = timeOptions({ include: time });
-  const formId = `${formKey}-${date}-${time ?? ""}-${clientId ?? ""}-${serviceIds?.join(",") ?? ""}-${fromBlockId ?? ""}`;
+  const formId = `${formKey}-${date}-${time ?? ""}-${clientId ?? ""}-${serviceIds?.join(",") ?? ""}-${fromBlockId ?? ""}-${professionalId ?? ""}`;
   // Dia, horário e duração escolhidos agora, para o aviso de fora do expediente
   const [pick, setPick] = useState({ form: formId, date, time: time ?? "09:00" });
   const [minutes, setMinutes] = useState(0);
@@ -272,6 +279,18 @@ export function NewAppointmentSheet({
                   className="grid gap-3"
                 >
                   {fromBlockId ? <input type="hidden" name="fromBlockId" value={fromBlockId} /> : null}
+                  {professionals && professionals.length > 1 ? (
+                    <label className="grid min-w-0 gap-1 text-sm font-bold">
+                      Profissional
+                      <select name="professionalId" className={pair} defaultValue={professionalId}>
+                        {professionals.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
                   <LetterPicker
                     name="clientId"
                     label="Cliente"

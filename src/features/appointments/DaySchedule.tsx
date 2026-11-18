@@ -17,6 +17,7 @@ import { searchClients } from "@/features/clients/core";
 import { listBookable } from "@/features/services/core";
 import { addDays, dayRange, formatBRL, todayStr } from "@/lib/dates";
 import { maskPhone } from "@/lib/phone";
+import type { AgendaScope } from "@/features/team/agenda-scope";
 
 /** Semanas carregadas antes e depois da semana do dia escolhido. */
 const WEEK_RADIUS = 5;
@@ -32,6 +33,7 @@ export async function DaySchedule({
   base = "/calendario",
   calendar = false,
   actions = true,
+  scope,
 }: {
   tenantId: string;
   date: string;
@@ -41,7 +43,10 @@ export async function DaySchedule({
   calendar?: boolean;
   /** Fileira Bloquear/Agendar acima da linha do dia (o Painel não mostra: agenda pelo + da barra). */
   actions?: boolean;
+  /** Profissional filtrada e opções do agendar (sem ele, a agenda do salão todo, como sempre). */
+  scope?: AgendaScope;
 }) {
+  const prof = scope?.filterId;
   const today = todayStr();
   // Janela de semanas para a rolagem lateral da faixa; ao rolar além dela a faixa recentraliza
   const weeks = Array.from({ length: 2 * WEEK_RADIUS + 1 }, (_, i) => weekOf(addDays(date, (i - WEEK_RADIUS) * 7)));
@@ -50,9 +55,10 @@ export async function DaySchedule({
 
   await syncExternalCalendars(tenantId);
   const { weekRows, dayBlocks, clients, services, openHours } = await withTenant(tenantId, async (tx) => ({
-    openHours: await getHours(tx),
-    dayBlocks: await listBlocks(tx, dayRange(date)),
-    weekRows: await listDay(tx, weekRange),
+    // Expediente: o da filtrada; em "Todas", o da que já vem marcada no agendar (ou a primeira do salão)
+    openHours: await getHours(tx, prof ?? scope?.defaultId),
+    dayBlocks: await listBlocks(tx, dayRange(date), prof),
+    weekRows: await listDay(tx, weekRange, prof),
     clients: await searchClients(tx, ""),
     services: await listBookable(tx),
   }));
@@ -134,6 +140,8 @@ export async function DaySchedule({
           nowMin={date === today ? minuteOf(new Date()) : null}
           {...bookingOptions(clients, services)}
           week={openHours}
+          professionals={scope?.choices}
+          professionalId={scope?.defaultId}
           blockButton={actions ? <NewBlockSheet date={date} /> : undefined}
         />
       </div>

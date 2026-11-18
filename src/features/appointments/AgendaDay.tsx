@@ -13,6 +13,7 @@ import { Drawer } from "vaul";
 import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { notify } from "@/components/feedback/toast";
 import type { PickerOption } from "@/components/ui/LetterPicker";
+import type { ProfessionalOption } from "@/features/team/agenda-scope";
 import { Icon } from "@/components/ui/Icon";
 import { BlockCard } from "@/features/blocks/BlockCard";
 import { formatDayTitle, formatShortDate, todayStr } from "@/lib/dates";
@@ -148,6 +149,8 @@ export function AgendaDay({
   services,
   week,
   blockButton,
+  professionals,
+  professionalId,
 }: {
   date: string;
   /** Janela da grade, 06–23 esticada se preciso. */
@@ -166,6 +169,9 @@ export function AgendaDay({
   week: Day[];
   /** Botão Bloquear; sem ele (no Painel) a fileira Bloquear/Agendar não aparece. */
   blockButton?: ReactNode;
+  /** Escolha da profissional no agendar (2+ ativas). */
+  professionals?: ProfessionalOption[];
+  professionalId?: string;
 }) {
   const side = useSheetSide();
   // Horário otimista depois do arraste, até o servidor mandar a agenda nova
@@ -588,6 +594,8 @@ export function AgendaDay({
         clients={clients}
         services={services}
         week={week}
+        professionals={professionals}
+        professionalId={professionalId}
         openKey={newKey}
         time={temp ? hhmm(temp.start) : undefined}
         clientId={convert?.clientId}

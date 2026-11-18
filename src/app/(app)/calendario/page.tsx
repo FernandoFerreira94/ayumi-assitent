@@ -5,6 +5,8 @@ import { TodayFab } from "@/features/calendar/CalendarBar";
 import { parseView } from "@/features/calendar/grid";
 import { isDateStr, todayStr } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
+import { loadAgendaScope } from "@/features/team/agenda-scope-server";
+import { ProfessionalFilter } from "@/features/team/ProfessionalFilter";
 
 export const metadata: Metadata = { title: "Calendário" };
 
@@ -19,10 +21,12 @@ export default async function CalendarioPage({ searchParams }: PageProps<"/calen
   const today = todayStr();
   const view = parseView({ v: str("v"), y: str("y"), m: str("m"), d: str("d") }, today, isDateStr);
   if (view.kind !== "day") return null;
-  const { tenantId } = await requireTenant();
+  const me = await requireTenant();
+  const scope = await loadAgendaScope(me);
   return (
     <>
-      <DaySchedule tenantId={tenantId} date={view.date} withStrip calendar />
+      <ProfessionalFilter choices={scope.choices} active={scope.filterId} />
+      <DaySchedule tenantId={me.tenantId} date={view.date} withStrip calendar scope={scope} />
       {view.date === today ? null : <TodayFab href={`/calendario?d=${today}`} />}
     </>
   );

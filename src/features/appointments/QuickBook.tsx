@@ -51,6 +51,8 @@ export function QuickBook() {
       clients={options?.clients ?? null}
       services={options?.services ?? null}
       week={options?.week ?? null}
+      professionals={options?.professionals}
+      professionalId={options?.professionalId}
     />
   );
 }

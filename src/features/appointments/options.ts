@@ -2,6 +2,7 @@ import type { PickerOption } from "@/components/ui/LetterPicker";
 import { formatBRL } from "@/lib/dates";
 import type { Day } from "@/features/hours/slots";
 import { maskPhone } from "@/lib/phone";
+import type { ProfessionalOption } from "@/features/team/agenda-scope";
 
 /** Serviço no seletor, com valor e duração para a folha mostrar o total antes de agendar. */
 export type ServiceOption = PickerOption & { priceCents: number; durationMin: number };
@@ -10,6 +11,10 @@ export type BookingOptions = {
   services: ServiceOption[];
   /** Expediente da semana (só na folha do "Novo"), para avisar horário fora dele. */
   week?: Day[];
+  /** Profissionais para escolher no agendar; vazio/ausente = salão de uma só (ou login de profissional). */
+  professionals?: ProfessionalOption[];
+  /** Profissional já marcada (a do filtro da agenda ou a do login). */
+  professionalId?: string;
 };
 
 /** Clientes e serviços no formato do seletor da folha "Novo agendamento". */

@@ -66,4 +66,11 @@
 - Core recebe `professionalId` (opcional por enquanto): `insertAppointment`, `overlapsBlock(tx, professionalId, ...)`, `insertBlock(..., professionalId | null)`, `listDay/listBlocks(..., professionalId?)`, `getHours/saveHours`, `listSlotLists/saveSlotList`. Bloqueio com `professional_id` null vale para todas.
 - Sem `professionalId`, as telas usam a profissional padrão (primeira por `position`, `features/team/professional.ts`). As telas ainda não escolhem profissional (A3 em diante).
 - Banco: trigger BEFORE INSERT em `appointments`, `working_hours` e `slot_lists` preenche `professional_id` null com a profissional padrão do salão, criando uma (nome da dona ou do salão) se não houver. Função `default_professional_id` é SECURITY DEFINER e recusa salão diferente do ativo em `app.tenant_id`. Não existe em `blocks`.
-- Cuidado: a agenda do dia (`listDay`) e o expediente ainda leem a profissional padrão; ao ligar o seletor de profissional, passe o id para esses dois e para `computeCustomSlots`.
+- Cuidado: Vagas (`computeCustomSlots`) e as caixas do desktop (`Desk*`) ainda leem a profissional padrão/salão todo.
+
+## Seletor de profissional (A7, 18/11)
+- Regra pura em `features/team/agenda-scope.ts` (`agendaScope`, `bookingProfessionalId`, testes em `tests/unit/agenda-scope.test.ts`). Com 1 profissional ativa nada muda na tela. Com 2+ (dona/gerente): chips "Todas / por profissional" (`ProfessionalFilter`) acima da agenda no Painel e no Calendário, e campo "Profissional" na folha de agendar (padrão: a do filtro, senão a ligada ao login, senão a primeira).
+- Login de profissional vê e agenda só a própria agenda (sem filtro nem escolha).
+- O filtro fica no cookie `agenda_p` (action `setAgendaFilter`), para sobreviver à troca de dia na faixa da semana; `loadAgendaScope` (server) lê cookie + profissionais ativas. `createAppointment` só aceita profissional que está entre as opções do login.
+- `DaySchedule` recebe `scope` e filtra `listDay`/`listBlocks`/`getHours`; `agendaVersion` usa o mesmo filtro, senão o aviso "a agenda mudou" nunca some.
+- Limite conhecido: em "Todas", o aviso de fora do expediente usa o expediente da profissional marcada por padrão, não o da escolhida na hora.

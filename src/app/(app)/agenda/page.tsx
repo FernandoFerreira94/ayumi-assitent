@@ -13,6 +13,8 @@ import { BoxSkeleton, DeskKpis, DeskNext, DeskSide, DeskWeek } from "@/features/
 import { PlatformNotices } from "@/features/support/ui/PlatformNotices";
 import { dayRange, formatDayTitle, greeting, isDateStr, todayStr } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
+import { loadAgendaScope } from "@/features/team/agenda-scope-server";
+import { ProfessionalFilter } from "@/features/team/ProfessionalFilter";
 
 export const metadata: Metadata = { title: "Painel" };
 
@@ -26,8 +28,11 @@ export default async function PainelPage({ searchParams }: PageProps<"/agenda">)
   const { d } = await searchParams;
   const today = todayStr();
   const date = typeof d === "string" && isDateStr(d) ? d : today;
-  const { tenantId, userId, userName } = await requireTenant();
-  const rows = await withTenant(tenantId, (tx) => listDay(tx, dayRange(date)));
+  const me = await requireTenant();
+  const { tenantId, userId, userName } = me;
+  // Com 2+ profissionais: filtro "Todas / por profissional"; profissional vê só a própria agenda
+  const scope = await loadAgendaScope(me);
+  const rows = await withTenant(tenantId, (tx) => listDay(tx, dayRange(date), scope.filterId));
   const label = formatDayTitle(date);
   // Celular não carrega as caixas do desktop (nem consulta o banco para elas)
   const desk = userAgent({ headers: await headers() }).device.type !== "mobile";
@@ -65,9 +70,10 @@ export default async function PainelPage({ searchParams }: PageProps<"/agenda">)
             </div>
           ) : null}
           <div className="min-w-0">
+            <ProfessionalFilter choices={scope.choices} active={scope.filterId} />
             {desk ? (
               <AgendaTabs
-                day={<DaySchedule tenantId={tenantId} date={date} withStrip base="/agenda" actions={false} />}
+                day={<DaySchedule tenantId={tenantId} date={date} withStrip base="/agenda" actions={false} scope={scope} />}
                 week={
                   <Suspense fallback={<BoxSkeleton h="h-48" />}>
                     <DeskWeek {...p} />
@@ -75,7 +81,7 @@ export default async function PainelPage({ searchParams }: PageProps<"/agenda">)
                 }
               />
             ) : (
-              <DaySchedule tenantId={tenantId} date={date} withStrip base="/agenda" actions={false} />
+              <DaySchedule tenantId={tenantId} date={date} withStrip base="/agenda" actions={false} scope={scope} />
             )}
           </div>
         </div>
