@@ -7,6 +7,7 @@ import { openNewAppointment } from "@/features/appointments/QuickBook";
 import { NAV_ICONS } from "./nav-icons";
 import { ADMIN_NAV_ITEM, NAV_ITEMS, isNavActive, type NavIconKey, type NavItem } from "./nav-items";
 import { SideNavBrand } from "./SideNavBrand";
+import { SideNavSignOut } from "./SideNavSignOut";
 import { useNavIndicator } from "./useNavIndicator";
 
 function NavIcon({ name }: { name: NavIconKey }) {
@@ -107,6 +108,7 @@ export function SideNav({
           <span className="truncate font-bold">{salon}</span> <span className="text-xs text-muted">Perfil e conta</span>
         </span>
       </Link>
+      <SideNavSignOut />
     </nav>
   );
 }

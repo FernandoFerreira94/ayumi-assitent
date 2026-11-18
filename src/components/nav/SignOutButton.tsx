@@ -4,6 +4,21 @@ import { useState } from "react";
 import { notify } from "@/components/feedback/toast";
 import { authClient } from "@/lib/auth-client";
 
+/**
+ * Sai da conta e recarrega no /login. Recarrega de verdade em vez de navegar pelo app: com cacheComponents o Next
+ * guarda as telas anteriores escondidas (com o menu <dialog> ainda modal, que travava o login, e os dados da conta
+ * que saiu). O reload zera tudo e a próxima conta começa limpa. Devolve false (e avisa) se a rede falhar.
+ */
+export async function signOutAndReload(): Promise<boolean> {
+  const res = await authClient.signOut().catch(() => null);
+  if (!res || res.error) {
+    notify.error("NETWORK");
+    return false;
+  }
+  window.location.replace("/login");
+  return true;
+}
+
 /** Fica no fim do menu, em rosa, e pede confirmação antes de sair. */
 export function SignOutButton() {
   const [asking, setAsking] = useState(false);
@@ -57,15 +72,7 @@ export function SignOutButton() {
           disabled={busy}
           onClick={async () => {
             setBusy(true);
-            const res = await authClient.signOut().catch(() => null);
-            if (!res || res.error) {
-              setBusy(false);
-              return notify.error("NETWORK");
-            }
-            // Recarrega de verdade em vez de navegar pelo app: com cacheComponents o Next guarda as telas
-            // anteriores escondidas (com o menu <dialog> ainda modal, que travava o login, e os dados da conta
-            // que saiu). O reload zera tudo e a próxima conta começa limpa.
-            window.location.replace("/login");
+            if (!(await signOutAndReload())) setBusy(false);
           }}
           className="min-h-11 flex-1 rounded-full bg-fail font-bold text-white disabled:opacity-60"
         >

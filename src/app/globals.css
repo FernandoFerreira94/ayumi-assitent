@@ -2646,6 +2646,11 @@ textarea {
   .sidenav-profile {
     margin: auto 12px 0;
   }
+  /* Sair: logo abaixo do perfil, em rosa (ação de saída, não de navegação) */
+  .sidenav-signout {
+    margin: 4px 12px 0;
+    color: var(--fail);
+  }
   .sidenav-avatar {
     display: grid;
     flex: none;
@@ -2716,6 +2721,9 @@ textarea {
     margin-inline: 0;
   }
   .sidenav-profile {
+    margin-inline: 0;
+  }
+  .sidenav-signout {
     margin-inline: 0;
   }
 }

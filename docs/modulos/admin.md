@@ -44,6 +44,7 @@
 
 ## Depois do login
 - Todo login (senha, código 2FA, Google `callbackURL`, app da loja `NativeBridge`, e `/login` com sessão no `proxy.ts`) passa por `app/entrar/route.ts`: dono (`isPlatformAdmin`) vai ao `/admin` (o `requireAdmin` segue pedindo 2FA/step-up), o resto ao `/agenda`; sem sessão, `/login?sessao=invalida` (evita laço). Regra pura em `features/admin/landing.ts`. O redirect usa `Location` relativo: `request.url` em route handler no Railway é `localhost:8080` (bug de 18/11, login do Google caía no localhost). Abrir o app depois (start_url `/agenda`) não redireciona.
+- Sair no tablet/desktop: `components/nav/SideNavSignOut.tsx` no pé do menu lateral do app (`SideNav`) e do `/admin` (`AdminNav`), com diálogo de confirmação; usa `signOutAndReload` de `SignOutButton.tsx` (o mesmo do menu do celular).
 
 ## Configuração
 - `ADMIN_USER_IDS` (Railway, serviço web): ids de `"user".id` separados por vírgula. Vazia = ninguém é admin. Achar o id: `select id from "user" where email = '<e-mail do dono>'`.
