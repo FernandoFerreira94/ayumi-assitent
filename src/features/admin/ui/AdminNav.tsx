@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { SideNavBrand } from "@/components/nav/SideNavBrand";
+import { SideNavSignOut } from "@/components/nav/SideNavSignOut";
 import { useNavIndicator } from "@/components/nav/useNavIndicator";
 
 type Item = { href: string; label: string; icon: IconName };
@@ -66,6 +67,7 @@ export function AdminNav({ supportUnread = 0 }: { supportUnread?: number }) {
           <Icon name="calendar" size={22} />
           <span className="sr-only xl:not-sr-only xl:flex-1">Voltar para o app</span>
         </Link>
+        <SideNavSignOut />
       </nav>
       <nav
         aria-label="Painel do dono"
