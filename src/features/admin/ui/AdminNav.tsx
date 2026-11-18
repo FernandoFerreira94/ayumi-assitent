@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon, type IconName } from "@/components/ui/Icon";
+import { SideNavBrand } from "@/components/nav/SideNavBrand";
+import { useNavIndicator } from "@/components/nav/useNavIndicator";
 
 type Item = { href: string; label: string; icon: IconName };
 
@@ -26,6 +28,7 @@ const isOn = (pathname: string, href: string) =>
  */
 export function AdminNav({ supportUnread = 0 }: { supportUnread?: number }) {
   const pathname = usePathname();
+  const navRef = useNavIndicator<HTMLElement>(pathname);
   const badge = (href: string) =>
     href === "/admin/suporte" && supportUnread > 0 ? (
       <span className="rounded-full bg-primary px-1.5 text-xs font-bold leading-5 text-white">
@@ -35,11 +38,9 @@ export function AdminNav({ supportUnread = 0 }: { supportUnread?: number }) {
     ) : null;
   return (
     <>
-      <nav aria-label="Painel do dono" className="sidenav">
-        <p className="sidenav-brand">
-          <span aria-hidden="true" className="sidenav-dot" />
-          <span className="sr-only xl:not-sr-only">Bubbly Admin</span>
-        </p>
+      <nav ref={navRef} aria-label="Painel do dono" className="sidenav">
+        <span aria-hidden="true" className="sidenav-indicator" />
+        <SideNavBrand href="/admin" label="Bubbly Admin, início" subtitle="Painel do dono" />
         <ul className="sidenav-list">
           {ADMIN_NAV.map((i) => (
             <li key={i.href}>

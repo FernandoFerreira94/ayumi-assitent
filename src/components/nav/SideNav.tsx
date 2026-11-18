@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { openNewAppointment } from "@/features/appointments/QuickBook";
 import { NAV_ICONS } from "./nav-icons";
 import { ADMIN_NAV_ITEM, NAV_ITEMS, isNavActive, type NavIconKey, type NavItem } from "./nav-items";
+import { SideNavBrand } from "./SideNavBrand";
+import { useNavIndicator } from "./useNavIndicator";
 
 function NavIcon({ name }: { name: NavIconKey }) {
   return (
@@ -30,14 +32,18 @@ function NavIcon({ name }: { name: NavIconKey }) {
  */
 export function SideNav({
   studioName,
+  userName = null,
   pendencias,
   isAdmin = false,
 }: {
   studioName: string | null;
+  /** Nome de quem está logado, embaixo de "bubbly". Vazio = linha some. */
+  userName?: string | null;
   pendencias: number;
   isAdmin?: boolean;
 }) {
   const pathname = usePathname();
+  const navRef = useNavIndicator<HTMLElement>(pathname);
   const salon = studioName ?? "Meu salão";
 
   const link = (item: NavItem) => {
@@ -51,7 +57,9 @@ export function SideNav({
           {count ? (
             <>
               {" "}
-              <span className="sidenav-count">{count}</span>
+              <span key={count} className="sidenav-count">
+                {count}
+              </span>
             </>
           ) : null}
         </Link>
@@ -60,11 +68,9 @@ export function SideNav({
   };
 
   return (
-    <nav aria-label="Navegação principal" data-tour="sidenav" className="sidenav">
-      <p className="sidenav-brand">
-        <span aria-hidden="true" className="sidenav-dot" />
-        <span className="sr-only xl:not-sr-only">Bubbly</span>
-      </p>
+    <nav ref={navRef} aria-label="Navegação principal" data-tour="sidenav" className="sidenav">
+      <span aria-hidden="true" className="sidenav-indicator" />
+      <SideNavBrand href="/agenda" label="Bubbly, início" subtitle={userName} />
       <button type="button" className="sidenav-new" title="Novo agendamento (N)" onClick={() => openNewAppointment()}>
         <NavIcon name="novo" />
         <span className="sr-only xl:not-sr-only xl:flex-1 xl:text-left">Novo agendamento</span>

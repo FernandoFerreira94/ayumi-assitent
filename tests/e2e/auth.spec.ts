@@ -70,7 +70,8 @@ test.describe("login por e-mail e senha", () => {
 
     await page.getByLabel("Senha", { exact: true }).fill("senha-segura-123");
     await page.getByRole("button", { name: "Entrar", exact: true }).click();
-    await expect(page).toHaveURL(/\/agenda/);
+    // Passa pelo /entrar (navegação completa): folga para a máquina carregada
+    await expect(page).toHaveURL(/\/agenda/, { timeout: 10_000 });
   });
 });
 
@@ -94,11 +95,14 @@ test.describe("sair e entrar de novo", () => {
     await page.getByLabel("E-mail").fill(email);
     await page.getByLabel("Senha", { exact: true }).fill("senha-segura-123");
     await page.getByRole("button", { name: "Entrar", exact: true }).click();
-    await expect(page).toHaveURL(/\/agenda/);
+    // Passa pelo /entrar (navegação completa): folga para a máquina carregada
+    await expect(page).toHaveURL(/\/agenda/, { timeout: 10_000 });
   }
 
   // Bug: sair com o menu aberto deixava o <dialog> modal vivo na tela escondida e o login não respondia ao toque
   test("sai pelo menu e entra com outra conta sem fechar o app", async ({ page }) => {
+    // IP próprio: o limite de login por IP (3 a cada 10 s) não pode somar os logins dos outros testes
+    await page.setExtraHTTPHeaders({ "x-forwarded-for": `10.9.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` });
     await page.goto("/login");
     await entrar(page);
     await page.getByRole("button", { name: "Abrir menu" }).click();
