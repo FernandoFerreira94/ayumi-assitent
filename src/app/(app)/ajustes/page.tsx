@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { eq } from "drizzle-orm";
 import { PageShell } from "@/components/ui/PageShell";
+import { count, eq, isNull } from "drizzle-orm";
 import { getDb, withTenant } from "@/db/client";
-import { tenants } from "@/db/schema";
+import { apiTokens, tenants } from "@/db/schema";
 import { getHours } from "@/features/hours/core";
 import { InstallGuide } from "@/features/install/InstallGuide";
 import { getReminderSettings } from "@/features/reminders/core";
@@ -24,12 +24,13 @@ export const metadata: Metadata = { title: "Ajustes" };
  */
 export default async function AjustesPage() {
   const { tenantId } = await requireTenant();
-  const [{ whatsapp, google }, { week, reminders, replies }, [salon]] = await Promise.all([
+  const [{ whatsapp, google }, { week, reminders, replies, siri }, [salon]] = await Promise.all([
     shellStatus(tenantId),
     withTenant(tenantId, async (tx) => ({
       week: await getHours(tx),
       reminders: await getReminderSettings(tx),
       replies: await unreadSupportReplies(tx),
+      siri: (await tx.select({ n: count() }).from(apiTokens).where(isNull(apiTokens.revokedAt)))[0]!.n > 0,
     })),
     getDb()
       .select({ calendarOn: tenants.calendarTokenHash, icloudOn: tenants.icloudCalendarUrl })
@@ -60,12 +61,10 @@ export default async function AjustesPage() {
           todo={calendars.length ? undefined : "Configurar"}
         />
         <SettingsRow section="notificacoes" status={<PushStatusText />} />
+        <SettingsRow section="siri" status={siri ? "Ligada" : "Pergunte sua agenda para a Siri"} />
       </SettingsGroup>
       <SettingsGroup title="Clientes e agenda">
-        <SettingsRow
-          section="mensagens"
-          status={avisos.length ? avisos.join(" · ") : "Avisos desligados"}
-        />
+        <SettingsRow section="mensagens" status={avisos.length ? avisos.join(" · ") : "Avisos desligados"} />
         <SettingsRow section="expediente" status={hoursSummary(week)} />
       </SettingsGroup>
       <SettingsGroup title="Ajuda">
