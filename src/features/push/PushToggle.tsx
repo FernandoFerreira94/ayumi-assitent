@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useSyncExternalStore, useTransition } from "react";
 import { notify } from "@/components/feedback/toast";
+import { nativePushPlatform } from "@/features/native/push";
 import { subscribePush, unsubscribePush } from "./actions";
-import { TileTitle } from "@/components/ui/Icon";
-import { Switch } from "@/components/ui/Switch";
+import { NativePushToggle } from "./NativePushToggle";
+import { PushCard } from "./PushCard";
 
 type State = "checking" | "unsupported" | "denied" | "off" | "on";
 
@@ -16,8 +17,25 @@ function keyToBytes(b64: string): Uint8Array<ArrayBuffer> {
   return out;
 }
 
-/** Ajustes > Notificação: liga os avisos neste aparelho, sem texto longo nem botão de teste (o que chega é dito no tour). */
-export function PushToggle({ publicKey }: { publicKey: string | null }) {
+const noop = () => () => {};
+
+/**
+ * Ajustes > Notificação: liga os avisos neste aparelho, sem texto longo nem botão de teste (o que chega é dito no tour).
+ * No app da loja usa o push nativo (FCM/APNs); no navegador/PWA, o Web Push.
+ */
+export function PushToggle({
+  publicKey,
+  nativeReady,
+}: {
+  publicKey: string | null;
+  nativeReady: { android: boolean; ios: boolean };
+}) {
+  const platform = useSyncExternalStore(noop, nativePushPlatform, () => null);
+  if (platform) return <NativePushToggle platform={platform} ready={nativeReady[platform]} />;
+  return <WebPushToggle publicKey={publicKey} />;
+}
+
+function WebPushToggle({ publicKey }: { publicKey: string | null }) {
   const [state, setState] = useState<State>("checking");
   const [pending, start] = useTransition();
 
@@ -97,24 +115,13 @@ export function PushToggle({ publicKey }: { publicKey: string | null }) {
   };
 
   return (
-    <div className="glass grid gap-3 rounded-[1.75rem] px-5 py-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <TileTitle as="h2" icon="phone" tint="pink">
-            Notificação
-          </TileTitle>
-          <p className="text-sm font-semibold text-muted">{hint[state]}</p>
-        </div>
-        {state !== "checking" && (
-          <Switch
-            checked={state === "on"}
-            onChange={(on) => (on ? enable() : disable())}
-            busy={pending}
-            disabled={state === "unsupported" || state === "denied"}
-            label="Notificação neste aparelho"
-          />
-        )}
-      </div>
-    </div>
+    <PushCard
+      hint={hint[state]}
+      showSwitch={state !== "checking"}
+      checked={state === "on"}
+      busy={pending}
+      disabled={state === "unsupported" || state === "denied"}
+      onChange={(on) => (on ? enable() : disable())}
+    />
   );
 }

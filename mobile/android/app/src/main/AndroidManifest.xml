@@ -28,6 +28,11 @@
             </intent-filter>
         </activity>
 
+        <!-- Notificações nativas (FCM): ícone, cor e canal padrão quando o aviso chega com o app fechado -->
+        <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_stat_bubbly" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/bubbly_primary" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="avisos" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -43,4 +48,6 @@
     <!-- Importar clientes da agenda do celular. O plugin pede leitura e escrita juntas (mesmo grupo, um só aviso); o app só lê. -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+    <!-- Android 13+: avisos (pendências, respostas das clientes) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

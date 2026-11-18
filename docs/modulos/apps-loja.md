@@ -30,6 +30,17 @@ O Google não deixa entrar dentro da WebView. Fluxo (`features/native/handoff-co
 - Permissões: Android `READ_CONTACTS` + `WRITE_CONTACTS` (o plugin pede as duas no mesmo alias; um só aviso); iPhone `NSContactsUsageDescription`. Negou: toast mandando liberar em Ajustes.
 - Lojas: declarar contatos na Segurança dos dados (Play) e na privacidade do app (Apple): coletados só os escolhidos, para cadastro de clientes, sem compartilhar.
 
+## Avisos nativos (Bloco 3)
+- Plugin `@capacitor/push-notifications`. Cliente: `features/native/push.ts` (`registerNativePush`, canal Android "avisos"), tela `features/push/NativePushToggle.tsx` (Ajustes > Notificações escolhe sozinho entre Web Push e nativo).
+- Servidor: `push/fcm.ts` (FCM HTTP v1, conta de serviço) e `push/apns.ts` (HTTP/2, chave .p8). Inscrição na mesma `push_subscriptions`, endpoint `fcm:<token>` ou `apns:<token>` (sem migration).
+- Toque no aviso: `NativeBridge` abre `data.url` (só caminho interno, `safeAppPath`).
+- Env (web **e** worker): `FCM_SERVICE_ACCOUNT` (JSON ou base64); `APNS_KEY` (.p8), `APNS_KEY_ID`, `APPLE_TEAM_ID`, `APNS_SANDBOX=1` só para build de desenvolvimento. Sem a env, a tela mostra "chegam em breve".
+- Build: `google-services.json` no Codemagic (`GOOGLE_SERVICES_JSON` base64); sem ele o Android compila mas não registra. iPhone: `App.entitlements` (aps-environment) + capacidade Push no App ID.
+
+## Cara de app (Bloco 4)
+- Voltar do Android (`NativeBridge` + `native/back.ts`): fecha a folha/diálogo aberto (Escape), senão volta a página, senão minimiza.
+- Vibração (`native/haptics.ts`, `@capacitor/haptics`): toasts de sucesso, aviso e erro; só no app.
+
 ## Build local (Windows)
 - JDK 21 (Capacitor 8 exige; o JDK 17 do PC não serve): `$env:JAVA_HOME` apontando para um JDK 21.
 - `cd mobile; npx cap sync android; cd android; .\gradlew.bat assembleDebug` → `android/app/build/outputs/apk/debug/app-debug.apk`.
@@ -37,7 +48,7 @@ O Google não deixa entrar dentro da WebView. Fluxo (`features/native/handoff-co
 
 ## Cuidados
 - Regra de loja: o app **não vende nada** (sem preço, botão de assinar ou link de pagamento) quando `isNativeShell`; assinatura só no site (Apple 3.1.3(f)). **Atenção (17/11):** a decisão de 16/11 de cobrança híbrida (compra dentro do app pela Apple/Google, mais cara, + site com Mercado Pago) muda esta regra quando o billing chegar; até lá ela vale como está.
-- Push no app precisa de FCM/APNs (Bloco 3); Web Push não funciona na WebView do iPhone.
+- Web Push não funciona na WebView do iPhone: no app o push é sempre nativo.
 - Teclado: a WebView não é o Safari; conferir as regras de teclado do iPhone (`KeyboardWatcher`) no TestFlight antes de mexer.
 - Segredos de assinatura (.p8, keystore) só no Codemagic; `.gitignore` de `mobile/` barra `*.jks`, `*.p8`, `*.p12`.
 - Só teste (TestFlight e teste fechado) até o lançamento público (regra do usuário, 16/11/2026).

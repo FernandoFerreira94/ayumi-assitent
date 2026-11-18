@@ -4,6 +4,7 @@ import { toast, Toaster, type ExternalToast } from "sonner";
 import { Mascot } from "@/components/brand/Mascot";
 import { FEEDBACK_MOOD, type FeedbackKind } from "@/components/brand/moods";
 import { messageFor, type ErrorCode } from "@/lib/errors";
+import { haptic } from "@/features/native/haptics";
 
 /** Os cinco tipos de toast do app; a expressão de cada um vem de FEEDBACK_MOOD (brand/moods.ts). */
 export type ToastKind = FeedbackKind;
@@ -31,6 +32,8 @@ export function AppToaster() {
 }
 
 function show(kind: ToastKind, title: string, opts: ExternalToast = {}) {
+  // No app da loja, o resultado também vibra (sucesso, aviso, erro)
+  if (kind === "success" || kind === "warning" || kind === "error") haptic(kind);
   const fn = kind === "loading" ? toast.loading : toast[kind];
   return fn(title, { icon: icon(kind), ...opts });
 }
