@@ -2,9 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/feedback/EmptyState";
+import { Icon } from "@/components/ui/Icon";
 import type { PaymentMethod, PaymentRow, PaymentStatus } from "../types";
 import { fmtDate, formatBRL, METHOD_LABEL, PAY_STATUS } from "./format";
 import { PaymentBadge } from "./StatusBadge";
+import { adminFigure } from "./styles";
+
+const MethodIcon = ({ m }: { m: PaymentMethod }) => (
+  <Icon name={m === "pix" ? "coins" : "wallet"} size={16} className="text-muted" />
+);
 
 const select =
   "min-h-11 w-full rounded-2xl border-[1.5px] border-line bg-surface px-3 text-base font-semibold focus:border-primary focus:outline-none";
@@ -57,15 +63,16 @@ export function PaymentsView({ payments }: { payments: PaymentRow[] }) {
                   <span className="truncate font-bold">{p.salonName}</span>
                   <PaymentBadge status={p.status} />
                 </span>
-                <span className="flex justify-between text-sm font-semibold text-muted">
-                  <span>
+                <span className="flex items-center justify-between gap-2 text-sm font-semibold text-muted">
+                  <span className="flex items-center gap-1.5">
+                    <MethodIcon m={p.method} />
                     {fmtDate(p.paidAt ?? p.createdAt)} · {METHOD_LABEL[p.method]}
                   </span>
-                  <span className="font-bold text-fg tabular-nums">{formatBRL(p.amountCents)}</span>
+                  <span className={`${adminFigure} text-lg text-fg`}>{formatBRL(p.amountCents)}</span>
                 </span>
                 {p.feeCents !== null ? (
                   <span className="text-xs font-semibold text-muted tabular-nums">
-                    Taxa {formatBRL(p.feeCents)} · líquido {formatBRL(p.netCents ?? 0)}
+                    Taxa {formatBRL(p.feeCents)} · líquido <strong className="text-ok">{formatBRL(p.netCents ?? 0)}</strong>
                   </span>
                 ) : null}
               </li>
@@ -89,13 +96,20 @@ export function PaymentsView({ payments }: { payments: PaymentRow[] }) {
                   <tr key={p.paymentId} className="border-b border-line last:border-0">
                     <td className="px-4 py-3 font-semibold tabular-nums">{fmtDate(p.paidAt ?? p.createdAt)}</td>
                     <td className="px-4 py-3 font-bold">{p.salonName}</td>
-                    <td className="px-4 py-3 font-semibold">{METHOD_LABEL[p.method]}</td>
+                    <td className="px-4 py-3 font-semibold">
+                      <span className="flex items-center gap-1.5">
+                        <MethodIcon m={p.method} />
+                        {METHOD_LABEL[p.method]}
+                      </span>
+                    </td>
                     <td className="px-4 py-3"><PaymentBadge status={p.status} /></td>
                     <td className="px-4 py-3 text-right font-bold tabular-nums">{formatBRL(p.amountCents)}</td>
                     <td className="px-4 py-3 text-right font-semibold text-muted tabular-nums">
                       {p.feeCents === null ? "—" : formatBRL(p.feeCents)}
                     </td>
-                    <td className="px-4 py-3 text-right font-bold tabular-nums">{p.netCents === null ? "—" : formatBRL(p.netCents)}</td>
+                    <td className={`px-4 py-3 text-right text-base ${adminFigure} ${p.netCents === null ? "text-muted" : "text-ok"}`}>
+                      {p.netCents === null ? "—" : formatBRL(p.netCents)}
+                    </td>
                   </tr>
                 ))}
               </tbody>

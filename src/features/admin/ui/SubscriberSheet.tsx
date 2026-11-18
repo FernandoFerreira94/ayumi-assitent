@@ -3,9 +3,11 @@
 import { usePathname, useRouter } from "next/navigation";
 import { Drawer } from "vaul";
 import { SHEET_SCROLL, sheetClass, SidePanelClose, useSheetSide } from "@/components/ui/AdaptiveSheet";
+import { Icon, IconTile } from "@/components/ui/Icon";
 import type { OverviewRow, PaymentRow } from "../types";
 import { fmtDate, formatBRL, METHOD_LABEL } from "./format";
 import { PaymentBadge, StatusBadge } from "./StatusBadge";
+import { adminFigure } from "./styles";
 
 function Item({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -39,6 +41,27 @@ export function SubscriberSheet({ row, payments }: { row: OverviewRow | null; pa
                 </Drawer.Description>
               </div>
               <div className={SHEET_SCROLL}>
+                <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl bg-soft px-4 py-3">
+                  <span className="flex items-center gap-2.5">
+                    <IconTile name="wallet" tint="lavender" />
+                    <span className="grid">
+                      <span className="text-xs font-bold text-muted">{row.planName}</span>
+                      <span className={`${adminFigure} text-2xl leading-tight text-primary-text`}>
+                        {formatBRL(row.amountCents)}
+                        <span className="font-sans text-sm font-bold text-muted">{row.planInterval === "year" ? "/ano" : "/mês"}</span>
+                      </span>
+                    </span>
+                  </span>
+                  <StatusBadge status={row.status} />
+                </div>
+                {row.daysPastDue ? (
+                  <p className="mb-3 flex items-center gap-2 rounded-2xl bg-fail-bg px-4 py-3 text-sm font-semibold text-fail">
+                    <Icon name="alert" size={18} />
+                    <span>
+                      <strong className={`${adminFigure} text-lg`}>{row.daysPastDue} dias</strong> de atraso, desde {fmtDate(row.pastDueSince)}
+                    </span>
+                  </p>
+                ) : null}
                 <dl className="rounded-2xl bg-bg px-4">
                   <Item label="Situação"><StatusBadge status={row.status} /></Item>
                   <Item label="Plano">{row.planName}</Item>
@@ -66,13 +89,15 @@ export function SubscriberSheet({ row, payments }: { row: OverviewRow | null; pa
                   {row.providerSubscriptionId ? <Item label="Id no Mercado Pago"><span className="font-mono text-xs">{row.providerSubscriptionId}</span></Item> : null}
                 </dl>
 
-                <h3 className="pb-2 pt-5 text-base font-bold">Pagamentos recentes</h3>
+                <h3 className="flex items-center gap-2 pb-2 pt-5 text-base font-bold">
+                  <IconTile name="coins" tint="green" /> Pagamentos recentes
+                </h3>
                 {payments.length ? (
                   <ul className="grid gap-2">
                     {payments.map((p) => (
                       <li key={p.paymentId} className="flex items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3">
                         <span className="grid">
-                          <span className="text-sm font-bold tabular-nums">{formatBRL(p.amountCents)}</span>
+                          <span className={`${adminFigure} text-base`}>{formatBRL(p.amountCents)}</span>
                           <span className="text-xs font-semibold text-muted">
                             {fmtDate(p.paidAt ?? p.createdAt)} · {METHOD_LABEL[p.method]}
                           </span>

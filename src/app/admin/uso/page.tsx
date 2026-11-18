@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TileTitle } from "@/components/ui/Icon";
 import { logAdminAccess } from "@/features/admin/audit";
 import { requireAdmin } from "@/features/admin/guard";
 import { AdminShell } from "@/features/admin/ui/AdminShell";
@@ -20,21 +21,24 @@ export default async function AdminUsagePage() {
   const s = summarizeUsage(rows, now);
 
   return (
-    <AdminShell title="Uso" subtitle="Dados reais dos salões nos últimos 30 dias">
+    <AdminShell title="Uso" subtitle="Dados reais dos salões nos últimos 30 dias" icon="forecast" tint="teal">
       <h2 className="sr-only">Resumo</h2>
       <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-        <KpiCard icon="users" label="Salões" value={num(s.salons)} note={`${s.active7} usaram nos últimos 7 dias`} />
-        <KpiCard icon="chat" label="WhatsApp ligado" value={num(s.whatsapp)} note={`de ${s.salons} salões`} />
-        <KpiCard icon="calendar" label="Agendamentos" value={num(s.appts30)} note="últimos 30 dias, sem cancelados" />
-        <KpiCard icon="message" label="Mensagens enviadas" value={num(s.msgsOut30)} note="últimos 30 dias" />
+        <KpiCard icon="users" tint="blue" tone="brand" label="Salões" value={num(s.salons)} note={`${s.active7} usaram nos últimos 7 dias`} />
+        <KpiCard icon="chat" tint="green" tone="ok" label="WhatsApp ligado" value={num(s.whatsapp)} note={`de ${s.salons} salões`} />
+        <KpiCard icon="calendar" tint="lavender" label="Agendamentos" value={num(s.appts30)} note="últimos 30 dias, sem cancelados" />
+        <KpiCard icon="message" tint="teal" label="Mensagens enviadas" value={num(s.msgsOut30)} note="últimos 30 dias" />
         <KpiCard
           icon="forecast"
+          tint="orange"
           label="Por salão ativo"
           value={s.msgsPerActive === null ? "—" : num(s.msgsPerActive)}
           note="mensagens no mês (base do custo)"
         />
       </div>
-      <h2 className="pb-3 text-lg font-bold">Por salão</h2>
+      <TileTitle as="h2" icon="users" tint="blue" className="pb-3 text-lg">
+        Por salão
+      </TileTitle>
       <UsageTable rows={rows} now={now} />
     </AdminShell>
   );
