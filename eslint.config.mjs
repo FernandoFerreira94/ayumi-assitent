@@ -27,6 +27,8 @@ const eslintConfig = defineConfig([
     ".claude/**",
     // Casca nativa (Capacitor): projeto Android/iOS gerado, com dependências próprias
     "mobile/**",
+    // Bibliotecas minificadas de terceiros do site estático (GSAP, Lenis)
+    "site/public/js/*.min.js",
   ]),
 ]);
 
