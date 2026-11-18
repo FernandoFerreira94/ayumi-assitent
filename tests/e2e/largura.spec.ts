@@ -125,3 +125,15 @@ test("Pendências e Vagas usam a largura toda no desktop", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Gel" })).toBeVisible();
   expect(await width()).toBeGreaterThan(900);
 });
+
+test("Serviços no desktop vira tabela com o mês", async ({ page }) => {
+  await page.goto("/servicos");
+  await page.getByRole("button", { name: "Criar serviço" }).click();
+  await page.getByRole("dialog").getByRole("textbox", { name: "Nome", exact: true }).fill("Gel");
+  await page.getByRole("dialog").getByRole("textbox", { name: /Preço/ }).fill("100");
+  await page.getByRole("dialog").getByRole("button", { name: "Criar serviço" }).click();
+  await expect(page.getByText("Serviço criado")).toBeVisible();
+  await expect(page.getByText("receita do mês", { exact: true })).toBeVisible();
+  await expect(page.getByText("Receita do mês", { exact: true })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("listitem").filter({ hasText: "Gel" })).toContainText("Feitos no mês: 0");
+});

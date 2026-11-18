@@ -1,4 +1,4 @@
-import { and, asc, count, eq, gte, max, ne } from "drizzle-orm";
+import { and, asc, count, eq, gte, lt, max, ne, sql } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { appointments, services } from "@/db/schema";
 import type { ServiceInput } from "./schema";
@@ -16,6 +16,20 @@ export const listServices = (tx: Tx) =>
 
 /** O que pode entrar num agendamento novo (fora os pausados). */
 export const listBookable = async (tx: Tx) => (await listServices(tx)).filter((s) => s.bookable);
+
+/** Atendimentos concluídos no período, com as partes por id do serviço (para `salesByService`). */
+export const doneInRange = (tx: Tx, [from, to]: [Date, Date]) =>
+  tx
+    .select({
+      priceCents: appointments.priceCents,
+      serviceId: appointments.serviceId,
+      parts: sql<{ name: string; cents: number }[] | string | null>`(
+        select json_agg(json_build_object('name', x.service_id, 'cents', x.price_cents) order by x.position)
+        from appointment_services x where x.appointment_id = ${appointments.id}
+      )`,
+    })
+    .from(appointments)
+    .where(and(gte(appointments.startsAt, from), lt(appointments.startsAt, to), eq(appointments.status, "done")));
 
 /** Atendimentos marcados de agora em diante, por serviço. */
 export async function upcomingByService(tx: Tx, now = new Date()) {

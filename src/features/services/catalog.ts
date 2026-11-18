@@ -33,6 +33,8 @@ export type CatalogService = {
   returnDays: number | null;
   /** atendimentos marcados daqui para frente (avisados ao excluir) */
   upcoming: number;
+  /** concluídos no mês atual e o valor que trouxeram (colunas do desktop) */
+  month?: { count: number; cents: number };
 };
 
 /** Busca e nome repetido ignoram acento e maiúscula. */
