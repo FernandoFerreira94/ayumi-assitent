@@ -17,6 +17,7 @@ export type AdminAction =
   | "view_notices"
   | "notice_created"
   | "notice_ended"
+  | "notice_reopened"
   | "sessions_revoked"
   | "step_up_ok"
   | "step_up_failed"
@@ -36,6 +37,7 @@ export const ADMIN_ACTION_LABEL: Record<AdminAction, string> = {
   view_notices: "Abriu avisos",
   notice_created: "Publicou um aviso",
   notice_ended: "Encerrou um aviso",
+  notice_reopened: "Desfez o encerramento de um aviso",
   sessions_revoked: "Encerrou outras sessões",
   step_up_ok: "Código confirmado",
   step_up_failed: "Código errado",

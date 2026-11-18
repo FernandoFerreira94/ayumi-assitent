@@ -34,6 +34,15 @@ export async function insertNotice(input: NoticeInput, userId: string, now = new
   return r!.id;
 }
 
+/** Desfazer o "Encerrar": volta ao ar (só se foi encerrado há pouco, para não ressuscitar aviso antigo). */
+export async function reopenNotice(id: string): Promise<boolean> {
+  const r = await getDb().execute<{ id: string }>(
+    sql`update platform_notices set ended_at = null
+        where id = ${id} and ended_at > now() - interval '10 minutes' returning id`,
+  );
+  return r.length > 0;
+}
+
 export async function endNotice(id: string): Promise<boolean> {
   const r = await getDb().execute<{ id: string }>(
     sql`update platform_notices set ended_at = now() where id = ${id} and ended_at is null returning id`,

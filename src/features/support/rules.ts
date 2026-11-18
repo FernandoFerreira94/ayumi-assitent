@@ -56,6 +56,18 @@ export function preview(body: string, max = 90): string {
   return `${(space > max * 0.6 ? cut.slice(0, space) : cut).trimEnd()}…`;
 }
 
+const TZ = "America/Sao_Paulo";
+const dayKey = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(d);
+const hourFmt = new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
+const shortFmt = new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, day: "2-digit", month: "2-digit" });
+
+/** Quando, como na lista do WhatsApp: hoje = hora, ontem = "Ontem", antes = dia/mês (fuso do Brasil). */
+export function whenLabel(d: Date, now: Date): string {
+  if (dayKey(d) === dayKey(now)) return hourFmt.format(d);
+  if (dayKey(d) === dayKey(new Date(now.getTime() - 86_400_000))) return "Ontem";
+  return shortFmt.format(d);
+}
+
 export type Conversation = {
   tenantId: string;
   salonName: string;

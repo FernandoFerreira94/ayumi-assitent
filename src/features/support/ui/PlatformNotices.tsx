@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { IconTile } from "@/components/ui/Icon";
 import { withTenant } from "@/db/client";
 import { errCode, log } from "@/lib/log";
 import { liveNoticesFor, unreadSupportReplies } from "../core";
@@ -24,12 +25,26 @@ export async function PlatformNotices({ tenantId, userId }: { tenantId: string; 
   return (
     <div className="mb-4 grid gap-2">
       {replies ? (
-        <Link href="/ajustes/suporte" className="glass flex min-h-14 items-center gap-3 rounded-2xl px-4 py-3">
-          <span aria-hidden="true" className="size-2.5 shrink-0 rounded-full bg-primary" />
+        <Link href="/ajustes/suporte" className="glass flex min-h-16 items-center gap-3 rounded-[1.4rem] px-4 py-3 active:bg-soft">
+          <IconTile name="chat" tint="teal" />
           <span className="min-w-0 flex-1">
             <span className="block font-bold leading-tight">O suporte respondeu</span>
-            <span className="block text-sm font-semibold text-muted">Toque para ler a resposta.</span>
+            <span className="block text-sm font-semibold text-muted">
+              {replies === 1 ? "Toque para ler a resposta." : `${replies} respostas novas. Toque para ler.`}
+            </span>
           </span>
+          <svg
+            viewBox="0 0 24 24"
+            className="size-4 shrink-0 text-muted"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M9 5l7 7-7 7" />
+          </svg>
         </Link>
       ) : null}
       {notices.map((n) => (
