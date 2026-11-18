@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { notify } from "@/components/feedback/toast";
+import { emitPushChanged } from "@/features/settings/live-events";
 import {
   nativePermission,
   PushDenied,
@@ -19,6 +20,16 @@ type State = "checking" | "unsupported" | "denied" | "off" | "on";
 export function NativePushToggle({ platform, ready }: { platform: NativePlatform; ready: boolean }) {
   const [state, setState] = useState<State>("checking");
   const [pending, start] = useTransition();
+  const firstCheck = useRef(true);
+  // Avisa o selo de Conexões quando o interruptor muda (a primeira leitura não é mudança)
+  useEffect(() => {
+    if (state === "checking") return;
+    if (firstCheck.current) {
+      firstCheck.current = false;
+      return;
+    }
+    emitPushChanged();
+  }, [state]);
   const phone = platform === "ios" ? "iPhone" : "celular";
 
   useEffect(() => {

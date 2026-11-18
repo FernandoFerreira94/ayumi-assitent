@@ -6,10 +6,21 @@ import { getHours } from "@/features/hours/core";
 import { getReminderSettings } from "@/features/reminders/core";
 import { shellStatus } from "@/features/shell/status";
 import { unreadSupportReplies } from "@/features/support/core";
-import { PushStatusText } from "./PushStatusText";
+import { type Badge, calendarsLine, siriLine, whatsappLine } from "./connection-status";
 import { hoursSummary, type SectionKey } from "./sections";
 
-export type SettingsLine = { section: SectionKey; status: React.ReactNode; todo?: string };
+/**
+ * Linha de Ajustes. `badge` é o selo de estado das conexões (verde/âmbar/cinza); `todo`, o selo amarelo das outras
+ * linhas. `push` marca a Notificação: o estado é do aparelho, então quem desenha resolve no cliente
+ * (`notificationsLine`) com a localização que veio daqui.
+ */
+export type SettingsLine = {
+  section: SectionKey;
+  status: string;
+  todo?: string;
+  badge?: Badge;
+  push?: { locationOn: boolean };
+};
 export type SettingsGroupData = { title: string; lines: SettingsLine[] };
 
 /**
@@ -26,12 +37,15 @@ export const loadSettingsSummary = cache(async (tenantId: string): Promise<Setti
       siri: (await tx.select({ n: count() }).from(apiTokens).where(isNull(apiTokens.revokedAt)))[0]!.n > 0,
     })),
     getDb()
-      .select({ calendarOn: tenants.calendarTokenHash, icloudOn: tenants.icloudCalendarUrl })
+      .select({
+        calendarOn: tenants.calendarTokenHash,
+        icloudOn: tenants.icloudCalendarUrl,
+        locationSource: tenants.locationSource,
+      })
       .from(tenants)
       .where(eq(tenants.id, tenantId)),
   ]);
   const iphone = !!salon?.calendarOn || !!salon?.icloudOn;
-  const calendars = [google ? "Google conectado" : null, iphone ? "iPhone ligado" : null].filter(Boolean);
   const avisos = [
     reminders.first ? `1º aviso ${reminders.hours}h antes` : null,
     reminders.secondHours ? `2º aviso ${reminders.secondHours}h antes` : null,
@@ -41,19 +55,10 @@ export const loadSettingsSummary = cache(async (tenantId: string): Promise<Setti
     {
       title: "Conexões",
       lines: [
-        {
-          section: "whatsapp",
-          status:
-            whatsapp === "open" ? "Conectado" : whatsapp === "unavailable" ? "Sem resposta agora" : "Desconectado",
-          todo: whatsapp === "other" ? "Conectar" : undefined,
-        },
-        {
-          section: "calendarios",
-          status: calendars.length ? calendars.join(" · ") : "Google e iPhone",
-          todo: calendars.length ? undefined : "Configurar",
-        },
-        { section: "notificacoes", status: <PushStatusText /> },
-        { section: "siri", status: siri ? "Ligada" : "Pergunte sua agenda para a Siri" },
+        { section: "whatsapp", ...whatsappLine(whatsapp) },
+        { section: "calendarios", ...calendarsLine(google, iphone) },
+        { section: "notificacoes", status: "", push: { locationOn: salon?.locationSource === "device" } },
+        { section: "siri", ...siriLine(siri) },
       ],
     },
     {

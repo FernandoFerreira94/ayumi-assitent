@@ -10,7 +10,8 @@ import { requireTenant } from "@/lib/tenant";
 import { MAX_ACTIVE_TOKENS, type TokenItem } from "./tokens-shared";
 import { hashApiToken, newApiToken, tokenLast4 } from "./token";
 
-const PATH = "/ajustes/siri";
+/** "layout" de /ajustes: a seção e o selo da Siri na lista de Conexões. */
+const PATH = "/ajustes";
 
 /** Cria uma chave só de leitura. Ela volta só agora: o banco guarda o hash. */
 export async function createApiToken(rawName: string): Promise<ActionResult<{ token: string; item: TokenItem }>> {
@@ -29,7 +30,7 @@ export async function createApiToken(rawName: string): Promise<ActionResult<{ to
       return row!;
     });
     if (!res) return fail("API_TOKEN_LIMIT");
-    revalidatePath(PATH);
+    revalidatePath(PATH, "layout");
     return ok({
       token,
       item: {
@@ -59,7 +60,7 @@ export async function revokeApiToken(id: string): Promise<ActionResult> {
         .returning({ id: apiTokens.id }),
     );
     if (!done.length) return fail("NOT_FOUND");
-    revalidatePath(PATH);
+    revalidatePath(PATH, "layout");
     return ok();
   } catch {
     return fail("UNKNOWN");

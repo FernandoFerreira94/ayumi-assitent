@@ -126,6 +126,15 @@ body::before {
   -webkit-backdrop-filter: var(--glass-blur);
 }
 
+/* Cartão dentro do acordeão de Conexões: já está num vidro, então vira um cartão plano (sem vidro sobre vidro).
+   Só o cartão de primeiro nível: folhas e diálogos abrem em portal e não passam por aqui. */
+.conexao-corpo > section > .glass {
+  background: color-mix(in srgb, var(--soft) 55%, transparent);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 /* Botões de vidro: .btn-tint é a ação principal (vidro lavanda, como o +), .btn-glass as demais */
 .btn-tint,
 .btn-glass {

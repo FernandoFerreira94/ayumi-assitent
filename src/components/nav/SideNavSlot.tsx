@@ -5,7 +5,15 @@ import { SideNav } from "./SideNav";
 
 async function SideNavWithData() {
   const m = await getMenuData();
-  return <SideNav studioName={m.studioName} userName={m.userName} pendencias={m.pendencias} isAdmin={m.isAdmin} />;
+  return (
+    <SideNav
+      studioName={m.studioName}
+      userName={m.userName}
+      pendencias={m.pendencias}
+      attention={m.whatsapp === "other"}
+      isAdmin={m.isAdmin}
+    />
+  );
 }
 
 /** Reserva a largura do menu enquanto os dados chegam, para o conteúdo não pular de lado. */

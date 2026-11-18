@@ -25,3 +25,20 @@ describe("AppMenu", () => {
     expect(screen.getByRole("link", { name: "Admin", hidden: true })).toHaveAttribute("href", "/admin");
   });
 });
+
+describe("AppMenu: ponto de atenção", () => {
+  it("WhatsApp desconectado marca o avatar e Ajustes", () => {
+    render(<AppMenu {...base} whatsapp="other" />);
+    expect(screen.getByRole("button", { name: "Abrir menu, uma conexão pede atenção" })).toBeInTheDocument();
+    expect(screen.getByTestId("menu-alerta")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /^Ajustes, uma conexão pede atenção$/, hidden: true })).toHaveAttribute(
+      "href",
+      "/ajustes",
+    );
+  });
+
+  it("tudo conectado: sem ponto", () => {
+    render(<AppMenu {...base} />);
+    expect(screen.queryByTestId("menu-alerta")).not.toBeInTheDocument();
+  });
+});
