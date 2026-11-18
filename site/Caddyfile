@@ -24,8 +24,10 @@
 
 	@html path / *.html
 	header @html Cache-Control "public, max-age=300, must-revalidate"
-	@img path *.png *.svg *.ico
+	@img path *.png *.svg *.ico *.jpg
 	header @img Cache-Control "public, max-age=604800"
+	@asset path /js/* /css/* /video/*
+	header @asset Cache-Control "public, max-age=604800"
 
 	try_files {path} {path}.html
 	file_server
