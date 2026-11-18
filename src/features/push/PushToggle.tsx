@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore, useTransition } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { notify } from "@/components/feedback/toast";
+import { emitPushChanged } from "@/features/settings/live-events";
 import { nativePushPlatform } from "@/features/native/push";
 import { subscribePush, unsubscribePush } from "./actions";
 import { NativePushToggle } from "./NativePushToggle";
@@ -38,6 +39,16 @@ export function PushToggle({
 function WebPushToggle({ publicKey }: { publicKey: string | null }) {
   const [state, setState] = useState<State>("checking");
   const [pending, start] = useTransition();
+  const firstCheck = useRef(true);
+  // Avisa o selo de Conexões quando o interruptor muda (a primeira leitura não é mudança)
+  useEffect(() => {
+    if (state === "checking") return;
+    if (firstCheck.current) {
+      firstCheck.current = false;
+      return;
+    }
+    emitPushChanged();
+  }, [state]);
 
   useEffect(() => {
     let alive = true;

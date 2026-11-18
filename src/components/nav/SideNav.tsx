@@ -35,12 +35,15 @@ export function SideNav({
   studioName,
   userName = null,
   pendencias,
+  attention = false,
   isAdmin = false,
 }: {
   studioName: string | null;
   /** Nome de quem está logado, embaixo de "bubbly". Vazio = linha some. */
   userName?: string | null;
   pendencias: number;
+  /** Uma conexão pede ação (WhatsApp caiu): ponto âmbar em Ajustes. */
+  attention?: boolean;
   isAdmin?: boolean;
 }) {
   const pathname = usePathname();
@@ -55,6 +58,11 @@ export function SideNav({
         <Link href={item.href} title={item.label} aria-current={on ? "page" : undefined} className="sidenav-link">
           <NavIcon name={item.icon} />
           <span className="sr-only xl:not-sr-only xl:flex-1">{item.label}</span>
+          {item.href === "/ajustes" && attention ? (
+            <span className="absolute right-2 top-2 size-2.5 rounded-full bg-wait ring-2 ring-surface">
+              <span className="sr-only">, uma conexão pede atenção</span>
+            </span>
+          ) : null}
           {count ? (
             <>
               {" "}

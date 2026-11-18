@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { notify } from "@/components/feedback/toast";
 import { IconTile } from "@/components/ui/Icon";
 import { Switch } from "@/components/ui/Switch";
+import { emitLocationChanged } from "@/features/settings/live-events";
 import { clearLocation, saveDeviceLocation } from "./actions";
 import { currentPosition, locationGranted, placeOf } from "./device-location";
 
@@ -38,8 +39,10 @@ export function LocationToggle(props: { city: string | null; state: string | nul
     startLocating(async () => {
       if (!on) {
         const res = await clearLocation().catch(() => null);
-        if (res?.ok) setWhere({ city: null, state: null, source: null });
-        else notify.error(res ? res.code : "NETWORK");
+        if (res?.ok) {
+          setWhere({ city: null, state: null, source: null });
+          emitLocationChanged(false);
+        } else notify.error(res ? res.code : "NETWORK");
         return;
       }
       const pos = await currentPosition().catch((e: GeolocationPositionError | Error) => e);
@@ -59,6 +62,7 @@ export function LocationToggle(props: { city: string | null; state: string | nul
         return;
       }
       setWhere({ ...res.data, source: "device" });
+      emitLocationChanged(true);
       notify.success(
         "Localização ligada",
         res.data.city ? `${res.data.city} — ${res.data.state ?? ""}` : "A previsão do tempo já entra nos avisos.",

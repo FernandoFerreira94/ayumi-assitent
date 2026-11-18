@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { IconTile } from "@/components/ui/Icon";
 import { SECTIONS } from "./sections";
-import type { SettingsGroupData } from "./summary";
+import type { SettingsGroupData, SettingsLine } from "./summary";
+import { useLiveLines } from "./use-live-lines";
 
 /**
  * Desktop: as seções de Ajustes numa coluna à esquerda, como os Ajustes do Mac.
@@ -12,6 +13,9 @@ import type { SettingsGroupData } from "./summary";
  */
 export function SettingsNav({ groups }: { groups: SettingsGroupData[] }) {
   const path = usePathname();
+  // Notificação depende deste aparelho: resolve aqui, uma vez, para todas as linhas
+  const live = useLiveLines(groups.flatMap((g) => g.lines));
+  const bySection = new Map<string, SettingsLine>(live.map((l) => [l.section, l]));
   if (path === "/ajustes") return null;
   return (
     <nav
@@ -25,7 +29,8 @@ export function SettingsNav({ groups }: { groups: SettingsGroupData[] }) {
         <section key={g.title} aria-label={g.title} className="mt-5 grid gap-1.5 first-of-type:mt-0">
           <h2 className="px-3 text-xs font-bold uppercase tracking-wide text-muted">{g.title}</h2>
           <ul className="glass grid gap-0.5 rounded-[1.4rem] p-1.5">
-            {g.lines.map((l) => {
+            {g.lines.map((line) => {
+              const l = bySection.get(line.section) ?? line;
               const s = SECTIONS[l.section];
               const current = path.startsWith(s.href);
               return (
@@ -44,7 +49,15 @@ export function SettingsNav({ groups }: { groups: SettingsGroupData[] }) {
                       </span>
                       <span className="block truncate text-xs font-semibold text-muted">{l.status}</span>
                     </span>
-                    {l.todo ? (
+                    {l.badge ? (
+                      <span
+                        data-tone={l.badge.tone}
+                        title={l.badge.label}
+                        className={`size-2 shrink-0 rounded-full ${l.badge.tone === "ok" ? "bg-ok" : l.badge.tone === "warn" ? "bg-wait" : "bg-muted/50"}`}
+                      >
+                        <span className="sr-only">{l.badge.label}</span>
+                      </span>
+                    ) : l.todo ? (
                       <span className="shrink-0 rounded-full bg-wait-bg px-2 py-0.5 text-[11px] font-bold text-wait">
                         {l.todo}
                       </span>

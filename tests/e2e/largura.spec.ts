@@ -142,7 +142,10 @@ test("Serviços no desktop vira tabela com o mês", async ({ page }) => {
 
 test("Ajustes no desktop: seções à esquerda, a aberta à direita", async ({ page }) => {
   await page.goto("/ajustes");
-  await expect(page.getByRole("heading", { name: "Este aparelho" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Este aparelho", exact: true })).toBeVisible();
+  // Conexões abrem em acordeão também no desktop
+  await page.locator("#ajuste-whatsapp").click();
+  await expect(page.locator("#ajuste-whatsapp")).toHaveAttribute("aria-expanded", "true");
   await page.getByRole("link", { name: /Expediente/ }).click();
   await expect(page).toHaveURL(/\/ajustes\/expediente$/);
   const nav = page.getByRole("navigation", { name: "Seções de ajustes" });

@@ -16,15 +16,7 @@ export function SettingsGroup({ title, children }: { title: string; children: Re
  * Linha que abre uma seção. `status` resume o estado ("Conectado"); `todo` mostra o selo de pendência, para a
  * dona ver de longe o que ainda falta configurar. `id` é o alvo do tour.
  */
-export function SettingsRow({
-  section,
-  status,
-  todo,
-}: {
-  section: SectionKey;
-  status: React.ReactNode;
-  todo?: string;
-}) {
+export function SettingsRow({ section, status, todo }: { section: SectionKey; status: string; todo?: string }) {
   const s = SECTIONS[section];
   return (
     <li>

@@ -4,7 +4,7 @@
 
 ## Arquivos
 - `features/salon/actions.ts` (`saveSalon`, `saveAiSettings`; grava `tenants` pelo dono do banco, o papel do app só lê), `schema.ts` (segmentos), `SalonForm.tsx`, `AiRepliesForm.tsx`, `MascotPicker.tsx` + `mascot-actions.ts` (mascote por pessoa, vale em qualquer aparelho).
-- `features/settings/*`: `sections.ts` (seções, `legacyTarget` para âncoras antigas `/ajustes#x`, `hoursSummary`), `SettingsList.tsx` (`SettingsGroup`/`SettingsRow`, linha com `id="ajuste-<secao>"`), `LegacyHashRedirect.tsx`, `PushStatusText.tsx`, `SectionSkeleton.tsx`.
+- `features/settings/*`: `sections.ts` (seções, `legacyTarget` para âncoras antigas `/ajustes#x`, `hoursSummary`), `SettingsList.tsx` (`SettingsGroup`/`SettingsRow`, linha com `id="ajuste-<secao>"`), `ConnectionsAccordion.tsx`, `connection-bodies.tsx`, `connection-status.ts`, `StatusBadge.tsx`, `use-live-lines.ts`, `live-events.ts`, `LegacyHashRedirect.tsx`, `SectionSkeleton.tsx`.
 - `features/tour/*`: tour obrigatório do primeiro acesso, **todo em Ajustes**: saudação e depois cada linha (`#ajuste-whatsapp` … `#ajuste-expediente`), instalar (opcional) e fim. `TourGate`, `ReplayTourButton`, `actions.finishTour`.
 - `features/install/*`: guia de instalar o PWA por sistema. `components/nav/AutoUpdate.tsx` (16/11: atualiza SOZINHO, sem banner nem diálogo; confere `api/version` ao abrir e ao voltar ao app, nunca por intervalo; só recarrega se `isBusy()` for falso, sem dialog/sheet aberto nem campo em foco; trava de laço por versão em sessionStorage; depois mostra só o toast "App atualizado") + `lib/update-check.ts` + `features/update/UpdateButton.tsx` (manual em Ajustes) + `api/version`. O diálogo "App atualizado"/changelog foi removido.
 - `features/shell/status.ts`: estado da casca (WhatsApp/Google/pendências) para nav e Ajustes.
@@ -38,3 +38,10 @@ Links internos apontam direto para a seção (`/ajustes/whatsapp`, `/ajustes/cal
 ## Ajustes no desktop (18/11)
 - `ajustes/layout.tsx`: no tablet/desktop (`userAgent`, celular não consulta) monta `SettingsNav`, a coluna de seções à esquerda (`lg`), com estado e selo de cada seção e a atual marcada (`aria-current`). Em `/ajustes` a coluna some, porque a página já é a lista; lá o `lg` põe "Este aparelho" à direita.
 - Os resumos vêm de `settings/summary.tsx` (`loadSettingsSummary`, com `cache`), usados pela lista e pela coluna. Ids `#ajuste-*` do tour só existem na lista de `/ajustes`.
+
+## Conexões em acordeão (18/11)
+- Em `/ajustes` (celular e desktop) o grupo **Conexões** (WhatsApp, Calendários, Notificações, Siri) é um acordeão (`ConnectionsAccordion`): a seta gira para baixo e o cartão de conectar abre ali mesmo, um por vez. O cartão só monta na 1ª abertura (o WhatsApp não é consultado antes). Botão da linha mantém `id="ajuste-<secao>"` (tour); painel `#conexao-<secao>`.
+- O miolo de cada conexão mora em `connection-bodies.tsx` (`WhatsAppBody`, `CalendarsBody`, `NotificationsBody`, `SiriBody`), usado pelo acordeão e pelas telas `/ajustes/<secao>` (que continuam para links diretos, `?google=erro` e a coluna do desktop).
+- Selo por linha (`connection-status.ts`): verde = ligado, âmbar = pede ação, cinza = opcional desligado; resumo "X de 4 ativas · N pede(m) atenção". Notificação junta push DESTE aparelho (`push/use-push-state.ts`) + localização do salão (`locationSource === "device"`); resolvida no cliente por `useLiveLines`. `PushToggle`/`NativePushToggle`/`LocationToggle` emitem eventos de janela (`live-events.ts`) e o selo acompanha sem recarregar. Siri revalida `/ajustes` (layout).
+- Ponto âmbar no avatar e em Ajustes (`AppMenu`, `SideNav` `attention`) quando o WhatsApp caiu. Cartões dentro do acordeão ficam planos (`.conexao-corpo` no `globals.css`).
+- Testes: `tests/unit/connection-status.test.ts`, `app-menu.test.tsx`; e2e `ajustes.spec.ts` e `largura.spec.ts`.

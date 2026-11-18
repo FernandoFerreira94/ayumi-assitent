@@ -73,6 +73,8 @@ export function AppMenu({
   const dragFrom = useRef<number | null>(null);
   const pathname = usePathname();
   const abbr = initials(userName);
+  // Conexão que pede ação (hoje: WhatsApp caiu): ponto âmbar no avatar e em Ajustes, para ver sem abrir nada
+  const attention = whatsapp === "other";
 
   const close = () => ref.current?.close();
   const follow = (dy: number) => {
@@ -91,12 +93,19 @@ export function AppMenu({
     <>
       <button
         type="button"
-        aria-label="Abrir menu"
+        aria-label={attention ? "Abrir menu, uma conexão pede atenção" : "Abrir menu"}
         aria-haspopup="dialog"
         onClick={() => ref.current?.showModal()}
-        className="avatar grid size-11 shrink-0 place-content-center rounded-full text-sm font-bold text-white"
+        className="avatar relative grid size-11 shrink-0 place-content-center rounded-full text-sm font-bold text-white"
       >
         {abbr}
+        {attention ? (
+          <span
+            aria-hidden="true"
+            data-testid="menu-alerta"
+            className="absolute -right-0.5 -top-0.5 size-3 rounded-full bg-wait ring-2 ring-surface"
+          />
+        ) : null}
       </button>
       <dialog
         ref={ref}
@@ -159,6 +168,7 @@ export function AppMenu({
             {(isAdmin ? [...ITEMS, ADMIN_ITEM] : ITEMS).map((item) => {
               const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
               const badge = item.href === "/pendencias" && pendencias > 0 ? pendencias : 0;
+              const alert = item.href === "/ajustes" && attention;
               return (
                 <li key={item.href}>
                   <Link
@@ -171,6 +181,11 @@ export function AppMenu({
                   >
                     {item.icon}
                     {item.label}
+                    {alert ? (
+                      <span className="absolute right-2.5 top-2.5 size-2.5 rounded-full bg-wait">
+                        <span className="sr-only">, uma conexão pede atenção</span>
+                      </span>
+                    ) : null}
                     {badge ? (
                       <span className="absolute right-2 top-1.5 rounded-full bg-fail px-1.5 text-xs font-bold leading-5 text-white">
                         <span className="sr-only">, </span>
