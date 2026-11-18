@@ -61,6 +61,8 @@ export type MessageData = {
   priceCents?: number | null;
   /** Nome da profissional do atendimento para {profissional}; vazio/ausente no salão com uma só (ver professionalLabel) */
   professional?: string | null;
+  /** Link do convite (.ics) para a cliente salvar na agenda; só na mensagem de agendamento */
+  calendarUrl?: string | null;
 };
 export type SalonMessageOpts = { template?: string | null; name?: string | null; fullName?: boolean };
 
@@ -98,9 +100,22 @@ function fill(template: string, a: MessageData, salon: SalonMessageOpts, day: st
     .trim();
 }
 
-/** Mensagem de agendamento confirmado. Não pede resposta: quem pergunta são os avisos. */
+/** Linha do convite: vai no fim, ou onde a dona puser {agenda}. */
+export const calendarLine = (url: string) => `📲 Salve na sua agenda: ${url}`;
+
+/**
+ * Mensagem de agendamento confirmado. Não pede resposta: quem pergunta são os avisos. Com link do convite,
+ * a linha "Salve na sua agenda" vai no lugar de {agenda} ou, sem a chave, no fim (vale para textos já editados).
+ */
 export function bookingText(a: MessageData, now: Date, salon: SalonMessageOpts = {}): string {
-  return fill(salon.template?.trim() || DEFAULT_BOOKING, a, salon, dayLabel(a.startsAt, now));
+  const template = salon.template?.trim() || DEFAULT_BOOKING;
+  const line = a.calendarUrl ? calendarLine(a.calendarUrl) : "";
+  const withLink = template.includes("{agenda}")
+    ? template.replace(/\{agenda\}/g, line)
+    : line
+      ? `${template}\n\n${line}`
+      : template;
+  return fill(withLink, a, salon, dayLabel(a.startsAt, now)).replace(/\n{3,}/g, "\n\n");
 }
 
 /** 1º aviso. As opções 1/2/3 vão sempre no fim, mesmo com texto personalizado. */

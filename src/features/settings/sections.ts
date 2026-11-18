@@ -11,6 +11,7 @@ export const SECTIONS = {
   mensagens: { href: "/ajustes/mensagens", title: "Mensagens para a cliente", icon: "message", tint: "lavender" },
   equipe: { href: "/ajustes/equipe", title: "Equipe", icon: "users", tint: "teal" },
   expediente: { href: "/ajustes/expediente", title: "Expediente", icon: "clock", tint: "orange" },
+  suporte: { href: "/ajustes/suporte", title: "Ajuda e suporte", icon: "chat", tint: "teal" },
 } as const satisfies Record<string, { href: string; title: string; icon: IconName; tint: Tint }>;
 
 export type SectionKey = keyof typeof SECTIONS;

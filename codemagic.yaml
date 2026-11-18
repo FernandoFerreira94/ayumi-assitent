@@ -1,0 +1,66 @@
+# Builds dos apps da loja (casca Capacitor em mobile/). Roda no Codemagic, que tem Mac na nuvem.
+# Segredos (chave da App Store Connect, keystore do Android) ficam SÓ no Codemagic, nunca neste repo.
+workflows:
+  # APK de teste do Android, sem assinatura de loja. Dispara à mão no painel do Codemagic.
+  android-debug:
+    name: Android (APK de teste)
+    instance_type: linux_x2
+    max_build_duration: 30
+    environment:
+      java: 21
+      node: 24
+    scripts:
+      - name: Dependências da casca
+        working_directory: mobile
+        script: npm ci
+      - name: Copia config e plugins para o projeto Android
+        working_directory: mobile
+        script: npx cap sync android
+      - name: Firebase (notificações), se GOOGLE_SERVICES_JSON existir (base64 do google-services.json)
+        script: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo "$GOOGLE_SERVICES_JSON" | base64 --decode > mobile/android/app/google-services.json
+          fi
+      - name: Build
+        working_directory: mobile/android
+        script: ./gradlew assembleDebug
+    artifacts:
+      - mobile/android/app/build/outputs/apk/debug/*.apk
+
+  # iPhone para o TestFlight. Só funciona depois que a conta Apple Developer for aprovada e a integração
+  # "App Store Connect" (chave de API .p8) for cadastrada no Codemagic com o nome abaixo.
+  ios-testflight:
+    name: iPhone (TestFlight)
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+    integrations:
+      app_store_connect: Bubbly App Store Connect
+    environment:
+      node: 24
+      xcode: latest
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: br.app.bubbly
+    scripts:
+      - name: Dependências da casca
+        working_directory: mobile
+        script: npm ci
+      - name: Copia config e plugins para o projeto iOS
+        working_directory: mobile
+        script: npx cap sync ios
+      - name: Perfis de assinatura no projeto Xcode
+        script: xcode-project use-profiles --project mobile/ios/App/App.xcodeproj
+      - name: Número do build (precisa subir a cada envio)
+        working_directory: mobile/ios/App
+        script: agvtool new-version -all $(($(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID") + 1))
+      - name: Build do .ipa
+        script: |
+          xcode-project build-ipa \
+            --project mobile/ios/App/App.xcodeproj \
+            --scheme App
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

@@ -9,6 +9,7 @@ test("Ajustes é uma lista: cada linha abre a sua seção e a seta volta para a 
     ["Notificações", "Notificações"],
     ["Mensagens para a cliente", "Mensagens"],
     ["Expediente", "Expediente"],
+    ["Ajuda e suporte", "Ajuda e suporte"],
   ] as const) {
     await page.getByRole("link", { name: new RegExp(`^${row}`) }).click();
     await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();

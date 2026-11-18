@@ -36,6 +36,7 @@ export default async function CalendariosPage({ searchParams }: PageProps<"/ajus
           <IphoneCalendarCard
             enabled={salon.feedOn}
             hideNames={salon.hideNames}
+            subscribed={salon.subscribed}
             googleConnected={google}
             icloudOn={salon.icloudOn}
           />

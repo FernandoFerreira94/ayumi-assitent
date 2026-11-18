@@ -25,6 +25,10 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Skills versionadas (scripts de terceiros em CommonJS), não são código do app
     ".claude/**",
+    // Casca nativa (Capacitor): projeto Android/iOS gerado, com dependências próprias
+    "mobile/**",
+    // Bibliotecas minificadas de terceiros do site estático (GSAP, Lenis)
+    "site/public/js/*.min.js",
   ]),
 ]);
 

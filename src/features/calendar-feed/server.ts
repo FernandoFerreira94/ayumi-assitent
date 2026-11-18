@@ -32,11 +32,39 @@ export async function calendarSettings(tenantId: string, professionalId: string)
         feedOn: professionals.calendarTokenHash,
         hideNames: professionals.calendarHideNames,
         icloudOn: professionals.icloudCalendarUrl,
+        fetchedAt: professionals.calendarFetchedAt,
       })
       .from(professionals)
       .where(eq(professionals.id, professionalId)),
   );
-  return { feedOn: !!p?.feedOn, hideNames: p?.hideNames ?? false, icloudOn: !!p?.icloudOn };
+  return {
+    feedOn: !!p?.feedOn,
+    hideNames: p?.hideNames ?? false,
+    // O iPhone já leu o link atual (link novo zera)
+    subscribed: !!p?.feedOn && !!p?.fetchedAt,
+    icloudOn: !!p?.icloudOn,
+  };
+}
+
+/**
+ * Marca que o calendário leu o link da profissional (o iPhone assinou). Grava no máximo a cada 10 min para não
+ * escrever a cada atualização do iPhone. Quem chama não deixa a falha derrubar o feed.
+ */
+export async function markCalendarFetched(owner: FeedOwner) {
+  await withTenant(owner.tenantId, (tx) =>
+    tx
+      .update(professionals)
+      .set({ calendarFetchedAt: sql`now()` })
+      .where(
+        and(
+          eq(professionals.id, owner.id),
+          or(
+            isNull(professionals.calendarFetchedAt),
+            lt(professionals.calendarFetchedAt, sql`now() - interval '10 minutes'`),
+          ),
+        ),
+      ),
+  );
 }
 
 /**

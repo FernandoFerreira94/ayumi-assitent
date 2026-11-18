@@ -35,6 +35,7 @@ const parse = (formData: FormData) =>
     notes: formData.get("notes"),
     bookable: formData.get("bookable"),
     showInSlots: formData.get("showInSlots"),
+    returnDays: formData.get("returnDays"),
   });
 
 /** Cria (sem `id`) ou edita (com `id`). Nome repetido na mesma categoria volta como erro do campo. */

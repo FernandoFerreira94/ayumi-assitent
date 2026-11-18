@@ -33,7 +33,7 @@ export async function createCalendarLink(): Promise<ActionResult<{ url: string }
     await withTenant(tenantId, (tx) =>
       tx
         .update(professionals)
-        .set({ calendarTokenHash: hashToken(token) })
+        .set({ calendarTokenHash: hashToken(token), calendarFetchedAt: null })
         .where(eq(professionals.id, professionalId)),
     );
     return ok({ url: `${await baseUrl()}/api/calendar/${token}.ics` });
@@ -49,9 +49,31 @@ export async function disableCalendarLink(): Promise<ActionResult> {
     const professionalId = await calendarProfessionalId(me);
     if (!canAs(me, "calendar.own", professionalId)) return fail("FORBIDDEN");
     await withTenant(tenantId, (tx) =>
-      tx.update(professionals).set({ calendarTokenHash: null }).where(eq(professionals.id, professionalId)),
+      tx
+        .update(professionals)
+        .set({ calendarTokenHash: null, calendarFetchedAt: null })
+        .where(eq(professionals.id, professionalId)),
     );
     return ok();
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+/** O iPhone já leu o link? O sheet pergunta enquanto espera a assinatura. */
+export async function calendarLinkStatus(): Promise<ActionResult<{ subscribed: boolean }>> {
+  const me = await requireTenant();
+  const { tenantId } = me;
+  try {
+    const professionalId = await calendarProfessionalId(me);
+    if (!canAs(me, "calendar.own", professionalId)) return fail("FORBIDDEN");
+    const [row] = await withTenant(tenantId, (tx) =>
+      tx
+        .select({ on: professionals.calendarTokenHash, at: professionals.calendarFetchedAt })
+        .from(professionals)
+        .where(eq(professionals.id, professionalId)),
+    );
+    return ok({ subscribed: !!row?.on && !!row.at });
   } catch {
     return fail("UNKNOWN");
   }

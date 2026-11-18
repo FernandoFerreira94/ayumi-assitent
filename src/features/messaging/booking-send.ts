@@ -8,6 +8,7 @@ import { messagingForInstance } from "./evolution";
 import { sendDirect } from "./send";
 import { recordMessage } from "./store";
 import { serviceLabel } from "@/features/appointments/core";
+import { inviteUrl } from "@/features/calendar-feed/invite-token";
 import { errCode } from "@/lib/log";
 
 /** sent = a cliente recebeu; failed = o WhatsApp não enviou; skipped = nada a enviar (sem WhatsApp configurado) */
@@ -56,7 +57,12 @@ export async function sendBookingMessage(
     );
     // Cliente respondeu SAIR: nada automático
     if (!a || a.optedOut) return "skipped";
-    const text = bookingText({ ...a, professional: professionalLabel(a.professional, a.teamSize) }, now, { template: t?.template, name: t?.name, fullName: t?.fullName });
+    const calendarUrl = inviteUrl(tenantId, appointmentId);
+    const text = bookingText(
+      { ...a, professional: professionalLabel(a.professional, a.teamSize), calendarUrl },
+      now,
+      { template: t?.template, name: t?.name, fullName: t?.fullName },
+    );
     const res = await sendDirect(port, a.phone, text);
     if (!res.ok) {
       console.error(JSON.stringify({ level: "warn", msg: "booking_message_failed", code: res.code }));

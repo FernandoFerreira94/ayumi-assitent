@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectPlatform } from "@/features/install/platform";
+import { detectPlatform, isNativeShell } from "@/features/install/platform";
 
 const IPHONE =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1";
@@ -18,5 +18,16 @@ describe("plataforma para instalar o app", () => {
   it("Android e computador seguem cada um o seu", () => {
     expect(detectPlatform(ANDROID, 5)).toBe("android");
     expect(detectPlatform(WINDOWS, 0)).toBe("other");
+  });
+});
+
+describe("app da loja (casca nativa)", () => {
+  it("reconhece o BubblyApp no user agent do Android e do iPhone", () => {
+    expect(isNativeShell(`${ANDROID} BubblyApp/0.1`)).toBe(true);
+    expect(isNativeShell(`${IPHONE} BubblyApp/0.1`)).toBe(true);
+  });
+  it("navegador comum não é app da loja", () => {
+    expect(isNativeShell(IPHONE)).toBe(false);
+    expect(isNativeShell(ANDROID)).toBe(false);
   });
 });

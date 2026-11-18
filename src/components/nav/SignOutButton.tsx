@@ -1,12 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { notify } from "@/components/feedback/toast";
 import { authClient } from "@/lib/auth-client";
 
 /** Fica no fim do menu, em rosa, e pede confirmação antes de sair. */
 export function SignOutButton() {
-  const router = useRouter();
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -58,13 +57,19 @@ export function SignOutButton() {
           disabled={busy}
           onClick={async () => {
             setBusy(true);
-            await authClient.signOut();
-            router.replace("/login");
-            router.refresh();
+            const res = await authClient.signOut().catch(() => null);
+            if (!res || res.error) {
+              setBusy(false);
+              return notify.error("NETWORK");
+            }
+            // Recarrega de verdade em vez de navegar pelo app: com cacheComponents o Next guarda as telas
+            // anteriores escondidas (com o menu <dialog> ainda modal, que travava o login, e os dados da conta
+            // que saiu). O reload zera tudo e a próxima conta começa limpa.
+            window.location.replace("/login");
           }}
           className="min-h-11 flex-1 rounded-full bg-fail font-bold text-white disabled:opacity-60"
         >
-          Sair
+          {busy ? "Saindo…" : "Sair"}
         </button>
       </div>
     </div>

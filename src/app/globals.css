@@ -2430,7 +2430,9 @@ textarea {
   scroll-margin-block: 16px;
 }
 
-/* ── Menu lateral (tablet e desktop). Trilho de ícones até 1279 px; com nomes a partir de 1280 px. ── */
+/* ── Menu lateral (tablet e desktop). Trilho de ícones até 1279 px; com nomes a partir de 1280 px. ──
+   Vidro claro com um véu lavanda no topo; a pílula da tela atual (.sidenav-indicator, medida em
+   useNavIndicator) desliza de item em item; ícone dá um leve empurrão no hover e um "pop" ao acender. */
 .sidenav,
 .sidenav-placeholder {
   display: none;
@@ -2447,6 +2449,7 @@ textarea {
   .sidenav {
     position: sticky;
     top: 0;
+    z-index: 1;
     flex: none;
     display: flex;
     flex-direction: column;
@@ -2454,27 +2457,99 @@ textarea {
     gap: 4px;
     width: calc(76px + env(safe-area-inset-left));
     height: 100dvh;
+    overflow-x: hidden;
     overflow-y: auto;
-    padding: max(env(safe-area-inset-top), 16px) 0 max(env(safe-area-inset-bottom), 16px) env(safe-area-inset-left);
-    background: var(--surface);
+    scrollbar-width: none;
+    padding: max(env(safe-area-inset-top), 14px) 0 max(env(safe-area-inset-bottom), 16px) env(safe-area-inset-left);
+    background:
+      radial-gradient(120% 220px at 0% 0%, color-mix(in srgb, var(--primary) 13%, transparent), transparent 70%),
+      linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, var(--soft)), var(--surface));
     border-right: 1px solid var(--line);
+    box-shadow: 1px 0 0 rgba(255, 255, 255, 0.7) inset;
+  }
+  .sidenav::-webkit-scrollbar {
+    display: none;
+  }
+  /* Pílula da tela atual: atrás dos links (z 0), desliza com mola curta */
+  .sidenav-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    width: var(--ind-w, 0);
+    height: var(--ind-h, 0);
+    border-radius: 14px;
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--primary) 16%, var(--surface)),
+      color-mix(in srgb, var(--primary) 9%, var(--surface))
+    );
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--primary) 14%, transparent) inset,
+      0 6px 16px color-mix(in srgb, var(--primary) 14%, transparent);
+    opacity: var(--ind-o, 0);
+    transform: translate(var(--ind-x, 0), var(--ind-y, 0));
+    pointer-events: none;
+  }
+  .sidenav-indicator::before {
+    content: "";
+    position: absolute;
+    left: -2px;
+    top: 50%;
+    width: 4px;
+    height: 18px;
+    margin-top: -9px;
+    border-radius: 4px;
+    background: var(--primary);
+    opacity: 0;
+  }
+  .sidenav[data-ind-ready] .sidenav-indicator {
+    transition:
+      transform 0.42s var(--spring),
+      width 0.3s var(--ease),
+      height 0.3s var(--ease),
+      opacity 0.2s var(--ease);
   }
   .sidenav-brand {
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
     gap: 10px;
-    margin: 0 0 12px;
-    font-size: 20px;
-    font-weight: 800;
-    color: var(--primary);
+    margin: 0 0 14px;
+    padding: 4px;
+    border-radius: 18px;
+    color: var(--fg);
   }
-  .sidenav-dot {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: var(--primary);
+  .sidenav-brand:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+  .sidenav-mascot {
+    display: grid;
+    flex: none;
+    place-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    background: radial-gradient(circle at 50% 35%, var(--surface), var(--soft));
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--primary) 12%, transparent) inset,
+      0 6px 14px color-mix(in srgb, var(--primary) 18%, transparent);
+    transform-origin: 50% 90%;
+  }
+  .sidenav-mascot-pop {
+    animation: react-gelatina 0.8s ease-out;
+  }
+  .sidenav-person {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--muted);
   }
   .sidenav-list {
+    position: relative;
+    z-index: 1;
     display: grid;
     gap: 4px;
     width: 100%;
@@ -2485,6 +2560,7 @@ textarea {
   .sidenav-link,
   .sidenav-new {
     position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2494,10 +2570,27 @@ textarea {
     border-radius: 14px;
     font-weight: 600;
     color: var(--fg);
+    transition:
+      background-color 0.2s var(--ease),
+      color 0.2s var(--ease),
+      transform 0.2s var(--ease),
+      box-shadow 0.2s var(--ease);
   }
   .sidenav-link[aria-current="page"] {
+    color: var(--primary-text);
+    font-weight: 700;
+  }
+  /* Sem JS (ou antes da 1ª medida) o item aceso ainda tem fundo */
+  .sidenav:not([data-ind-ready]) .sidenav-link[aria-current="page"] {
     background: color-mix(in srgb, var(--primary) 12%, transparent);
-    color: var(--primary);
+  }
+  .sidenav-link[aria-current="page"] .sidenav-icon,
+  .sidenav-link[aria-current="page"] > span > svg {
+    animation: sidenav-icon-pop 0.42s var(--spring);
+  }
+  .sidenav-link:active,
+  .sidenav-new:active {
+    transform: scale(0.96);
   }
   .sidenav-link:focus-visible,
   .sidenav-new:focus-visible {
@@ -2506,14 +2599,21 @@ textarea {
   }
   .sidenav-new {
     width: 44px;
-    margin-bottom: 8px;
-    color: #fff;
-    background: var(--primary);
+    margin-bottom: 10px;
+    color: var(--on-primary);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 82%, #fff), var(--primary));
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.35) inset,
+      0 8px 18px color-mix(in srgb, var(--primary) 34%, transparent);
+  }
+  .sidenav-new .sidenav-icon {
+    transition: transform 0.35s var(--spring);
   }
   .sidenav-icon {
     width: 22px;
     height: 22px;
     flex: none;
+    transition: transform 0.25s var(--ease);
   }
   .sidenav-count {
     position: absolute;
@@ -2527,15 +2627,19 @@ textarea {
     border-radius: 999px;
     font-size: 12px;
     font-weight: 700;
-    color: #fff;
+    color: var(--on-primary);
     background: var(--primary);
+    box-shadow: 0 0 0 2px var(--surface);
+    animation: sidenav-icon-pop 0.42s var(--spring);
   }
   .sidenav-kbd {
     display: none;
   }
   .sidenav-sep {
-    width: calc(100% - 24px);
-    margin: 8px 12px;
+    position: relative;
+    z-index: 1;
+    width: calc(100% - 32px);
+    margin: 8px 16px;
     border: 0;
     border-top: 1px solid var(--line);
   }
@@ -2550,8 +2654,20 @@ textarea {
     height: 32px;
     border-radius: 50%;
     font-weight: 700;
-    color: var(--primary);
-    background: color-mix(in srgb, var(--primary) 16%, transparent);
+    color: var(--on-primary);
+    background: linear-gradient(135deg, var(--accent), var(--primary));
+    box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent);
+  }
+}
+@keyframes sidenav-icon-pop {
+  0% {
+    transform: scale(0.8);
+  }
+  60% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: none;
   }
 }
 @media (min-width: 80rem) {
@@ -2564,7 +2680,10 @@ textarea {
     padding-inline: calc(16px + env(safe-area-inset-left)) 16px;
   }
   .sidenav-brand {
-    padding-inline: 12px;
+    margin-bottom: 18px;
+  }
+  .sidenav-indicator::before {
+    opacity: 1;
   }
   .sidenav-list {
     padding: 0;
@@ -2576,15 +2695,21 @@ textarea {
   }
   .sidenav-new {
     width: auto;
+    white-space: nowrap;
   }
   .sidenav-count {
     position: static;
+    box-shadow: none;
   }
   .sidenav-kbd {
     display: inline;
+    min-width: 20px;
+    padding: 1px 6px;
+    border-radius: 6px;
     font: inherit;
     font-size: 12px;
-    opacity: 0.8;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.2);
   }
   .sidenav-sep {
     width: 100%;
@@ -2592,6 +2717,21 @@ textarea {
   }
   .sidenav-profile {
     margin-inline: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidenav[data-ind-ready] .sidenav-indicator,
+  .sidenav-link,
+  .sidenav-new,
+  .sidenav-icon,
+  .sidenav-new .sidenav-icon {
+    transition: none;
+  }
+  .sidenav-mascot-pop,
+  .sidenav-count,
+  .sidenav-link[aria-current="page"] .sidenav-icon,
+  .sidenav-link[aria-current="page"] > span > svg {
+    animation: none;
   }
 }
 
@@ -2616,13 +2756,66 @@ textarea {
     cursor: pointer;
   }
   .sidenav-link:not([aria-current="page"]):hover {
-    background: color-mix(in srgb, var(--fg) 5%, transparent);
+    background: color-mix(in srgb, var(--primary) 6%, transparent);
+    color: var(--primary-text);
+  }
+  .sidenav-link:not([aria-current="page"]):hover .sidenav-icon,
+  .sidenav-link:not([aria-current="page"]):hover > span > svg {
+    transform: translateX(2px) rotate(-4deg);
   }
   .sidenav-new:hover {
-    background: color-mix(in srgb, var(--primary) 88%, var(--fg));
+    transform: translateY(-1px);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.35) inset,
+      0 12px 24px color-mix(in srgb, var(--primary) 40%, transparent);
+  }
+  .sidenav-new:hover .sidenav-icon {
+    transform: rotate(90deg);
   }
   .btn-tint:hover,
   .btn-glass:hover {
     filter: brightness(0.97);
+  }
+}
+
+/* Passo a passo ilustrado (StepGuide): um passo por encaixe, sem barra de rolagem */
+.guide-scroll {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  border-radius: 1.5rem;
+}
+.guide-scroll::-webkit-scrollbar {
+  display: none;
+}
+.guide-slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+/* Anel que pulsa no ponto onde tocar: guia o olho para o alvo do passo */
+.guide-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: guide-pulse 1.8s var(--ease) infinite;
+}
+@keyframes guide-pulse {
+  0% {
+    opacity: 0.55;
+    transform: scale(0.9);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .guide-pulse {
+    animation: none;
+    opacity: 0;
   }
 }

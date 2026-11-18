@@ -27,3 +27,6 @@
 - Falha de clima/IA nunca bloqueia o aviso.
 - Mudou aqui: Redeploy do **worker**.
 - Testes: `tests/db/push.test.ts`, `tests/unit/owner-notices.test.ts`, `push-schema.test.ts`.
+
+- Push também é usado pelo painel do dono (`admin/alerts.notifyAdmins`: cadastro novo, resumo das 9h, suporte) e pelo suporte (`sendToAll` ao salão). Ver [admin.md](admin.md) e [suporte.md](suporte.md).
+- App da loja: push nativo (FCM/APNs). `pushFromEnv` roteia pelo endpoint (`fcm:`/`apns:` vs URL Web Push); canal sem env lança erro comum (não apaga a inscrição). Ver [apps-loja.md](apps-loja.md).

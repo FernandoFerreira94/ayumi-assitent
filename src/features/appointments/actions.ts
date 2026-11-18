@@ -1,8 +1,10 @@
 "use server";
 
+import { and, count, inArray, isNotNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { withTenant } from "@/db/client";
+import { appointments } from "@/db/schema";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
 import { mayEditAppointments } from "@/features/team/guard";
@@ -221,18 +223,27 @@ class Rollback {
  */
 export async function updateStatuses(
   items: { id: string; status: string }[],
-): Promise<ActionResult<{ sync: SyncResult }>> {
+): Promise<ActionResult<{ sync: SyncResult; returns: number }>> {
   const me = await requireTenant();
   const { tenantId } = me;
   const p = manyInput.safeParse(items);
   if (!p.success) return fail("VALIDATION");
+  let returns = 0;
   try {
-    await withTenant(tenantId, async (tx) => {
+    returns = await withTenant(tenantId, async (tx) => {
       if (!(await mayEditAppointments(tx, me, p.data.map((it) => it.id)))) throw new Rollback(fail("FORBIDDEN"));
       for (const it of p.data) {
         const r = await setStatus(tx, it.id, it.status);
         if (!r.ok) throw new Rollback(r);
       }
+      // quantos concluídos ganharam data de retorno (o toast avisa; a lista fica em Clientes)
+      const done = p.data.filter((it) => it.status === "done").map((it) => it.id);
+      if (!done.length) return 0;
+      const [row] = await tx
+        .select({ n: count() })
+        .from(appointments)
+        .where(and(inArray(appointments.id, done), isNotNull(appointments.returnDueOn)));
+      return row?.n ?? 0;
     });
   } catch (e) {
     return e instanceof Rollback ? e.res : fail("UNKNOWN");
@@ -246,5 +257,5 @@ export async function updateStatuses(
     if (s === "auth" || s === "failed") sync = s;
     else if (sync === "synced") sync = s;
   }
-  return ok({ sync });
+  return ok({ sync, returns });
 }

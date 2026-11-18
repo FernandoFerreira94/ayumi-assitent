@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useSyncExternalStore } from "react";
-import { detectPlatform, type InstallPlatform } from "./platform";
+import { detectPlatform, isNativeShell, type InstallPlatform } from "./platform";
 
 const STANDALONE = "(display-mode: standalone)";
 
@@ -38,7 +38,9 @@ function subscribe(onChange: () => void) {
 /** Texto estável para o useSyncExternalStore comparar: "plataforma|pode-instalar-direto"; vazio = já instalado. */
 function snapshot(): string {
   const installed =
-    window.matchMedia(STANDALONE).matches || (navigator as { standalone?: boolean }).standalone === true;
+    window.matchMedia(STANDALONE).matches ||
+    (navigator as { standalone?: boolean }).standalone === true ||
+    isNativeShell(navigator.userAgent);
   if (installed) return "";
   return `${detectPlatform(navigator.userAgent, navigator.maxTouchPoints)}|${deferred ? "1" : "0"}`;
 }

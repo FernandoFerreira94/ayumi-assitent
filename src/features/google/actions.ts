@@ -7,6 +7,7 @@ import { getDb, withTenant } from "@/db/client";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { fail, ok, type ActionResult } from "@/lib/errors";
+import { PASSWORD_MAX, PASSWORD_MIN } from "@/lib/password";
 import { requireTenant } from "@/lib/tenant";
 import { mayEditAppointments } from "@/features/team/guard";
 import { canAs } from "@/features/team/permissions";
@@ -43,7 +44,7 @@ export async function disconnectGoogle(): Promise<ActionResult<{ onlyLogin?: boo
 }
 
 const passwordSchema = z
-  .object({ password: z.string().min(8).max(128), confirm: z.string() })
+  .object({ password: z.string().min(PASSWORD_MIN).max(PASSWORD_MAX), confirm: z.string() })
   .refine((v) => v.password === v.confirm, { path: ["confirm"] });
 
 /**

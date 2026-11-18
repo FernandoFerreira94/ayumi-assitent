@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Drawer } from "vaul";
-import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
+import { SHEET_SCROLL, SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { notify } from "@/components/feedback/toast";
 import { formatBRL } from "@/lib/dates";
@@ -280,6 +280,7 @@ export function ServicesCatalog({
                         <span className="text-xs font-semibold text-muted">
                           {formatDuration(s.durationMin)}
                           {s.bufferMin ? ` + ${s.bufferMin} min de intervalo` : ""}
+                          {s.returnDays ? ` · volta em ~${s.returnDays} dias` : ""}
                           {s.bookable ? "" : <span className="text-accent"> · pausado</span>}
                         </span>
                       </button>
@@ -343,27 +344,29 @@ export function ServicesCatalog({
       <Drawer.Root direction={side} repositionInputs={false} open={open} onOpenChange={setOpen}>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
-          <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] overflow-y-auto rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
-<SidePanelClose />
+          <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] rounded-t-3xl pt-4 outline-none", "sheet z-50 flex flex-col")}>
+            <SidePanelClose />
             <Drawer.Handle className="mb-3 md:hidden" />
-            <Drawer.Title className="pb-1 text-xl font-bold">{sheetTitle}</Drawer.Title>
-            <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
-              Mudar preço ou duração vale só para os próximos agendamentos.
-            </Drawer.Description>
-            {sheet?.kind === "service" ? (
-              <ServiceForm
-                key={sheetKey}
-                service={sheet.service}
-                preset={sheet.preset}
-                services={shown}
-                onSaved={() => {
-                  setOpen(false);
-                  setQuery("");
-                }}
-                onDuplicate={duplicate}
-                onDelete={remove}
-              />
-            ) : null}
+            <div className={SHEET_SCROLL}>
+              <Drawer.Title className="pb-1 text-xl font-bold">{sheetTitle}</Drawer.Title>
+              <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
+                Mudar preço ou duração vale só para os próximos agendamentos.
+              </Drawer.Description>
+              {sheet?.kind === "service" ? (
+                <ServiceForm
+                  key={sheetKey}
+                  service={sheet.service}
+                  preset={sheet.preset}
+                  services={shown}
+                  onSaved={() => {
+                    setOpen(false);
+                    setQuery("");
+                  }}
+                  onDuplicate={duplicate}
+                  onDelete={remove}
+                />
+              ) : null}
+            </div>
           </Drawer.Content>
         </Drawer.Portal>
       </Drawer.Root>

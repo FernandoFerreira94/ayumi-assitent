@@ -26,6 +26,7 @@ export default async function ServicosPage({ searchParams }: PageProps<"/servico
       notes: s.notes,
       bookable: s.bookable,
       showInSlots: s.showInSlots,
+      returnDays: s.returnDays,
       upcoming: upcoming.get(s.id) ?? 0,
     }));
     return services;

@@ -10,6 +10,7 @@ import { PushStatusText } from "@/features/settings/PushStatusText";
 import { hoursSummary } from "@/features/settings/sections";
 import { SettingsGroup, SettingsRow } from "@/features/settings/SettingsList";
 import { shellStatus } from "@/features/shell/status";
+import { unreadSupportReplies } from "@/features/support/core";
 import { listProfessionals } from "@/features/team/core";
 import { canAs, ownAgendaId } from "@/features/team/permissions";
 import { calendarProfessionalId } from "@/features/team/professional";
@@ -27,10 +28,13 @@ export default async function AjustesPage() {
   const me = await requireTenant();
   const { tenantId, professionalId } = me;
   const manager = canAs(me, "team.manage");
-  const [{ whatsapp, google }, { week, reminders, team }, calendar] = await Promise.all([
+  const [{ whatsapp, google }, { week, reminders, team, replies }, calendar] = await Promise.all([
     shellStatus(tenantId, professionalId),
-    withTenant(tenantId, async (tx) => ({ week: await getHours(tx, ownAgendaId(me)), reminders: await getReminderSettings(tx),
+    withTenant(tenantId, async (tx) => ({
+      week: await getHours(tx, ownAgendaId(me)),
+      reminders: await getReminderSettings(tx),
       team: manager ? (await listProfessionals(tx)).filter((p) => p.active).length : 0,
+      replies: await unreadSupportReplies(tx),
     })),
     calendarProfessionalId({ tenantId, professionalId }).then((id) => calendarSettings(tenantId, id)),
   ]);
@@ -69,6 +73,13 @@ export default async function AjustesPage() {
         {manager ? (
           <SettingsRow section="equipe" status={team === 1 ? "1 profissional" : `${team} profissionais`} />
         ) : null}
+      </SettingsGroup>
+      <SettingsGroup title="Ajuda">
+        <SettingsRow
+          section="suporte"
+          status={replies ? "O suporte respondeu" : "Fale com a gente e dúvidas comuns"}
+          todo={replies ? (replies === 1 ? "1 nova" : `${replies} novas`) : undefined}
+        />
       </SettingsGroup>
       <div className="mt-7 grid gap-3">
         <h2 className="px-3 text-xs font-bold uppercase tracking-wide text-muted">Este aparelho</h2>

@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, ilike, inArray, isNull, lt, ne, or, sum } from "drizzle-orm";
+import { and, asc, between, count, desc, eq, gte, ilike, inArray, isNull, lt, ne, or, sql, sum } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { appointments, clients, messages, services } from "@/db/schema";
 import { serviceLabel } from "@/features/appointments/core";
@@ -81,6 +81,44 @@ export async function deleteClientRow(tx: Tx, id: string): Promise<ActionResult>
 }
 
 /** Resumo do cartão da cliente: próximo horário, última visita, quantas vezes veio, quanto gastou e faltas. */
+/**
+ * "Para chamar": clientes cujo retorno da última visita vence entre `from` e `to` (datas do estúdio),
+ * sem "Não precisa" e sem nenhum horário marcado daqui para frente. Mais atrasada primeiro.
+ */
+export function listDueReturns(tx: Tx, from: string, to: string, now = new Date()) {
+  return tx
+    .select({
+      appointmentId: appointments.id,
+      clientId: clients.id,
+      name: clients.name,
+      phoneE164: clients.phoneE164,
+      due: appointments.returnDueOn,
+      service: serviceLabel,
+    })
+    .from(appointments)
+    .innerJoin(clients, eq(clients.id, appointments.clientId))
+    .innerJoin(services, eq(services.id, appointments.serviceId))
+    .where(
+      and(
+        eq(appointments.status, "done"),
+        between(appointments.returnDueOn, from, to),
+        isNull(appointments.returnSkippedAt),
+        isNull(clients.anonymizedAt),
+        // é a visita concluída mais recente dela
+        sql`not exists (select 1 from appointments x where x.client_id = ${appointments.clientId}
+          and x.status = 'done' and x.starts_at > ${appointments.startsAt})`,
+        // e não tem nada marcado daqui para frente
+        sql`not exists (select 1 from appointments y where y.client_id = ${appointments.clientId}
+          and y.status <> 'cancelled' and y.starts_at > ${now.toISOString()}::timestamptz)`,
+      ),
+    )
+    .orderBy(asc(appointments.returnDueOn), asc(clients.name))
+    .limit(50);
+}
+
+/** Quantas visitas o cartão da cliente mostra no histórico. */
+export const HISTORY = 5;
+
 export async function clientSummary(tx: Tx, clientId: string, now = new Date()) {
   const label = (where: ReturnType<typeof and>, order: "asc" | "desc") =>
     tx
@@ -91,7 +129,7 @@ export async function clientSummary(tx: Tx, clientId: string, now = new Date()) 
       .orderBy(order === "asc" ? asc(appointments.startsAt) : desc(appointments.startsAt))
       .limit(1);
   const mine = eq(appointments.clientId, clientId);
-  const [[next], [last], [totals], [faltas]] = await Promise.all([
+  const [[next], [last], [totals], [faltas], visits] = await Promise.all([
     label(and(mine, gte(appointments.startsAt, now), ne(appointments.status, "cancelled")), "asc"),
     label(and(mine, lt(appointments.startsAt, now), eq(appointments.status, "done")), "desc"),
     tx
@@ -102,12 +140,51 @@ export async function clientSummary(tx: Tx, clientId: string, now = new Date()) 
       .select({ n: count() })
       .from(appointments)
       .where(and(mine, inArray(appointments.status, ["no_show"]))),
+    // Histórico: as últimas visitas concluídas, a mais recente primeiro (uma a mais para o intervalo da última)
+    tx
+      .select({
+        id: appointments.id,
+        startsAt: appointments.startsAt,
+        service: serviceLabel,
+        returnDueOn: appointments.returnDueOn,
+        returnSkippedAt: appointments.returnSkippedAt,
+      })
+      .from(appointments)
+      .innerJoin(services, eq(services.id, appointments.serviceId))
+      .where(and(mine, lt(appointments.startsAt, now), eq(appointments.status, "done")))
+      .orderBy(desc(appointments.startsAt))
+      .limit(HISTORY + 1),
   ]);
+  // Retorno: o da visita mais recente, se ela tem data e não foi dispensado
+  const latest = visits[0];
+  const ret =
+    latest?.returnDueOn && !latest.returnSkippedAt
+      ? { appointmentId: latest.id, due: latest.returnDueOn, service: latest.service }
+      : null;
   return {
     next: next ?? null,
     last: last ?? null,
     visits: totals?.visits ?? 0,
     spentCents: Number(totals?.spent ?? 0),
     noShows: faltas?.n ?? 0,
+    history: visits.map((v) => ({ startsAt: v.startsAt, service: v.service })),
+    ret,
   };
+}
+
+/** Números de cada cliente para a lista do desktop e os filtros: visitas, última visita, gasto e se tem horário marcado. */
+export function clientStats(tx: Tx, now = new Date()) {
+  const at = now.toISOString();
+  return tx
+    .select({
+      clientId: appointments.clientId,
+      visits: sql<number>`count(*) filter (where ${appointments.status} = 'done')`.mapWith(Number),
+      lastVisit: sql<Date | null>`max(${appointments.startsAt}) filter (where ${appointments.status} = 'done')`.mapWith(
+        (v) => (v ? new Date(v) : null),
+      ),
+      spentCents: sql<number>`coalesce(sum(${appointments.priceCents}) filter (where ${appointments.status} = 'done'), 0)`.mapWith(Number),
+      hasNext: sql<boolean>`bool_or(${appointments.status} <> 'cancelled' and ${appointments.startsAt} > ${at}::timestamptz)`.mapWith(Boolean),
+    })
+    .from(appointments)
+    .groupBy(appointments.clientId);
 }

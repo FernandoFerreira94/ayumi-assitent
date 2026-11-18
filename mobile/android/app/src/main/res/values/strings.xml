@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Bubbly</string>
+    <string name="title_activity_main">Bubbly</string>
+    <string name="package_name">br.app.bubbly</string>
+    <string name="custom_url_scheme">br.app.bubbly</string>
+</resources>

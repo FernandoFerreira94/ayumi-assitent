@@ -4,6 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { notify } from "@/components/feedback/toast";
 import { loadNotice } from "./actions";
+import { useCloseOnHide } from "@/lib/use-close-on-hide";
 
 type Notice = { id: string; kind: string; title: string; body: string; detail: string | null };
 
@@ -17,6 +18,7 @@ export function NoticeHost() {
   const pathname = usePathname();
   const id = params.get("aviso");
   const ref = useRef<HTMLDialogElement>(null);
+  useCloseOnHide(ref);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [text, setText] = useState("");
 

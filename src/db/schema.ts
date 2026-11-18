@@ -53,6 +53,8 @@ export const tenants = pgTable("tenants", {
   calendarTokenHash: text("calendar_token_hash").unique(),
   /** No link do calendário, título sem o nome da cliente (só o serviço) */
   calendarHideNames: boolean("calendar_hide_names").notNull().default(false),
+  /** Última leitura do link pelo calendário (iPhone); null = link novo ainda não assinado */
+  calendarFetchedAt: timestamp("calendar_fetched_at", { withTimezone: true }),
   /** Link público (webcal/https) de um calendário do iCloud, lido só para trazer eventos; null = desligado. Nunca logar. */
   icloudCalendarUrl: text("icloud_calendar_url"),
   /** Horas antes do horário do segundo aviso (para quem não respondeu); null = só um aviso */
@@ -89,6 +91,8 @@ export const professionals = pgTable(
     /** SHA-256 do token do link de calendário assinado; null = link desligado */
     calendarTokenHash: text("calendar_token_hash").unique(),
     calendarHideNames: boolean("calendar_hide_names").notNull().default(false),
+    /** Última leitura do link pelo calendário (iPhone assinou); link novo zera */
+    calendarFetchedAt: timestamp("calendar_fetched_at", { withTimezone: true }),
     /** Link público do calendário do iCloud, só leitura. Nunca logar. */
     icloudCalendarUrl: text("icloud_calendar_url"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -144,6 +148,8 @@ export const services = pgTable("services", {
   bookable: boolean("bookable").notNull().default(true),
   showInSlots: boolean("show_in_slots").notNull().default(true),
   notes: text("notes"),
+  /** Retorno aproximado em dias (ex.: unha 15); null = serviço sem retorno */
+  returnDays: integer("return_days"),
 });
 
 export const appointmentStatus = pgEnum("appointment_status", [
@@ -203,6 +209,10 @@ export const appointments = pgTable(
     discountCents: integer("discount_cents").notNull().default(0),
     /** Observação livre (ex.: motivo do desconto), até 300 caracteres */
     notes: text("notes"),
+    /** Data prevista do retorno, gravada ao concluir (menor retorno entre os serviços); null = sem retorno */
+    returnDueOn: date("return_due_on"),
+    /** "Não precisa": a dona dispensou o retorno deste atendimento */
+    returnSkippedAt: timestamp("return_skipped_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

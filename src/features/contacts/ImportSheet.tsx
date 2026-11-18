@@ -6,7 +6,8 @@ import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/Adapti
 import { notify } from "@/components/feedback/toast";
 import type { ActionResult } from "@/lib/errors";
 import { maskPhone } from "@/lib/phone";
-import { importSelected, previewFromFile, previewFromGoogle } from "./actions";
+import { useDeviceContacts, ContactsDenied, readDeviceContacts } from "@/features/native/device-contacts";
+import { importSelected, previewFromDevice, previewFromFile, previewFromGoogle } from "./actions";
 import type { Preview } from "./core";
 
 type PreviewRes = ActionResult<{ list: Preview; ignored: number }>;
@@ -16,13 +17,15 @@ const btn =
 
 export function ImportSheet() {
   const side = useSheetSide();
+  const device = useDeviceContacts();
   const [open, setOpen] = useState(false);
   const [list, setList] = useState<Preview | null>(null);
   const [ignored, setIgnored] = useState(0);
-  const [source, setSource] = useState<"google" | "file">("file");
+  const [source, setSource] = useState<"google" | "file" | "device">("file");
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [pending, start] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
+
 
   function reset() {
     setList(null);
@@ -44,6 +47,24 @@ export function ImportSheet() {
   function fromGoogle() {
     setSource("google");
     start(async () => receive(await previewFromGoogle(), fromGoogle));
+  }
+
+  function fromDevice() {
+    setSource("device");
+    start(async () => {
+      let rows;
+      try {
+        rows = await readDeviceContacts();
+      } catch (e) {
+        if (e instanceof ContactsDenied) {
+          notify.warning("Sem acesso aos contatos", "Libere em Ajustes do celular → Bubbly → Contatos.");
+        } else {
+          notify.error("UNKNOWN", fromDevice);
+        }
+        return;
+      }
+      receive(await previewFromDevice(rows), fromDevice);
+    });
   }
 
   function fromFile(file: File) {
@@ -104,8 +125,16 @@ export function ImportSheet() {
 
           {!list ? (
             <div className="grid gap-2" aria-busy={pending}>
+              {device && (
+                <button type="button" className={btn} onClick={fromDevice} disabled={pending}>
+                  {pending && source === "device" ? "Lendo a agenda…" : "Da agenda do celular"}
+                  <span className="block text-sm font-semibold text-muted">
+                    Você escolhe quem entra; o resto não é salvo
+                  </span>
+                </button>
+              )}
               <button type="button" className={btn} onClick={fromGoogle} disabled={pending}>
-                {pending ? "Buscando…" : "Do Google Contatos"}
+                {pending && source === "google" ? "Buscando…" : "Do Google Contatos"}
                 <span className="block text-sm font-semibold text-muted">Usa a conta Google conectada</span>
               </button>
               <button type="button" className={btn} onClick={() => fileRef.current?.click()} disabled={pending}>

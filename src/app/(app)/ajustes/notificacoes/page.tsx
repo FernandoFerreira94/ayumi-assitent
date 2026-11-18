@@ -20,7 +20,13 @@ export default async function NotificacoesPage() {
     <PageShell back backHref="/ajustes" title="Notificações">
       <div className="grid gap-3">
         <section id="avisos-celular" aria-label="Notificação" className="scroll-mt-6">
-          <PushToggle publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
+          <PushToggle
+            publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null}
+            nativeReady={{
+              android: !!process.env.FCM_SERVICE_ACCOUNT,
+              ios: !!(process.env.APNS_KEY && process.env.APNS_KEY_ID && process.env.APPLE_TEAM_ID),
+            }}
+          />
         </section>
         <section id="localizacao" aria-label="Localização" className="scroll-mt-6">
           <LocationToggle

@@ -7,7 +7,9 @@ import { openNewAppointment } from "@/features/appointments/QuickBook";
 import { canOpenPath } from "@/features/team/access";
 import type { Role } from "@/features/team/permissions";
 import { NAV_ICONS } from "./nav-icons";
-import { NAV_ITEMS, isNavActive, type NavIconKey, type NavItem } from "./nav-items";
+import { ADMIN_NAV_ITEM, NAV_ITEMS, isNavActive, type NavIconKey, type NavItem } from "./nav-items";
+import { SideNavBrand } from "./SideNavBrand";
+import { useNavIndicator } from "./useNavIndicator";
 
 function NavIcon({ name }: { name: NavIconKey }) {
   return (
@@ -33,13 +35,19 @@ function NavIcon({ name }: { name: NavIconKey }) {
 export function SideNav({
   role = "owner",
   studioName,
+  userName = null,
   pendencias,
+  isAdmin = false,
 }: {
   role?: Role;
   studioName: string | null;
+  /** Nome de quem está logado, embaixo de "bubbly". Vazio = linha some. */
+  userName?: string | null;
   pendencias: number;
+  isAdmin?: boolean;
 }) {
   const pathname = usePathname();
+  const navRef = useNavIndicator<HTMLElement>(pathname);
   const salon = studioName ?? "Meu salão";
 
   const link = (item: NavItem) => {
@@ -53,7 +61,9 @@ export function SideNav({
           {count ? (
             <>
               {" "}
-              <span className="sidenav-count">{count}</span>
+              <span key={count} className="sidenav-count">
+                {count}
+              </span>
             </>
           ) : null}
         </Link>
@@ -62,11 +72,9 @@ export function SideNav({
   };
 
   return (
-    <nav aria-label="Navegação principal" data-tour="sidenav" className="sidenav">
-      <p className="sidenav-brand">
-        <span aria-hidden="true" className="sidenav-dot" />
-        <span className="sr-only xl:not-sr-only">Bubbly</span>
-      </p>
+    <nav ref={navRef} aria-label="Navegação principal" data-tour="sidenav" className="sidenav">
+      <span aria-hidden="true" className="sidenav-indicator" />
+      <SideNavBrand href="/agenda" label="Bubbly, início" subtitle={userName} />
       <button type="button" className="sidenav-new" title="Novo agendamento (N)" onClick={() => openNewAppointment()}>
         <NavIcon name="novo" />
         <span className="sr-only xl:not-sr-only xl:flex-1 xl:text-left">Novo agendamento</span>
@@ -77,6 +85,19 @@ export function SideNav({
       <ul className="sidenav-list">{NAV_ITEMS.filter((i) => i.group === "main" && canOpenPath(role, i.href)).map(link)}</ul>
       <hr className="sidenav-sep" />
       <ul className="sidenav-list">{NAV_ITEMS.filter((i) => i.group === "more" && canOpenPath(role, i.href)).map(link)}</ul>
+      {isAdmin ? (
+        <>
+          <hr className="sidenav-sep" />
+          <ul className="sidenav-list">
+            <li>
+              <Link href={ADMIN_NAV_ITEM.href} prefetch={false} title="Painel do dono" className="sidenav-link">
+                <NavIcon name={ADMIN_NAV_ITEM.icon} />
+                <span className="sr-only xl:not-sr-only xl:flex-1">{ADMIN_NAV_ITEM.label}</span>
+              </Link>
+            </li>
+          </ul>
+        </>
+      ) : null}
       <Link
         href="/perfil"
         title="Perfil e conta"
@@ -87,9 +108,7 @@ export function SideNav({
           {salon.charAt(0).toUpperCase()}
         </span>
         <span className="sr-only xl:not-sr-only xl:grid xl:min-w-0 xl:leading-tight">
-          <span className="truncate font-bold">{salon}</span>
-          {" "}
-          <span className="text-xs text-muted">Perfil e conta</span>
+          <span className="truncate font-bold">{salon}</span> <span className="text-xs text-muted">Perfil e conta</span>
         </span>
       </Link>
     </nav>

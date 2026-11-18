@@ -1,4 +1,5 @@
 import { toNextJsHandler } from "better-auth/next-js";
+import { CHALLENGE_COOKIE } from "@/features/native/handoff-core";
 import { auth } from "@/lib/auth";
 
 const handlers = toNextJsHandler(auth);
@@ -20,7 +21,9 @@ export async function GET(req: Request) {
   } catch {
     // corpo sem JSON: segue com UNKNOWN
   }
-  const back = new URL("/login", process.env.BETTER_AUTH_URL || url.origin);
+  // Login começado pelo app da loja: o erro volta para o app (handoff), não para o /login do navegador
+  const fromApp = (req.headers.get("cookie") ?? "").includes(`${CHALLENGE_COOKIE}=`);
+  const back = new URL(fromApp ? "/api/native-auth/finish" : "/login", process.env.BETTER_AUTH_URL || url.origin);
   back.searchParams.set("error", code);
   return Response.redirect(back, 302);
 }

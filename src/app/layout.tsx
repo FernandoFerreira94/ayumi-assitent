@@ -2,11 +2,12 @@ import type { Metadata, Viewport } from "next";
 import { Quicksand, Nunito } from "next/font/google";
 import { mascotGate } from "@/components/brand/mascots";
 import { Splash, splashGate } from "@/components/brand/Splash";
-import { UpdateBanner } from "@/components/nav/UpdateBanner";
+import { AutoUpdate } from "@/components/nav/AutoUpdate";
 import { AppToaster } from "@/components/feedback/toast";
 import { STARTUP_IMAGES } from "@/lib/startup-images";
 import { ServiceWorkerRegister } from "@/components/nav/ServiceWorkerRegister";
 import { KeyboardWatcher } from "@/components/system/KeyboardWatcher";
+import { NativeBridge } from "@/features/native/NativeBridge";
 import { SHARE_DESCRIPTION, shareMeta, siteUrl } from "@/lib/share-meta";
 import "./globals.css";
 import "@/components/brand/mascot-themes.css";
@@ -60,10 +61,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <div className="status-fill" aria-hidden="true" />
         <Splash />
         {children}
-        <UpdateBanner />
+        <AutoUpdate />
         <AppToaster />
         <ServiceWorkerRegister />
         <KeyboardWatcher />
+        <NativeBridge />
       </body>
     </html>
   );

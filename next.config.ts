@@ -3,8 +3,8 @@ import type { NextConfig } from "next";
 // Identifica esta versão do app: o navegador compara com /api/version para saber se há atualização.
 const BUILD_ID = process.env.RAILWAY_GIT_COMMIT_SHA || process.env.GITHUB_SHA || `local-${Date.now()}`;
 
-// Política de conteúdo: começa só em relatório (Report-Only) para não quebrar nada; depois de uma semana
-// sem violações no console/Sentry, trocar a chave para Content-Security-Policy.
+// Política de conteúdo (bloqueia o que não está na lista). Serviço externo novo no navegador = incluir aqui;
+// os testes e2e falham se o navegador acusar violação.
 const CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
@@ -25,12 +25,23 @@ const SECURITY_HEADERS = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self)" },
-  { key: "Content-Security-Policy-Report-Only", value: CSP },
+  { key: "Content-Security-Policy", value: CSP },
+];
+
+// Painel do dono: nunca em cache, nunca indexado e sem mandar o endereço para outro site (somam aos de cima).
+const ADMIN_HEADERS = [
+  { key: "Cache-Control", value: "no-store" },
+  { key: "X-Robots-Tag", value: "noindex, nofollow" },
+  { key: "Referrer-Policy", value: "no-referrer" },
 ];
 
 const nextConfig: NextConfig = {
   async headers() {
-    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+    return [
+      { source: "/:path*", headers: SECURITY_HEADERS },
+      { source: "/admin", headers: ADMIN_HEADERS },
+      { source: "/admin/:path*", headers: ADMIN_HEADERS },
+    ];
   },
   env: { NEXT_PUBLIC_BUILD_ID: BUILD_ID },
   cacheComponents: true,

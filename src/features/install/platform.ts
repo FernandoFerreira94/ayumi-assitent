@@ -11,3 +11,11 @@ export function detectPlatform(userAgent: string, maxTouchPoints: number): Insta
   if (/Android/.test(userAgent)) return "android";
   return "other";
 }
+
+/**
+ * Aberto pelo app da loja (casca Capacitor em mobile/): o capacitor.config.json acrescenta "BubblyApp/<versão>"
+ * ao user agent. Lá o app já está instalado, então não se ensina a instalar o PWA.
+ */
+export function isNativeShell(userAgent: string): boolean {
+  return /\bBubblyApp\//.test(userAgent);
+}

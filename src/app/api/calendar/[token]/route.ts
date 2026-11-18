@@ -1,5 +1,5 @@
 import { connection } from "next/server";
-import { feedIcs, professionalByTokenHash } from "@/features/calendar-feed/server";
+import { feedIcs, markCalendarFetched, professionalByTokenHash } from "@/features/calendar-feed/server";
 import { hashToken, isTokenShape } from "@/features/calendar-feed/token";
 import { errInfo, log } from "@/lib/log";
 
@@ -15,7 +15,10 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/calendar/[token
   try {
     const owner = await professionalByTokenHash(hashToken(token));
     if (!owner) return notFound();
-    const body = await feedIcs(owner);
+    const [body] = await Promise.all([
+      feedIcs(owner),
+      markCalendarFetched(owner).catch((e) => log("warn", "calendar_fetch_mark_failed", errInfo(e))),
+    ]);
     return new Response(body, {
       headers: {
         ...PRIVATE,

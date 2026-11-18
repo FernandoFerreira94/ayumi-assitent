@@ -8,7 +8,9 @@ import type { WhatsAppState } from "@/features/shell/status";
 import { canOpenPath } from "@/features/team/access";
 import type { Role } from "@/features/team/permissions";
 import { NAV_ICONS } from "./nav-icons";
+import { ADMIN_NAV_ITEM } from "./nav-items";
 import { SignOutButton } from "./SignOutButton";
+import { useCloseOnHide } from "@/lib/use-close-on-hide";
 
 const icon = (d: React.ReactNode) => (
   <svg
@@ -34,7 +36,9 @@ const ITEMS = [
   { href: "/vagas", label: "Vagas", icon: icon(NAV_ICONS.vagas) },
   { href: "/pendencias", label: "Pendências", icon: icon(NAV_ICONS.pendencias) },
   { href: "/ajustes", label: "Ajustes", icon: icon(NAV_ICONS.ajustes) },
-] as const;
+];
+
+const ADMIN_ITEM = { href: ADMIN_NAV_ITEM.href, label: ADMIN_NAV_ITEM.label, icon: icon(NAV_ICONS.admin) };
 
 /** Arrastar a folha para cima mais que isso fecha; menos, ela volta. */
 const DRAG_CLOSE_PX = 60;
@@ -58,6 +62,7 @@ export function AppMenu({
   whatsapp,
   pendencias,
   version,
+  isAdmin = false,
 }: {
   role: Role;
   userName: string | null;
@@ -65,8 +70,10 @@ export function AppMenu({
   whatsapp: WhatsAppState;
   pendencias: number;
   version: string;
+  isAdmin?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  useCloseOnHide(ref);
   const dragFrom = useRef<number | null>(null);
   const pathname = usePathname();
   const abbr = initials(userName);
@@ -153,7 +160,7 @@ export function AppMenu({
             </Link>
           ) : null}
           <ul className="grid grid-cols-3 gap-2 [&>li]:min-w-0">
-            {ITEMS.filter((i) => canOpenPath(role, i.href)).map((item) => {
+            {(isAdmin ? [...ITEMS, ADMIN_ITEM] : ITEMS).filter((i) => i === ADMIN_ITEM || canOpenPath(role, i.href)).map((item) => {
               const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
               const badge = item.href === "/pendencias" && pendencias > 0 ? pendencias : 0;
               return (
@@ -161,6 +168,8 @@ export function AppMenu({
                   <Link
                     href={item.href}
                     onClick={close}
+                    // /admin registra cada visita: não pré-carregar
+                    prefetch={item.href === ADMIN_ITEM.href ? false : undefined}
                     aria-current={active ? "page" : undefined}
                     className="relative flex min-h-16 flex-col items-center justify-center gap-1.5 rounded-2xl border border-line bg-surface px-1 py-3 text-center text-[13px] font-semibold shadow-[0_6px_16px_-6px_rgba(40,24,110,0.28)] hover:bg-soft aria-[current=page]:bg-soft"
                   >

@@ -131,10 +131,19 @@ export default function PrivacidadePage() {
             se você ligar a previsão do tempo.
           </li>
           <li>
+            <strong>Resend:</strong> envia os e-mails do app (como o link para criar uma nova senha); recebe só o seu
+            e-mail e o nome.
+          </li>
+          <li>
             <strong>Sentry:</strong> registros técnicos de erro, sem nome, telefone ou texto das mensagens.
           </li>
           <li>Autoridades, apenas quando a lei exigir.</li>
         </ul>
+        <p>
+          A equipe do Bubbly vê, num painel interno protegido por senha e segundo fator, só o nome do salão, o nome e o
+          e-mail da dona da conta e o histórico da assinatura (plano, valor, pagamentos e cancelamentos), para gerir as
+          assinaturas. Esse painel não mostra clientes, agenda nem mensagens, e cada acesso a ele fica registrado.
+        </p>
         <p>
           Alguns desses serviços ficam fora do Brasil. Nesses casos a transferência segue as regras da LGPD (art. 33).
         </p>

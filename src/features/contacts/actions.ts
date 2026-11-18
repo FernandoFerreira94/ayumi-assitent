@@ -10,8 +10,8 @@ import { GoogleAuthError } from "@/features/google/calendar";
 import { googleAccessToken } from "@/features/google/server";
 import { importClients, markExisting, type Preview } from "./core";
 import { fetchGoogleContacts } from "./google";
-import { parseContactsFile, type Parsed } from "./parse";
-import { importInput, MAX_FILE_BYTES } from "./schema";
+import { normalize, parseContactsFile, type Parsed } from "./parse";
+import { deviceInput, importInput, MAX_FILE_BYTES } from "./schema";
 
 type PreviewResult = { list: Preview; ignored: number };
 
@@ -50,6 +50,18 @@ export async function previewFromGoogle(): Promise<ActionResult<PreviewResult>> 
     return await toPreview(tenantId, await fetchGoogleContacts(token));
   } catch (e) {
     return fail(e instanceof GoogleAuthError ? "GOOGLE_EXPIRED" : "NETWORK");
+  }
+}
+
+/** Agenda do celular (app da loja): só monta a prévia, nada é gravado aqui. */
+export async function previewFromDevice(raw: unknown): Promise<ActionResult<PreviewResult>> {
+  const { tenantId } = await requireTenant();
+  const p = deviceInput.safeParse(raw);
+  if (!p.success) return fail("VALIDATION");
+  try {
+    return await toPreview(tenantId, normalize(p.data));
+  } catch {
+    return fail("UNKNOWN");
   }
 }
 
