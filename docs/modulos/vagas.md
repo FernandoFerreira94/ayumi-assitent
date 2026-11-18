@@ -19,3 +19,6 @@
 - Mudou regra de expediente: avisos do dia dependem dela (`owner-notices/plan.isDayOff`, `dayEndMin`).
 - Texto de divulgação segue o modelo da cliente (semanas, "dd/mm - 09:00 | 10:00"); confira a prévia.
 - Testes: `tests/e2e/vagas.spec.ts`, `tests/unit/slots.test.ts`, `share-text.test.ts`, `custom-slots.test.ts`.
+
+## Desktop (18/11)
+- `/vagas` com `PageShell wide` (loading também). No `lg`: "Lista personalizada" e "Copiar texto para divulgar" lado a lado; os dias viram grade (`auto-fill, minmax(220px)`) com selo "N vagas". Celular igual.

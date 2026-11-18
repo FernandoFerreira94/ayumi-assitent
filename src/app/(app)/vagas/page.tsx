@@ -71,7 +71,7 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
   const withSlots = days.filter((d) => d.slots.length > 0);
 
   return (
-    <PageShell title="Vagas" subtitle="Toque num horário para agendar">
+    <PageShell wide title="Vagas" subtitle="Toque num horário para agendar">
       <nav aria-label="Serviço" className="mb-4 flex gap-2 overflow-x-auto pb-1">
         {services.map((x) => (
           <Link
@@ -85,8 +85,16 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
         ))}
         <NewServiceSheet services={all} />
       </nav>
-      <div className="mb-3">
+      {/* Desktop: as duas ações lado a lado, acima da semana */}
+      <div className="mb-3 grid gap-3 lg:grid-cols-2">
         <CustomSheet services={services.map((x) => ({ id: x.id, name: x.name }))} saved={lists} today={today} />
+        {withSlots.length > 0 && (
+          // No topo: é a ação da tela, não precisa rolar a semana até achar
+          <ShareSheet
+            serviceName={service.name}
+            days={withSlots.map((d) => ({ date: d.date, label: shortDayLabel(d.date), slots: d.slots }))}
+          />
+        )}
       </div>
       {withSlots.length === 0 ? (
         <EmptyState
@@ -95,15 +103,16 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
           description="Confira o expediente em Ajustes > Expediente ou libere horários na agenda."
         />
       ) : (
-        <div className="grid gap-3">
-          {/* No topo: é a ação da tela, não precisa rolar a semana até achar */}
-          <ShareSheet
-            serviceName={service.name}
-            days={withSlots.map((d) => ({ date: d.date, label: shortDayLabel(d.date), slots: d.slots }))}
-          />
+        // Desktop: a semana em colunas, um dia ao lado do outro
+        <div className="grid gap-3 lg:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] lg:items-start">
           {withSlots.map((d) => (
             <section key={d.date} aria-label={formatDayTitle(d.date)} className="glass rounded-2xl px-4 py-3">
-              <h2 className="pb-2 text-sm font-bold capitalize">{formatDayTitle(d.date)}</h2>
+              <h2 className="pb-2 text-sm font-bold capitalize lg:flex lg:items-start lg:justify-between lg:gap-2">
+                {formatDayTitle(d.date)}
+                <span className="hidden shrink-0 whitespace-nowrap rounded-full bg-soft px-2 py-0.5 text-xs font-semibold normal-case text-primary-text lg:inline">
+                  {d.slots.length} {d.slots.length === 1 ? "vaga" : "vagas"}
+                </span>
+              </h2>
               <ul className="flex flex-wrap gap-2">
                 {d.slots.map((t) => (
                   <li key={t}>

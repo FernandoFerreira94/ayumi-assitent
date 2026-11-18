@@ -83,7 +83,10 @@ test("Clientes no desktop: a ficha abre ao lado da lista e os filtros trocam a l
   await expect(page.getByText("Cliente cadastrada")).toBeVisible();
 
   await expect(page.getByRole("region", { name: "Resumo das clientes" })).toBeVisible();
-  await page.getByRole("button", { name: /Bia Souza/ }).first().click();
+  await page
+    .getByRole("button", { name: /Bia Souza/ })
+    .first()
+    .click();
   const ficha = page.getByRole("region", { name: "Ficha de Bia Souza" });
   await expect(ficha).toBeVisible();
   await expect(ficha.getByText("Nenhum marcado")).toBeVisible();
@@ -104,4 +107,21 @@ test("Financeiro de tela larga: 6 meses, quem mais trouxe e faltas", async ({ pa
   await expect(page.getByRole("heading", { name: "Quem mais trouxe no mês" })).toBeVisible();
   await expect(page.getByText("Nenhum atendimento concluído nesse mês.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Faltas no mês" })).toBeVisible();
+});
+
+test("Pendências e Vagas usam a largura toda no desktop", async ({ page }) => {
+  const width = async () => (await page.locator("main").first().boundingBox())!.width;
+  await page.goto("/pendencias");
+  await expect(page.getByText("Tudo em dia")).toBeVisible();
+  expect(await width()).toBeGreaterThan(900);
+
+  await page.goto("/servicos");
+  await page.getByRole("button", { name: "Criar serviço" }).click();
+  await page.getByRole("dialog").getByRole("textbox", { name: "Nome", exact: true }).fill("Gel");
+  await page.getByRole("dialog").getByRole("textbox", { name: /Preço/ }).fill("100");
+  await page.getByRole("dialog").getByRole("button", { name: "Criar serviço" }).click();
+  await expect(page.getByText("Serviço criado")).toBeVisible();
+  await page.goto("/vagas");
+  await expect(page.getByRole("link", { name: "Gel" })).toBeVisible();
+  expect(await width()).toBeGreaterThan(900);
 });
