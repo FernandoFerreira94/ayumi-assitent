@@ -71,3 +71,28 @@ test("Painel de tela larga: números, próxima cliente, mini mês, pendências e
   await page.reload();
   await expect(page.getByRole("tab", { name: "Semana" })).toHaveAttribute("aria-selected", "true");
 });
+
+test("Clientes no desktop: a ficha abre ao lado da lista e os filtros trocam a lista", async ({ page }) => {
+  const vp = page.viewportSize()!;
+  test.skip(vp.width < 1024, "ficha ao lado só a partir de 1024 px");
+  await page.goto("/clientes");
+  await page.getByRole("button", { name: "Nova cliente" }).click();
+  await page.getByLabel("Nome").fill("Bia Souza");
+  await page.getByLabel("WhatsApp").fill("11987651111");
+  await page.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByText("Cliente cadastrada")).toBeVisible();
+
+  await expect(page.getByRole("region", { name: "Resumo das clientes" })).toBeVisible();
+  await page.getByRole("button", { name: /Bia Souza/ }).first().click();
+  const ficha = page.getByRole("region", { name: "Ficha de Bia Souza" });
+  await expect(ficha).toBeVisible();
+  await expect(ficha.getByText("Nenhum marcado")).toBeVisible();
+  // Não abriu folha por cima: a ficha está na própria tela
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+
+  await page.getByRole("navigation", { name: "Filtrar clientes" }).getByRole("link", { name: "Novas" }).click();
+  await expect(page).toHaveURL(/\?f=novas$/);
+  await expect(page.getByRole("button", { name: /^Bia Souza/ })).toBeVisible();
+  await page.getByRole("navigation", { name: "Filtrar clientes" }).getByRole("link", { name: "Sumidas" }).click();
+  await expect(page.getByText('Nenhuma cliente em "Sumidas"')).toBeVisible();
+});
