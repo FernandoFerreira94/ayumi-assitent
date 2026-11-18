@@ -135,5 +135,19 @@ test("Serviços no desktop vira tabela com o mês", async ({ page }) => {
   await expect(page.getByText("Serviço criado")).toBeVisible();
   await expect(page.getByText("receita do mês", { exact: true })).toBeVisible();
   await expect(page.getByText("Receita do mês", { exact: true })).toBeVisible();
-  await expect(page.getByRole("main").getByRole("listitem").filter({ hasText: "Gel" })).toContainText("Feitos no mês: 0");
+  await expect(page.getByRole("main").getByRole("listitem").filter({ hasText: "Gel" })).toContainText(
+    "Feitos no mês: 0",
+  );
+});
+
+test("Ajustes no desktop: seções à esquerda, a aberta à direita", async ({ page }) => {
+  await page.goto("/ajustes");
+  await expect(page.getByRole("heading", { name: "Este aparelho" })).toBeVisible();
+  await page.getByRole("link", { name: /Expediente/ }).click();
+  await expect(page).toHaveURL(/\/ajustes\/expediente$/);
+  const nav = page.getByRole("navigation", { name: "Seções de ajustes" });
+  await expect(nav.getByRole("link", { name: /Expediente/ })).toHaveAttribute("aria-current", "page");
+  await nav.getByRole("link", { name: /WhatsApp/ }).click();
+  await expect(page).toHaveURL(/\/ajustes\/whatsapp$/);
+  await expect(nav.getByRole("link", { name: /WhatsApp/ })).toHaveAttribute("aria-current", "page");
 });
