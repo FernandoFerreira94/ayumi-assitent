@@ -202,6 +202,19 @@ h1 em{font-style:normal;color:var(--primary)}
 #be{width:min(46vmin,300px);cursor:pointer}
 #be .bolha-svg{width:100%;height:auto;display:block}
 
+/* header segmentado: peças soltas no topo, juntas ao rolar */
+.seg{max-width:1240px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;transition:max-width .5s var(--spring)}
+.seg-p{height:58px;display:flex;align-items:center;border-radius:999px;border:1px solid transparent;transition:background .35s,box-shadow .35s,border-color .35s}
+.seg-logo{padding:0 20px}
+.top .seg-nav{position:relative;padding:5px;gap:0}
+.seg-nav a{position:relative;z-index:1;padding:10px 16px;border-radius:999px;color:var(--muted);text-decoration:none;font-weight:700;font-size:14px;transition:color .25s}
+.seg-nav a.on{color:#fff}
+.seg-ind{position:absolute;z-index:0;top:5px;bottom:5px;left:0;width:0;border-radius:999px;background:var(--primary);box-shadow:0 8px 18px rgba(109,74,255,.35);opacity:0;transition:left .45s var(--spring),width .45s var(--spring),opacity .25s}
+.seg-nav.has .seg-ind{opacity:1}
+.seg-r{gap:12px;padding:0 6px 0 16px}
+.top.stuck .seg-logo,.top.stuck .seg-r{background:linear-gradient(180deg,rgba(255,255,255,.86),rgba(255,255,255,.58));border-color:rgba(255,255,255,.9);box-shadow:inset 0 1px 0 #fff,0 12px 30px rgba(40,24,110,.12);backdrop-filter:blur(18px) saturate(1.7);-webkit-backdrop-filter:blur(18px) saturate(1.7)}
+.top.stuck .seg{max-width:1040px}
+@media (max-width:980px){.seg-nav{display:none}.seg-logo,.seg-r{background:linear-gradient(180deg,rgba(255,255,255,.86),rgba(255,255,255,.58));border-color:rgba(255,255,255,.9);box-shadow:0 10px 24px rgba(40,24,110,.12);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}.seg-p{height:52px}.seg-logo{padding:0 16px}}
 .tright{display:flex;align-items:center;gap:14px}
 .enter{font-weight:700;font-size:15px;color:var(--ink);text-decoration:none}
 .skip{position:absolute;left:-999px;top:8px;z-index:99;background:var(--fg);color:#fff;padding:10px 16px;border-radius:12px}
@@ -264,9 +277,11 @@ html:not(.js) #ph{display:none}
 </head>
 <body>
 <a class="skip" href="#dia">Pular para o conteúdo</a>
-<header class="top gut"><div class="top-in glass"><a href="#hero" class="word" style="font-size:28px">bubbly</a>
-<nav aria-label="Seções"><a href="#dia">Um dia</a><a href="#passos">Como funciona</a><a href="#recursos">Recursos</a><a href="#reels">Vídeos</a><a href="#planos">Planos</a></nav>
-<div class="tright"><a class="enter" href="https://app.bubbly.app.br/login">Entrar</a><a class="btn btn-tint" href="https://wa.me/5512997041551?text=Oi%21%20Quero%20testar%20o%20bubbly%20no%20meu%20neg%C3%B3cio." target="_blank" rel="noopener">Testar grátis</a></div></div></header>
+<header class="top gut" id="top"><div class="seg">
+<div class="seg-logo seg-p"><a href="#hero" class="word" style="font-size:26px">bubbly</a></div>
+<nav class="seg-nav seg-p glass" aria-label="Seções"><span class="seg-ind" aria-hidden="true"></span><a href="#dia">Um dia</a><a href="#passos">Como funciona</a><a href="#recursos">Recursos</a><a href="#reels">Vídeos</a><a href="#planos">Planos</a></nav>
+<div class="seg-r seg-p"><a class="enter" href="https://app.bubbly.app.br/login">Entrar</a><a class="btn btn-tint" href="https://wa.me/5512997041551?text=Oi%21%20Quero%20testar%20o%20bubbly%20no%20meu%20neg%C3%B3cio." target="_blank" rel="noopener">Testar grátis</a></div>
+</div></header>
 
 <main>
 <section id="hero" aria-label="Topo">
@@ -575,5 +590,15 @@ html:not(.js) #ph{display:none}
   gsap.from("#be",{y:120,scale:.4,rotation:-20,ease:"elastic.out(1,.5)",duration:1.6,scrollTrigger:{trigger:"#fim",start:"top 70%"}});
   gsap.from("#fim h2",{y:60,autoAlpha:0,duration:1,ease:"power3.out",scrollTrigger:{trigger:"#fim",start:"top 60%"}});
 })();
+</script>
+<script>
+(function(){var top=document.getElementById("top"),nav=document.querySelector(".seg-nav"),ind=nav.querySelector(".seg-ind"),as=[].slice.call(nav.querySelectorAll("a")),cur=null;
+function mv(a){if(a===cur)return;cur=a;as.forEach(function(x){x.classList.toggle("on",x===a);if(x===a)x.setAttribute("aria-current","true");else x.removeAttribute("aria-current")});
+ if(!a){nav.classList.remove("has");return}nav.classList.add("has");ind.style.left=a.offsetLeft+"px";ind.style.width=a.offsetWidth+"px"}
+var secs=as.map(function(a){return document.querySelector(a.getAttribute("href"))});
+function spy(){top.classList.toggle("stuck",scrollY>60);var y=innerHeight*.4,hit=null;
+ secs.forEach(function(sec,i){if(!sec)return;var r=sec.getBoundingClientRect();if(r.top<=y&&r.bottom>y)hit=as[i]});mv(hit)}
+addEventListener("scroll",spy,{passive:true});addEventListener("resize",function(){var c=cur;cur=null;mv(c)});spy();
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){var c=cur;cur=null;mv(c)});})();
 </script>
 </body></html>
