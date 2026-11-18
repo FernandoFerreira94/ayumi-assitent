@@ -13,3 +13,6 @@ ios/DerivedData/
 *.p8
 *.p12
 *.mobileprovision
+# Config do Firebase: vem do Codemagic (GOOGLE_SERVICES_JSON) ou fica só no PC
+android/app/google-services.json
+ios/App/App/GoogleService-Info.plist
