@@ -78,7 +78,9 @@ export function ConnectionsAccordion({
                   <IconTile name={s.icon} tint={s.tint} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-bold leading-tight">{s.title}</span>
-                    <span className="block truncate text-sm font-semibold text-muted">{l.status || "\u00a0"}</span>
+                    <span className="line-clamp-2 text-sm font-semibold leading-snug text-muted">
+                      {l.status || "\u00a0"}
+                    </span>
                   </span>
                   {l.badge ? <StatusBadge badge={l.badge} /> : null}
                   <svg
