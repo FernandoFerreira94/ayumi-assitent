@@ -23,8 +23,8 @@ export function NativeBridge() {
           if (!url.startsWith(`${APP_LINK_PREFIX}auth`)) return;
           const { finishNativeGoogleLogin } = await import("./google-login");
           const result = await finishNativeGoogleLogin(url);
-          // Navegação completa: o servidor lê o cookie novo e o proxy leva para a agenda
-          location.replace(result.ok ? "/agenda" : `/login?error=${encodeURIComponent(result.error)}`);
+          // Navegação completa: o servidor lê o cookie novo e o /entrar leva para a agenda (ou o /admin, se for o dono)
+          location.replace(result.ok ? "/entrar" : `/login?error=${encodeURIComponent(result.error)}`);
         }),
       );
       // Android: sem isto, o voltar com uma folha aberta trocava de página por baixo dela

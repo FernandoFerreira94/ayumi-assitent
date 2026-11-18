@@ -42,6 +42,14 @@ test("sem login, /admin responde 404 (não manda para o login)", async ({ browse
   await ctx.close();
 });
 
+test("depois do login, o dono cai no /admin (que ainda pede o código) e o salão no Painel", async ({ page, context }) => {
+  await page.goto("/entrar");
+  await expect(page).toHaveURL(/\/agenda$/);
+  await loginAsAdmin(context, { twoFactor: true, stepUp: false });
+  await page.goto("/entrar");
+  await expect(page).toHaveURL(/\/admin\/verificar$/);
+});
+
 test("admin sem 2FA cai na ativação", async ({ page, context }) => {
   await loginAsAdmin(context, { twoFactor: false, stepUp: false });
   await page.goto("/admin");

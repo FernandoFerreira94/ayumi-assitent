@@ -149,7 +149,7 @@ export function LoginForm() {
     }
     const res = await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/agenda",
+      callbackURL: "/entrar",
       errorCallbackURL: "/login",
     });
     if (res?.error) {
@@ -175,9 +175,9 @@ export function LoginForm() {
       if (res.error) return fail(authErrorText(res.error.code ?? res.error.message));
       if (res.data && "twoFactorRedirect" in res.data && res.data.twoFactorRedirect) return go("code");
       setSuccess(true);
-      notify.success("Pronto! Abrindo sua agenda");
-      router.replace("/agenda");
-      router.refresh();
+      notify.success("Pronto! Entrando");
+      // Navegação completa: o /entrar lê a sessão nova e leva ao Painel (ou ao /admin, se for o dono)
+      window.location.replace("/entrar");
     } catch {
       fail(ERROR_MESSAGES.NETWORK);
     } finally {
@@ -226,9 +226,9 @@ export function LoginForm() {
         : await authClient.twoFactor.verifyBackupCode({ code });
       if (res.error) return fail(authErrorText(res.error.code ?? res.error.message));
       setSuccess(true);
-      notify.success("Pronto! Abrindo sua agenda");
-      router.replace("/agenda");
-      router.refresh();
+      notify.success("Pronto! Entrando");
+      // Navegação completa: o /entrar lê a sessão nova e leva ao Painel (ou ao /admin, se for o dono)
+      window.location.replace("/entrar");
     } catch {
       fail(ERROR_MESSAGES.NETWORK);
     } finally {

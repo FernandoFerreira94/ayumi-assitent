@@ -33,7 +33,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
   if (logged && pathname.startsWith("/login")) {
-    return NextResponse.redirect(new URL("/agenda", request.url));
+    return NextResponse.redirect(new URL("/entrar", request.url));
   }
   return NextResponse.next();
 }

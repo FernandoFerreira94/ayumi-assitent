@@ -42,6 +42,9 @@
 - (d) Efeito colateral: com 2FA ligado, o **login por e-mail e senha** do dono pede o código logo depois da senha (`twoFactorRedirect`); o `LoginForm` mostra o passo "Código de acesso" (`authClient.twoFactor.verifyTotp` ou `verifyBackupCode`).
 - Hook `before` no `auth.ts`: com sessão, `/two-factor/*` só para quem está em `ADMIN_USER_IDS` (outra pessoa recebe 404); sem sessão, só `verify-totp` e `verify-backup-code` (passo do login).
 
+## Depois do login
+- Todo login (senha, código 2FA, Google `callbackURL`, app da loja `NativeBridge`, e `/login` com sessão no `proxy.ts`) passa por `app/entrar/route.ts`: dono (`isPlatformAdmin`) vai ao `/admin` (o `requireAdmin` segue pedindo 2FA/step-up), o resto ao `/agenda`; sem sessão, `/login?sessao=invalida` (evita laço). Regra pura em `features/admin/landing.ts`. Abrir o app depois (start_url `/agenda`) não redireciona.
+
 ## Configuração
 - `ADMIN_USER_IDS` (Railway, serviço web): ids de `"user".id` separados por vírgula. Vazia = ninguém é admin. Achar o id: `select id from "user" where email = '<e-mail do dono>'`.
 - e2e sobe o servidor com `ADMIN_USER_IDS=e2e-admin` (`playwright.config.ts`).
