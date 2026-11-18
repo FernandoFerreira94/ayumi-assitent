@@ -16,6 +16,11 @@ workflows:
       - name: Copia config e plugins para o projeto Android
         working_directory: mobile
         script: npx cap sync android
+      - name: Firebase (notificações), se GOOGLE_SERVICES_JSON existir (base64 do google-services.json)
+        script: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo "$GOOGLE_SERVICES_JSON" | base64 --decode > mobile/android/app/google-services.json
+          fi
       - name: Build
         working_directory: mobile/android
         script: ./gradlew assembleDebug

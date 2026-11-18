@@ -2,7 +2,10 @@ import { sql } from "drizzle-orm";
 import webpush from "web-push";
 import { mascotTitle } from "@/components/brand/mascots";
 import { getDb } from "@/db/client";
-import { PushGoneError, type PushPort, type PushTarget } from "./port";
+import { apnsFromEnv } from "./apns";
+import { fcmFromEnv, type NativeSender } from "./fcm";
+import { parseNativeEndpoint } from "./native-core";
+import { PushGoneError, type PushPayload, type PushPort, type PushTarget } from "./port";
 
 // Mascote de cada pessoa por 5 min: um lote de avisos não consulta o banco a cada aparelho
 const cache = new Map<string, { mascot: string | null; at: number }>();
@@ -20,30 +23,62 @@ async function mascotOf(sub: PushTarget): Promise<string | null> {
   return mascot;
 }
 
-/** Cliente real (VAPID). Sem as 3 variáveis, devolve null e o envio é pulado. */
-export function pushFromEnv(env: NodeJS.ProcessEnv = process.env): PushPort | null {
+/** Web Push (VAPID). Sem as 3 variáveis, null. */
+function webFromEnv(env: NodeJS.ProcessEnv) {
   const pub = env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const priv = env.VAPID_PRIVATE_KEY;
   const subject = env.VAPID_SUBJECT;
   if (!pub || !priv || !subject) return null;
   webpush.setVapidDetails(subject, pub, priv);
+  return async (sub: PushTarget, payload: PushPayload) => {
+    try {
+      await webpush.sendNotification(
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+        JSON.stringify(payload),
+        // urgency high: o iPhone entrega na hora mesmo com a tela bloqueada ou em economia de bateria
+        { TTL: 6 * 3600, urgency: "high" },
+      );
+    } catch (e) {
+      const code = (e as { statusCode?: number }).statusCode;
+      if (code === 404 || code === 410) throw new PushGoneError();
+      throw e;
+    }
+  };
+}
+
+export type PushChannels = {
+  web: ((sub: PushTarget, payload: PushPayload) => Promise<void>) | null;
+  android: NativeSender | null;
+  ios: NativeSender | null;
+};
+
+/** Escolhe o canal pelo endpoint: "fcm:" Android, "apns:" iPhone, o resto Web Push. */
+export function routePush(
+  ch: PushChannels,
+  title: (sub: PushTarget, p: PushPayload) => Promise<PushPayload>,
+): PushPort {
   return {
     async send(sub, payload) {
-      // Todo aviso (pendências, cliente respondeu, não respondeu, avisos do dia) segue o mascote de Meu perfil
-      const mascot = await mascotOf(sub).catch(() => null);
-      const titled = { ...payload, title: mascotTitle(payload.title, mascot) };
-      try {
-        await webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          JSON.stringify(titled),
-          // urgency high: o iPhone entrega na hora mesmo com a tela bloqueada ou em economia de bateria
-          { TTL: 6 * 3600, urgency: "high" },
-        );
-      } catch (e) {
-        const code = (e as { statusCode?: number }).statusCode;
-        if (code === 404 || code === 410) throw new PushGoneError();
-        throw e;
+      const titled = await title(sub, payload);
+      const native = parseNativeEndpoint(sub.endpoint);
+      if (native) {
+        const send = ch[native.platform];
+        if (!send) throw new Error(`push_${native.platform}_off`);
+        return send(native.token, titled);
       }
+      if (!ch.web) throw new Error("push_web_off");
+      return ch.web(sub, titled);
     },
   };
+}
+
+/** Cliente real: Web Push (VAPID) + app da loja (FCM/APNs). Sem nenhum configurado, null e o envio é pulado. */
+export function pushFromEnv(env: NodeJS.ProcessEnv = process.env): PushPort | null {
+  const ch: PushChannels = { web: webFromEnv(env), android: fcmFromEnv(env), ios: apnsFromEnv(env) };
+  if (!ch.web && !ch.android && !ch.ios) return null;
+  // Todo aviso (pendências, cliente respondeu, não respondeu, avisos do dia) segue o mascote de Meu perfil
+  return routePush(ch, async (sub, payload) => {
+    const mascot = await mascotOf(sub).catch(() => null);
+    return { ...payload, title: mascotTitle(payload.title, mascot) };
+  });
 }
