@@ -8,9 +8,10 @@ test("Siri e Atalhos: criar chave, consultar e desligar", async ({ page, request
   await sheet.getByLabel("Nome do aparelho").fill("iPhone teste");
   await sheet.getByRole("button", { name: "Criar chave" }).click();
 
-  const token = (await sheet.locator("code").textContent())!.trim();
+  const token = (await sheet.locator("code").textContent())!.replace(/^Bearer\s+/, "").trim();
   expect(token).toMatch(/^bub_[A-Za-z0-9_-]{43}$/);
-  await expect(sheet.getByText("Agenda de hoje", { exact: true })).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "Copiar endereço de Agenda de hoje" })).toBeVisible();
+  await expect(sheet.getByRole("region", { name: "Como montar o Atalho" })).toBeVisible();
 
   const auth = { authorization: `Bearer ${token}` };
   for (const path of ["/api/v1/atalhos/agenda?dia=hoje", "/api/v1/atalhos/proxima", "/api/v1/atalhos/resumo"]) {
