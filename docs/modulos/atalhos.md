@@ -10,7 +10,8 @@
 - `server.ts`: `activeTokenByHash` (como dono do banco: ainda não se sabe o estúdio), `markTokenUsed` (no máximo a cada 10 min), `loadRows` (via `withTenant` + `appointments/core.listDay`), `handleAtalho` (casca das rotas), `listApiTokens`.
 - `actions.ts`: `createApiToken(nome)` (máx. 3 ligadas, devolve a chave só nessa hora), `revokeApiToken(id)`.
 - `tokens-shared.ts`: `MAX_ACTIVE_TOKENS`, tipo `TokenItem` (fora do `"use server"`).
-- `AtalhosCard.tsx`: tela `/ajustes/siri` (seção `siri` em `settings/sections.ts`, linha em Conexões). Criar no sheet (vaul): nome do aparelho → chave com Copiar + endereços dos 3 Atalhos com Copiar. Lista "•••• a9F2 · usada há X" e Desligar com confirmação na linha.
+- `atalho-guide.tsx`: `ATALHO_STEPS`, 7 passos ilustrados (SVG com `GuideArt`, no `StepGuide`) de como montar o Atalho no app Atalhos; aparecem na tela e no sheet depois de criar a chave.
+- `AtalhosCard.tsx`: tela `/ajustes/siri` (seção `siri` em `settings/sections.ts`, linha em Conexões). Criar no sheet (vaul): nome do aparelho → **autorização** (`Bearer bub_…`, pronta para o valor do cabeçalho) + endereços dos 3 Atalhos com Copiar + passo a passo ilustrado. Colunas do sheet com `grid-cols-1 min-w-0` (o endereço longo estourava a largura no celular). Lista "•••• a9F2 · usada há X" e Desligar com confirmação na linha.
 
 ## Rotas (GET, `Authorization: Bearer bub_…`)
 
