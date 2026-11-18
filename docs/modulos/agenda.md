@@ -59,3 +59,6 @@
 - Animação Órbita só aqui; demais ações usam toast.
 - Folhas de agendar/editar: Dia e Horário lado a lado (classe `pair`, `h-13` fixo porque o select do iOS ignora min-height); a folha rola (`max-h` + `overflow-y-auto`). Ao fechar o teclado, o `KeyboardWatcher` devolve a página para a rolagem de antes do foco (o iOS deixava a folha com o fim fora da tela).
 - Testes: `tests/e2e/retorno.spec.ts`, `tests/db/returns.test.ts`, `tests/unit/returns.test.ts`, `tests/e2e/agenda*.spec.ts`, `agendamento.spec.ts`, `bloqueios.spec.ts`, `pendencias.spec.ts`, `mes.spec.ts`; `tests/db/reschedule.test.ts`; unit `agenda-grid`, `timeline`, `day-version`, `pricing`, `briefing`, `calendar-grid`, `month-picker`.
+
+## Pendências no desktop (18/11)
+- `/pendencias` com `PageShell wide` (loading também). No `lg` as seções viram colunas de quadro (`auto-fit, minmax(300px)`) com fundo suave e contador no título. Celular igual.
