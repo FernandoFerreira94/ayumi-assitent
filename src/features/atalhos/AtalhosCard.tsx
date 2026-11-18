@@ -5,6 +5,8 @@ import { Drawer } from "vaul";
 import { notify } from "@/components/feedback/toast";
 import { SHEET_SCROLL, SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { Icon, TileTitle } from "@/components/ui/Icon";
+import { StepGuide } from "@/components/ui/StepGuide";
+import { ATALHO_STEPS } from "./atalho-guide";
 import { createApiToken, revokeApiToken } from "./actions";
 import { MAX_ACTIVE_TOKENS, type TokenItem } from "./tokens-shared";
 
@@ -65,7 +67,7 @@ export function AtalhosCard({ initial, baseUrl }: { initial: TokenItem[]; baseUr
   }
 
   return (
-    <div className="grid gap-3">
+    <div className="grid min-w-0 grid-cols-1 gap-3">
       <div className="glass grid gap-3 rounded-[1.75rem] px-5 py-4">
         <TileTitle icon="sparkles" tint="lavender">
           Siri e Atalhos do iPhone
@@ -146,6 +148,11 @@ export function AtalhosCard({ initial, baseUrl }: { initial: TokenItem[]; baseUr
         </ul>
       ) : null}
 
+      <section className="grid min-w-0 gap-2" aria-label="Como funciona">
+        <h2 className="px-3 text-xs font-bold uppercase tracking-wide text-muted">Como montar o Atalho</h2>
+        <StepGuide steps={ATALHO_STEPS} label="Como montar o Atalho no iPhone" />
+      </section>
+
       <Drawer.Root direction={side} repositionInputs={false} open={open} onOpenChange={setOpen}>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
@@ -164,44 +171,41 @@ export function AtalhosCard({ initial, baseUrl }: { initial: TokenItem[]; baseUr
               </Drawer.Description>
 
               {token ? (
-                <div className="mt-4 grid gap-3">
-                  <div className="glass grid gap-2 rounded-2xl px-4 py-3">
-                    <p className="text-sm font-bold">Sua chave (aparece só agora)</p>
-                    <code className="break-all rounded-xl bg-soft px-3 py-2 text-sm font-semibold">{token}</code>
+                <div className="mt-4 grid min-w-0 grid-cols-1 gap-3">
+                  <div className="glass grid min-w-0 gap-2 rounded-2xl px-4 py-3">
+                    <p className="text-sm font-bold">1. Sua autorização (aparece só agora)</p>
+                    <code className="break-all rounded-xl bg-soft px-3 py-2 text-sm font-semibold">Bearer {token}</code>
                     <button
                       type="button"
                       className="btn-tint flex min-h-12 items-center justify-center gap-2 rounded-2xl px-5 font-bold"
-                      onClick={() => void copyText(token, "Chave")}
+                      onClick={() => void copyText(`Bearer ${token}`, "Autorização")}
                     >
-                      <Icon name="copy" size={18} /> Copiar chave
+                      <Icon name="copy" size={18} /> Copiar autorização
                     </button>
                   </div>
-                  <ol className="grid list-decimal gap-1.5 pl-6 text-sm font-semibold">
-                    <li>Abra o app Atalhos e crie um Atalho com o nome da frase (ex.: Agenda de hoje).</li>
-                    <li>Ação &quot;Obter Conteúdo do URL&quot; com o endereço abaixo, método GET.</li>
-                    <li>Em Cabeçalhos: Authorization = Bearer + espaço + a chave.</li>
-                    <li>
-                      Ação &quot;Obter Valor do Dicionário&quot;, chave fala. Depois &quot;Mostrar Resultado&quot;.
-                    </li>
-                  </ol>
-                  <ul className="glass grid divide-y divide-line rounded-2xl">
-                    {SHORTCUTS.map((s) => (
-                      <li key={s.path} className="flex items-center gap-3 px-4 py-2.5">
-                        <span className="min-w-0 flex-1">
-                          <span className="block font-bold">{s.phrase}</span>
-                          <span className="block truncate text-xs font-semibold text-muted">{baseUrl + s.path}</span>
-                        </span>
-                        <button
-                          type="button"
-                          className="btn-glass flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-bold"
-                          onClick={() => void copyText(baseUrl + s.path, "Endereço")}
-                          aria-label={`Copiar endereço de ${s.phrase}`}
-                        >
-                          <Icon name="copy" size={16} /> Copiar
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="grid min-w-0 gap-2">
+                    <p className="px-1 text-sm font-bold">2. Endereço de cada frase</p>
+                    <ul className="glass grid min-w-0 divide-y divide-line rounded-2xl">
+                      {SHORTCUTS.map((s) => (
+                        <li key={s.path} className="flex min-w-0 items-center gap-3 px-4 py-2.5">
+                          <span className="min-w-0 flex-1">
+                            <span className="block font-bold">{s.phrase}</span>
+                            <span className="block truncate text-xs font-semibold text-muted">{baseUrl + s.path}</span>
+                          </span>
+                          <button
+                            type="button"
+                            className="btn-glass flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-bold"
+                            onClick={() => void copyText(baseUrl + s.path, "Endereço")}
+                            aria-label={`Copiar endereço de ${s.phrase}`}
+                          >
+                            <Icon name="copy" size={16} /> Copiar
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <p className="px-1 text-sm font-bold">3. Monte o Atalho no iPhone</p>
+                  <StepGuide steps={ATALHO_STEPS} label="Como montar o Atalho" />
                   <button
                     type="button"
                     className="btn-glass min-h-12 rounded-2xl px-5 font-bold"
@@ -212,7 +216,7 @@ export function AtalhosCard({ initial, baseUrl }: { initial: TokenItem[]; baseUr
                 </div>
               ) : (
                 <form
-                  className="mt-4 grid gap-3"
+                  className="mt-4 grid min-w-0 grid-cols-1 gap-3"
                   onSubmit={(e) => {
                     e.preventDefault();
                     if (!busy) void create();
