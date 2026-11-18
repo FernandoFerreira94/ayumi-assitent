@@ -1,17 +1,9 @@
 import type { Metadata } from "next";
 import { PageShell } from "@/components/ui/PageShell";
-import { count, eq, isNull } from "drizzle-orm";
-import { getDb, withTenant } from "@/db/client";
-import { apiTokens, tenants } from "@/db/schema";
-import { getHours } from "@/features/hours/core";
 import { InstallGuide } from "@/features/install/InstallGuide";
-import { getReminderSettings } from "@/features/reminders/core";
 import { LegacyHashRedirect } from "@/features/settings/LegacyHashRedirect";
-import { PushStatusText } from "@/features/settings/PushStatusText";
-import { hoursSummary } from "@/features/settings/sections";
 import { SettingsGroup, SettingsRow } from "@/features/settings/SettingsList";
-import { shellStatus } from "@/features/shell/status";
-import { unreadSupportReplies } from "@/features/support/core";
+import { loadSettingsSummary } from "@/features/settings/summary";
 import { ReplayTourButton } from "@/features/tour/ReplayTourButton";
 import { UpdateButton } from "@/features/update/UpdateButton";
 import { requireTenant } from "@/lib/tenant";
@@ -21,64 +13,31 @@ export const metadata: Metadata = { title: "Ajustes" };
 /**
  * Ajustes é a lista de partida, como os Ajustes do iPhone: cada linha diz o estado e abre a sua seção.
  * Aqui só se lê o resumo; o que cada seção edita (e carrega) fica na tela dela.
+ * Desktop: lista à esquerda e "Este aparelho" à direita; dentro das seções a lista vira a coluna lateral.
  */
 export default async function AjustesPage() {
   const { tenantId } = await requireTenant();
-  const [{ whatsapp, google }, { week, reminders, replies, siri }, [salon]] = await Promise.all([
-    shellStatus(tenantId),
-    withTenant(tenantId, async (tx) => ({
-      week: await getHours(tx),
-      reminders: await getReminderSettings(tx),
-      replies: await unreadSupportReplies(tx),
-      siri: (await tx.select({ n: count() }).from(apiTokens).where(isNull(apiTokens.revokedAt)))[0]!.n > 0,
-    })),
-    getDb()
-      .select({ calendarOn: tenants.calendarTokenHash, icloudOn: tenants.icloudCalendarUrl })
-      .from(tenants)
-      .where(eq(tenants.id, tenantId)),
-  ]);
-  const iphone = !!salon?.calendarOn || !!salon?.icloudOn;
-  const calendars = [google ? "Google conectado" : null, iphone ? "iPhone ligado" : null].filter(Boolean);
-  const avisos = [
-    reminders.first ? `1º aviso ${reminders.hours}h antes` : null,
-    reminders.secondHours ? `2º aviso ${reminders.secondHours}h antes` : null,
-  ].filter(Boolean);
+  const groups = await loadSettingsSummary(tenantId);
 
   return (
-    <PageShell title="Ajustes">
+    <PageShell title="Ajustes" wide>
       <LegacyHashRedirect />
-      <SettingsGroup title="Conexões">
-        <SettingsRow
-          section="whatsapp"
-          status={
-            whatsapp === "open" ? "Conectado" : whatsapp === "unavailable" ? "Sem resposta agora" : "Desconectado"
-          }
-          todo={whatsapp === "other" ? "Conectar" : undefined}
-        />
-        <SettingsRow
-          section="calendarios"
-          status={calendars.length ? calendars.join(" · ") : "Google e iPhone"}
-          todo={calendars.length ? undefined : "Configurar"}
-        />
-        <SettingsRow section="notificacoes" status={<PushStatusText />} />
-        <SettingsRow section="siri" status={siri ? "Ligada" : "Pergunte sua agenda para a Siri"} />
-      </SettingsGroup>
-      <SettingsGroup title="Clientes e agenda">
-        <SettingsRow section="mensagens" status={avisos.length ? avisos.join(" · ") : "Avisos desligados"} />
-        <SettingsRow section="expediente" status={hoursSummary(week)} />
-      </SettingsGroup>
-      <SettingsGroup title="Ajuda">
-        <SettingsRow
-          section="suporte"
-          status={replies ? "O suporte respondeu" : "Fale com a gente e dúvidas comuns"}
-          todo={replies ? (replies === 1 ? "1 nova" : `${replies} novas`) : undefined}
-        />
-      </SettingsGroup>
-      <div className="mt-7 grid gap-3">
-        <h2 className="px-3 text-xs font-bold uppercase tracking-wide text-muted">Este aparelho</h2>
-        <UpdateButton />
-        <InstallGuide />
-        <ReplayTourButton />
+      <div className="md:mx-auto md:max-w-[720px] lg:mx-0 lg:grid lg:max-w-[1100px] lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
+        <div>
+          {groups.map((g) => (
+            <SettingsGroup key={g.title} title={g.title}>
+              {g.lines.map((l) => (
+                <SettingsRow key={l.section} section={l.section} status={l.status} todo={l.todo} />
+              ))}
+            </SettingsGroup>
+          ))}
+        </div>
+        <div className="mt-7 grid gap-3 lg:mt-0">
+          <h2 className="px-3 text-xs font-bold uppercase tracking-wide text-muted">Este aparelho</h2>
+          <UpdateButton />
+          <InstallGuide />
+          <ReplayTourButton />
+        </div>
       </div>
     </PageShell>
   );

@@ -34,3 +34,7 @@ Links internos apontam direto para a seção (`/ajustes/whatsapp`, `/ajustes/cal
 ## LGPD em Meu perfil (13/11)
 - **Baixar meus dados** (`salon/ExportDataButton` → `actions.exportMyData`): 3 CSV (clientes, agendamentos, despesas), `;` + BOM para o Excel; `salon/export-csv.toCsv`.
 - **Excluir minha conta** (`salon/DeleteAccountSheet` → `actions.deleteAccount` → `delete-account.deleteAccountData`): digitar EXCLUIR; revoga Google (`google/server.revokeGoogleOfUser`), logout + `admin.remove` da instância Evolution, apaga `tenants` do dono (cascata) e o `user` (cascata em sessões/contas/vínculos). Teste `tests/db/delete-account.test.ts`.
+
+## Ajustes no desktop (18/11)
+- `ajustes/layout.tsx`: no tablet/desktop (`userAgent`, celular não consulta) monta `SettingsNav`, a coluna de seções à esquerda (`lg`), com estado e selo de cada seção e a atual marcada (`aria-current`). Em `/ajustes` a coluna some, porque a página já é a lista; lá o `lg` põe "Este aparelho" à direita.
+- Os resumos vêm de `settings/summary.tsx` (`loadSettingsSummary`, com `cache`), usados pela lista e pela coluna. Ids `#ajuste-*` do tour só existem na lista de `/ajustes`.
