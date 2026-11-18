@@ -46,3 +46,28 @@ test("alvos do menu têm pelo menos 44 px", async ({ page }) => {
     expect(b.height).toBeGreaterThanOrEqual(44);
   }
 });
+
+test("Painel de tela larga: números, próxima cliente, mini mês, pendências e Dia/Semana", async ({ page }) => {
+  await page.goto("/agenda");
+  await expect(page.getByRole("region", { name: "Ganhos da semana" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Confirmações de hoje" })).toBeVisible();
+  await expect(page.getByRole("region", { name: /Próxima cliente|Atendendo agora/ })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Pendências" })).toContainText("Tudo em dia");
+
+  // Mini mês: o próximo mês troca o título e o clique num dia abre a agenda dele, sem recarregar
+  const mes = page.getByRole("region", { name: "Mês" });
+  const titulo = mes.getByRole("heading");
+  const antes = await titulo.textContent();
+  await mes.getByRole("button", { name: "Próximo mês" }).click();
+  await expect(titulo).not.toHaveText(antes!);
+  await mes.getByRole("button", { name: /^15\b/ }).click();
+  await expect(page).toHaveURL(/\/agenda\?d=\d{4}-\d{2}-15$/);
+  await expect(page.getByRole("region", { name: "Primeira cliente do dia" })).toBeVisible();
+
+  // Semana: troca a agenda pela visão da semana e lembra a escolha
+  await page.getByRole("tab", { name: "Semana" }).click();
+  await expect(page.getByRole("tab", { name: "Semana" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("link", { name: /^dom/ })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("tab", { name: "Semana" })).toHaveAttribute("aria-selected", "true");
+});

@@ -4,7 +4,7 @@ Atualizado em 17/11/2026 (main em #162, auditoria completa). Ache o módulo da t
 
 | Módulo | Ficha | Pastas | Finalidade | Mexeu aqui? Confira |
 | --- | --- | --- | --- | --- |
-| Agenda | [agenda.md](agenda.md) | `features/appointments`, `features/calendar`, `features/blocks`, telas `agenda`, `calendario`, `pendencias` | Agendar, editar, remarcar, status, bloqueios/pausas, dia/mês/ano | Google (sync), WhatsApp (msg de agendamento), lembretes, financeiro (valores), vagas (horário ocupado), sino/push |
+| Agenda | [agenda.md](agenda.md) | `features/appointments`, `features/calendar`, `features/blocks`, `features/dashboard` (Painel no desktop), telas `agenda`, `calendario`, `pendencias` | Agendar, editar, remarcar, status, bloqueios/pausas, dia/mês/ano | Google (sync), WhatsApp (msg de agendamento), lembretes, financeiro (valores), vagas (horário ocupado), sino/push |
 | Clientes | [clientes.md](clientes.md) | `features/clients`, `features/contacts`, tela `clientes` | Cadastro, busca, cartão da cliente, importar contatos | Agenda (cliente do agendamento), WhatsApp (telefone/conversa), Google Contatos |
 | Serviços | [servicos.md](servicos.md) | `features/services`, tela `servicos` | Catálogo: valor, duração, cor, ordem, pausar | Agenda (preço/duração), vagas (duração), financeiro (pizza), cores `--svc-*` |
 | Vagas e expediente | [vagas.md](vagas.md) | `features/hours`, tela `vagas`, Ajustes > Expediente | Expediente/pausa por dia, horários livres, texto para divulgar | Agenda e bloqueios (ocupado), Google importado, avisos do dia (folga/fim do expediente) |
