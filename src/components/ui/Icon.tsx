@@ -280,15 +280,19 @@ export function TileTitle({
   icon,
   tint,
   as: Tag = "p",
+  id,
+  className = "",
   children,
 }: {
   icon: IconName;
   tint: Tint;
-  as?: "p" | "h2";
+  as?: "p" | "h2" | "h3";
+  id?: string;
+  className?: string;
   children: ReactNode;
 }) {
   return (
-    <Tag className="flex items-center gap-2.5 font-bold">
+    <Tag id={id} className={`flex items-center gap-2.5 font-bold ${className}`}>
       <IconTile name={icon} tint={tint} />
       <span className="min-w-0">{children}</span>
     </Tag>

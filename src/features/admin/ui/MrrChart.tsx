@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import type { MrrMonthRow } from "../types";
 import { fmtMonthLong, fmtMonthShort, formatBRL } from "./format";
 
@@ -116,23 +117,29 @@ export function MrrChart({ months }: { months: MrrMonthRow[] }) {
 /** Movimento do mês: de onde veio e para onde foi o MRR (texto em tinta, nunca na cor da série). */
 export function MrrMovements({ month }: { month: MrrMonthRow }) {
   const items = [
-    { label: "Novos", v: month.newCents, sign: "+" },
-    { label: "Aumentos", v: month.expansionCents, sign: "+" },
-    { label: "Reativados", v: month.reactivationCents, sign: "+" },
-    { label: "Reduções", v: month.contractionCents, sign: "−" },
-    { label: "Cancelados", v: month.churnCents, sign: "−" },
+    { label: "Novos", v: month.newCents, up: true },
+    { label: "Aumentos", v: month.expansionCents, up: true },
+    { label: "Reativados", v: month.reactivationCents, up: true },
+    { label: "Reduções", v: month.contractionCents, up: false },
+    { label: "Cancelados", v: month.churnCents, up: false },
   ];
   return (
-    <dl className="grid grid-cols-2 gap-x-4 gap-y-2 border-t border-line pt-4 text-sm sm:grid-cols-5">
-      {items.map((i) => (
-        <div key={i.label} className="grid">
-          <dt className="font-semibold text-muted">{i.label}</dt>
-          <dd className="font-bold tabular-nums">
-            {i.v ? i.sign : ""}
-            {formatBRL(i.v)}
-          </dd>
-        </div>
-      ))}
+    <dl className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-line pt-4 text-sm sm:grid-cols-5">
+      {items.map((i) => {
+        const color = !i.v ? "text-muted" : i.up ? "text-ok" : "text-fail";
+        return (
+          <div key={i.label} className="grid gap-0.5">
+            <dt className="flex items-center gap-1 font-semibold text-muted">
+              <Icon name={i.up ? "arrowUp" : "arrowDown"} size={14} className={color} />
+              {i.label}
+            </dt>
+            <dd className={`font-brand text-lg tracking-[-0.01em] tabular-nums ${color}`}>
+              {i.v ? (i.up ? "+" : "−") : ""}
+              {formatBRL(i.v)}
+            </dd>
+          </div>
+        );
+      })}
     </dl>
   );
 }

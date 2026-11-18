@@ -31,7 +31,7 @@ export default async function AdminSubscribersPage({ searchParams }: PageProps<"
   }
 
   return (
-    <AdminShell title="Assinantes" subtitle={`${rows.length} salões cadastrados`}>
+    <AdminShell title="Assinantes" subtitle={`${rows.length} salões cadastrados`} icon="users" tint="blue">
       {IS_DEMO ? <DemoBanner /> : null}
       <SubscribersView rows={rows} />
       <SubscriberSheet row={row} payments={payments} />

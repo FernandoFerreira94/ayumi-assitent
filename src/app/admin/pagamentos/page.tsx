@@ -31,14 +31,14 @@ export default async function AdminPaymentsPage({ searchParams }: PageProps<"/ad
   const next = shiftMonth(month, 1);
 
   return (
-    <AdminShell title="Pagamentos" subtitle="Tudo o que entrou e saiu no mês">
+    <AdminShell title="Pagamentos" subtitle="Tudo o que entrou e saiu no mês" icon="wallet" tint="green">
       {IS_DEMO ? <DemoBanner /> : null}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <nav aria-label="Mês" className="flex items-center gap-2">
           <Link href={`/admin/pagamentos?mes=${prev}`} aria-label={`Mês anterior, ${fmtMonthLong(prev)}`} className={arrow}>
             <span className="rotate-90"><Icon name="arrowDown" size={18} /></span>
           </Link>
-          <h2 className="min-w-44 text-center text-lg font-bold" aria-live="polite">{fmtMonthLong(month)}</h2>
+          <h2 className="min-w-44 text-center font-brand text-xl text-primary-text" aria-live="polite">{fmtMonthLong(month)}</h2>
           {isCurrent ? (
             <span aria-hidden="true" className={`${arrow} opacity-40`}>
               <span className="-rotate-90"><Icon name="arrowDown" size={18} /></span>
@@ -59,11 +59,13 @@ export default async function AdminPaymentsPage({ searchParams }: PageProps<"/ad
       </div>
 
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard icon="wallet" label="Líquido" value={formatBRL(got.netCents)} note={`${got.approvedCount} aprovados`} />
-        <KpiCard icon="coins" label="Bruto" value={formatBRL(got.grossCents)} />
-        <KpiCard icon="ticket" label="Taxas" value={formatBRL(got.feeCents)} note="Mercado Pago" />
+        <KpiCard icon="wallet" tint="green" tone="ok" label="Líquido" value={formatBRL(got.netCents)} note={`${got.approvedCount} aprovados`} />
+        <KpiCard icon="coins" tint="lavender" tone="brand" label="Bruto" value={formatBRL(got.grossCents)} />
+        <KpiCard icon="ticket" tint="gray" label="Taxas" value={formatBRL(got.feeCents)} note="Mercado Pago" />
         <KpiCard
           icon="refresh"
+          tint="red"
+          tone={got.refundedCents > 0 ? "fail" : "fg"}
           label="Estornos"
           value={formatBRL(got.refundedCents)}
           note={got.refundedCents ? "estorno ou contestação" : "nenhum"}

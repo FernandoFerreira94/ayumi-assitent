@@ -14,6 +14,7 @@ import {
 } from "@/features/admin/metrics";
 import { getBillingHealth, getEvents, getMrrMonths, getOverview, getPayments, IS_DEMO } from "@/features/admin/queries";
 import { AdminShell } from "@/features/admin/ui/AdminShell";
+import { TileTitle } from "@/components/ui/Icon";
 import { DemoBanner } from "@/features/admin/ui/DemoBanner";
 import { fmtPct, formatBRL } from "@/features/admin/ui/format";
 import { HealthBar } from "@/features/admin/ui/HealthBar";
@@ -48,7 +49,7 @@ export default async function AdminOverviewPage() {
   const late = rows.filter((r) => r.status === "past_due").sort((a, b) => (b.daysPastDue ?? 0) - (a.daysPastDue ?? 0));
 
   return (
-    <AdminShell title="Visão geral" subtitle="Assinaturas e receita do Bubbly">
+    <AdminShell title="Visão geral" subtitle="Assinaturas e receita do Bubbly" icon="compass">
       {IS_DEMO ? <DemoBanner /> : null}
       <HealthBar health={health} level={healthLevel(health, now)} now={now} />
 
@@ -56,6 +57,8 @@ export default async function AdminOverviewPage() {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <KpiCard
           icon="forecast"
+          tint="lavender"
+          tone="brand"
           label="MRR"
           value={formatBRL(s.mrrCents)}
           note={s.mrrAtRiskCents ? `${formatBRL(s.mrrAtRiskCents)} em risco` : s.arpaCents ? `${formatBRL(s.arpaCents)} por salão` : undefined}
@@ -63,24 +66,30 @@ export default async function AdminOverviewPage() {
         />
         <KpiCard
           icon="wallet"
+          tint="green"
+          tone="ok"
           label="Recebido no mês"
           value={formatBRL(got.netCents)}
           note={`Bruto ${formatBRL(got.grossCents)} · taxa ${formatBRL(got.feeCents)}`}
         />
         <KpiCard
           icon="users"
+          tint="blue"
           label="Pagantes"
           value={String(s.payingCount)}
           note={s.courtesyCount ? `+ ${s.courtesyCount} cortesia${s.courtesyCount > 1 ? "s" : ""}` : undefined}
         />
         <KpiCard
           icon="sparkles"
+          tint="pink"
           label="Em teste"
           value={String(s.trialCount)}
           note={s.trialsEndingSoon ? `${s.trialsEndingSoon} acaba${s.trialsEndingSoon > 1 ? "m" : ""} em 3 dias` : "nenhum acaba em 3 dias"}
         />
         <KpiCard
           icon="alert"
+          tint="red"
+          tone={s.pastDueCount > 0 ? "fail" : "fg"}
           label="Em atraso"
           value={String(s.pastDueCount)}
           note={s.pastDueCount ? `${formatBRL(s.mrrAtRiskCents)} por mês` : "ninguém devendo"}
@@ -88,6 +97,8 @@ export default async function AdminOverviewPage() {
         />
         <KpiCard
           icon="userX"
+          tint="orange"
+          tone={last.churnCount > 0 ? "wait" : "fg"}
           label="Churn do mês"
           value={churnRate === null ? "—" : fmtPct(churnRate)}
           note={`${last.churnCount} salão${last.churnCount === 1 ? "" : "s"} · ${formatBRL(last.churnCents)}`}
@@ -96,9 +107,9 @@ export default async function AdminOverviewPage() {
 
       <section className={`${adminCard} mt-5`} aria-labelledby="ov-mrr">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 id="ov-mrr" className="text-lg font-bold">
+          <TileTitle as="h2" id="ov-mrr" icon="forecast" tint="lavender" className="text-lg">
             MRR em 12 meses
-          </h2>
+          </TileTitle>
           <p className="text-sm font-semibold text-muted">Receita mensal recorrente (anual dividido por 12)</p>
         </div>
         <MrrChart months={months} />

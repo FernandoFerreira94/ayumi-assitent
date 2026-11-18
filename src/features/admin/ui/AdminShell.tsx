@@ -1,23 +1,31 @@
+import { IconTile, type IconName, type Tint } from "@/components/ui/Icon";
 import { unreadSupportCount } from "@/features/support/admin";
 import { AdminNav } from "./AdminNav";
 
-/** Casca das telas do painel (menu + título). Use só depois do requireAdmin, para não revelar o painel. */
+/** Casca das telas do painel (menu + título com o quadradinho da tela). Use só depois do requireAdmin, para não revelar o painel. */
 export async function AdminShell({
   title,
   subtitle,
+  icon,
+  tint = "lavender",
   children,
 }: {
   title: string;
-  subtitle?: string;
+  subtitle?: React.ReactNode;
+  icon?: IconName;
+  tint?: Tint;
   children: React.ReactNode;
 }) {
   return (
     <div className="md:flex">
       <AdminNav supportUnread={await unreadSupportCount().catch(() => 0)} />
       <main className="mx-auto w-full min-w-0 max-w-[1200px] flex-1 px-4 pb-10 pt-4 md:px-8 md:pt-8">
-        <header className="pb-5">
-          <h1 className="text-2xl font-bold">{title}</h1>
-          {subtitle ? <p className="text-sm font-semibold text-muted">{subtitle}</p> : null}
+        <header className="flex items-center gap-3 pb-5">
+          {icon ? <IconTile name={icon} tint={tint} size="lg" /> : null}
+          <div className="min-w-0">
+            <h1 className="font-brand text-[28px] leading-tight tracking-[-0.01em] text-fg">{title}</h1>
+            {subtitle ? <p className="text-sm font-semibold text-muted">{subtitle}</p> : null}
+          </div>
         </header>
         {children}
       </main>

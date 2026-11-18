@@ -8,7 +8,7 @@ import { filterSubscribers, sortSubscribers, TABS, type SortKey, type Tab } from
 import type { OverviewRow, PaymentMethod, PlanKind } from "../types";
 import { fmtShort, formatBRL, METHOD_LABEL } from "./format";
 import { StatusBadge } from "./StatusBadge";
-import { adminInput } from "./styles";
+import { adminFigure, adminInput } from "./styles";
 
 const select =
   "min-h-11 rounded-2xl border-[1.5px] border-line bg-surface px-3 text-base font-semibold focus:border-primary focus:outline-none";
@@ -19,6 +19,19 @@ function dueText(r: OverviewRow) {
   if (r.status === "trialing") return `Teste até ${fmtShort(r.trialEndsAt)}`;
   if (r.nextDueAt) return `Vence ${fmtShort(r.nextDueAt)}`;
   return "—";
+}
+
+/** Vencimento com desenho: alerta vermelho no atraso, brilho no teste, calendário no resto. */
+function Due({ r }: { r: OverviewRow }) {
+  const late = r.status === "past_due";
+  return (
+    <span className={`inline-flex items-center gap-1.5 ${late ? "font-bold text-fail" : "font-semibold text-muted"}`}>
+      {r.status === "past_due" || r.status === "trialing" || r.nextDueAt ? (
+        <Icon name={late ? "alert" : r.status === "trialing" ? "sparkles" : "calendar"} size={15} />
+      ) : null}
+      {dueText(r)}
+    </span>
+  );
 }
 
 /** Lista de salões: abas por situação, filtros, busca local e ordem. Tocar num salão abre o detalhe (?salao=). */
@@ -48,7 +61,7 @@ export function SubscribersView({ rows }: { rows: OverviewRow[] }) {
             className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-bold text-muted aria-selected:bg-soft aria-selected:text-primary-text"
           >
             {t.label}
-            <span className="rounded-full bg-bg px-1.5 text-xs tabular-nums">{counts[t.id]}</span>
+            <span className="rounded-full bg-bg px-2 text-xs font-bold text-fg tabular-nums">{counts[t.id]}</span>
           </button>
         ))}
       </div>
@@ -115,9 +128,11 @@ export function SubscribersView({ rows }: { rows: OverviewRow[] }) {
                   <span className="text-sm font-semibold text-muted">
                     {r.planName} · {r.paymentMethod ? METHOD_LABEL[r.paymentMethod] : "sem pagamento"}
                   </span>
-                  <span className="flex justify-between text-sm font-semibold">
-                    <span className={r.status === "past_due" ? "text-fail" : "text-muted"}>{dueText(r)}</span>
-                    <span className="font-bold tabular-nums">{formatBRL(r.mrrCents)}/mês</span>
+                  <span className="flex items-center justify-between gap-2 text-sm font-semibold">
+                    <Due r={r} />
+                    <span className="text-muted">
+                      <strong className={`${adminFigure} text-lg ${r.mrrCents ? "text-primary-text" : "text-muted"}`}>{formatBRL(r.mrrCents)}</strong>/mês
+                    </span>
                   </span>
                 </Link>
               </li>
@@ -150,8 +165,12 @@ export function SubscribersView({ rows }: { rows: OverviewRow[] }) {
                     </td>
                     <td className="px-4 py-2"><StatusBadge status={r.status} /></td>
                     <td className="px-4 py-2 font-semibold">{r.paymentMethod ? METHOD_LABEL[r.paymentMethod] : "—"}</td>
-                    <td className={`px-4 py-2 font-semibold ${r.status === "past_due" ? "text-fail" : ""}`}>{dueText(r)}</td>
-                    <td className="px-4 py-2 text-right font-bold tabular-nums">{formatBRL(r.mrrCents)}</td>
+                    <td className="px-4 py-2">
+                      <Due r={r} />
+                    </td>
+                    <td className={`px-4 py-2 text-right text-base ${adminFigure} ${r.mrrCents ? "text-primary-text" : "text-muted"}`}>
+                      {formatBRL(r.mrrCents)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
