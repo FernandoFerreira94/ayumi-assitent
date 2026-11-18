@@ -196,6 +196,24 @@ export function ChatSheet({
               className="absolute left-1/2 top-1.5 h-1 w-10 -translate-x-1/2 rounded-full bg-line md:hidden"
               aria-hidden="true"
             />
+            {/* No celular a folha não tem X: este botão sai da conversa se ela abriu sem querer (no PWA não há voltar do navegador) */}
+            <Drawer.Close
+              aria-label="Voltar"
+              className="btn-glass mt-2 grid size-11 shrink-0 place-content-center rounded-full focus-visible:outline-2 focus-visible:outline-primary md:hidden"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="size-[22px]"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M15 5l-7 7 7 7" />
+              </svg>
+            </Drawer.Close>
             <span
               className="mt-2 grid size-11 shrink-0 place-content-center rounded-full bg-soft font-bold text-primary-text"
               aria-hidden="true"
