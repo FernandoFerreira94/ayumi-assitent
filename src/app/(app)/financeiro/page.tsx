@@ -116,9 +116,9 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
             <div>
               <dt className="flex items-center gap-1 text-xs font-bold text-muted">
                 <Icon name="forecast" size={14} className="text-primary-text" />
-                Previsto
+                A receber
               </dt>
-              <dd className="font-bold tabular-nums">{formatBRL(s.forecast)}</dd>
+              <dd className="font-bold tabular-nums">{formatBRL(s.pending)}</dd>
             </div>
             <div>
               <dt className="flex items-center gap-1 text-xs font-bold text-muted">

@@ -19,6 +19,6 @@
 - Celular igual (as caixas novas ficam `hidden md:grid`).
 
 ## Cuidados
-- Previsto = tudo que não foi cancelado nem faltou (`no_show`); recebido = só `done` (`appointments/core.forecastCents`/`receivedCents`). Remarcado transfere sem duplicar. Mudança em status ou desconto mexe aqui.
+- Previsto = tudo que não foi cancelado nem faltou (`no_show`); recebido = só `done`; o resumo mostra **A receber** = previsto − recebido (`summary.pending`, 19/11), para não repetir o valor de Ganhos (`appointments/core.forecastCents`/`receivedCents`). Remarcado transfere sem duplicar. Mudança em status ou desconto mexe aqui.
 - Dinheiro sempre em centavos.
 - Testes: `tests/e2e/financeiro.spec.ts`, `tests/db/expenses.test.ts`, `tests/unit/finance.test.ts`, `pricing.test.ts`.

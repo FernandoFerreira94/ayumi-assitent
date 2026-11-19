@@ -45,6 +45,7 @@ const bySlice = (rows: Row[]) => {
 
 /**
  * Ganho do período: o recebido vem dos concluídos, o previsto soma o que ainda não faltou.
+ * `pending` (a receber) é o previsto menos o recebido: só o que ainda não foi concluído.
  * `forecastSlices` divide o previsto por serviço: a pizza usa quando ainda não há nada concluído.
  */
 export function summarize(rows: Row[]) {
@@ -53,6 +54,7 @@ export function summarize(rows: Row[]) {
   return {
     received,
     forecast: forecastCents(rows),
+    pending: forecastCents(rows) - received,
     doneCount: done.length,
     averageCents: done.length ? Math.round(received / done.length) : 0,
     slices: bySlice(done),
