@@ -50,6 +50,7 @@
 
 ## Cuidados
 
+- **Faltou só depois do início** (19/11): `appointments/no-show.ts` (`canMarkNoShow`). `core.setStatus` recusa `no_show` antes de `starts_at` com `NO_SHOW_TOO_EARLY` (vale para `updateStatus` e o lote). No `AppointmentCard` (agenda, Pendências, detalhe, celular e desktop) o botão fica desligado com "Faltou: disponível a partir das HH:MM" e liga sozinho na hora.
 - Toda criação/edição/remarcação passa por `lockTenant` + `overlapsBlock`; não pule.
 - Fora do expediente (ou salão fechado) **não bloqueia** (13/11): `agenda-grid.conflictReason` só olha sobreposição; `outsideHours` vira aviso (dica do arraste em âmbar, texto no toast, aviso na folha de agendar, que recebe o expediente da semana via `week`). Pausa fixa do expediente continua ocupando.
 - Painel (`/agenda`) não tem a fileira Bloquear/Agendar (`DaySchedule actions={false}`); Bloquear fica no Calendário, agendar pelo + da barra ou toque no vazio.

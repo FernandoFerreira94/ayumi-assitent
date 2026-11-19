@@ -12,6 +12,7 @@ export const ERROR_MESSAGES = {
   IMAGE_TOO_LARGE: "A imagem é grande demais. Tente uma foto menor.",
   NOT_ALLOWED: "Esta conta não tem acesso.",
   VALIDATION: "Confira os campos destacados.",
+  NO_SHOW_TOO_EARLY: "Só dá para marcar falta depois do horário do atendimento.",
   NOT_FOUND: "Não encontramos esse item. Ele pode ter sido apagado.",
   CITY_NOT_FOUND: "Não encontramos essa cidade. Confira o nome e a UF.",
   PUSH_NOT_CONFIGURED: "Os avisos no celular ainda não estão configurados no servidor.",
