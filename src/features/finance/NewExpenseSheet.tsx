@@ -30,7 +30,7 @@ export function NewExpenseSheet({ date }: { date: string }) {
 
   return (
     <Drawer.Root direction={side} repositionInputs={false} open={open} onOpenChange={setOpen}>
-      <Drawer.Trigger className="btn-tint min-h-12 w-full rounded-full px-4 text-sm font-bold">
+      <Drawer.Trigger className="btn-tint min-h-12 w-full rounded-full px-4 text-base font-bold">
         Lançar gasto
       </Drawer.Trigger>
       <Drawer.Portal>
