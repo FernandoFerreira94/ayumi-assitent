@@ -504,6 +504,8 @@ button {
   font-size: 10px;
   font-weight: 700;
   line-height: 12px;
+  /* roxo mais escuro: 10px sobre a lente lilás precisa de 4.5:1 */
+  color: var(--primary-text);
   white-space: nowrap;
   text-overflow: ellipsis;
   animation: tab-label-in 0.3s var(--spring);
