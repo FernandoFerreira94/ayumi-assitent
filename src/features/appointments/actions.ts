@@ -69,7 +69,7 @@ export async function refreshAgenda(): Promise<ActionResult> {
 }
 
 export async function createAppointment(_prev: ActionResult<{ id: string }> | null, formData: FormData) {
-  const { tenantId } = await requireTenant();
+  const { tenantId, userId } = await requireTenant();
   const parsed = appointmentInput.safeParse({
     clientId: formData.get("clientId") ?? "",
     // Cada serviço escolhido vem num campo "serviceIds"; vazios são seletores extras ainda sem escolha
@@ -90,7 +90,7 @@ export async function createAppointment(_prev: ActionResult<{ id: string }> | nu
   try {
     const res = await withTenant(tenantId, async (tx) => {
       if (fromBlock.success && !(await convertExternalBlock(tx, fromBlock.data))) return fail("NOT_FOUND");
-      const r = await insertAppointment(tx, tenantId, { ...parsed.data, discount, notes, payment });
+      const r = await insertAppointment(tx, tenantId, { ...parsed.data, discount, notes, payment, createdBy: userId });
       // sem agendamento, o evento volta como estava (desfaz a transação)
       if (!r.ok && fromBlock.success) throw new RollbackWith(r);
       return r;
@@ -189,12 +189,12 @@ export async function updatePayment(input: {
   paid: boolean;
   method?: string | null;
 }): Promise<ActionResult> {
-  const { tenantId } = await requireTenant();
+  const { tenantId, userId } = await requireTenant();
   const p = paymentInput.safeParse(input);
   if (!p.success) return fail("VALIDATION");
   try {
     const res = await withTenant(tenantId, (tx) =>
-      setPayment(tx, p.data.id, p.data.paid ? { method: p.data.method ?? null } : null),
+      setPayment(tx, p.data.id, p.data.paid ? { method: p.data.method ?? null } : null, userId),
     );
     if (!res.ok) return res;
     revalidatePath("/agenda");

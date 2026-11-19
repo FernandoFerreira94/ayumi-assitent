@@ -73,6 +73,20 @@ export const tenants = pgTable("tenants", {
   /** "device" = localização do celular (sempre atualizada), "manual" = cidade digitada; null = sem localização */
   goodMorning: boolean("good_morning").notNull().default(true),
   locationSource: text("location_source").$type<"device" | "manual">(),
+  /** Carteira da cliente (0049): sinal sugerido em % do total ao escolher "Sinal" */
+  depositPct: smallint("deposit_pct").notNull().default(30),
+  /** Antecedência mínima (h) para o cancelamento virar crédito; menos que isso o sinal pode ficar para o salão */
+  cancelNoticeHours: smallint("cancel_notice_hours").notNull().default(24),
+  /** Cancelou em cima da hora: o sinal fica para o salão */
+  lateCancelKeepsDeposit: boolean("late_cancel_keeps_deposit").notNull().default(true),
+  /** Faltou: o sinal fica para o salão */
+  noShowKeepsDeposit: boolean("no_show_keeps_deposit").notNull().default(true),
+  /** Faltou: a sessão do pacote é consumida */
+  noShowUsesSession: boolean("no_show_uses_session").notNull().default(true),
+  /** Validade padrão (dias) de pacote vendido; crédito em dinheiro não vence */
+  packageValidDays: smallint("package_valid_days").notNull().default(90),
+  /** Chave Pix para a mensagem pedir o sinal; null = não pede */
+  pixKey: text("pix_key"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -355,3 +369,42 @@ export const apiTokens = pgTable("api_tokens", {
   /** Preenchido = código de pareamento ainda não trocado (não vale como chave). */
   pairingExpiresAt: timestamp("pairing_expires_at", { withTimezone: true }),
 });
+
+/**
+ * Extrato da carteira da cliente (0049): só inserção. Correção = linha do mesmo tipo com valor negativo e
+ * `reversesId`. Regras de saldo em features/wallet/rules.ts.
+ */
+export const clientLedger = pgTable(
+  "client_ledger",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    clientId: uuid("client_id").notNull(),
+    appointmentId: uuid("appointment_id"),
+    kind: text("kind")
+      .notNull()
+      .$type<
+        | "payment"
+        | "refund"
+        | "credit_in"
+        | "credit_use"
+        | "retained"
+        | "expire"
+        | "session_grant"
+        | "session_reserve"
+        | "session_use"
+        | "session_return"
+      >(),
+    amountCents: integer("amount_cents").notNull().default(0),
+    sessions: integer("sessions").notNull().default(0),
+    method: text("method").$type<"pix" | "dinheiro" | "cartao">(),
+    reason: text("reason"),
+    reversesId: uuid("reverses_id"),
+    createdBy: text("created_by"),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("client_ledger_client").on(t.tenantId, t.clientId, t.occurredAt)],
+);
