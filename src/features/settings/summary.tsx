@@ -6,6 +6,7 @@ import { getHours } from "@/features/hours/core";
 import { getReminderSettings } from "@/features/reminders/core";
 import { shellStatus } from "@/features/shell/status";
 import { unreadSupportReplies } from "@/features/support/core";
+import { getWalletSettings } from "@/features/wallet/core";
 import { type Badge, calendarsLine, siriLine, whatsappLine } from "./connection-status";
 import { hoursSummary, type SectionKey } from "./sections";
 
@@ -28,13 +29,14 @@ export type SettingsGroupData = { title: string; lines: SettingsLine[] };
  * Usado pela lista de `/ajustes` e pela coluna lateral das seções no desktop; `cache` evita consultar duas vezes.
  */
 export const loadSettingsSummary = cache(async (tenantId: string): Promise<SettingsGroupData[]> => {
-  const [{ whatsapp, google }, { week, reminders, replies, siri }, [salon]] = await Promise.all([
+  const [{ whatsapp, google }, { week, reminders, replies, siri, wallet }, [salon]] = await Promise.all([
     shellStatus(tenantId),
     withTenant(tenantId, async (tx) => ({
       week: await getHours(tx),
       reminders: await getReminderSettings(tx),
       replies: await unreadSupportReplies(tx),
       siri: (await tx.select({ n: count() }).from(apiTokens).where(isNull(apiTokens.revokedAt)))[0]!.n > 0,
+      wallet: await getWalletSettings(tx),
     })),
     getDb()
       .select({
@@ -66,6 +68,10 @@ export const loadSettingsSummary = cache(async (tenantId: string): Promise<Setti
       lines: [
         { section: "mensagens", status: avisos.length ? avisos.join(" · ") : "Avisos desligados" },
         { section: "expediente", status: hoursSummary(week) },
+        {
+          section: "pagamentos",
+          status: `Sinal ${wallet.depositPct}% · crédito com ${wallet.cancelNoticeHours}h de antecedência`,
+        },
       ],
     },
     {

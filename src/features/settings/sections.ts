@@ -10,6 +10,7 @@ export const SECTIONS = {
   notificacoes: { href: "/ajustes/notificacoes", title: "Notificações", icon: "bell", tint: "red" },
   mensagens: { href: "/ajustes/mensagens", title: "Mensagens para a cliente", icon: "message", tint: "lavender" },
   expediente: { href: "/ajustes/expediente", title: "Expediente", icon: "clock", tint: "orange" },
+  pagamentos: { href: "/ajustes/pagamentos", title: "Pagamentos", icon: "wallet", tint: "green" },
   siri: { href: "/ajustes/siri", title: "Siri e Atalhos", icon: "sparkles", tint: "lavender" },
   suporte: { href: "/ajustes/suporte", title: "Ajuda e suporte", icon: "chat", tint: "teal" },
 } as const satisfies Record<string, { href: string; title: string; icon: IconName; tint: Tint }>;

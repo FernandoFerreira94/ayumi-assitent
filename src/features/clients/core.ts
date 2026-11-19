@@ -1,6 +1,6 @@
 import { and, asc, between, count, desc, eq, gte, ilike, inArray, isNull, lt, ne, or, sql, sum } from "drizzle-orm";
 import type { Tx } from "@/db/client";
-import { appointments, clients, messages, services } from "@/db/schema";
+import { appointments, clientLedger, clients, messages, services } from "@/db/schema";
 import { serviceLabel } from "@/features/appointments/core";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import type { ClientInput } from "./schema";
@@ -59,7 +59,7 @@ export async function updateClientRow(tx: Tx, id: string, input: ClientInput): P
 export const anonPhone = (id: string) => `anon:${id}`;
 
 /**
- * Exclui a cliente. Sem agendamentos, apaga de vez. Com histórico, anonimiza (LGPD): some nome, telefone,
+ * Exclui a cliente. Sem agendamentos nem movimento na carteira, apaga de vez. Com histórico, anonimiza (LGPD): some nome, telefone,
  * e-mail, observações e conversa; os atendimentos ficam como "Cliente removida" para o financeiro não mudar.
  */
 export async function deleteClientRow(tx: Tx, id: string): Promise<ActionResult> {
@@ -68,7 +68,11 @@ export async function deleteClientRow(tx: Tx, id: string): Promise<ActionResult>
     .from(appointments)
     .where(eq(appointments.clientId, id))
     .limit(1);
-  if (!used) {
+  // Movimento na carteira também é histórico financeiro: anonimiza em vez de apagar
+  const [moved] = used
+    ? [used]
+    : await tx.select({ id: clientLedger.id }).from(clientLedger).where(eq(clientLedger.clientId, id)).limit(1);
+  if (!moved) {
     await tx.delete(clients).where(eq(clients.id, id));
     return ok();
   }

@@ -3,6 +3,7 @@ import type { Tx } from "@/db/client";
 import { appointmentServices, appointments, clients, services } from "@/db/schema";
 import { lockTenant, overlapsBlock } from "@/features/blocks/core";
 import { returnDue } from "@/features/returns/rules";
+import { recordPayment, reverseAppointmentPayments } from "@/features/wallet/core";
 import { toInstant, todayStr } from "@/lib/dates";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { canMarkNoShow } from "./no-show";
@@ -37,6 +38,8 @@ export type BookingInput = {
   notes?: string | null;
   /** Já pagou (adiantado) ao agendar; a forma é opcional. */
   payment?: { method: PaymentMethod | null } | null;
+  /** Quem agendou (vai no extrato da carteira). */
+  createdBy?: string | null;
 };
 
 /** Busca os serviços na ordem pedida; null se algum não existe, está pausado ou foi excluído. */
@@ -119,6 +122,16 @@ export async function insertAppointment(
         })
         .returning({ id: appointments.id });
       await writeServices(sp, tenantId, r.id, list);
+      // Carteira: "já pagou" ao agendar vira um pagamento do total no extrato
+      if (input.payment)
+        await recordPayment(sp, {
+          tenantId,
+          clientId: cli.id,
+          appointmentId: r.id,
+          amountCents: totalCents,
+          method: input.payment.method,
+          createdBy: input.createdBy,
+        });
       return r;
     });
     return ok({ id: row.id });
@@ -185,13 +198,27 @@ export async function setPayment(
   tx: Tx,
   id: string,
   payment: { method: PaymentMethod | null } | null,
+  createdBy?: string | null,
 ): Promise<ActionResult> {
   const rows = await tx
     .update(appointments)
     .set(payment ? { paidAt: new Date(), paymentMethod: payment.method } : { paidAt: null, paymentMethod: null })
     .where(and(eq(appointments.id, id), payment ? ne(appointments.status, "cancelled") : undefined))
-    .returning({ id: appointments.id });
-  return rows.length ? ok() : fail("NOT_ALLOWED");
+    .returning({ tenantId: appointments.tenantId, clientId: appointments.clientId, priceCents: appointments.priceCents });
+  const a = rows[0];
+  if (!a) return fail("NOT_ALLOWED");
+  // Carteira: o extrato segue a marcação. Marcar de novo (outra forma) anula o pagamento antigo e grava o novo.
+  await reverseAppointmentPayments(tx, id, createdBy);
+  if (payment)
+    await recordPayment(tx, {
+      tenantId: a.tenantId,
+      clientId: a.clientId,
+      appointmentId: id,
+      amountCents: a.priceCents,
+      method: payment.method,
+      createdBy,
+    });
+  return ok();
 }
 
 /**
