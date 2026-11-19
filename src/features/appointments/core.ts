@@ -5,6 +5,7 @@ import { lockTenant, overlapsBlock } from "@/features/blocks/core";
 import { returnDue } from "@/features/returns/rules";
 import { toInstant, todayStr } from "@/lib/dates";
 import { fail, ok, type ActionResult } from "@/lib/errors";
+import { canMarkNoShow } from "./no-show";
 import { applyDiscount, type Discount } from "./pricing";
 import type { Status } from "./schema";
 
@@ -145,8 +146,15 @@ async function returnDueFor(tx: Tx, id: string): Promise<string | null> {
 /**
  * Muda o status. Concluir grava a data prevista do retorno (se algum serviço tem retorno);
  * qualquer outro status (inclusive o Desfazer) limpa a data e o "Não precisa".
+ * Faltou só vale depois do horário de início (`NO_SHOW_TOO_EARLY` antes disso).
  */
-export async function setStatus(tx: Tx, id: string, status: Status): Promise<ActionResult> {
+export async function setStatus(tx: Tx, id: string, status: Status, now: Date = new Date()): Promise<ActionResult> {
+  if (status === "no_show") {
+    // Falta só depois do horário de início (a tela já esconde; aqui é a trava de verdade)
+    const [a] = await tx.select({ startsAt: appointments.startsAt }).from(appointments).where(eq(appointments.id, id));
+    if (!a) return fail("NOT_ALLOWED");
+    if (!canMarkNoShow(a.startsAt, now)) return fail("NO_SHOW_TOO_EARLY");
+  }
   try {
     const returnFields =
       status === "done" ? { returnDueOn: await returnDueFor(tx, id) } : { returnDueOn: null, returnSkippedAt: null };

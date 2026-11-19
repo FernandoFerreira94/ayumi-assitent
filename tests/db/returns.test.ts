@@ -41,7 +41,10 @@ d("data do retorno ao concluir (Postgres real)", () => {
         values (${id},${T},${s},${i},5000,60)`;
     return id as string;
   };
-  const status = (id: string, s: "done" | "confirmed" | "no_show") => withTenant(T, (tx) => setStatus(tx, id, s));
+  // "Agora" depois de todos os horários do teste (Faltou só vale depois do início)
+  const later = new Date("2031-01-01T00:00:00Z");
+  const status = (id: string, s: "done" | "confirmed" | "no_show", now = later) =>
+    withTenant(T, (tx) => setStatus(tx, id, s, now));
   const row = async (id: string) =>
     (
       await admin`select to_char(return_due_on,'YYYY-MM-DD') as due, return_skipped_at from appointments where id = ${id}`
@@ -75,5 +78,15 @@ d("data do retorno ao concluir (Postgres real)", () => {
     await status(id, "done");
     await status(id, "no_show");
     expect((await row(id)).due).toBeNull();
+  });
+
+  it("Faltou antes do horário de início é recusado e não muda nada", async () => {
+    const id = await insert(unha, [], "2030-03-10T23:00:00Z"); // 20:00 em São Paulo
+    expect(await status(id, "no_show", new Date("2030-03-10T22:59:00Z"))).toMatchObject({
+      ok: false,
+      code: "NO_SHOW_TOO_EARLY",
+    });
+    expect((await admin`select status from appointments where id = ${id}`)[0].status).toBe("confirmed");
+    expect(await status(id, "no_show", new Date("2030-03-10T23:00:00Z"))).toMatchObject({ ok: true });
   });
 });

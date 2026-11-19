@@ -59,9 +59,21 @@ test("o dia abre no topo, sem rolar sozinho", async ({ page }) => {
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
 });
 
-test("Faltou mostra Desfazer e volta ao status anterior", async ({ page }) => {
+test("Faltou fica desligado antes do horário, com a dica", async ({ page }) => {
   await prepara(page);
   const dia = addDays(todayStr(), 1);
+  await agenda(page, dia, "10:00");
+
+  await page.getByRole("button", { name: /Ana Lima, Escova, 10:00/ }).click();
+  await page.getByRole("button", { name: "Mais ações" }).click();
+  await expect(page.getByRole("button", { name: "Faltou" })).toBeDisabled();
+  await expect(page.getByText("Faltou: disponível a partir das 10:00")).toBeVisible();
+});
+
+test("Faltou mostra Desfazer e volta ao status anterior", async ({ page }) => {
+  await prepara(page);
+  // Só dá para marcar falta depois do horário: agenda num dia que já passou
+  const dia = addDays(todayStr(), -1);
   await agenda(page, dia, "10:00");
 
   await page.getByRole("button", { name: /Ana Lima, Escova, 10:00/ }).click();

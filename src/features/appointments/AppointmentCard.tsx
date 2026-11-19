@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { notify } from "@/components/feedback/toast";
 import { Icon } from "@/components/ui/Icon";
 import type { SyncResult } from "@/features/google/sync";
 import { CHAT_BUTTON, ChatGlyph, ChatSheet } from "@/features/messaging/ChatSheet";
 import { cancelReturnPrompt, openReturnPrompt } from "@/features/returns/ReturnPrompt";
+import { toInstant } from "@/lib/dates";
 import type { ActionResult } from "@/lib/errors";
 import { updateStatus } from "./actions";
 import { EditAppointmentSheet } from "./EditAppointmentSheet";
+import { canMarkNoShow, noShowHint } from "./no-show";
 import { warnSync } from "./sync-warning";
 import type { Status } from "./schema";
 
@@ -61,6 +63,18 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
   const open = status === "pending_confirmation" || status === "confirmed" || status === "reschedule_requested";
   // Quem pediu para remarcar já abre com Remarcar à vista
   const [more, setMore] = useState(status === "reschedule_requested");
+  // Faltou só depois do horário de início; o botão liga sozinho quando a hora chega
+  const startsAt = toInstant(date, startHHMM);
+  const startMs = startsAt.getTime();
+  const [now, setNow] = useState(() => Date.now());
+  const noShowOk = canMarkNoShow(startsAt, new Date(now));
+  useEffect(() => {
+    const wait = startMs - Date.now();
+    // setTimeout não aguenta esperas longas; para outro dia a tela já terá sido aberta de novo
+    if (wait <= 0 || wait > 24 * 3600_000) return;
+    const t = setTimeout(() => setNow(Date.now()), wait + 500);
+    return () => clearTimeout(t);
+  }, [startMs]);
 
   function change(next: Status, undoTo?: Status) {
     setBusy(next);
@@ -171,7 +185,8 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
               />
               <button
                 type="button"
-                disabled={pending}
+                disabled={pending || !noShowOk}
+                aria-describedby={noShowOk ? undefined : `falta-${id}`}
                 onClick={() => change("no_show", status)}
                 className={`${btn} btn-glass`}
               >
@@ -187,6 +202,11 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
                 <Icon name="close" size={18} />
                 {busy === "cancelled" ? "Cancelando…" : "Cancelar"}
               </button>
+              {noShowOk ? null : (
+                <p id={`falta-${id}`} className="w-full text-xs font-semibold text-muted">
+                  Faltou: {noShowHint(startHHMM).toLowerCase()}
+                </p>
+              )}
             </div>
           ) : null}
         </>
