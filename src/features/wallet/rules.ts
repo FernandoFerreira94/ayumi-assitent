@@ -345,59 +345,46 @@ export function parsePolicy(
   };
 }
 
-export type RuleSection = { title: string; items: string[] };
+export type GuideStep = { icon: "coins" | "wallet" | "checkCircle"; title: string; text: string };
+export type GuideOutcome = { when: string; result: string; tone: "ok" | "keep" | "same" };
+export type WalletGuide = { steps: GuideStep[]; outcomes: GuideOutcome[]; notes: string[] };
 
-/** "Como funciona": as regras do dinheiro da cliente, com a política do salão (Ajustes > Pagamentos e Financeiro). */
-export function walletRules(p: WalletPolicy): RuleSection[] {
-  const h = `${p.cancelNoticeHours}h`;
-  const late = p.lateCancelKeepsDeposit
-    ? "o sinal fica com o salão e o resto vira crédito"
-    : "tudo o que ela pagou vira crédito";
-  return [
-    {
-      title: "Sinal e pagamento",
-      items: [
-        `Ao agendar, você pode lançar um sinal (sugestão: ${p.depositPct}% do valor). O resto fica em "A pagar".`,
-        'Pago tudo antes do dia? Fica em "Adiantado" e o atendimento já aparece como pago.',
-      ],
-    },
-    {
-      title: "Cancelou ou faltou",
-      items: [
-        `Cancelou com ${h} ou mais de antecedência: tudo o que ela pagou vira crédito.`,
-        `Cancelou com menos de ${h}: ${late}.`,
-        p.noShowKeepsDeposit
-          ? "Faltou: o sinal fica com o salão e o resto vira crédito."
-          : "Faltou: tudo o que ela pagou vira crédito.",
-        "Voltou o status (ex.: cancelou por engano)? Tudo é desfeito sozinho.",
-      ],
-    },
-    {
-      title: "Crédito da cliente",
-      items: [
-        "Nunca vence e é usado sozinho no próximo agendamento.",
-        "Quer devolver em dinheiro? Toque em Devolver na ficha da cliente: sai do crédito e do caixa do mês.",
-      ],
-    },
-    {
-      title: "Pacotes e promoções",
-      items: [
-        "A cliente paga o pacote adiantado: entra no caixa do dia (não vira crédito).",
-        "Cada agendamento de um dos serviços do pacote usa 1 sessão sozinho, a do pacote que vence primeiro.",
-        `O pacote vale ${p.packageValidDays} dias (ou o prazo do próprio pacote).`,
-        p.noShowUsesSession
-          ? "Cancelou: a sessão volta para o pacote. Faltou: a sessão conta como usada."
-          : "Cancelou ou faltou: a sessão volta para o pacote.",
-        "Promoção com datas só é vendida entre o começo e o fim. Com limite de clientes, cada cliente compra 1 vez e esgota nas primeiras.",
-      ],
-    },
-    {
-      title: "No Financeiro",
-      items: [
-        "Ganhos: atendimentos concluídos. Sessão de pacote entra pelo preço do pacote ÷ sessões.",
-        "Entrou no caixa: o dinheiro que entrou de verdade no mês (sinais, pagamentos e pacotes, menos devoluções).",
-        "Sinal que ficou com o salão (cancelou em cima da hora ou faltou) continua no caixa.",
-      ],
-    },
-  ];
+/**
+ * "Como funciona" em poucas palavras, com a política do salão: o caminho do agendamento (3 passos), o que
+ * acontece em cada situação e 3 lembretes. Mostrado em Ajustes > Pagamentos e no Financeiro.
+ */
+export function walletGuide(p: WalletPolicy): WalletGuide {
+  const keep = "Sinal fica · resto vira crédito";
+  return {
+    steps: [
+      { icon: "coins", title: "Agendou", text: `Sinal opcional (${p.depositPct}%). O resto fica a pagar.` },
+      { icon: "wallet", title: "Tem crédito ou pacote?", text: "O app usa sozinho." },
+      { icon: "checkCircle", title: "Concluiu", text: "Entra nos Ganhos." },
+    ],
+    outcomes: [
+      { when: `Cancelou com ${p.cancelNoticeHours}h ou mais`, result: "Vira crédito", tone: "ok" },
+      {
+        when: "Cancelou em cima da hora",
+        result: p.lateCancelKeepsDeposit ? keep : "Vira crédito",
+        tone: p.lateCancelKeepsDeposit ? "keep" : "ok",
+      },
+      {
+        when: "Faltou",
+        result: p.noShowKeepsDeposit ? keep : "Vira crédito",
+        tone: p.noShowKeepsDeposit ? "keep" : "ok",
+      },
+      {
+        when: "Faltou com pacote",
+        result: p.noShowUsesSession ? "Sessão conta como usada" : "Sessão volta",
+        tone: p.noShowUsesSession ? "keep" : "ok",
+      },
+      { when: "Cancelou com pacote", result: "Sessão volta", tone: "ok" },
+      { when: "Remarcou", result: "Nada muda", tone: "same" },
+    ],
+    notes: [
+      "Crédito nunca vence. Para devolver: ficha da cliente > Devolver.",
+      `Pacote vale ${p.packageValidDays} dias e entra no caixa na venda.`,
+      "Caixa = dinheiro que entrou no mês, menos devoluções.",
+    ],
+  };
 }

@@ -17,7 +17,7 @@ import { MonthlyBars } from "@/features/finance/MonthlyBars";
 import { PaymentList } from "@/features/finance/PaymentList";
 import { splitPayments } from "@/features/finance/payments";
 import { cashInRange, getWalletSettings } from "@/features/wallet/core";
-import { walletRules } from "@/features/wallet/rules";
+import { walletGuide } from "@/features/wallet/rules";
 import { WalletRulesSheet } from "@/features/wallet/WalletRulesSheet";
 import { formatBRL, todayStr } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
@@ -210,7 +210,7 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
               <h2 id="pagamentos" className={`${h2} flex-1`}>
                 Pagamentos das clientes
               </h2>
-              <WalletRulesSheet rules={walletRules(policy)} className="-my-2 -mr-2" />
+              <WalletRulesSheet guide={walletGuide(policy)} className="-my-2 -mr-2" />
             </div>
             <PaymentList {...pay} cashCents={cash} />
           </section>

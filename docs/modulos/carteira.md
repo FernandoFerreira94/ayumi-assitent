@@ -42,7 +42,8 @@
 - **Migration 0052:** `package_templates.starts_on/ends_on` (vende só no período), `max_clients` ("as N primeiras": 1 por cliente, esgota no limite), `service_ids uuid[]` (1 a 30 serviços; `service_id` = referência do preço, o mais caro: `rules.referenceService`). `client_packages.service_ids` guarda a cópia. Índice `client_packages_template`.
 - **Venda** (`sellPackage`, dentro do `lockTenant`): recusa com `scheduled`/`ended`/`sold_out`/`already_bought` → erros `PROMO_*`. Situação: `rules.promoStatus`; linha "De 01/12 a 31/12 · 12 de 30 clientes": `rules.promoLine`. A folha de venda só mostra os valendo (`status === "running"`).
 - **Uso:** `pickSession` aceita qualquer serviço do pacote; no agendamento a sessão cobre 1 serviço (o mais caro entre os agendados que o pacote cobre).
-- **"Como funciona"** (`WalletRulesSheet` + `rules.walletRules(policy)`): regras de sinal, cancelar/faltar, crédito, pacotes/promoções e caixa, com a política do salão. Em Ajustes > Pagamentos (topo) e no Financeiro ("Pagamentos das clientes").
+- **"Como funciona"** (`WalletRulesSheet` + `rules.walletGuide(policy)`): 3 passos (agendou → crédito/pacote → concluiu), "E se…" (resultado de cada situação em selo) e 3 lembretes, com a política do salão. Em Ajustes > Pagamentos (topo) e no Financeiro ("Pagamentos das clientes").
+- **UX (19/11):** Ajustes > Pagamentos em abas "Regras" | "Pacotes e promoções" (`PaymentsTabs`, `?aba=pacotes` abre a segunda); textos curtos. Criar pacote = passo a passo de 3 telas (tipo → serviços e sessões → promoção opcional) com resumo (preço, economia, validade). Pacotes em cartões com selos (`PackageChips`: sessões, serviços, economia, até dd/mm, vagas, Agendada/Encerrada/Esgotada), também na venda.
 
 ## Arquivos
 

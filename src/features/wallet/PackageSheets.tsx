@@ -18,7 +18,7 @@ import {
 } from "./actions";
 import {
   dayMonth,
-  packagePreview,
+  packagePrice,
   promoLine,
   referenceService,
   serviceNames,
@@ -46,10 +46,40 @@ const STATUS: Record<PromoStatus, { label: string; cls: string } | null> = {
   sold_out: { label: "Esgotada", cls: "bg-fail-bg text-fail" },
 };
 
-/**
- * Ajustes > Pagamentos > Pacotes: modelos que o salão vende ("Pague X, leve Y" e "Pacote de sessões"),
- * cada um com a frase pronta. Criar abre uma folha com no máximo 3 campos e a prévia.
- */
+const pill = "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold";
+
+/** Selos do pacote: sessões, serviços, economia, período e vagas. */
+function PackageChips({ t }: { t: TemplateView }) {
+  const when = t.endsOn ? `até ${dayMonth(t.endsOn)}` : t.startsOn ? `a partir de ${dayMonth(t.startsOn)}` : null;
+  return (
+    <span className="flex flex-wrap gap-1.5">
+      <span className={`${pill} bg-surface`}>
+        <Icon name="ticket" size={13} className="text-primary-text" />
+        {t.sessionsTotal} {t.sessionsTotal === 1 ? "sessão" : "sessões"}
+      </span>
+      <span className={`${pill} bg-surface`}>
+        <Icon name="scissors" size={13} className="text-primary-text" />
+        {serviceNames(t.services.map((x) => x.name))}
+      </span>
+      {t.saveCents > 0 ? <span className={`${pill} bg-ok-bg text-ok`}>economiza {formatBRL(t.saveCents)}</span> : null}
+      {when ? (
+        <span className={`${pill} bg-surface`}>
+          <Icon name="calendar" size={13} className="text-primary-text" />
+          {when}
+        </span>
+      ) : null}
+      {t.maxClients !== null ? (
+        <span className={`${pill} bg-surface`}>
+          <Icon name="users" size={13} className="text-primary-text" />
+          {t.soldClients}/{t.maxClients} clientes
+        </span>
+      ) : null}
+      {STATUS[t.status] ? <span className={`${pill} ${STATUS[t.status]!.cls}`}>{STATUS[t.status]!.label}</span> : null}
+    </span>
+  );
+}
+
+/** Ajustes > Pagamentos > Pacotes: cartões curtos com selos; criar é um passo a passo de 3 telas. */
 export function PackageTemplates({
   templates,
   services,
@@ -66,36 +96,26 @@ export function PackageTemplates({
         Pacotes à venda
       </TileTitle>
       {templates.length === 0 ? (
-        <p className="text-sm font-semibold text-muted">
-          Nenhum ainda. Ex.: &quot;Pague 3 esmaltações, leve 4&quot;, só em dezembro e para as 30 primeiras clientes. A
-          cliente paga adiantado e as sessões são usadas sozinhas ao agendar.
-        </p>
+        <div className="grid gap-2 rounded-2xl bg-soft px-4 py-4 text-center">
+          <p className="font-bold">Nenhum pacote ainda</p>
+          <p className="text-sm font-semibold text-muted">Ex.: pague 3 esmaltações, leve 4.</p>
+        </div>
       ) : (
         <ul className="grid gap-2">
           {templates.map((t) => (
-            <li key={t.id} className="flex items-start gap-3 rounded-2xl bg-soft px-4 py-3">
-              <p className="min-w-0 flex-1">
-                <span className="block font-bold">
-                  {t.name} <span className="tabular-nums text-primary-text">· {formatBRL(t.pricedCents)}</span>
-                  {STATUS[t.status] ? (
-                    <span
-                      className={`ml-2 inline-block rounded-full px-2 py-0.5 align-middle text-xs font-bold ${STATUS[t.status]!.cls}`}
-                    >
-                      {STATUS[t.status]!.label}
-                    </span>
-                  ) : null}
-                </span>
-                <span className="block text-sm font-semibold text-muted first-letter:uppercase">{t.preview}</span>
-                {t.promo ? (
-                  <span className="mt-0.5 flex items-center gap-1 text-sm font-bold text-primary-text">
-                    <Icon name="calendar" size={14} />
-                    {t.promo}
-                  </span>
-                ) : null}
-              </p>
+            <li
+              key={t.id}
+              className={`grid gap-2 rounded-2xl bg-soft px-4 py-3 ${t.status === "ended" || t.status === "sold_out" ? "opacity-70" : ""}`}
+            >
+              <div className="flex items-start gap-3">
+                <p className="min-w-0 flex-1 font-bold">{t.name}</p>
+                <p className="shrink-0 text-lg font-bold tabular-nums text-primary-text">{formatBRL(t.pricedCents)}</p>
+              </div>
+              <PackageChips t={t} />
               <button
                 type="button"
                 disabled={pending}
+                aria-label={`Tirar ${t.name} da venda`}
                 onClick={() =>
                   start(async () => {
                     const r = await archivePackageTemplateAction(t.id).catch(() => null);
@@ -103,9 +123,9 @@ export function PackageTemplates({
                     else notify.error(r && !r.ok ? r.code : "NETWORK");
                   })
                 }
-                className="min-h-11 shrink-0 px-2 text-sm font-bold text-fail"
+                className="-mb-1 justify-self-end px-1 py-1 text-sm font-bold text-fail"
               >
-                Tirar
+                Tirar da venda
               </button>
             </li>
           ))}
@@ -116,45 +136,83 @@ export function PackageTemplates({
   );
 }
 
+const STEPS = ["Tipo", "Serviços e sessões", "Promoção"] as const;
+const STEP_OF: Record<string, number> = {
+  kind: 0,
+  serviceIds: 1,
+  sessionsPaid: 1,
+  sessionsTotal: 1,
+  priceCents: 1,
+  startsOn: 2,
+  endsOn: 2,
+  maxClients: 2,
+  name: 2,
+};
+const BAD_TEXT: Record<string, string> = {
+  serviceIds: "Escolha pelo menos um serviço.",
+  sessionsPaid: "A cliente paga menos sessões do que leva.",
+  sessionsTotal: "De 1 a 100 sessões.",
+  priceCents: "Digite o preço (ex.: 400,00).",
+  endsOn: "O fim vem depois do começo.",
+  maxClients: "De 1 a 10.000 clientes.",
+};
+
 function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays: number }) {
   const side = useSheetSide();
   const [open, setOpen] = useState(false);
+  const [step, setStep] = useState(0);
   const [kind, setKind] = useState<PackageKind>("pay_x");
   const [serviceIds, setServiceIds] = useState<string[]>(services[0] ? [services[0].id] : []);
-  const [startsOn, setStartsOn] = useState("");
-  const [endsOn, setEndsOn] = useState("");
-  const [cap, setCap] = useState("");
   const [paid, setPaid] = useState("3");
   const [total, setTotal] = useState("4");
   const [price, setPrice] = useState("");
+  const [startsOn, setStartsOn] = useState("");
+  const [endsOn, setEndsOn] = useState("");
+  const [cap, setCap] = useState("");
   const [name, setName] = useState("");
   const [bad, setBad] = useState<string | null>(null);
   const [error, setError] = useState<ErrorCode | null>(null);
   const [pending, start] = useTransition();
 
   const picked = services.filter((s) => serviceIds.includes(s.id));
-  const svc = referenceService(picked);
+  const ref = referenceService(picked);
   const names = serviceNames(picked.map((s) => s.name));
-  const promo = promoLine(
-    { startsOn: startsOn || null, endsOn: endsOn || null, maxClients: Number(cap) || null },
-    null,
-    dayMonth,
-  );
-  const toggle = (id: string) =>
-    setServiceIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
   const draft = {
     kind,
     sessionsPaid: Number(paid) || 0,
     sessionsTotal: Number(total) || 0,
     priceCents: fieldToCents(price) ?? 0,
   };
-  const ok = svc && draft.sessionsTotal > 0 && (kind === "sessions" || draft.sessionsPaid < draft.sessionsTotal);
-  const preview = ok ? packagePreview(draft, picked, validDays, formatBRL) : null;
-  const autoName = svc
+  const stepOk =
+    !!ref &&
+    draft.sessionsTotal > 0 &&
+    draft.sessionsTotal <= 100 &&
+    (kind === "sessions"
+      ? fieldToCents(price) !== null
+      : draft.sessionsPaid >= 1 && draft.sessionsPaid < draft.sessionsTotal);
+  const priced = ref ? packagePrice(draft, ref.priceCents) : 0;
+  const save = ref ? Math.max(0, draft.sessionsTotal * ref.priceCents - priced) : 0;
+  const promo = promoLine(
+    { startsOn: startsOn || null, endsOn: endsOn || null, maxClients: Number(cap) || null },
+    null,
+    dayMonth,
+  );
+  const autoName = ref
     ? (kind === "pay_x" ? `Pague ${paid} leve ${total} ${names}` : `${total} sessões de ${names}`).slice(0, 80)
     : "";
+  const toggle = (id: string) =>
+    setServiceIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
 
-  function save() {
+  function onOpenChange(next: boolean) {
+    setOpen(next);
+    if (next) {
+      setStep(0);
+      setBad(null);
+      setError(null);
+    }
+  }
+
+  function save_() {
     setBad(null);
     setError(null);
     start(async () => {
@@ -170,21 +228,42 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
         maxClients: cap,
       }).catch(() => null);
       if (!r?.ok) {
-        if (r && !r.ok && r.code === "VALIDATION") setBad(r.field ?? "kind");
-        else setError(r && !r.ok ? r.code : "NETWORK");
+        if (r && !r.ok && r.code === "VALIDATION") {
+          setBad(r.field ?? "kind");
+          setStep(STEP_OF[r.field ?? "kind"] ?? 0);
+        } else setError(r && !r.ok ? r.code : "NETWORK");
         return;
       }
       setOpen(false);
       setName("");
+      setStartsOn("");
+      setEndsOn("");
+      setCap("");
       notify.success("Pacote criado");
     });
   }
 
+  const summary = ref ? (
+    <div className="grid gap-1 rounded-2xl bg-soft px-4 py-3">
+      <p className="flex items-baseline justify-between gap-3">
+        <span className="font-bold">
+          {draft.sessionsTotal} {draft.sessionsTotal === 1 ? "sessão" : "sessões"} · {names}
+        </span>
+        <span className="text-xl font-bold tabular-nums text-primary-text">{formatBRL(priced)}</span>
+      </p>
+      <p className="flex flex-wrap gap-1.5">
+        {save > 0 ? <span className={`${pill} bg-ok-bg text-ok`}>economiza {formatBRL(save)}</span> : null}
+        <span className={`${pill} bg-surface`}>vale {validDays} dias</span>
+        {promo ? <span className={`${pill} bg-surface text-primary-text`}>{promo}</span> : null}
+      </p>
+    </div>
+  ) : null;
+
   return (
-    <Drawer.Root direction={side} open={open} onOpenChange={setOpen} repositionInputs={false}>
+    <Drawer.Root direction={side} open={open} onOpenChange={onOpenChange} repositionInputs={false}>
       <Drawer.Trigger
         disabled={!services.length}
-        className="btn-tint flex min-h-12 items-center justify-center rounded-full px-5 font-bold disabled:opacity-60"
+        className="btn-tint flex min-h-12 items-center justify-center gap-2 rounded-full px-5 font-bold disabled:opacity-60"
       >
         Criar pacote
       </Drawer.Trigger>
@@ -193,97 +272,123 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
         <Drawer.Content className={sheet(side)}>
           <SidePanelClose />
           <div className={SHEET_SCROLL}>
-            <Drawer.Title className="pb-1 text-xl font-bold">Novo pacote</Drawer.Title>
-            <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
-              A cliente paga adiantado; cada agendamento de um dos serviços usa uma sessão sozinho.
+            <Drawer.Title className="text-xl font-bold">Novo pacote</Drawer.Title>
+            <Drawer.Description className="pb-3 text-sm font-semibold text-muted">
+              Passo {step + 1} de 3 · {STEPS[step]}
             </Drawer.Description>
-            <div className="grid gap-3">
-              <div className="flex gap-2" role="group" aria-label="Modelo">
-                <button type="button" aria-pressed={kind === "pay_x"} onClick={() => setKind("pay_x")} className={chip}>
-                  Pague X, leve Y
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={kind === "sessions"}
-                  onClick={() => setKind("sessions")}
-                  className={chip}
-                >
-                  Pacote de sessões
-                </button>
+            <div className="mb-4 grid grid-cols-3 gap-1.5" aria-hidden="true">
+              {STEPS.map((s, i) => (
+                <span key={s} className={`h-1.5 rounded-full ${i <= step ? "bg-primary" : "bg-line"}`} />
+              ))}
+            </div>
+
+            {step === 0 ? (
+              <div className="grid gap-2" role="radiogroup" aria-label="Tipo de pacote">
+                {(
+                  [
+                    ["pay_x", "Pague X, leve Y", "Ex.: paga 3, leva 4"],
+                    ["sessions", "Pacote de sessões", "Ex.: 5 sessões por R$ 200"],
+                  ] as const
+                ).map(([k, title, ex]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    role="radio"
+                    aria-checked={kind === k}
+                    onClick={() => setKind(k)}
+                    className="flex items-center gap-3 rounded-2xl border-2 border-line bg-surface px-4 py-4 text-left aria-checked:border-primary aria-checked:bg-soft"
+                  >
+                    <span className="grid size-10 shrink-0 place-items-center rounded-full bg-soft text-primary-text">
+                      <Icon name={k === "pay_x" ? "sparkles" : "ticket"} size={20} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-bold">{title}</span>
+                      <span className="block text-sm font-semibold text-muted">{ex}</span>
+                    </span>
+                    {kind === k ? <Icon name="checkCircle" size={22} className="text-primary-text" /> : null}
+                  </button>
+                ))}
               </div>
-              <div className="grid gap-1.5">
-                <p className="text-sm font-bold">
-                  Serviços <span className="font-semibold text-muted">· a sessão vale em qualquer um</span>
-                </p>
-                <div
-                  className={`flex flex-wrap gap-2 rounded-2xl ${bad === "serviceIds" ? "ring-2 ring-fail" : ""}`}
-                  role="group"
-                  aria-label="Serviços do pacote"
-                >
-                  {services.map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      aria-pressed={serviceIds.includes(s.id)}
-                      onClick={() => toggle(s.id)}
-                      className={`${chip} flex-none`}
-                    >
-                      {s.name} · {formatBRL(s.priceCents)}
-                    </button>
-                  ))}
+            ) : null}
+
+            {step === 1 ? (
+              <div className="grid gap-4">
+                <div className="grid gap-1.5">
+                  <p className="text-sm font-bold">Serviços</p>
+                  <div
+                    className={`flex flex-wrap gap-2 rounded-2xl ${bad === "serviceIds" ? "ring-2 ring-fail" : ""}`}
+                    role="group"
+                    aria-label="Serviços do pacote"
+                  >
+                    {services.map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        aria-pressed={serviceIds.includes(s.id)}
+                        onClick={() => toggle(s.id)}
+                        className={`${chip} flex-none`}
+                      >
+                        {s.name} · {formatBRL(s.priceCents)}
+                      </button>
+                    ))}
+                  </div>
+                  {picked.length > 1 ? (
+                    <p className="text-xs font-semibold text-muted">A sessão vale em qualquer um.</p>
+                  ) : null}
                 </div>
-                {kind === "pay_x" && picked.length > 1 && svc ? (
-                  <p className="text-xs font-semibold text-muted">
-                    O preço usa o serviço mais caro ({svc.name}, {formatBRL(svc.priceCents)}).
-                  </p>
-                ) : null}
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {kind === "pay_x" ? (
+                <div className="grid grid-cols-2 gap-2">
+                  {kind === "pay_x" ? (
+                    <label className="grid gap-1.5">
+                      <span className="text-sm font-bold">Paga</span>
+                      <input
+                        inputMode="numeric"
+                        aria-label="Sessões pagas"
+                        value={paid}
+                        onChange={(e) => setPaid(e.target.value.replace(/\D/g, ""))}
+                        aria-invalid={bad === "sessionsPaid"}
+                        className={field}
+                      />
+                    </label>
+                  ) : (
+                    <label className="grid gap-1.5">
+                      <span className="text-sm font-bold">Preço</span>
+                      <input
+                        inputMode="decimal"
+                        aria-label="Preço do pacote"
+                        placeholder={
+                          ref ? ((ref.priceCents * (Number(total) || 0) * 0.9) / 100).toFixed(2).replace(".", ",") : ""
+                        }
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                        aria-invalid={bad === "priceCents"}
+                        className={field}
+                      />
+                    </label>
+                  )}
                   <label className="grid gap-1.5">
-                    <span className="text-sm font-bold">Paga</span>
+                    <span className="text-sm font-bold">{kind === "pay_x" ? "Leva" : "Sessões"}</span>
                     <input
                       inputMode="numeric"
-                      aria-label="Sessões pagas"
-                      value={paid}
-                      onChange={(e) => setPaid(e.target.value.replace(/\D/g, ""))}
-                      aria-invalid={bad === "sessionsPaid"}
+                      aria-label="Sessões no pacote"
+                      value={total}
+                      onChange={(e) => setTotal(e.target.value.replace(/\D/g, ""))}
+                      aria-invalid={bad === "sessionsTotal"}
                       className={field}
                     />
                   </label>
-                ) : (
-                  <label className="grid gap-1.5">
-                    <span className="text-sm font-bold">Preço</span>
-                    <input
-                      inputMode="decimal"
-                      aria-label="Preço do pacote"
-                      placeholder={
-                        svc ? ((svc.priceCents * (Number(total) || 0) * 0.9) / 100).toFixed(2).replace(".", ",") : ""
-                      }
-                      value={price}
-                      onChange={(e) => setPrice(e.target.value)}
-                      aria-invalid={bad === "priceCents"}
-                      className={field}
-                    />
-                  </label>
-                )}
-                <label className="grid gap-1.5">
-                  <span className="text-sm font-bold">{kind === "pay_x" ? "Leva" : "Sessões"}</span>
-                  <input
-                    inputMode="numeric"
-                    aria-label="Sessões no pacote"
-                    value={total}
-                    onChange={(e) => setTotal(e.target.value.replace(/\D/g, ""))}
-                    aria-invalid={bad === "sessionsTotal"}
-                    className={field}
-                  />
-                </label>
+                </div>
+                {stepOk ? summary : null}
               </div>
-              <fieldset className="grid gap-2 rounded-2xl border border-line p-3">
-                <legend className="px-1 text-sm font-bold">Promoção (opcional)</legend>
+            ) : null}
+
+            {step === 2 ? (
+              <div className="grid gap-4">
+                <p className="text-sm font-semibold text-muted">
+                  Tudo opcional. Fora das datas ou sem vagas, sai da venda.
+                </p>
                 <div className="grid grid-cols-2 gap-2">
                   <label className="grid min-w-0 gap-1.5">
-                    <span className="text-xs font-bold text-muted">Começa</span>
+                    <span className="text-sm font-bold">Começa</span>
                     <input
                       type="date"
                       aria-label="Início da promoção"
@@ -294,7 +399,7 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
                     />
                   </label>
                   <label className="grid min-w-0 gap-1.5">
-                    <span className="text-xs font-bold text-muted">Termina</span>
+                    <span className="text-sm font-bold">Termina</span>
                     <input
                       type="date"
                       aria-label="Fim da promoção"
@@ -307,7 +412,7 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
                   </label>
                 </div>
                 <label className="grid gap-1.5">
-                  <span className="text-xs font-bold text-muted">Só para as primeiras (clientes)</span>
+                  <span className="text-sm font-bold">Vagas (primeiras clientes)</span>
                   <input
                     inputMode="numeric"
                     aria-label="Limite de clientes"
@@ -318,56 +423,63 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
                     className={field}
                   />
                 </label>
-                <p className="text-xs font-semibold text-muted">
-                  Fora das datas ou ao chegar no limite, sai da venda sozinho. Com limite, cada cliente compra 1 vez.
-                </p>
-              </fieldset>
-              <label className="grid gap-1.5">
-                <span className="text-sm font-bold">Nome (opcional)</span>
-                <input
-                  value={name}
-                  maxLength={80}
-                  placeholder={autoName}
-                  onChange={(e) => setName(e.target.value)}
-                  aria-invalid={bad === "name"}
-                  className={field}
-                />
-              </label>
-              {preview ? (
-                <p className="rounded-2xl bg-soft px-4 py-3 text-sm font-bold first-letter:uppercase">
-                  {preview}
-                  {promo ? <span className="block text-primary-text">{promo}</span> : null}
-                </p>
+                <label className="grid gap-1.5">
+                  <span className="text-sm font-bold">Nome</span>
+                  <input
+                    aria-label="Nome (opcional)"
+                    value={name}
+                    maxLength={80}
+                    placeholder={autoName}
+                    onChange={(e) => setName(e.target.value)}
+                    aria-invalid={bad === "name"}
+                    className={field}
+                  />
+                </label>
+                {summary}
+              </div>
+            ) : null}
+
+            {bad && BAD_TEXT[bad] && STEP_OF[bad] === step ? (
+              <p role="alert" className="mt-3 text-sm font-semibold text-fail">
+                {BAD_TEXT[bad]}
+              </p>
+            ) : null}
+            {error ? (
+              <p role="alert" className="mt-3 rounded-2xl bg-fail-bg px-4 py-3 text-sm font-semibold text-fail">
+                {messageFor(error)}
+              </p>
+            ) : null}
+
+            <div className="mt-5 flex gap-2">
+              {step > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setStep(step - 1)}
+                  className="btn-glass min-h-13 rounded-full px-5 font-bold"
+                >
+                  Voltar
+                </button>
               ) : null}
-              {bad ? (
-                <p role="alert" className="text-sm font-semibold text-fail">
-                  {bad === "sessionsPaid"
-                    ? "A cliente paga menos sessões do que leva."
-                    : bad === "priceCents"
-                      ? "Digite o preço do pacote (ex.: 400,00)."
-                      : bad === "serviceIds"
-                        ? "Escolha pelo menos um serviço."
-                        : bad === "endsOn"
-                          ? "O fim da promoção vem depois do começo."
-                          : bad === "maxClients"
-                            ? "Limite de 1 a 10.000 clientes."
-                            : "Confira o campo destacado."}
-                </p>
-              ) : null}
-              {error ? (
-                <p role="alert" className="rounded-2xl bg-fail-bg px-4 py-3 text-sm font-semibold text-fail">
-                  {messageFor(error)}
-                </p>
-              ) : null}
-              <button
-                type="button"
-                onClick={save}
-                disabled={pending}
-                className="btn-tint mt-1 flex min-h-13 items-center justify-center gap-2 rounded-full px-5 font-bold disabled:opacity-70"
-              >
-                {pending ? <span className="spin" aria-hidden="true" /> : null}
-                {pending ? "Criando…" : "Criar pacote"}
-              </button>
+              {step < 2 ? (
+                <button
+                  type="button"
+                  onClick={() => setStep(step + 1)}
+                  disabled={step === 1 && !stepOk}
+                  className="btn-tint flex min-h-13 flex-1 items-center justify-center rounded-full px-5 font-bold disabled:opacity-60"
+                >
+                  Continuar
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={save_}
+                  disabled={pending}
+                  className="btn-tint flex min-h-13 flex-1 items-center justify-center gap-2 rounded-full px-5 font-bold disabled:opacity-70"
+                >
+                  {pending ? <span className="spin" aria-hidden="true" /> : null}
+                  {pending ? "Criando…" : "Criar pacote"}
+                </button>
+              )}
             </div>
           </div>
         </Drawer.Content>
@@ -443,7 +555,7 @@ export function SellPackageSheet({
           <div className={SHEET_SCROLL}>
             <Drawer.Title className="pb-1 text-xl font-bold">Vender pacote para {first}</Drawer.Title>
             <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
-              Pago agora: entra no caixa de hoje. As sessões são usadas sozinhas ao agendar o serviço.
+              Pago agora. As sessões são usadas sozinhas ao agendar.
             </Drawer.Description>
             {list === null && !error ? (
               <div className="grid gap-2" aria-busy="true" aria-label="Carregando pacotes">
@@ -453,7 +565,7 @@ export function SellPackageSheet({
             ) : list && list.length === 0 ? (
               <p className="rounded-2xl bg-soft px-4 py-3 text-sm font-semibold">
                 Nenhum pacote à venda hoje.{" "}
-                <Link href="/ajustes/pagamentos" className="font-bold text-primary-text underline">
+                <Link href="/ajustes/pagamentos?aba=pacotes" className="font-bold text-primary-text underline">
                   Criar em Ajustes &gt; Pagamentos
                 </Link>
               </p>
@@ -467,13 +579,15 @@ export function SellPackageSheet({
                       role="radio"
                       aria-checked={pick === t.id}
                       onClick={() => setPick(t.id)}
-                      className="grid gap-0.5 rounded-2xl border border-line bg-surface px-4 py-3 text-left aria-checked:border-primary aria-checked:bg-soft"
+                      className="grid gap-2 rounded-2xl border-2 border-line bg-surface px-4 py-3 text-left aria-checked:border-primary aria-checked:bg-soft"
                     >
-                      <span className="font-bold">
-                        {t.name} <span className="tabular-nums text-primary-text">· {formatBRL(t.pricedCents)}</span>
+                      <span className="flex items-start gap-3">
+                        <span className="min-w-0 flex-1 font-bold">{t.name}</span>
+                        <span className="shrink-0 text-lg font-bold tabular-nums text-primary-text">
+                          {formatBRL(t.pricedCents)}
+                        </span>
                       </span>
-                      <span className="text-sm font-semibold text-muted first-letter:uppercase">{t.preview}</span>
-                      {t.promo ? <span className="text-sm font-bold text-primary-text">{t.promo}</span> : null}
+                      <PackageChips t={t} />
                     </button>
                   ))}
                 </div>

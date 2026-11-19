@@ -3,7 +3,7 @@
 import { startTransition, useActionState, useState, type ReactNode } from "react";
 import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
-import { TileTitle } from "@/components/ui/Icon";
+import { Icon, TileTitle } from "@/components/ui/Icon";
 import { Switch } from "@/components/ui/Switch";
 import type { ActionResult } from "@/lib/errors";
 import { saveWalletSettingsAction } from "./actions";
@@ -48,7 +48,7 @@ export function WalletSettingsForm({ settings }: { settings: WalletSettings }) {
       <Card icon="coins" tint="green" title="Sinal">
         <Row
           label="Sinal sugerido"
-          hint="O sinal é opcional. Quando você escolher Sinal ao agendar, o app já preenche esse valor."
+          hint="Opcional. Já vem preenchido ao agendar."
           control={
             <select
               name="depositPct"
@@ -69,8 +69,8 @@ export function WalletSettingsForm({ settings }: { settings: WalletSettings }) {
 
       <Card icon="reschedule" tint="orange" title="Cancelamento e falta">
         <Row
-          label="Antecedência para virar crédito"
-          hint={`Cancelou com ${hoursLabel(notice)} ou mais: o valor pago vira crédito da cliente para o próximo horário.`}
+          label="Crédito se cancelar com"
+          hint={notice === 0 ? "Qualquer cancelamento vira crédito." : `${hoursLabel(notice)} ou mais de antecedência.`}
           control={
             <select
               name="cancelNoticeHours"
@@ -92,36 +92,33 @@ export function WalletSettingsForm({ settings }: { settings: WalletSettings }) {
           name="lateCancelKeepsDeposit"
           checked={lateKeeps}
           onChange={setLateKeeps}
-          label="Em cima da hora, o sinal fica para o salão"
-          hint={
-            lateKeeps ? "O resto do que foi pago vira crédito." : "Mesmo em cima da hora, tudo vira crédito da cliente."
-          }
+          label="Em cima da hora, sinal fica"
+          hint={lateKeeps ? "Resto vira crédito." : "Tudo vira crédito."}
         />
         <Toggle
           name="noShowKeepsDeposit"
           checked={noShowKeeps}
           onChange={setNoShowKeeps}
-          label="Faltou, o sinal fica para o salão"
-          hint={noShowKeeps ? "O resto do que foi pago vira crédito." : "Tudo que foi pago vira crédito da cliente."}
+          label="Faltou, sinal fica"
+          hint={noShowKeeps ? "Resto vira crédito." : "Tudo vira crédito."}
         />
         <Toggle
           name="noShowUsesSession"
           checked={noShowSession}
           onChange={setNoShowSession}
-          label="Faltou, a sessão do pacote conta como usada"
-          hint={
-            noShowSession ? "Quem tem pacote perde a sessão do horário." : "A sessão volta para o pacote da cliente."
-          }
+          label="Faltou, perde a sessão do pacote"
+          hint={noShowSession ? "A sessão conta como usada." : "A sessão volta para o pacote."}
         />
-        <p className="text-sm font-semibold text-muted">
-          Remarcar nunca perde nada: o que foi pago acompanha o horário novo.
+        <p className="flex items-center gap-2 rounded-2xl bg-soft px-3 py-2 text-sm font-semibold">
+          <Icon name="reschedule" size={16} className="text-primary-text" />
+          Remarcar não muda nada.
         </p>
       </Card>
 
       <Card icon="ticket" tint="lavender" title="Pacotes">
         <Row
           label="Validade padrão"
-          hint="Vale para pacotes novos e aparece para a cliente na venda. Crédito em dinheiro não vence."
+          hint="Para pacotes novos. Crédito não vence."
           control={
             <select
               name="packageValidDays"
@@ -149,13 +146,11 @@ export function WalletSettingsForm({ settings }: { settings: WalletSettings }) {
             defaultValue={settings.pixKey ?? ""}
             maxLength={140}
             autoComplete="off"
-            placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
+            placeholder="CPF, e-mail, telefone…"
             aria-invalid={bad === "pixKey"}
             className="min-h-12 rounded-2xl border border-line bg-white px-4 text-base"
           />
-          <span className="text-sm font-semibold text-muted">
-            Opcional. Com ela, a mensagem de agendamento pode pedir o sinal no Pix.
-          </span>
+          <span className="text-sm font-semibold text-muted">Opcional. Vai na mensagem do sinal.</span>
         </label>
       </Card>
 
