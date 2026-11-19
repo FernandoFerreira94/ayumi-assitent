@@ -114,7 +114,13 @@ export async function insertAppointment(
   const pick = await pickSession(tx, cli.id, ids, input.date);
   const { discountCents } = priced;
   const totalCents = pick
-    ? Math.max(0, priced.totalCents - (list.find((x) => x.id === pick.serviceId)?.priceCents ?? 0) + pick.valueCents)
+    ? Math.max(
+        0,
+        // a sessão cobre 1 serviço do pacote (o mais caro entre os agendados)
+        priced.totalCents -
+          Math.max(0, ...list.filter((x) => pick.serviceIds.includes(x.id)).map((x) => x.priceCents)) +
+          pick.valueCents,
+      )
     : priced.totalCents;
   const owed = totalCents - (pick?.valueCents ?? 0);
   // Sinal nunca passa do que falta; sem valor = pagou tudo
@@ -147,7 +153,8 @@ export async function insertAppointment(
         })
         .returning({ id: appointments.id });
       await writeServices(sp, tenantId, r.id, list);
-      if (pick) await reserveSession(sp, { tenantId, clientId: cli.id, appointmentId: r.id, pick, createdBy: input.createdBy });
+      if (pick)
+        await reserveSession(sp, { tenantId, clientId: cli.id, appointmentId: r.id, pick, createdBy: input.createdBy });
       // Carteira: crédito da cliente paga primeiro, sozinho; o "já pagou"/sinal cobre o resto
       const credit = await useCredit(sp, {
         tenantId,
@@ -370,7 +377,12 @@ export async function editAppointment(
   input: { date: string; time: string; serviceId: string; single?: boolean },
 ): Promise<ActionResult> {
   const [a] = await tx
-    .select({ startsAt: appointments.startsAt, endsAt: appointments.endsAt, serviceId: appointments.serviceId, priceCents: appointments.priceCents })
+    .select({
+      startsAt: appointments.startsAt,
+      endsAt: appointments.endsAt,
+      serviceId: appointments.serviceId,
+      priceCents: appointments.priceCents,
+    })
     .from(appointments)
     .where(eq(appointments.id, id));
   if (!a) return fail("NOT_ALLOWED");
@@ -400,7 +412,9 @@ export async function editAppointment(
           serviceId: input.serviceId,
           priceCents,
           // Trocar o serviço volta para um serviço só, com o valor cheio dele
-          ...(newService ? { bufferMin: newService.bufferMin, discountKind: null, discountValue: null, discountCents: 0 } : {}),
+          ...(newService
+            ? { bufferMin: newService.bufferMin, discountKind: null, discountValue: null, discountCents: 0 }
+            : {}),
           ...(moved ? { status: "pending_confirmation" as const, reminderSentAt: null, replyAt: null } : {}),
         })
         .where(eq(appointments.id, id)),

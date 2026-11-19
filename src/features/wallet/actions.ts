@@ -2,23 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 import { withTenant } from "@/db/client";
-import { fail, ok, type ActionResult } from "@/lib/errors";
+import { fail, ok, type ActionResult, type ErrorCode } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
 import { z } from "zod";
 import { lockTenant } from "@/features/blocks/core";
 import { PAYMENT_METHODS } from "@/features/appointments/payment";
 import { parseDiscount } from "@/features/appointments/pricing";
-import { formatBRL, formatShortDate, todayStr } from "@/lib/dates";
+import { formatShortDate, todayStr } from "@/lib/dates";
 import { getWalletSettings, refundCredit, saveWalletSettings } from "./core";
-import {
-  archiveTemplate,
-  createTemplate,
-  listTemplates,
-  sellPackage,
-  templateById,
-  type TemplateRow,
-} from "./packages";
-import { packagePreview, packagePrice, parsePackageDraft, parsePolicy } from "./rules";
+import { archiveTemplate, createTemplate, listTemplates, sellPackage, type SellRefusal } from "./packages";
+import { parsePackageDraft, parsePolicy } from "./rules";
+import { templateView, type TemplateView } from "./views";
 
 /** Ajustes > Pagamentos: sinal sugerido, política de cancelamento/falta, validade de pacote e chave Pix. */
 export async function saveWalletSettingsAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
@@ -79,49 +73,43 @@ export async function refundCreditAction(input: {
   }
 }
 
-export type TemplateView = TemplateRow & { pricedCents: number; preview: string };
-
-const view = (t: TemplateRow, defaultDays: number): TemplateView => {
-  const svc = { name: t.serviceName, priceCents: t.servicePriceCents };
-  return {
-    ...t,
-    pricedCents: packagePrice(t, t.servicePriceCents),
-    preview: packagePreview(t, svc, t.validDays ?? defaultDays, formatBRL),
-  };
-};
-
-/** Modelos de pacote do salão, com preço de hoje e a frase pronta. */
+/** Modelos de pacote do salão, com preço de hoje, a frase pronta e a situação da promoção. */
 export async function loadPackageTemplates(): Promise<ActionResult<{ templates: TemplateView[]; validDays: number }>> {
   const { tenantId } = await requireTenant();
   try {
     return await withTenant(tenantId, async (tx) => {
       const days = (await getWalletSettings(tx)).packageValidDays;
-      return ok({ templates: (await listTemplates(tx)).map((t) => view(t, days)), validDays: days });
+      const today = todayStr();
+      return ok({ templates: (await listTemplates(tx)).map((t) => templateView(t, days, today)), validDays: days });
     });
   } catch {
     return fail("UNKNOWN");
   }
 }
 
-/** Cria um modelo: "Pague X, leve Y" ou "Pacote de sessões". */
+/** Cria um modelo: "Pague X, leve Y" ou "Pacote de sessões", com 1 ou mais serviços e promoção opcional. */
 export async function createPackageTemplateAction(input: {
   kind: string;
   name: string;
-  serviceId: string;
+  serviceIds: string[];
   sessionsPaid: string;
   sessionsTotal: string;
   price: string;
+  startsOn?: string;
+  endsOn?: string;
+  maxClients?: string;
 }): Promise<ActionResult> {
   const { tenantId } = await requireTenant();
   const price = parseDiscount("brl", input.price);
   const parsed = parsePackageDraft({
     ...input,
+    serviceIds: Array.isArray(input.serviceIds) ? input.serviceIds.map(String) : [],
     priceCents: input.kind === "sessions" ? (price && price !== "invalid" ? price.value : null) : 0,
   });
   if (!parsed.ok) return fail("VALIDATION", parsed.field);
   try {
     const id = await withTenant(tenantId, (tx) => createTemplate(tx, tenantId, parsed.draft));
-    if (!id) return fail("VALIDATION", "serviceId");
+    if (!id) return fail("VALIDATION", "serviceIds");
     revalidatePath("/ajustes", "layout");
     return ok();
   } catch {
@@ -160,15 +148,21 @@ export async function sellPackageAction(input: {
   try {
     const sold = await withTenant(tenantId, async (tx) => {
       await lockTenant(tx, tenantId);
-      const t = await templateById(tx, p.data.templateId);
-      const r = await sellPackage(tx, { tenantId, ...p.data, today: todayStr(), createdBy: userId });
-      return r && t ? { name: t.name, sessions: r.sessions, expiresOn: formatShortDate(r.expiresOn) } : null;
+      return sellPackage(tx, { tenantId, ...p.data, today: todayStr(), createdBy: userId });
     });
-    if (!sold) return fail("NOT_FOUND");
+    if (!sold.ok) return fail(REFUSAL[sold.reason]);
     revalidatePath("/financeiro");
     revalidatePath("/clientes");
-    return ok(sold);
+    return ok({ name: sold.name, sessions: sold.sessions, expiresOn: formatShortDate(sold.expiresOn) });
   } catch {
     return fail("UNKNOWN");
   }
 }
+
+const REFUSAL: Record<SellRefusal, ErrorCode> = {
+  not_found: "NOT_FOUND",
+  scheduled: "PROMO_NOT_STARTED",
+  ended: "PROMO_ENDED",
+  sold_out: "PROMO_SOLD_OUT",
+  already_bought: "PROMO_ALREADY_BOUGHT",
+};

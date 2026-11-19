@@ -306,10 +306,13 @@ d("carteira da cliente (Postgres real)", () => {
         pk.createTemplate(tx, T, {
           kind: "pay_x",
           name: "Pague 3 leve 4",
-          serviceId: svc,
+          serviceIds: [svc],
           sessionsPaid: 3,
           sessionsTotal: 4,
           priceCents: 0,
+          startsOn: null,
+          endsOn: null,
+          maxClients: null,
         }),
       ))!;
     });
@@ -369,6 +372,73 @@ d("carteira da cliente (Postgres real)", () => {
       expect(r.data.session).toBeNull();
       const [a] = await admin`select price_cents, paid_at from appointments where id = ${r.data.id}`;
       expect(a).toMatchObject({ price_cents: 5000, paid_at: null });
+    });
+  });
+
+  describe("promoções (período, limite e vários serviços)", () => {
+    let pk: typeof import("@/features/wallet/packages");
+    let pe: string, eva: string, fer: string, promo: string;
+    const sell = (clientId: string, today: string) =>
+      withTenant(T, (tx) => pk.sellPackage(tx, { tenantId: T, clientId, templateId: promo, method: "pix", today }));
+
+    beforeAll(async () => {
+      pk = await import("@/features/wallet/packages");
+      [{ id: pe }] =
+        await admin`insert into services (tenant_id,name,duration_min,price_cents) values (${T},'Pé',60,4000) returning id`;
+      [{ id: eva }] =
+        await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Eva','+5511977771111') returning id`;
+      [{ id: fer }] =
+        await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Fer','+5511977772222') returning id`;
+      promo = (await withTenant(T, (tx) =>
+        pk.createTemplate(tx, T, {
+          kind: "pay_x",
+          name: "Dezembro: pague 1 leve 2",
+          serviceIds: [pe, svc],
+          sessionsPaid: 1,
+          sessionsTotal: 2,
+          priceCents: 0,
+          startsOn: "2030-12-01",
+          endsOn: "2030-12-31",
+          maxClients: 1,
+        }),
+      ))!;
+    });
+
+    it("guarda os serviços e usa o mais caro como referência do preço", async () => {
+      const [t] = await admin`select service_id, service_ids from package_templates where id = ${promo}`;
+      expect(t.service_id).toBe(svc);
+      expect([...t.service_ids].sort()).toEqual([pe, svc].sort());
+    });
+
+    it("fora do período não vende", async () => {
+      expect(await sell(eva, "2030-11-30")).toEqual({ ok: false, reason: "scheduled" });
+      expect(await sell(eva, "2031-01-01")).toEqual({ ok: false, reason: "ended" });
+    });
+
+    it("limite: 1 por cliente e esgota na N-ésima", async () => {
+      expect(await sell(eva, "2030-12-02")).toMatchObject({ ok: true, priceCents: 5000, sessions: 2 });
+      expect(await sell(eva, "2030-12-03")).toEqual({ ok: false, reason: "already_bought" });
+      expect(await sell(fer, "2030-12-03")).toEqual({ ok: false, reason: "sold_out" });
+      const [row] = (await withTenant(T, (tx) => pk.listTemplates(tx))).filter((t) => t.id === promo);
+      expect(row).toMatchObject({ soldClients: 1, maxClients: 1 });
+      expect(row!.services.map((s) => s.id).sort()).toEqual([pe, svc].sort());
+    });
+
+    it("a sessão vale em qualquer serviço do pacote", async () => {
+      const r = await withTenant(T, (tx) =>
+        core.insertAppointment(tx, T, {
+          clientId: eva,
+          serviceIds: [pe],
+          date: "2030-12-05",
+          time: "10:00",
+          payment: null,
+        }),
+      );
+      if (!r.ok) throw new Error(r.code);
+      expect(r.data.session).toMatchObject({ left: 1, total: 2 });
+      const [a] = await admin`select price_cents, paid_at from appointments where id = ${r.data.id}`;
+      expect(a.price_cents).toBe(2500);
+      expect(a.paid_at).not.toBeNull();
     });
   });
 });

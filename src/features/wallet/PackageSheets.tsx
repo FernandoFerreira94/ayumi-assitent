@@ -5,7 +5,7 @@ import { useEffect, useState, useTransition } from "react";
 import { Drawer } from "vaul";
 import { SHEET_SCROLL, SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import { notify } from "@/components/feedback/toast";
-import { TileTitle } from "@/components/ui/Icon";
+import { Icon, TileTitle } from "@/components/ui/Icon";
 import { METHOD_LABEL, PAYMENT_METHODS, type PaymentMethod } from "@/features/appointments/payment";
 import { fieldToCents } from "@/features/appointments/PaymentFields";
 import { formatBRL } from "@/lib/dates";
@@ -15,9 +15,17 @@ import {
   createPackageTemplateAction,
   loadPackageTemplates,
   sellPackageAction,
-  type TemplateView,
 } from "./actions";
-import { packagePreview, type PackageKind } from "./rules";
+import {
+  dayMonth,
+  packagePreview,
+  promoLine,
+  referenceService,
+  serviceNames,
+  type PackageKind,
+  type PromoStatus,
+} from "./rules";
+import type { TemplateView } from "./views";
 
 const chip =
   "inline-flex min-h-11 flex-1 items-center justify-center rounded-full border border-line bg-surface px-3 text-sm font-bold transition-colors aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-on-primary";
@@ -30,6 +38,13 @@ const sheet = (side: ReturnType<typeof useSheetSide>) =>
   );
 
 type Svc = { id: string; name: string; priceCents: number };
+
+const STATUS: Record<PromoStatus, { label: string; cls: string } | null> = {
+  running: null,
+  scheduled: { label: "Agendada", cls: "bg-soft text-primary-text" },
+  ended: { label: "Encerrada", cls: "bg-fail-bg text-fail" },
+  sold_out: { label: "Esgotada", cls: "bg-fail-bg text-fail" },
+};
 
 /**
  * Ajustes > Pagamentos > Pacotes: modelos que o salão vende ("Pague X, leve Y" e "Pacote de sessões"),
@@ -52,8 +67,8 @@ export function PackageTemplates({
       </TileTitle>
       {templates.length === 0 ? (
         <p className="text-sm font-semibold text-muted">
-          Nenhum ainda. Ex.: &quot;Pague 3 esmaltações, leve 4&quot;. A cliente paga adiantado e as sessões são usadas
-          sozinhas ao agendar.
+          Nenhum ainda. Ex.: &quot;Pague 3 esmaltações, leve 4&quot;, só em dezembro e para as 30 primeiras clientes. A
+          cliente paga adiantado e as sessões são usadas sozinhas ao agendar.
         </p>
       ) : (
         <ul className="grid gap-2">
@@ -62,8 +77,21 @@ export function PackageTemplates({
               <p className="min-w-0 flex-1">
                 <span className="block font-bold">
                   {t.name} <span className="tabular-nums text-primary-text">· {formatBRL(t.pricedCents)}</span>
+                  {STATUS[t.status] ? (
+                    <span
+                      className={`ml-2 inline-block rounded-full px-2 py-0.5 align-middle text-xs font-bold ${STATUS[t.status]!.cls}`}
+                    >
+                      {STATUS[t.status]!.label}
+                    </span>
+                  ) : null}
                 </span>
                 <span className="block text-sm font-semibold text-muted first-letter:uppercase">{t.preview}</span>
+                {t.promo ? (
+                  <span className="mt-0.5 flex items-center gap-1 text-sm font-bold text-primary-text">
+                    <Icon name="calendar" size={14} />
+                    {t.promo}
+                  </span>
+                ) : null}
               </p>
               <button
                 type="button"
@@ -92,7 +120,10 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
   const side = useSheetSide();
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<PackageKind>("pay_x");
-  const [serviceId, setServiceId] = useState(services[0]?.id ?? "");
+  const [serviceIds, setServiceIds] = useState<string[]>(services[0] ? [services[0].id] : []);
+  const [startsOn, setStartsOn] = useState("");
+  const [endsOn, setEndsOn] = useState("");
+  const [cap, setCap] = useState("");
   const [paid, setPaid] = useState("3");
   const [total, setTotal] = useState("4");
   const [price, setPrice] = useState("");
@@ -101,7 +132,16 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
   const [error, setError] = useState<ErrorCode | null>(null);
   const [pending, start] = useTransition();
 
-  const svc = services.find((s) => s.id === serviceId);
+  const picked = services.filter((s) => serviceIds.includes(s.id));
+  const svc = referenceService(picked);
+  const names = serviceNames(picked.map((s) => s.name));
+  const promo = promoLine(
+    { startsOn: startsOn || null, endsOn: endsOn || null, maxClients: Number(cap) || null },
+    null,
+    dayMonth,
+  );
+  const toggle = (id: string) =>
+    setServiceIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
   const draft = {
     kind,
     sessionsPaid: Number(paid) || 0,
@@ -109,11 +149,9 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
     priceCents: fieldToCents(price) ?? 0,
   };
   const ok = svc && draft.sessionsTotal > 0 && (kind === "sessions" || draft.sessionsPaid < draft.sessionsTotal);
-  const preview = ok ? packagePreview(draft, svc, validDays, formatBRL) : null;
+  const preview = ok ? packagePreview(draft, picked, validDays, formatBRL) : null;
   const autoName = svc
-    ? kind === "pay_x"
-      ? `Pague ${paid} leve ${total} ${svc.name}`
-      : `${total} sessões de ${svc.name}`
+    ? (kind === "pay_x" ? `Pague ${paid} leve ${total} ${names}` : `${total} sessões de ${names}`).slice(0, 80)
     : "";
 
   function save() {
@@ -123,10 +161,13 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
       const r = await createPackageTemplateAction({
         kind,
         name: name.trim() || autoName,
-        serviceId,
+        serviceIds,
         sessionsPaid: paid,
         sessionsTotal: total,
         price,
+        startsOn,
+        endsOn,
+        maxClients: cap,
       }).catch(() => null);
       if (!r?.ok) {
         if (r && !r.ok && r.code === "VALIDATION") setBad(r.field ?? "kind");
@@ -154,7 +195,7 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
           <div className={SHEET_SCROLL}>
             <Drawer.Title className="pb-1 text-xl font-bold">Novo pacote</Drawer.Title>
             <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
-              A cliente paga adiantado; cada agendamento do serviço usa uma sessão sozinho.
+              A cliente paga adiantado; cada agendamento de um dos serviços usa uma sessão sozinho.
             </Drawer.Description>
             <div className="grid gap-3">
               <div className="flex gap-2" role="group" aria-label="Modelo">
@@ -170,21 +211,33 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
                   Pacote de sessões
                 </button>
               </div>
-              <label className="grid gap-1.5">
-                <span className="text-sm font-bold">Serviço</span>
-                <select
-                  value={serviceId}
-                  onChange={(e) => setServiceId(e.target.value)}
-                  aria-invalid={bad === "serviceId"}
-                  className={field}
+              <div className="grid gap-1.5">
+                <p className="text-sm font-bold">
+                  Serviços <span className="font-semibold text-muted">· a sessão vale em qualquer um</span>
+                </p>
+                <div
+                  className={`flex flex-wrap gap-2 rounded-2xl ${bad === "serviceIds" ? "ring-2 ring-fail" : ""}`}
+                  role="group"
+                  aria-label="Serviços do pacote"
                 >
                   {services.map((s) => (
-                    <option key={s.id} value={s.id}>
+                    <button
+                      key={s.id}
+                      type="button"
+                      aria-pressed={serviceIds.includes(s.id)}
+                      onClick={() => toggle(s.id)}
+                      className={`${chip} flex-none`}
+                    >
                       {s.name} · {formatBRL(s.priceCents)}
-                    </option>
+                    </button>
                   ))}
-                </select>
-              </label>
+                </div>
+                {kind === "pay_x" && picked.length > 1 && svc ? (
+                  <p className="text-xs font-semibold text-muted">
+                    O preço usa o serviço mais caro ({svc.name}, {formatBRL(svc.priceCents)}).
+                  </p>
+                ) : null}
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 {kind === "pay_x" ? (
                   <label className="grid gap-1.5">
@@ -226,6 +279,49 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
                   />
                 </label>
               </div>
+              <fieldset className="grid gap-2 rounded-2xl border border-line p-3">
+                <legend className="px-1 text-sm font-bold">Promoção (opcional)</legend>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="grid min-w-0 gap-1.5">
+                    <span className="text-xs font-bold text-muted">Começa</span>
+                    <input
+                      type="date"
+                      aria-label="Início da promoção"
+                      value={startsOn}
+                      onChange={(e) => setStartsOn(e.target.value)}
+                      aria-invalid={bad === "startsOn"}
+                      className={`${field} min-w-0 px-3`}
+                    />
+                  </label>
+                  <label className="grid min-w-0 gap-1.5">
+                    <span className="text-xs font-bold text-muted">Termina</span>
+                    <input
+                      type="date"
+                      aria-label="Fim da promoção"
+                      value={endsOn}
+                      min={startsOn || undefined}
+                      onChange={(e) => setEndsOn(e.target.value)}
+                      aria-invalid={bad === "endsOn"}
+                      className={`${field} min-w-0 px-3`}
+                    />
+                  </label>
+                </div>
+                <label className="grid gap-1.5">
+                  <span className="text-xs font-bold text-muted">Só para as primeiras (clientes)</span>
+                  <input
+                    inputMode="numeric"
+                    aria-label="Limite de clientes"
+                    placeholder="Sem limite"
+                    value={cap}
+                    onChange={(e) => setCap(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                    aria-invalid={bad === "maxClients"}
+                    className={field}
+                  />
+                </label>
+                <p className="text-xs font-semibold text-muted">
+                  Fora das datas ou ao chegar no limite, sai da venda sozinho. Com limite, cada cliente compra 1 vez.
+                </p>
+              </fieldset>
               <label className="grid gap-1.5">
                 <span className="text-sm font-bold">Nome (opcional)</span>
                 <input
@@ -238,7 +334,10 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
                 />
               </label>
               {preview ? (
-                <p className="rounded-2xl bg-soft px-4 py-3 text-sm font-bold first-letter:uppercase">{preview}</p>
+                <p className="rounded-2xl bg-soft px-4 py-3 text-sm font-bold first-letter:uppercase">
+                  {preview}
+                  {promo ? <span className="block text-primary-text">{promo}</span> : null}
+                </p>
               ) : null}
               {bad ? (
                 <p role="alert" className="text-sm font-semibold text-fail">
@@ -246,7 +345,13 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
                     ? "A cliente paga menos sessões do que leva."
                     : bad === "priceCents"
                       ? "Digite o preço do pacote (ex.: 400,00)."
-                      : "Confira o campo destacado."}
+                      : bad === "serviceIds"
+                        ? "Escolha pelo menos um serviço."
+                        : bad === "endsOn"
+                          ? "O fim da promoção vem depois do começo."
+                          : bad === "maxClients"
+                            ? "Limite de 1 a 10.000 clientes."
+                            : "Confira o campo destacado."}
                 </p>
               ) : null}
               {error ? (
@@ -301,8 +406,9 @@ export function SellPackageSheet({
       .then((r) => {
         if (!alive) return;
         if (r?.ok) {
-          setList(r.data.templates);
-          setPick((p) => p ?? r.data.templates[0]?.id ?? null);
+          const running = r.data.templates.filter((t) => t.status === "running");
+          setList(running);
+          setPick((p) => p ?? running[0]?.id ?? null);
         } else setError("NETWORK");
       });
     return () => {
@@ -346,7 +452,7 @@ export function SellPackageSheet({
               </div>
             ) : list && list.length === 0 ? (
               <p className="rounded-2xl bg-soft px-4 py-3 text-sm font-semibold">
-                Nenhum pacote criado.{" "}
+                Nenhum pacote à venda hoje.{" "}
                 <Link href="/ajustes/pagamentos" className="font-bold text-primary-text underline">
                   Criar em Ajustes &gt; Pagamentos
                 </Link>
@@ -367,6 +473,7 @@ export function SellPackageSheet({
                         {t.name} <span className="tabular-nums text-primary-text">· {formatBRL(t.pricedCents)}</span>
                       </span>
                       <span className="text-sm font-semibold text-muted first-letter:uppercase">{t.preview}</span>
+                      {t.promo ? <span className="text-sm font-bold text-primary-text">{t.promo}</span> : null}
                     </button>
                   ))}
                 </div>

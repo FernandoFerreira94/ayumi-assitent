@@ -29,6 +29,19 @@ test("criar Pague 3 leve 4, vender na ficha e agendar usando a sessão", async (
   await expect(page.getByText("Pacote criado")).toBeVisible();
   await expect(page.getByRole("region", { name: "Pacotes à venda" })).toContainText("Pague 3 leve 4 Esmaltação");
 
+  // Promoção: datas e limite de clientes
+  await page.getByRole("button", { name: "Criar pacote" }).click();
+  await novo.getByRole("button", { name: "Pacote de sessões" }).click();
+  await novo.getByLabel("Preço do pacote").fill("150,00");
+  await novo.getByLabel("Início da promoção").fill(todayStr());
+  await novo.getByLabel("Fim da promoção").fill(addDays(todayStr(), 30));
+  await novo.getByLabel("Limite de clientes").fill("30");
+  await expect(novo.getByText("para as 30 primeiras clientes", { exact: false })).toBeVisible();
+  await novo.getByLabel("Nome (opcional)").fill("Promo de dezembro");
+  await novo.getByRole("button", { name: "Criar pacote" }).click();
+  await expect(page.getByText("Pacote criado")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Pacotes à venda" })).toContainText("0 de 30 clientes");
+
   // Ficha: vender
   await page.goto("/clientes");
   const cartao = page.getByRole("dialog", { name: "Bia Souza" });
@@ -59,4 +72,10 @@ test("criar Pague 3 leve 4, vender na ficha e agendar usando a sessão", async (
   // Venda entra no caixa de hoje
   await page.goto(`/financeiro?m=${todayStr().slice(0, 7)}`);
   await expect(page.getByText("Entrou no caixa").locator("..")).toContainText(/R\$\s135,00/);
+
+  // Regras à mão no Financeiro
+  await page.getByRole("button", { name: "Como funciona" }).click();
+  await expect(page.getByRole("dialog", { name: "Como funciona o dinheiro da cliente" })).toContainText(
+    "Nunca vence e é usado sozinho",
+  );
 });

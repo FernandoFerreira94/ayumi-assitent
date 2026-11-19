@@ -35,13 +35,20 @@
 - **Agendar** (`insertAppointment`): `packages.pickSession` acha o pacote valendo no dia para um dos serviços (vence primeiro); o serviço entra no total pelo valor da sessão (Ganhos por sessão, D3) e o resto segue sinal/crédito/"já pagou". Devolve `session` e a folha avisa "Usou 1 sessão do pacote X. Restam N de M".
 - **Cancelar/faltar** (`settleStatusChange`): a parte do pacote nunca vira dinheiro; a sessão volta ou fica pela política. Toast: "a sessão voltou para o pacote".
 - **Telas:** Ajustes > Pagamentos > "Pacotes à venda" (`PackageTemplates`, criar com prévia `rules.packagePreview`, Tirar = `active=false`); ficha da cliente > "Pacotes" (`ClientPackages` + `SellPackageSheet`, pago na hora).
-- Fora da v1: venda com parte a receber, pacote com vários serviços, editar atendimento com pacote (não recalcula), vencimento automático (PR 5, job `client-wallet-daily`).
+- Fora da v1: venda com parte a receber, editar atendimento com pacote (não recalcula), vencimento automático (PR 5, job `client-wallet-daily`).
+
+## Promoções: período, limite e vários serviços (19/11)
+
+- **Migration 0052:** `package_templates.starts_on/ends_on` (vende só no período), `max_clients` ("as N primeiras": 1 por cliente, esgota no limite), `service_ids uuid[]` (1 a 30 serviços; `service_id` = referência do preço, o mais caro: `rules.referenceService`). `client_packages.service_ids` guarda a cópia. Índice `client_packages_template`.
+- **Venda** (`sellPackage`, dentro do `lockTenant`): recusa com `scheduled`/`ended`/`sold_out`/`already_bought` → erros `PROMO_*`. Situação: `rules.promoStatus`; linha "De 01/12 a 31/12 · 12 de 30 clientes": `rules.promoLine`. A folha de venda só mostra os valendo (`status === "running"`).
+- **Uso:** `pickSession` aceita qualquer serviço do pacote; no agendamento a sessão cobre 1 serviço (o mais caro entre os agendados que o pacote cobre).
+- **"Como funciona"** (`WalletRulesSheet` + `rules.walletRules(policy)`): regras de sinal, cancelar/faltar, crédito, pacotes/promoções e caixa, com a política do salão. Em Ajustes > Pagamentos (topo) e no Financeiro ("Pagamentos das clientes").
 
 ## Arquivos
 
 - `features/wallet/rules.ts` (puro): `appointmentPaid`, `walletBalance`, `cashIn`, `remainingCents`, `suggestedDeposit`, `cancelOutcome` (D1/D2), `walletEffect`, `walletStatement`, `payXPrice`, `sessionValue`, `packageExpiresOn`, `parsePolicy`, `DEFAULT_POLICY`.
 - `features/wallet/core.ts`: `settleStatusChange`, `useCredit`, `refundCredit`, `clientBalance`, `appointmentPaidCents`, `paidCentsSql`, `cashInRange`, `livePaidCents`, `AUTO_DONE_REASON`, `clientMoves`, `appointmentMoves`, `recordPayment`, `reverseAppointmentPayments`, `getWalletSettings`, `saveWalletSettings`.
-- `features/wallet/packages.ts`: `listTemplates`, `createTemplate`, `archiveTemplate`, `sellPackage`, `clientPackageList`, `pickSession`, `reserveSession`. UI: `PackageSheets.tsx`, `ClientWallet.tsx`.
+- `features/wallet/views.ts` (`templateView`). `features/wallet/packages.ts`: `listTemplates`, `createTemplate`, `archiveTemplate`, `sellPackage`, `clientPackageList`, `pickSession`, `reserveSession`. UI: `PackageSheets.tsx`, `ClientWallet.tsx`.
 - Tela: `app/(app)/ajustes/pagamentos`. Linha em Ajustes > "Clientes e agenda".
 
 ## Próximas fases

@@ -8,8 +8,10 @@ import { and, asc, eq } from "drizzle-orm";
 import { services } from "@/db/schema";
 import { listTemplates } from "@/features/wallet/packages";
 import { PackageTemplates } from "@/features/wallet/PackageSheets";
-import { packagePreview, packagePrice } from "@/features/wallet/rules";
-import { formatBRL } from "@/lib/dates";
+import { templateView } from "@/features/wallet/views";
+import { todayStr } from "@/lib/dates";
+import { walletRules } from "@/features/wallet/rules";
+import { WalletRulesSheet } from "@/features/wallet/WalletRulesSheet";
 
 export const metadata: Metadata = { title: "Pagamentos" };
 
@@ -26,18 +28,13 @@ export default async function PagamentosPage() {
       .orderBy(asc(services.position), asc(services.name)),
   }));
   const days = settings.packageValidDays;
-  const views = templates.map((t) => ({
-    ...t,
-    pricedCents: packagePrice(t, t.servicePriceCents),
-    preview: packagePreview(
-      t,
-      { name: t.serviceName, priceCents: t.servicePriceCents },
-      t.validDays ?? days,
-      formatBRL,
-    ),
-  }));
+  const today = todayStr();
+  const views = templates.map((t) => templateView(t, days, today));
   return (
     <PageShell back backHref="/ajustes" title="Pagamentos">
+      <div className="-mt-1 mb-2 flex justify-end">
+        <WalletRulesSheet rules={walletRules(settings)} />
+      </div>
       <section id="pagamentos" aria-label="Pagamentos das clientes" className="scroll-mt-6">
         <WalletSettingsForm settings={settings} />
       </section>

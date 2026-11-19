@@ -16,7 +16,9 @@ import { byMonth, monthsUpTo, noShows, topClients } from "@/features/finance/ins
 import { MonthlyBars } from "@/features/finance/MonthlyBars";
 import { PaymentList } from "@/features/finance/PaymentList";
 import { splitPayments } from "@/features/finance/payments";
-import { cashInRange } from "@/features/wallet/core";
+import { cashInRange, getWalletSettings } from "@/features/wallet/core";
+import { walletRules } from "@/features/wallet/rules";
+import { WalletRulesSheet } from "@/features/wallet/WalletRulesSheet";
 import { formatBRL, todayStr } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
 
@@ -50,9 +52,10 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
   // Tablet/desktop: os 6 meses até o escolhido (uma consulta para o período todo)
   const months = monthsUpTo(ym, 6);
   const first = monthRange(months[0]);
-  const { rows, spent, history, historySpent, cash } = await withTenant(tenantId, async (tx) => ({
+  const { rows, spent, history, historySpent, cash, policy } = await withTenant(tenantId, async (tx) => ({
     rows: await listDay(tx, range),
     cash: await cashInRange(tx, range),
+    policy: await getWalletSettings(tx),
     spent: await listExpenses(tx, dates[0], dates[1]),
     history: await listDay(tx, [first.range[0], range[1]]),
     historySpent: await listExpenses(tx, first.dates[0], dates[1]),
@@ -120,8 +123,7 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
             </div>
             <div>
               <dt className="flex items-center gap-1 text-xs font-bold text-muted">
-                <Icon name="forecast" size={14} className="text-primary-text" />
-                A receber
+                <Icon name="forecast" size={14} className="text-primary-text" />A receber
               </dt>
               <dd className="font-bold tabular-nums">{formatBRL(s.pending)}</dd>
             </div>
@@ -204,9 +206,12 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
 
         <div className="grid gap-4">
           <section aria-labelledby="pagamentos" className={card}>
-            <h2 id="pagamentos" className={h2}>
-              Pagamentos das clientes
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 id="pagamentos" className={`${h2} flex-1`}>
+                Pagamentos das clientes
+              </h2>
+              <WalletRulesSheet rules={walletRules(policy)} className="-my-2 -mr-2" />
+            </div>
             <PaymentList {...pay} cashCents={cash} />
           </section>
 
