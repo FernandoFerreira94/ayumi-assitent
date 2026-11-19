@@ -32,6 +32,10 @@ export const ERROR_MESSAGES = {
   ADMIN_PASSWORD_REQUIRED: "Digite a senha da sua conta para continuar.",
   RESET_LINK_INVALID: "Este link de nova senha expirou ou já foi usado. Peça um novo na tela de entrar.",
   ADMIN_STEP_UP_BUSY: "Outra tentativa ainda está em andamento. Tente de novo em instantes.",
+  PROMO_NOT_STARTED: "Essa promoção ainda não começou.",
+  PROMO_ENDED: "Essa promoção já terminou.",
+  PROMO_SOLD_OUT: "Essa promoção esgotou: já chegou no limite de clientes.",
+  PROMO_ALREADY_BOUGHT: "Essa cliente já comprou essa promoção (é 1 por cliente).",
   NETWORK: "Sem conexão. Verifique a internet e tente de novo.",
   UNKNOWN: "Algo deu errado do nosso lado. Tente de novo em instantes.",
 } as const;
