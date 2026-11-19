@@ -6,14 +6,10 @@ import { notify } from "@/components/feedback/toast";
 import type { ActionResult } from "@/lib/errors";
 import { saveWorkingHours } from "./actions";
 import type { Day } from "./slots";
+import { HOUR_OPTIONS } from "./times";
 import { TileTitle } from "@/components/ui/Icon";
 
 const NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
-// 06:00 a 23:00 de meia em meia hora (mesma faixa da grade do dia)
-const TIMES = Array.from({ length: 35 }, (_, i) => {
-  const m = 6 * 60 + i * 30;
-  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${m % 60 ? "30" : "00"}`;
-});
 // 16px: abaixo disso o iPhone dá zoom na tela ao tocar no campo
 const sel = "min-h-11 rounded-full border px-3 text-base font-semibold";
 
@@ -51,7 +47,7 @@ export function HoursForm({ week }: { week: Day[] }) {
               {name}
             </label>
             <select name={`opens-${i}`} aria-label={`${name}: abre`} defaultValue={d?.opens ?? "09:00"} className={sel}>
-              {TIMES.map((t) => (
+              {HOUR_OPTIONS.map((t) => (
                 <option key={t}>{t}</option>
               ))}
             </select>
@@ -61,7 +57,7 @@ export function HoursForm({ week }: { week: Day[] }) {
               defaultValue={d?.closes ?? "18:00"}
               className={sel}
             >
-              {TIMES.map((t) => (
+              {HOUR_OPTIONS.map((t) => (
                 <option key={t}>{t}</option>
               ))}
             </select>
@@ -92,7 +88,7 @@ export function HoursForm({ week }: { week: Day[] }) {
             disabled={!pauseOn}
             className={`${sel} disabled:opacity-50`}
           >
-            {TIMES.map((t) => (
+            {HOUR_OPTIONS.map((t) => (
               <option key={t}>{t}</option>
             ))}
           </select>
@@ -103,7 +99,7 @@ export function HoursForm({ week }: { week: Day[] }) {
             disabled={!pauseOn}
             className={`${sel} disabled:opacity-50`}
           >
-            {TIMES.map((t) => (
+            {HOUR_OPTIONS.map((t) => (
               <option key={t}>{t}</option>
             ))}
           </select>
@@ -117,7 +113,9 @@ export function HoursForm({ week }: { week: Day[] }) {
           </p>
         ) : null}
       </div>
-      <SubmitButton pending={pending} pendingLabel="Salvando…">Salvar expediente</SubmitButton>
+      <SubmitButton pending={pending} pendingLabel="Salvando…">
+        Salvar expediente
+      </SubmitButton>
     </form>
   );
 }
