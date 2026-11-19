@@ -18,6 +18,10 @@
 - `PageShell wide`; no `lg` duas colunas. Coluna nova (só `md+`): **Últimos 6 meses** (`MonthlyBars.tsx`, recebido x gastos, um eixo, hover com saldo, clique abre o mês, tabela sr-only), **Quem mais trouxe no mês** (top 5 concluídos) e **Faltas no mês** (% sobre concluído + faltou, valor perdido). Regras puras em `insights.ts` (`monthsUpTo`, `byMonth`, `topClients`, `noShows`; testes em `tests/unit/finance-insights.test.ts`). Ganhos mostra "mês anterior" no `md+`.
 - Celular igual (as caixas novas ficam `hidden md:grid`).
 
+## Pagamentos das clientes (19/11)
+- Caixa "Pagamentos das clientes" (celular e desktop): A pagar (em aberto sem marcação) e Adiantado (pago antes do começo), com totais; tocar abre a `PaymentSheet` da agenda. Regra em `finance/payments.ts` (`splitPayments`), UI `PaymentList.tsx`.
+- Não muda Ganhos/Previsto: recebido continua = concluído.
+
 ## Cuidados
 - Previsto = tudo que não foi cancelado nem faltou (`no_show`); recebido = só `done`; o resumo mostra **A receber** = previsto − recebido (`summary.pending`, 19/11), para não repetir o valor de Ganhos (`appointments/core.forecastCents`/`receivedCents`). Remarcado transfere sem duplicar. Mudança em status ou desconto mexe aqui.
 - Dinheiro sempre em centavos.

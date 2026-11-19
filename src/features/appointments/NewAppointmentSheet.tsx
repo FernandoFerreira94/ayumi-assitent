@@ -13,6 +13,7 @@ import { messageFor, type ErrorCode } from "@/lib/errors";
 import { whatsappStatus } from "@/features/whatsapp/actions";
 import { BookingOverlay, type Booking, type Step } from "./BookingOverlay";
 import { BookingServices } from "./BookingServices";
+import { PaymentFields } from "./PaymentFields";
 import { daySpan, OUTSIDE_HOURS, outsideHours } from "./agenda-grid";
 import type { ServiceOption } from "./options";
 import { warnSync } from "./sync-warning";
@@ -285,6 +286,7 @@ export function NewAppointmentSheet({
                     discountError={fieldErr?.field === "discountValue"}
                     onMinutes={setMinutes}
                   />
+                  <PaymentFields form />
                   {/* Dia e horário lado a lado: a folha fica mais curta e o botão Agendar aparece sem rolar tanto */}
                   <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] gap-3">
                     <label className="grid min-w-0 gap-1 text-sm font-bold">

@@ -17,6 +17,7 @@ import { Icon } from "@/components/ui/Icon";
 import { BlockCard } from "@/features/blocks/BlockCard";
 import { formatDayTitle, formatShortDate, todayStr } from "@/lib/dates";
 import { AppointmentCard } from "./AppointmentCard";
+import type { PaymentView } from "./payment";
 import { rescheduleAppointment } from "./actions";
 import {
   conflictReason,
@@ -66,6 +67,7 @@ export type AgendaAppointment = Span & {
   /** Desconto dado neste agendamento, já formatado para exibir. */
   discount: { label: string; from: string; off: string } | null;
   notes: string | null;
+  payment: PaymentView;
 };
 /** Origem do evento de fora: "google" (Google Agenda) ou "icloud" (Calendário do iPhone). Sem = bloqueio do app. */
 export type ExternalSource = "google" | "icloud";
@@ -640,6 +642,7 @@ export function AgendaDay({
                   status={detailAppt.status}
                   discount={detailAppt.discount}
                   notes={detailAppt.notes}
+                  payment={detailAppt.payment}
                   onSettled={() => setDetailId(null)}
                 />
               ) : detailBlock?.external ? (

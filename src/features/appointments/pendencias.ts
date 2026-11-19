@@ -15,6 +15,8 @@ const base = (tx: Tx) =>
       clientPhone: clients.phoneE164,
       serviceId: services.id,
       serviceName: serviceLabel,
+      paidAt: appointments.paidAt,
+      paymentMethod: appointments.paymentMethod,
     })
     .from(appointments)
     .innerJoin(clients, eq(clients.id, appointments.clientId))

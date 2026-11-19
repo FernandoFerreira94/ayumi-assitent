@@ -16,7 +16,8 @@ import { getHours } from "@/features/hours/core";
 import { convertExternalBlock, listBlocks } from "@/features/blocks/core";
 import { forceSyncExternalCalendars } from "@/features/blocks/external-sync";
 import { dayRange, isDateStr, toInstant } from "@/lib/dates";
-import { editAppointment, insertAppointment, listDay, moveAppointment, setStatus } from "./core";
+import { editAppointment, insertAppointment, listDay, moveAppointment, setPayment, setStatus } from "./core";
+import { PAYMENT_METHODS, parsePayment } from "./payment";
 import { dayVersion } from "./version";
 import { bookingOptions, type BookingOptions } from "./options";
 import { parseDiscount } from "./pricing";
@@ -83,12 +84,13 @@ export async function createAppointment(_prev: ActionResult<{ id: string }> | nu
     String(formData.get("notes") ?? "")
       .trim()
       .slice(0, 300) || null;
+  const payment = parsePayment(formData.get("paid"), formData.get("paymentMethod"));
   // "Transformar em agendamento": o evento de fora (iPhone/Google) que ocupava o horário sai junto
   const fromBlock = z.string().uuid().safeParse(formData.get("fromBlockId"));
   try {
     const res = await withTenant(tenantId, async (tx) => {
       if (fromBlock.success && !(await convertExternalBlock(tx, fromBlock.data))) return fail("NOT_FOUND");
-      const r = await insertAppointment(tx, tenantId, { ...parsed.data, discount, notes });
+      const r = await insertAppointment(tx, tenantId, { ...parsed.data, discount, notes, payment });
       // sem agendamento, o evento volta como estava (desfaz a transação)
       if (!r.ok && fromBlock.success) throw new RollbackWith(r);
       return r;
@@ -170,6 +172,36 @@ export async function editAppointmentAction(input: {
     revalidatePath("/agenda");
     revalidatePath("/pendencias");
     return ok({ sync: await syncAppointmentSafe(tenantId, p.data.id) });
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+const paymentInput = z.object({
+  id: z.string().uuid(),
+  paid: z.boolean(),
+  method: z.enum(PAYMENT_METHODS).nullable().optional(),
+});
+
+/** Marca ou desmarca o pagamento da cliente (no detalhe do atendimento ou no Financeiro). */
+export async function updatePayment(input: {
+  id: string;
+  paid: boolean;
+  method?: string | null;
+}): Promise<ActionResult> {
+  const { tenantId } = await requireTenant();
+  const p = paymentInput.safeParse(input);
+  if (!p.success) return fail("VALIDATION");
+  try {
+    const res = await withTenant(tenantId, (tx) =>
+      setPayment(tx, p.data.id, p.data.paid ? { method: p.data.method ?? null } : null),
+    );
+    if (!res.ok) return res;
+    revalidatePath("/agenda");
+    revalidatePath("/calendario");
+    revalidatePath("/pendencias");
+    revalidatePath("/financeiro");
+    return ok();
   } catch {
     return fail("UNKNOWN");
   }

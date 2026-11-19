@@ -26,7 +26,7 @@ Este arquivo **roteia**. O detalhe de cada módulo fica em `docs/modulos/`.
 
 **Durante**
 - Siga as regras permanentes abaixo. Toda ação mostra carregando, erro e sucesso.
-- Mudou banco: nova migration `src/db/migrations/00NN_nome.sql` (próximo número livre: hoje **0048** (já existem dois `0026` e dois `0029`; 0036–0040 e 0043–0044 estão vagos na main e a branch local de pagamentos usa números nessa faixa, então não reaproveite buracos)) + `src/db/schema.ts` + policy RLS se for tabela nova.
+- Mudou banco: nova migration `src/db/migrations/00NN_nome.sql` (próximo número livre: hoje **0049** (já existem dois `0026` e dois `0029`; 0036–0040 e 0043–0044 estão vagos na main e a branch local de pagamentos usa números nessa faixa, então não reaproveite buracos)) + `src/db/schema.ts` + policy RLS se for tabela nova.
 - Mudou algo que o worker usa (`reminders`, `owner-notices`, `push`, `messaging`): lembre que web e worker precisam de Redeploy.
 
 **Depois**
