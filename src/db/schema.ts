@@ -181,6 +181,10 @@ export const appointments = pgTable(
     returnDueOn: date("return_due_on"),
     /** "Não precisa": a dona dispensou o retorno deste atendimento */
     returnSkippedAt: timestamp("return_skipped_at", { withTimezone: true }),
+    /** Quando a dona marcou que a cliente pagou (antes do começo = pago adiantado); null = não marcado */
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    /** Forma de pagamento (opcional, só com paid_at) */
+    paymentMethod: text("payment_method").$type<"pix" | "dinheiro" | "cartao">(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("appointments_tenant_start").on(t.tenantId, t.startsAt)],

@@ -14,6 +14,8 @@ import { ServicePie } from "@/features/finance/ServicePie";
 import { summarize } from "@/features/finance/summary";
 import { byMonth, monthsUpTo, noShows, topClients } from "@/features/finance/insights";
 import { MonthlyBars } from "@/features/finance/MonthlyBars";
+import { PaymentList } from "@/features/finance/PaymentList";
+import { splitPayments } from "@/features/finance/payments";
 import { formatBRL, todayStr } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
 
@@ -58,6 +60,7 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
   const top = topClients(rows);
   const missed = noShows(rows);
   const s = summarize(rows);
+  const pay = splitPayments(rows);
   const spentCents = spent.reduce((t, e) => t + e.amountCents, 0);
   const balance = s.received - spentCents;
   const sheetDate = ym === today.slice(0, 7) ? today : dates[0];
@@ -193,6 +196,13 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
         </div>
 
         <div className="grid gap-4">
+          <section aria-labelledby="pagamentos" className={card}>
+            <h2 id="pagamentos" className={h2}>
+              Pagamentos das clientes
+            </h2>
+            <PaymentList {...pay} />
+          </section>
+
           <section aria-labelledby="por-servico" className={card}>
             <h2 id="por-servico" className={h2}>
               {s.received > 0 || s.forecast === 0 ? "Ganhos por serviço" : "Previsto por serviço"}
