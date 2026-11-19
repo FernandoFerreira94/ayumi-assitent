@@ -1,7 +1,7 @@
-import { and, asc, eq, inArray, isNull, notExists } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNull, lt, notExists, sql, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { Tx } from "@/db/client";
-import { clientLedger, tenants } from "@/db/schema";
+import { appointments, clientLedger, tenants } from "@/db/schema";
 import type { PaymentMethod } from "@/features/appointments/payment";
 import type { Move, WalletPolicy } from "./rules";
 
@@ -9,6 +9,31 @@ import type { Move, WalletPolicy } from "./rules";
  * Carteira da cliente: leitura e gravação do extrato (`client_ledger`). Só insere; corrigir = anular.
  * Sempre dentro de `withTenant` (RLS) e, quando mexe em saldo, dentro do `lockTenant` de quem chama.
  */
+
+/** Motivo do pagamento que o app grava sozinho ao concluir (o que faltava). Sair de concluído anula só esses. */
+export const AUTO_DONE_REASON = "Recebido ao concluir";
+
+/**
+ * Quanto do atendimento já está pago, em SQL (mesma regra de `rules.appointmentPaid`), para as listas da agenda
+ * e do Financeiro sem buscar o extrato inteiro.
+ */
+export const paidCentsSql = sql<number>`coalesce((
+  select sum(case when l.kind in ('payment', 'credit_use') then l.amount_cents
+                  when l.kind in ('refund', 'credit_in', 'retained') then -l.amount_cents else 0 end)
+  from client_ledger l where l.appointment_id = ${appointments.id}
+), 0)`.mapWith(Number);
+
+/** Dinheiro que entrou no caixa no período (pagamentos menos devoluções), pela data do movimento. */
+export async function cashInRange(tx: Tx, [from, to]: [Date, Date]): Promise<number> {
+  const [r] = await tx
+    .select({
+      cents: sql<number>`coalesce(sum(case when ${clientLedger.kind} = 'payment' then ${clientLedger.amountCents}
+        when ${clientLedger.kind} = 'refund' then -${clientLedger.amountCents} else 0 end), 0)`.mapWith(Number),
+    })
+    .from(clientLedger)
+    .where(and(gte(clientLedger.occurredAt, from), lt(clientLedger.occurredAt, to)));
+  return r?.cents ?? 0;
+}
 
 /** Movimentos da cliente, do mais velho ao mais novo. */
 export function clientMoves(tx: Tx, clientId: string) {
@@ -42,6 +67,28 @@ export function appointmentMoves(tx: Tx, appointmentIds: string[]): Promise<Move
     .where(inArray(clientLedger.appointmentId, appointmentIds));
 }
 
+/** Pagamentos ainda valendo (não anulados) de um atendimento; `only` filtra por motivo. */
+async function livePayments(tx: Tx, appointmentId: string, only?: SQL) {
+  const rev = alias(clientLedger, "rev");
+  return tx
+    .select()
+    .from(clientLedger)
+    .where(
+      and(
+        eq(clientLedger.appointmentId, appointmentId),
+        eq(clientLedger.kind, "payment"),
+        isNull(clientLedger.reversesId),
+        notExists(tx.select({ id: rev.id }).from(rev).where(eq(rev.reversesId, clientLedger.id))),
+        only,
+      ),
+    );
+}
+
+/** Soma dos pagamentos valendo do atendimento. */
+export async function livePaidCents(tx: Tx, appointmentId: string) {
+  return (await livePayments(tx, appointmentId)).reduce((t, m) => t + m.amountCents, 0);
+}
+
 /** Grava um pagamento da cliente (com atendimento = pago nele; sem = entra no crédito). */
 export async function recordPayment(
   tx: Tx,
@@ -53,6 +100,7 @@ export async function recordPayment(
     method: PaymentMethod | null;
     createdBy?: string | null;
     occurredAt?: Date;
+    reason?: string | null;
   },
 ) {
   if (input.amountCents <= 0) return;
@@ -63,28 +111,27 @@ export async function recordPayment(
     kind: "payment",
     amountCents: input.amountCents,
     method: input.method,
+    reason: input.reason ?? null,
     createdBy: input.createdBy ?? null,
     occurredAt: input.occurredAt ?? new Date(),
   });
 }
 
 /**
- * Anula os pagamentos ainda valendo de um atendimento (desmarcar "pago" ou trocar a forma). Cada um ganha uma
- * linha negativa apontando para ele; nada é apagado.
+ * Anula os pagamentos ainda valendo de um atendimento (desmarcar "pago", trocar sinal/forma, sair de concluído).
+ * Cada um ganha uma linha negativa apontando para ele; nada é apagado. `onlyAuto` anula só o "Recebido ao concluir".
  */
-export async function reverseAppointmentPayments(tx: Tx, appointmentId: string, createdBy?: string | null) {
-  const rev = alias(clientLedger, "rev");
-  const live = await tx
-    .select()
-    .from(clientLedger)
-    .where(
-      and(
-        eq(clientLedger.appointmentId, appointmentId),
-        eq(clientLedger.kind, "payment"),
-        isNull(clientLedger.reversesId),
-        notExists(tx.select({ id: rev.id }).from(rev).where(eq(rev.reversesId, clientLedger.id))),
-      ),
-    );
+export async function reverseAppointmentPayments(
+  tx: Tx,
+  appointmentId: string,
+  createdBy?: string | null,
+  opts: { onlyAuto?: boolean; reason?: string } = {},
+) {
+  const live = await livePayments(
+    tx,
+    appointmentId,
+    opts.onlyAuto ? eq(clientLedger.reason, AUTO_DONE_REASON) : undefined,
+  );
   if (!live.length) return;
   await tx.insert(clientLedger).values(
     live.map((m) => ({
@@ -95,7 +142,7 @@ export async function reverseAppointmentPayments(tx: Tx, appointmentId: string, 
       amountCents: -m.amountCents,
       sessions: -m.sessions,
       method: m.method,
-      reason: "Pagamento desmarcado",
+      reason: opts.reason ?? "Pagamento desmarcado",
       reversesId: m.id,
       createdBy: createdBy ?? null,
     })),

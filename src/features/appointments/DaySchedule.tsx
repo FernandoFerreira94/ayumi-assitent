@@ -11,6 +11,7 @@ import { listBlocks } from "@/features/blocks/core";
 import { guessAppointment } from "@/features/calendar-feed/match";
 import { syncExternalCalendars } from "@/features/blocks/external-sync";
 import { getHours } from "@/features/hours/core";
+import { getWalletSettings } from "@/features/wallet/core";
 import { weekdayOf } from "@/features/hours/slots";
 import { NewBlockSheet } from "@/features/blocks/NewBlockSheet";
 import { bookingOptions } from "@/features/appointments/options";
@@ -50,12 +51,13 @@ export async function DaySchedule({
   const weekRange: [Date, Date] = [dayRange(weeks[0][0])[0], dayRange(weeks[weeks.length - 1][6])[1]];
 
   await syncExternalCalendars(tenantId);
-  const { weekRows, dayBlocks, clients, services, openHours } = await withTenant(tenantId, async (tx) => ({
+  const { weekRows, dayBlocks, clients, services, openHours, wallet } = await withTenant(tenantId, async (tx) => ({
     openHours: await getHours(tx),
     dayBlocks: await listBlocks(tx, dayRange(date)),
     weekRows: await listDay(tx, weekRange),
     clients: await searchClients(tx, ""),
     services: await listBookable(tx),
+    wallet: await getWalletSettings(tx),
   }));
 
   const rows = weekRows.filter((r) => todayStr(r.startsAt) === date);
@@ -136,6 +138,7 @@ export async function DaySchedule({
           nowMin={date === today ? minuteOf(new Date()) : null}
           {...bookingOptions(clients, services)}
           week={openHours}
+          depositPct={wallet.depositPct}
           blockButton={actions ? <NewBlockSheet date={date} /> : undefined}
         />
       </div>

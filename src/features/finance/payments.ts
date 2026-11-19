@@ -9,6 +9,8 @@ type Row = {
   serviceName: string;
   paidAt: Date | null;
   paymentMethod: PaymentMethod | null;
+  /** Do extrato da carteira (sinal ou tudo) */
+  paidCents?: number;
 };
 
 export type PaymentItem = {
@@ -21,12 +23,15 @@ export type PaymentItem = {
 };
 
 /**
- * Pagamentos das clientes no mês: quem ainda vai pagar (atendimento em aberto, sem marcação) e quem
- * já pagou adiantado. Falta não entra; concluído sem marcação conta como pago no atendimento (fora das duas listas).
+ * Pagamentos das clientes no mês: quem ainda vai pagar (atendimento em aberto, sem marcação ou só com sinal) e o que
+ * já entrou adiantado (pago tudo antes, ou o sinal). Quem deu sinal aparece nas duas listas: o que falta em "A pagar"
+ * e o sinal em "Adiantado". Falta e cancelado não entram; concluído conta como pago no atendimento.
  */
 export function splitPayments(rows: Row[]) {
   const toPay: PaymentItem[] = [];
   const advance: PaymentItem[] = [];
+  let toPayCents = 0;
+  let advanceCents = 0;
   for (const r of rows) {
     if (r.status === "no_show" || r.status === "cancelled") continue;
     const item = {
@@ -37,9 +42,15 @@ export function splitPayments(rows: Row[]) {
       priceCents: r.priceCents,
       payment: paymentView(r),
     };
-    if (item.payment.state === "unpaid") toPay.push(item);
-    else if (item.payment.state === "advance") advance.push(item);
+    const { state, paidCents, remainingCents } = item.payment;
+    if (state === "unpaid" || state === "deposit") {
+      toPay.push(item);
+      toPayCents += remainingCents;
+    }
+    if (state === "advance" || state === "deposit") {
+      advance.push(item);
+      advanceCents += paidCents;
+    }
   }
-  const sum = (l: PaymentItem[]) => l.reduce((t, x) => t + x.priceCents, 0);
-  return { toPay, advance, toPayCents: sum(toPay), advanceCents: sum(advance) };
+  return { toPay, advance, toPayCents, advanceCents };
 }

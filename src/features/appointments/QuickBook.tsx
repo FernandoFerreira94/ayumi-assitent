@@ -51,6 +51,7 @@ export function QuickBook() {
       clients={options?.clients ?? null}
       services={options?.services ?? null}
       week={options?.week ?? null}
+      depositPct={options?.depositPct}
     />
   );
 }

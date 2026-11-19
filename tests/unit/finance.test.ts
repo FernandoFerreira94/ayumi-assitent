@@ -61,6 +61,10 @@ describe("resumo do ganho", () => {
     expect(s).toMatchObject({ received: 20000, forecast: 25000, pending: 5000, doneCount: 2, averageCents: 10000 });
     expect(s.slices).toEqual([{ name: "Gel", cents: 20000 }]);
   });
+  it("a receber desconta o sinal ou adiantado já pago", () => {
+    const s = summarize([{ ...row("Pé", 10000, "confirmed"), paidCents: 3000 }, row("Mão", 4000, "confirmed")]);
+    expect(s.pending).toBe(11000);
+  });
   it("atendimento com dois serviços conta nas duas fatias, com o desconto dividido", () => {
     const s = summarize([
       {

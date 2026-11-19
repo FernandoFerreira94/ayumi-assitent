@@ -57,6 +57,7 @@ export function NewAppointmentSheet({
   serviceIds,
   fromBlockId,
   week,
+  depositPct,
   onClosed,
 }: {
   date: string;
@@ -75,6 +76,8 @@ export function NewAppointmentSheet({
   fromBlockId?: string;
   /** Expediente da semana (0 = domingo); com ele a folha avisa quando o horário cai fora (pode agendar mesmo assim). */
   week?: Day[] | null;
+  /** Sinal sugerido (% do total), de Ajustes > Pagamentos. */
+  depositPct?: number;
   /** Avisa quando a folha fecha, para a agenda tirar o bloco provisório. */
   onClosed?: () => void;
 }) {
@@ -104,6 +107,7 @@ export function NewAppointmentSheet({
   // Dia, horário e duração escolhidos agora, para o aviso de fora do expediente
   const [pick, setPick] = useState({ form: formId, date, time: time ?? "09:00" });
   const [minutes, setMinutes] = useState(0);
+  const [totalCents, setTotalCents] = useState(0);
   if (pick.form !== formId) setPick({ form: formId, date, time: time ?? "09:00" });
   const startMin = toMinutes(pick.time);
   const outside =
@@ -285,8 +289,14 @@ export function NewAppointmentSheet({
                     defaultIds={serviceIds}
                     discountError={fieldErr?.field === "discountValue"}
                     onMinutes={setMinutes}
+                    onTotal={setTotalCents}
                   />
-                  <PaymentFields form />
+                  <PaymentFields
+                    form
+                    totalCents={totalCents}
+                    depositPct={depositPct}
+                    amountError={fieldErr?.field === "depositAmount"}
+                  />
                   {/* Dia e horário lado a lado: a folha fica mais curta e o botão Agendar aparece sem rolar tanto */}
                   <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] gap-3">
                     <label className="grid min-w-0 gap-1 text-sm font-bold">

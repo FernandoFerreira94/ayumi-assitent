@@ -3,11 +3,17 @@ import type { Tx } from "@/db/client";
 import { appointmentServices, appointments, clients, services } from "@/db/schema";
 import { lockTenant, overlapsBlock } from "@/features/blocks/core";
 import { returnDue } from "@/features/returns/rules";
-import { recordPayment, reverseAppointmentPayments } from "@/features/wallet/core";
+import {
+  AUTO_DONE_REASON,
+  livePaidCents,
+  paidCentsSql,
+  recordPayment,
+  reverseAppointmentPayments,
+} from "@/features/wallet/core";
 import { toInstant, todayStr } from "@/lib/dates";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { canMarkNoShow } from "./no-show";
-import type { PaymentMethod } from "./payment";
+import type { PaymentInput } from "./payment";
 import { applyDiscount, type Discount } from "./pricing";
 import type { Status } from "./schema";
 
@@ -36,8 +42,8 @@ export type BookingInput = {
   discount?: Discount | null;
   /** Observação livre, ex.: motivo do desconto. */
   notes?: string | null;
-  /** Já pagou (adiantado) ao agendar; a forma é opcional. */
-  payment?: { method: PaymentMethod | null } | null;
+  /** Já pagou ao agendar (tudo ou só o sinal, `amountCents`); a forma é opcional. */
+  payment?: PaymentInput | null;
   /** Quem agendou (vai no extrato da carteira). */
   createdBy?: string | null;
 };
@@ -94,6 +100,8 @@ export async function insertAppointment(
     list.reduce((c, x) => c + x.priceCents, 0),
     input.discount ?? null,
   );
+  // Sinal nunca passa do total; sem valor = pagou tudo
+  const paidNow = input.payment ? Math.min(totalCents, input.payment.amountCents ?? totalCents) : 0;
   const startsAt = toInstant(input.date, input.time);
   const endsAt = new Date(startsAt.getTime() + durationMin * 60_000);
   await lockTenant(tx, tenantId);
@@ -115,8 +123,10 @@ export async function insertAppointment(
           discountValue: input.discount?.value ?? null,
           discountCents,
           notes: input.notes || null,
-          paidAt: input.payment ? new Date() : null,
-          paymentMethod: input.payment?.method ?? null,
+          // Sinal (menos que o total) não marca como pago: fica "Sinal R$ X · falta R$ Y"
+          paidAt: input.payment && paidNow >= totalCents ? new Date() : null,
+          // A forma no atendimento é a do pagamento completo (o banco exige paid_at); a do sinal fica no extrato
+          paymentMethod: input.payment && paidNow >= totalCents ? input.payment.method : null,
           // Fica confirmado quando a cliente responder "1" ao lembrete da véspera
           status: "pending_confirmation",
         })
@@ -128,7 +138,7 @@ export async function insertAppointment(
           tenantId,
           clientId: cli.id,
           appointmentId: r.id,
-          amountCents: totalCents,
+          amountCents: paidNow,
           method: input.payment.method,
           createdBy: input.createdBy,
         });
@@ -181,9 +191,29 @@ export async function setStatus(tx: Tx, id: string, status: Status, now: Date = 
         .update(appointments)
         .set({ status, ...returnFields })
         .where(eq(appointments.id, id))
-        .returning({ id: appointments.id }),
+        .returning({
+          tenantId: appointments.tenantId,
+          clientId: appointments.clientId,
+          priceCents: appointments.priceCents,
+          paymentMethod: appointments.paymentMethod,
+        }),
     );
-    return rows.length ? ok() : fail("NOT_ALLOWED");
+    const a = rows[0];
+    if (!a) return fail("NOT_ALLOWED");
+    // Carteira: concluir dá baixa no que faltava (pago no atendimento); sair de concluído anula essa baixa
+    if (status === "done") {
+      const rest = a.priceCents - (await livePaidCents(tx, id));
+      if (rest > 0)
+        await recordPayment(tx, {
+          tenantId: a.tenantId,
+          clientId: a.clientId,
+          appointmentId: id,
+          amountCents: rest,
+          method: a.paymentMethod,
+          reason: AUTO_DONE_REASON,
+        });
+    } else await reverseAppointmentPayments(tx, id, null, { onlyAuto: true, reason: "Saiu de concluído" });
+    return ok();
   } catch (e) {
     if (pgCode(e) === "23P01") return fail("SLOT_TAKEN");
     throw e;
@@ -191,37 +221,63 @@ export async function setStatus(tx: Tx, id: string, status: Status, now: Date = 
 }
 
 /**
- * Marca (ou desmarca) que a cliente pagou. Não mexe no status nem no valor: pagamento e
- * atendimento andam separados (pode pagar antes, no dia ou depois). Cancelado não aceita marcação nova.
+ * Marca o pagamento da cliente: tudo, só o sinal (`amountCents` menor que o total) ou nada (null = a pagar).
+ * Não mexe no status nem no valor. Cancelado não aceita marcação nova.
+ * No extrato: subir o valor (sinal → tudo) grava só a diferença; baixar, desmarcar ou trocar a forma anula os
+ * pagamentos que valiam e grava o novo. Nada é apagado.
  */
 export async function setPayment(
   tx: Tx,
   id: string,
-  payment: { method: PaymentMethod | null } | null,
+  payment: PaymentInput | null,
   createdBy?: string | null,
 ): Promise<ActionResult> {
-  const rows = await tx
-    .update(appointments)
-    .set(payment ? { paidAt: new Date(), paymentMethod: payment.method } : { paidAt: null, paymentMethod: null })
-    .where(and(eq(appointments.id, id), payment ? ne(appointments.status, "cancelled") : undefined))
-    .returning({
+  const [a] = await tx
+    .select({
       tenantId: appointments.tenantId,
       clientId: appointments.clientId,
       priceCents: appointments.priceCents,
-    });
-  const a = rows[0];
-  if (!a) return fail("NOT_ALLOWED");
-  // Carteira: o extrato segue a marcação. Marcar de novo (outra forma) anula o pagamento antigo e grava o novo.
-  await reverseAppointmentPayments(tx, id, createdBy);
-  if (payment)
+      status: appointments.status,
+      paidAt: appointments.paidAt,
+      paymentMethod: appointments.paymentMethod,
+    })
+    .from(appointments)
+    .where(eq(appointments.id, id));
+  if (!a || (payment && a.status === "cancelled")) return fail("NOT_ALLOWED");
+
+  const current = await livePaidCents(tx, id);
+  const target = payment ? Math.min(a.priceCents, payment.amountCents ?? a.priceCents) : 0;
+  const sameMethod = !payment || payment.method === null || payment.method === a.paymentMethod;
+  // Subiu (sinal → tudo): só a diferença, na forma escolhida agora (sinal no Pix e o resto em dinheiro, por ex.)
+  if (payment && target > current) {
     await recordPayment(tx, {
       tenantId: a.tenantId,
       clientId: a.clientId,
       appointmentId: id,
-      amountCents: a.priceCents,
+      amountCents: target - current,
       method: payment.method,
       createdBy,
     });
+  } else if (target < current || !sameMethod) {
+    await reverseAppointmentPayments(tx, id, createdBy);
+    if (payment)
+      await recordPayment(tx, {
+        tenantId: a.tenantId,
+        clientId: a.clientId,
+        appointmentId: id,
+        amountCents: target,
+        method: payment.method,
+        createdBy,
+      });
+  }
+  const full = payment !== null && target >= a.priceCents;
+  await tx
+    .update(appointments)
+    .set({
+      paidAt: full ? (a.paidAt ?? new Date()) : null,
+      paymentMethod: full ? (payment.method ?? a.paymentMethod) : null,
+    })
+    .where(eq(appointments.id, id));
   return ok();
 }
 
@@ -329,6 +385,7 @@ export function listDay(tx: Tx, [from, to]: [Date, Date]) {
       notes: appointments.notes,
       paidAt: appointments.paidAt,
       paymentMethod: appointments.paymentMethod,
+      paidCents: paidCentsSql,
       serviceParts,
     })
     .from(appointments)

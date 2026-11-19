@@ -6,10 +6,27 @@ import { SHEET_SCROLL, SidePanelClose, sheetClass, useSheetSide } from "@/compon
 import { notify } from "@/components/feedback/toast";
 import { messageFor, type ErrorCode } from "@/lib/errors";
 import { updatePayment } from "./actions";
-import { PaymentFields } from "./PaymentFields";
-import type { PaymentMethod, PaymentView } from "./payment";
+import { centsToField, fieldToCents, PaymentFields, type PaymentPick } from "./PaymentFields";
+import type { PaymentView } from "./payment";
+import { formatBRL } from "@/lib/dates";
 
-/** Folha para marcar (ou desmarcar) que a cliente pagou, depois de agendar e antes ou depois do atendimento. */
+/** O que estava marcado, para o Desfazer e para abrir a folha. */
+function pickOf(p: PaymentView): PaymentPick {
+  if (p.state === "deposit") return { choice: "deposit", method: p.method, amount: centsToField(p.paidCents) };
+  if (p.state === "advance" || p.state === "paid") return { choice: "full", method: p.method, amount: "" };
+  return { choice: "none", method: null, amount: "" };
+}
+
+const toInput = (p: PaymentPick) => ({
+  paid: p.choice !== "none",
+  method: p.choice === "none" ? null : p.method,
+  amountCents: p.choice === "deposit" ? fieldToCents(p.amount) : null,
+});
+
+/**
+ * Folha do pagamento da cliente, depois de agendar e antes ou depois do atendimento: a pagar, sinal ou tudo.
+ * Com sinal, abre em "Já pagou" (o motivo mais comum é receber o resto); o extrato grava só a diferença.
+ */
 export function PaymentSheet({
   id,
   clientName,
@@ -29,24 +46,32 @@ export function PaymentSheet({
 }) {
   const side = useSheetSide();
   const Root = nested ? Drawer.NestedRoot : Drawer.Root;
-  const marked = payment.state === "advance" || payment.state === "paid";
+  const total = payment.paidCents + payment.remainingCents;
   const [open, setOpen] = useState(false);
-  const [pick, setPick] = useState<{ paid: boolean; method: PaymentMethod | null }>({ paid: true, method: payment.method });
+  const [pick, setPick] = useState<PaymentPick>({ ...pickOf(payment), choice: "full" });
   const [error, setError] = useState<ErrorCode | null>(null);
+  const [badAmount, setBadAmount] = useState(false);
   const [pending, start] = useTransition();
 
   function onOpenChange(next: boolean) {
     setOpen(next);
     setError(null);
-    // abre já em "Já pagou": é o motivo mais comum de abrir
-    if (next) setPick({ paid: true, method: payment.method });
+    setBadAmount(false);
+    // abre já em "Já pagou": é o motivo mais comum de abrir (marcar pago ou receber o resto do sinal)
+    if (next) setPick({ ...pickOf(payment), choice: "full" });
   }
 
   function save() {
     setError(null);
-    const before = { paid: marked, method: payment.method };
+    const input = toInput(pick);
+    if (pick.choice === "deposit" && (input.amountCents === null || input.amountCents >= total)) {
+      setBadAmount(true);
+      return;
+    }
+    setBadAmount(false);
+    const before = toInput(pickOf(payment));
     start(async () => {
-      const res = await updatePayment({ id, ...pick }).catch(() => null);
+      const res = await updatePayment({ id, ...input }).catch(() => null);
       if (!res?.ok) {
         setError(res && !res.ok ? res.code : "NETWORK");
         return;
@@ -56,7 +81,10 @@ export function PaymentSheet({
         void updatePayment({ id, ...before }).then((r) => {
           if (!r.ok) notify.error(r.code, undo);
         });
-      notify.undoable(pick.paid ? "Pagamento marcado" : "Voltou para a pagar", undo);
+      notify.undoable(
+        pick.choice === "full" ? "Pagamento marcado" : pick.choice === "deposit" ? "Sinal marcado" : "Voltou para a pagar",
+        undo,
+      );
     });
   }
 
@@ -78,8 +106,20 @@ export function PaymentSheet({
             <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
               {price} · agora: {payment.label.toLowerCase()}
             </Drawer.Description>
+            {payment.state === "deposit" ? (
+              <dl className="mb-3 grid grid-cols-2 gap-2 rounded-2xl bg-soft px-4 py-3">
+                <div>
+                  <dt className="text-xs font-bold text-muted">Sinal pago</dt>
+                  <dd className="text-lg font-bold tabular-nums text-ok">{formatBRL(payment.paidCents)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-bold text-muted">Falta</dt>
+                  <dd className="text-lg font-bold tabular-nums text-primary-text">{formatBRL(payment.remainingCents)}</dd>
+                </div>
+              </dl>
+            ) : null}
             <div className="grid gap-3">
-              <PaymentFields paid={pick.paid} method={pick.method} onChange={setPick} />
+              <PaymentFields value={pick} onChange={setPick} totalCents={total} amountError={badAmount} />
               {error ? (
                 <p role="alert" className="rounded-2xl bg-fail-bg px-4 py-3 text-sm font-semibold text-fail">
                   {messageFor(error)}

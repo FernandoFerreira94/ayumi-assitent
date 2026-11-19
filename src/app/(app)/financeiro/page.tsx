@@ -16,6 +16,7 @@ import { byMonth, monthsUpTo, noShows, topClients } from "@/features/finance/ins
 import { MonthlyBars } from "@/features/finance/MonthlyBars";
 import { PaymentList } from "@/features/finance/PaymentList";
 import { splitPayments } from "@/features/finance/payments";
+import { cashInRange } from "@/features/wallet/core";
 import { formatBRL, todayStr } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
 
@@ -49,8 +50,9 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
   // Tablet/desktop: os 6 meses até o escolhido (uma consulta para o período todo)
   const months = monthsUpTo(ym, 6);
   const first = monthRange(months[0]);
-  const { rows, spent, history, historySpent } = await withTenant(tenantId, async (tx) => ({
+  const { rows, spent, history, historySpent, cash } = await withTenant(tenantId, async (tx) => ({
     rows: await listDay(tx, range),
+    cash: await cashInRange(tx, range),
     spent: await listExpenses(tx, dates[0], dates[1]),
     history: await listDay(tx, [first.range[0], range[1]]),
     historySpent: await listExpenses(tx, first.dates[0], dates[1]),
@@ -200,7 +202,7 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
             <h2 id="pagamentos" className={h2}>
               Pagamentos das clientes
             </h2>
-            <PaymentList {...pay} />
+            <PaymentList {...pay} cashCents={cash} />
           </section>
 
           <section aria-labelledby="por-servico" className={card}>

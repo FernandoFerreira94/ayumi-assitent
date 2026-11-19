@@ -29,6 +29,44 @@ describe("pagamento na folha de agendar", () => {
     expect(parsePayment("1", "pix")).toEqual({ method: "pix" });
     expect(parsePayment("1", "boleto")).toEqual({ method: null });
   });
+  it("sinal lê o valor em reais; vazio ou inválido não passa", () => {
+    expect(parsePayment("deposit", "pix", "30,00")).toEqual({ method: "pix", amountCents: 3000 });
+    expect(parsePayment("deposit", null, "1.250,5")).toEqual({ method: null, amountCents: 125050 });
+    expect(parsePayment("deposit", null, "")).toBe("invalid");
+    expect(parsePayment("deposit", null, "abc")).toBe("invalid");
+  });
+});
+
+describe("sinal no selo", () => {
+  it("parte paga em aberto vira sinal com o que falta", () => {
+    const v = paymentView({
+      paidAt: null,
+      startsAt: start,
+      status: "confirmed",
+      paymentMethod: "pix",
+      priceCents: 10000,
+      paidCents: 3000,
+    });
+    expect(v).toMatchObject({ state: "deposit", paidCents: 3000, remainingCents: 7000 });
+    expect(v.label.replace(/\s/g, " ")).toBe("Sinal R$ 30,00 · falta R$ 70,00");
+  });
+  it("concluído com sinal conta como pago no atendimento", () => {
+    expect(paymentState({ paidAt: null, startsAt: start, status: "done", paidCents: 3000, priceCents: 10000 })).toBe(
+      "on_service",
+    );
+  });
+  it("sem nada pago fica a pagar, com o total faltando", () => {
+    expect(
+      paymentView({
+        paidAt: null,
+        startsAt: start,
+        status: "confirmed",
+        paymentMethod: null,
+        priceCents: 5000,
+        paidCents: 0,
+      }),
+    ).toMatchObject({ state: "unpaid", remainingCents: 5000 });
+  });
 });
 
 describe("pagamentos do mês no Financeiro", () => {
@@ -53,5 +91,11 @@ describe("pagamentos do mês no Financeiro", () => {
     expect(r.toPay.map((x) => x.id)).toEqual(["a"]);
     expect(r.advance.map((x) => x.id)).toEqual(["b"]);
     expect(r).toMatchObject({ toPayCents: 3000, advanceCents: 7000 });
+  });
+  it("quem deu sinal aparece nas duas abas: o que falta e o que pagou", () => {
+    const r = splitPayments([{ ...row("s", "confirmed", null, 10000), paidCents: 3000 }]);
+    expect(r.toPay.map((x) => x.id)).toEqual(["s"]);
+    expect(r.advance.map((x) => x.id)).toEqual(["s"]);
+    expect(r).toMatchObject({ toPayCents: 7000, advanceCents: 3000 });
   });
 });

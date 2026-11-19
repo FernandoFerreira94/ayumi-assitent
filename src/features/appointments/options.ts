@@ -10,6 +10,8 @@ export type BookingOptions = {
   services: ServiceOption[];
   /** Expediente da semana (só na folha do "Novo"), para avisar horário fora dele. */
   week?: Day[];
+  /** Sinal sugerido (% do total) de Ajustes > Pagamentos. */
+  depositPct?: number;
 };
 
 /** Clientes e serviços no formato do seletor da folha "Novo agendamento". */

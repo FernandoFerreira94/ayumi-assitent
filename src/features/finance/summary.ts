@@ -9,6 +9,8 @@ type Row = {
   serviceName: string;
   /** Serviços do atendimento com o valor cheio de cada um (json do banco; null nos antigos). */
   serviceParts?: Part[] | string | null;
+  /** Já pago (sinal ou adiantado), do extrato da carteira */
+  paidCents?: number;
 };
 
 /** Um atendimento com escova + hidratação conta nas duas fatias, cada uma com a parte dela do total. */
@@ -45,7 +47,8 @@ const bySlice = (rows: Row[]) => {
 
 /**
  * Ganho do período: o recebido vem dos concluídos, o previsto soma o que ainda não faltou.
- * `pending` (a receber) é o previsto menos o recebido: só o que ainda não foi concluído.
+ * `pending` (a receber) é o que falta entrar dos atendimentos ainda não concluídos: o valor menos o sinal ou
+ * adiantado já pago.
  * `forecastSlices` divide o previsto por serviço: a pizza usa quando ainda não há nada concluído.
  */
 export function summarize(rows: Row[]) {
@@ -54,7 +57,9 @@ export function summarize(rows: Row[]) {
   return {
     received,
     forecast: forecastCents(rows),
-    pending: forecastCents(rows) - received,
+    pending: rows
+      .filter((r) => r.status !== "done" && r.status !== "no_show")
+      .reduce((t, r) => t + Math.max(0, r.priceCents - (r.paidCents ?? 0)), 0),
     doneCount: done.length,
     averageCents: done.length ? Math.round(received / done.length) : 0,
     slices: bySlice(done),

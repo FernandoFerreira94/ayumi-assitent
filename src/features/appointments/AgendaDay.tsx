@@ -149,6 +149,7 @@ export function AgendaDay({
   clients,
   services,
   week,
+  depositPct,
   blockButton,
 }: {
   date: string;
@@ -166,6 +167,8 @@ export function AgendaDay({
   services: ServiceOption[];
   /** Expediente da semana (0 = domingo), para a folha avisar quando o horário cai fora dele. */
   week: Day[];
+  /** Sinal sugerido (% do total) para a folha de agendar. */
+  depositPct?: number;
   /** Botão Bloquear; sem ele (no Painel) a fileira Bloquear/Agendar não aparece. */
   blockButton?: ReactNode;
 }) {
@@ -590,6 +593,7 @@ export function AgendaDay({
         clients={clients}
         services={services}
         week={week}
+        depositPct={depositPct}
         openKey={newKey}
         time={temp ? hhmm(temp.start) : undefined}
         clientId={convert?.clientId}
