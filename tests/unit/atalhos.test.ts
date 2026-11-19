@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { falaAgenda, falaProxima, falaResumo, parseDia, spokenTime, type AtalhoRow } from "@/features/atalhos/core";
+import {
+  falaAgenda,
+  falaProxima,
+  falaResumo,
+  numberWords,
+  parseDia,
+  spokenHour,
+  spokenTime,
+  type AtalhoRow,
+} from "@/features/atalhos/core";
 import { createLimiter } from "@/features/atalhos/rate";
 import { bearerToken, hashApiToken, isApiTokenShape, newApiToken, tokenLast4 } from "@/features/atalhos/token";
 
@@ -50,17 +59,24 @@ describe("parseDia", () => {
 });
 
 describe("frases da Siri", () => {
-  it("hora falada", () => {
+  it("hora curta nos dados e hora falada na frase", () => {
     expect(spokenTime(at("18", "09:00"))).toBe("9h");
     expect(spokenTime(at("18", "10:30"))).toBe("10h30");
+    expect(spokenHour(at("18", "09:00"))).toBe("às nove");
+    expect(spokenHour(at("18", "14:30"))).toBe("às duas e meia da tarde");
+    expect(spokenHour(at("18", "13:15"))).toBe("à uma e quinze da tarde");
+    expect(spokenHour(at("18", "12:00"))).toBe("ao meio-dia");
+    expect(spokenHour(at("18", "19:45"))).toBe("às sete e quarenta e cinco da noite");
+    expect(numberWords(2, true)).toBe("duas");
+    expect(numberWords(41)).toBe("quarenta e um");
   });
 
   it("dia vazio", () => {
-    expect(falaAgenda("hoje", [], at("18", "08:00"))).toBe("Hoje você não tem clientes na agenda.");
-    expect(falaAgenda("amanha", [])).toBe("Amanhã você não tem clientes na agenda.");
+    expect(falaAgenda("hoje", [], at("18", "08:00"))).toBe("Sua agenda de hoje está livre, nenhuma cliente marcada.");
+    expect(falaAgenda("amanha", [])).toBe("Sua agenda de amanhã está livre, nenhuma cliente marcada.");
   });
 
-  it("agenda de hoje lista só o que falta, com primeiro nome e quem não confirmou", () => {
+  it("agenda de hoje em fala corrida, só o que falta, primeiro nome e quem não confirmou", () => {
     const rows = [
       row("18", "08:00", "09:00", "done", "Carla Dias"),
       row("18", "10:30", "11:30", "confirmed", "Bia Lima"),
@@ -68,46 +84,51 @@ describe("frases da Siri", () => {
     ];
     const f = falaAgenda("hoje", rows, at("18", "10:00"));
     expect(f).toBe(
-      "Hoje você tem 3 clientes. Faltam 2: 10h30 Bia, Design de sobrancelha. 14h Ana, Design de sobrancelha. 1 ainda não confirmou.",
+      "Hoje você tem três clientes e ainda faltam duas. Agora vem Bia às dez e meia, design de sobrancelha, depois Ana às duas da tarde, design de sobrancelha. Só Ana ainda não confirmou.",
     );
     expect(f).not.toContain("Souza");
+    expect(f).not.toMatch(/\d/);
   });
 
-  it("1 cliente no singular", () => {
+  it("amanhã com uma cliente", () => {
     expect(falaAgenda("amanha", [row("19", "09:00", "10:00", "confirmed")])).toBe(
-      "Amanhã você tem 1 cliente. 9h Ana, Design de sobrancelha.",
+      "Amanhã você tem uma cliente. Primeiro Ana às nove, design de sobrancelha.",
     );
   });
 
   it("todos já passaram", () => {
-    expect(falaAgenda("hoje", [row("18", "08:00", "09:00", "done")], at("18", "12:00"))).toContain("já passaram");
+    expect(falaAgenda("hoje", [row("18", "08:00", "09:00", "done")], at("18", "12:00"))).toBe(
+      "Hoje você teve uma cliente e já acabou tudo. Bom descanso!",
+    );
   });
 
   it("próxima cliente hoje, com quanto falta", () => {
     expect(falaProxima([row("18", "10:30", "11:30", "pending_confirmation", "Bia Lima")], at("18", "09:50"))).toBe(
-      "Sua próxima cliente é Bia, hoje às 10h30, daqui a 40 min, Design de sobrancelha. Ela ainda não confirmou.",
+      "Sua próxima cliente é Bia, daqui a quarenta minutos, às dez e meia, para design de sobrancelha. Ela ainda não confirmou.",
     );
   });
 
   it("próxima em atendimento agora e em outro dia", () => {
     expect(falaProxima([row("18", "10:00", "11:00", "confirmed")], at("18", "10:20"))).toBe(
-      "Agora você está com Ana, Design de sobrancelha, até 11h.",
+      "Agora você está com Ana, design de sobrancelha, e termina lá pelas onze.",
     );
-    expect(falaProxima([row("19", "09:00", "10:00", "confirmed")], at("18", "20:00"))).toContain("amanhã às 9h");
-    expect(falaProxima([], at("18", "20:00"))).toContain("próximos 7 dias");
+    expect(falaProxima([row("19", "09:00", "10:00", "confirmed")], at("18", "20:00"))).toBe(
+      "Sua próxima cliente é Ana, amanhã às nove, para design de sobrancelha.",
+    );
+    expect(falaProxima([], at("18", "20:00"))).toContain("próximos sete dias");
   });
 
   it("resumo com previsto, recebido e pendentes; falta não conta", () => {
     const rows = [
       row("18", "08:00", "09:00", "done", "A", 5000),
-      row("18", "10:00", "11:00", "pending_confirmation", "B", 8000),
+      row("18", "10:00", "11:00", "pending_confirmation", "Bia", 8050),
       row("18", "12:00", "13:00", "no_show", "C", 9000),
     ];
     expect(falaResumo("hoje", rows)).toBe(
-      "Hoje você tem 2 clientes, R$ 130,00 previstos, R$ 50,00 já recebidos e 1 sem confirmar.",
+      "Hoje você tem duas clientes, com R$ 130,50 previstos e R$ 50 já recebidos. Só Bia ainda não confirmou.",
     );
     expect(falaResumo("amanha", [row("19", "08:00", "09:00", "confirmed", "A", 5000)])).toBe(
-      "Amanhã você tem 1 cliente e R$ 50,00 previstos.",
+      "Amanhã você tem uma cliente, com R$ 50 previstos.",
     );
   });
 });
