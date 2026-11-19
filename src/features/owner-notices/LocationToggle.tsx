@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/Switch";
 import { emitLocationChanged } from "@/features/settings/live-events";
 import { clearLocation, saveDeviceLocation } from "./actions";
 import { currentPosition, locationGranted, placeOf } from "./device-location";
+import { enableDeviceLocation } from "./enable-location";
 
 type Source = "device" | "manual" | null;
 
@@ -45,27 +46,23 @@ export function LocationToggle(props: { city: string | null; state: string | nul
         } else notify.error(res ? res.code : "NETWORK");
         return;
       }
-      const pos = await currentPosition().catch((e: GeolocationPositionError | Error) => e);
-      if (!("coords" in pos)) {
-        if ("code" in pos && pos.code === 1)
+      const res = await enableDeviceLocation();
+      if (!res.ok) {
+        if (res.reason === "denied")
           notify.warning(
             "Localização bloqueada",
             "Libere a localização nos Ajustes do iPhone (Privacidade > Serviços de Localização).",
           );
-        else notify.problem("Não deu para achar a localização", "Tente de novo perto de uma janela.");
+        else if (res.reason === "unavailable")
+          notify.problem("Não deu para achar a localização", "Tente de novo perto de uma janela.");
+        else notify.error(res.code);
         return;
       }
-      const place = await placeOf(pos.coords.latitude, pos.coords.longitude);
-      const res = await saveDeviceLocation(place).catch(() => null);
-      if (!res?.ok) {
-        notify.error(res ? res.code : "NETWORK");
-        return;
-      }
-      setWhere({ ...res.data, source: "device" });
+      setWhere({ city: res.city, state: res.state, source: "device" });
       emitLocationChanged(true);
       notify.success(
         "Localização ligada",
-        res.data.city ? `${res.data.city} — ${res.data.state ?? ""}` : "A previsão do tempo já entra nos avisos.",
+        res.city ? `${res.city} — ${res.state ?? ""}` : "A previsão do tempo já entra nos avisos.",
       );
     });
   }
