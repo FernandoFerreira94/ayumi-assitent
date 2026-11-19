@@ -241,16 +241,14 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
             )}
           </section>
 
-          <section aria-labelledby="lancamentos" className={card}>
-            <h2 id="lancamentos" className={h2}>
-              Gastos lançados
-            </h2>
-            {spent.length ? (
+          {spent.length ? (
+            <section aria-labelledby="lancamentos" className={card}>
+              <h2 id="lancamentos" className={h2}>
+                Gastos lançados
+              </h2>
               <ExpenseList rows={spent} />
-            ) : (
-              <p className="py-2 text-sm font-semibold text-muted">Nenhum gasto lançado nesse mês.</p>
-            )}
-          </section>
+            </section>
+          ) : null}
         </div>
       </div>
     </PageShell>
