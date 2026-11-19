@@ -1,12 +1,12 @@
 import "server-only";
-import { and, asc, eq, isNull, lt, or, sql } from "drizzle-orm";
+import { and, asc, eq, gt, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
 import { getDb, withTenant } from "@/db/client";
 import { apiTokens } from "@/db/schema";
 import { listDay } from "@/features/appointments/core";
 import { errInfo, log } from "@/lib/log";
 import type { AtalhoRow } from "./core";
 import { allowIp, allowToken } from "./rate";
-import { bearerToken, hashApiToken } from "./token";
+import { bearerToken, hashApiToken, isPairingCodeShape, newApiToken, tokenLast4 } from "./token";
 import type { TokenItem } from "./tokens-shared";
 
 /** Chave ativa dona do hash. Roda como dono do banco: ainda não se sabe o estúdio (igual ao webhook). */
@@ -14,7 +14,7 @@ export async function activeTokenByHash(hash: string) {
   const [t] = await getDb()
     .select({ id: apiTokens.id, tenantId: apiTokens.tenantId, scope: apiTokens.scope })
     .from(apiTokens)
-    .where(and(eq(apiTokens.tokenHash, hash), isNull(apiTokens.revokedAt)))
+    .where(and(eq(apiTokens.tokenHash, hash), isNull(apiTokens.revokedAt), isNull(apiTokens.pairingExpiresAt)))
     .limit(1);
   return t ?? null;
 }
@@ -105,7 +105,7 @@ export async function listApiTokens(tenantId: string): Promise<TokenItem[]> {
         lastUsedAt: apiTokens.lastUsedAt,
       })
       .from(apiTokens)
-      .where(isNull(apiTokens.revokedAt))
+      .where(and(isNull(apiTokens.revokedAt), isNull(apiTokens.pairingExpiresAt)))
       .orderBy(asc(apiTokens.createdAt)),
   );
   return rows.map((r) => ({
@@ -113,4 +113,64 @@ export async function listApiTokens(tenantId: string): Promise<TokenItem[]> {
     createdAt: r.createdAt.toISOString(),
     lastUsedAt: r.lastUsedAt?.toISOString() ?? null,
   }));
+}
+
+/**
+ * Troca o código de pareamento pela chave, numa única UPDATE: uso único e atômico (dois pedidos com o mesmo
+ * código → só um ganha). Roda como dono do banco: o código é que diz o estúdio. Vencido ou usado: null.
+ */
+export async function redeemPairing(code: string): Promise<string | null> {
+  const token = newApiToken();
+  const done = await getDb()
+    .update(apiTokens)
+    .set({ tokenHash: hashApiToken(token), last4: tokenLast4(token), pairingExpiresAt: null })
+    .where(
+      and(
+        eq(apiTokens.tokenHash, hashApiToken(code)),
+        isNull(apiTokens.revokedAt),
+        isNotNull(apiTokens.pairingExpiresAt),
+        gt(apiTokens.pairingExpiresAt, sql`now()`),
+      ),
+    )
+    .returning({ id: apiTokens.id });
+  return done.length ? token : null;
+}
+
+/** Lê o código do corpo: JSON `{ "codigo": "bubpar_…" }` (padrão do app Atalhos) ou texto puro. Nunca da URL. */
+async function pairingCodeOf(req: Request): Promise<string | null> {
+  const raw = (await req.text().catch(() => "")).slice(0, 500).trim();
+  let v = raw;
+  if (raw.startsWith("{")) {
+    try {
+      const j = JSON.parse(raw) as { codigo?: unknown };
+      v = typeof j.codigo === "string" ? j.codigo.trim() : "";
+    } catch {
+      v = "";
+    }
+  }
+  return isPairingCodeShape(v) ? v : null;
+}
+
+/**
+ * POST /api/v1/atalhos/parear: o Atalho "Bubbly" manda o código que o app copiou e recebe a chave (texto puro,
+ * só ela, para salvar direto em arquivo). Falha: 400 com a frase para a Siri falar. Nunca loga código nem chave.
+ */
+export async function handlePairing(req: Request): Promise<Response> {
+  if (!allowIp(clientIp(req)))
+    return respond(req, 429, { fala: "Muitas tentativas seguidas. Tenta de novo daqui a um minuto." });
+  const code = await pairingCodeOf(req);
+  const expired = () =>
+    respond(req, 400, {
+      fala: "Esse código já venceu. Abra o Bubbly, em Ajustes, Siri e Atalhos, e toque em Adicionar à Siri de novo.",
+    });
+  if (!code) return expired();
+  try {
+    const token = await redeemPairing(code);
+    if (!token) return expired();
+    if (wantsJson(req)) return Response.json({ chave: token }, { headers: HEADERS });
+    return new Response(token, { headers: { ...HEADERS, "Content-Type": "text/plain; charset=utf-8" } });
+  } catch (e) {
+    log("error", "atalho_pairing_failed", errInfo(e));
+    return respond(req, 500, { fala: "Não consegui ligar a Siri agora. Tenta de novo em instantes." });
+  }
 }

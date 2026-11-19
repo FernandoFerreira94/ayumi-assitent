@@ -348,4 +348,6 @@ export const apiTokens = pgTable("api_tokens", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
   revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  /** Preenchido = código de pareamento ainda não trocado (não vale como chave). */
+  pairingExpiresAt: timestamp("pairing_expires_at", { withTimezone: true }),
 });
