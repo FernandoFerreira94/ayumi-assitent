@@ -36,21 +36,42 @@ export function appointmentPaid(moves: readonly Move[], appointmentId: string): 
   return paid;
 }
 
+/** Efeito de um movimento no crédito da cliente (0 = não mexe no crédito). */
+export function walletEffect(m: Move): number {
+  if (m.kind === "credit_in") return m.amountCents;
+  if (m.kind === "credit_use" || m.kind === "expire") return -m.amountCents;
+  if (m.appointmentId === null) {
+    if (m.kind === "payment") return m.amountCents;
+    if (m.kind === "refund" || m.kind === "retained") return -m.amountCents;
+  }
+  return 0;
+}
+
 /**
  * Crédito da cliente (dinheiro dela guardado no salão). Entra: pagamento sem atendimento e o que um atendimento
  * passou ao crédito. Sai: crédito usado, devolução/retenção sem atendimento e vencimento.
  */
-export function walletBalance(moves: readonly Move[]): number {
-  let bal = 0;
-  for (const m of moves) {
-    if (m.kind === "credit_in") bal += m.amountCents;
-    else if (m.kind === "credit_use" || m.kind === "expire") bal -= m.amountCents;
-    else if (m.appointmentId === null) {
-      if (m.kind === "payment") bal += m.amountCents;
-      else if (m.kind === "refund" || m.kind === "retained") bal -= m.amountCents;
-    }
-  }
-  return bal;
+export const walletBalance = (moves: readonly Move[]) => moves.reduce((t, m) => t + walletEffect(m), 0);
+
+const WALLET_LABEL: Partial<Record<LedgerKind, string>> = {
+  credit_in: "Virou crédito",
+  credit_use: "Usado no agendamento",
+  expire: "Venceu",
+  payment: "Crédito lançado",
+  refund: "Devolvido",
+  retained: "Ficou para o salão",
+};
+
+/** Extrato do crédito para a ficha: só o que mexe no crédito, o mais novo primeiro. */
+export function walletStatement<T extends Move & { reason: string | null; occurredAt: Date }>(
+  moves: readonly T[],
+  limit = 10,
+): { at: Date; label: string; cents: number }[] {
+  return moves
+    .map((m) => ({ at: m.occurredAt, label: m.reason || WALLET_LABEL[m.kind] || m.kind, cents: walletEffect(m) }))
+    .filter((m) => m.cents !== 0)
+    .reverse()
+    .slice(0, limit);
 }
 
 /** Dinheiro que entrou no caixa: pagamentos menos devoluções (a data é a do movimento). */

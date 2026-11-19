@@ -3,7 +3,15 @@ import { alias } from "drizzle-orm/pg-core";
 import type { Tx } from "@/db/client";
 import { appointments, clientLedger, tenants } from "@/db/schema";
 import type { PaymentMethod } from "@/features/appointments/payment";
-import type { Move, WalletPolicy } from "./rules";
+import {
+  appointmentPaid,
+  cancelOutcome,
+  walletBalance,
+  type LedgerKind,
+  type Move,
+  type Outcome,
+  type WalletPolicy,
+} from "./rules";
 
 /**
  * Carteira da cliente: leitura e gravação do extrato (`client_ledger`). Só insere; corrigir = anular.
@@ -67,8 +75,8 @@ export function appointmentMoves(tx: Tx, appointmentIds: string[]): Promise<Move
     .where(inArray(clientLedger.appointmentId, appointmentIds));
 }
 
-/** Pagamentos ainda valendo (não anulados) de um atendimento; `only` filtra por motivo. */
-async function livePayments(tx: Tx, appointmentId: string, only?: SQL) {
+/** Movimentos ainda valendo (não anulados) de um atendimento, dos tipos pedidos; `only` filtra mais. */
+async function liveMoves(tx: Tx, appointmentId: string, kinds: LedgerKind[], only?: SQL) {
   const rev = alias(clientLedger, "rev");
   return tx
     .select()
@@ -76,12 +84,38 @@ async function livePayments(tx: Tx, appointmentId: string, only?: SQL) {
     .where(
       and(
         eq(clientLedger.appointmentId, appointmentId),
-        eq(clientLedger.kind, "payment"),
+        inArray(clientLedger.kind, kinds),
         isNull(clientLedger.reversesId),
         notExists(tx.select({ id: rev.id }).from(rev).where(eq(rev.reversesId, clientLedger.id))),
         only,
       ),
     );
+}
+
+const livePayments = (tx: Tx, appointmentId: string, only?: SQL) => liveMoves(tx, appointmentId, ["payment"], only);
+
+/** Anula movimentos: cada um ganha uma linha negativa apontando para ele; nada é apagado. */
+async function reverseMoves(
+  tx: Tx,
+  rows: Awaited<ReturnType<typeof liveMoves>>,
+  reason: string,
+  createdBy?: string | null,
+) {
+  if (!rows.length) return;
+  await tx.insert(clientLedger).values(
+    rows.map((m) => ({
+      tenantId: m.tenantId,
+      clientId: m.clientId,
+      appointmentId: m.appointmentId,
+      kind: m.kind,
+      amountCents: -m.amountCents,
+      sessions: -m.sessions,
+      method: m.method,
+      reason,
+      reversesId: m.id,
+      createdBy: createdBy ?? null,
+    })),
+  );
 }
 
 /** Soma dos pagamentos valendo do atendimento. */
@@ -132,21 +166,110 @@ export async function reverseAppointmentPayments(
     appointmentId,
     opts.onlyAuto ? eq(clientLedger.reason, AUTO_DONE_REASON) : undefined,
   );
-  if (!live.length) return;
-  await tx.insert(clientLedger).values(
-    live.map((m) => ({
-      tenantId: m.tenantId,
-      clientId: m.clientId,
-      appointmentId: m.appointmentId,
-      kind: m.kind,
-      amountCents: -m.amountCents,
-      sessions: -m.sessions,
-      method: m.method,
-      reason: opts.reason ?? "Pagamento desmarcado",
-      reversesId: m.id,
-      createdBy: createdBy ?? null,
-    })),
-  );
+  await reverseMoves(tx, live, opts.reason ?? "Pagamento desmarcado", createdBy);
+}
+
+/** Quanto do atendimento está pago agora (pagamentos e crédito usado, menos o que saiu dele). */
+export async function appointmentPaidCents(tx: Tx, appointmentId: string) {
+  return appointmentPaid(await appointmentMoves(tx, [appointmentId]), appointmentId);
+}
+
+/** Crédito da cliente agora (soma do extrato). */
+export async function clientBalance(tx: Tx, clientId: string) {
+  return walletBalance(await clientMoves(tx, clientId));
+}
+
+/** Usa o crédito da cliente num atendimento (no máximo `upTo`). Devolve quanto usou. */
+export async function useCredit(
+  tx: Tx,
+  input: { tenantId: string; clientId: string; appointmentId: string; upTo: number; createdBy?: string | null },
+) {
+  const amount = Math.min(input.upTo, await clientBalance(tx, input.clientId));
+  if (amount <= 0) return 0;
+  await tx.insert(clientLedger).values({
+    tenantId: input.tenantId,
+    clientId: input.clientId,
+    appointmentId: input.appointmentId,
+    kind: "credit_use",
+    amountCents: amount,
+    reason: "Crédito usado no agendamento",
+    createdBy: input.createdBy ?? null,
+  });
+  return amount;
+}
+
+const CLOSED = new Set(["cancelled", "no_show"]);
+
+/**
+ * Carteira quando o status muda (D1/D2). Cancelar ou faltar: o que foi pago vira crédito da cliente, menos o
+ * sinal que fica para o salão quando a política manda (Ajustes > Pagamentos). Sair de cancelado/faltou anula
+ * esse acerto, e o pago volta para o atendimento. Devolve o acerto feito (null quando nada mudou de lugar).
+ */
+export async function settleStatusChange(
+  tx: Tx,
+  a: { id: string; tenantId: string; clientId: string; startsAt: Date; priceCents: number },
+  prev: string,
+  next: string,
+  now: Date = new Date(),
+  createdBy?: string | null,
+): Promise<Outcome | null> {
+  if (prev === next) return null;
+  if (CLOSED.has(prev))
+    await reverseMoves(tx, await liveMoves(tx, a.id, ["credit_in", "retained"]), "Voltou para a agenda", createdBy);
+  if (!CLOSED.has(next)) return null;
+  const paid = await appointmentPaidCents(tx, a.id);
+  if (paid <= 0) return null;
+  const out = cancelOutcome({
+    policy: await getWalletSettings(tx),
+    status: next as "cancelled" | "no_show",
+    startsAt: a.startsAt,
+    at: now,
+    totalCents: a.priceCents,
+    paidCents: paid,
+  });
+  const base = { tenantId: a.tenantId, clientId: a.clientId, appointmentId: a.id, createdBy: createdBy ?? null };
+  const rows = [
+    {
+      ...base,
+      kind: "credit_in" as const,
+      amountCents: out.toCredit,
+      reason: next === "no_show" ? "Faltou" : "Cancelou",
+    },
+    {
+      ...base,
+      kind: "retained" as const,
+      amountCents: out.retained,
+      reason: next === "no_show" ? "Sinal da falta" : "Sinal do cancelamento em cima da hora",
+    },
+  ].filter((r) => r.amountCents > 0);
+  if (rows.length) await tx.insert(clientLedger).values(rows);
+  return out;
+}
+
+/** Devolve dinheiro do crédito da cliente (estorno manual). No máximo o crédito que ela tem. */
+export async function refundCredit(
+  tx: Tx,
+  input: {
+    tenantId: string;
+    clientId: string;
+    amountCents: number;
+    method: PaymentMethod | null;
+    reason?: string | null;
+    createdBy?: string | null;
+  },
+): Promise<"ok" | "too_much"> {
+  if (input.amountCents <= 0 || input.amountCents > (await clientBalance(tx, input.clientId))) return "too_much";
+  await tx.insert(clientLedger).values({
+    tenantId: input.tenantId,
+    clientId: input.clientId,
+    appointmentId: null,
+    kind: "refund",
+    amountCents: input.amountCents,
+    method: input.method,
+    reason: input.reason || "Devolvido à cliente",
+    createdBy: input.createdBy ?? null,
+  });
+  return "ok";
 }
 
 export type WalletSettings = WalletPolicy & { pixKey: string | null };

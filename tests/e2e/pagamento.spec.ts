@@ -59,7 +59,10 @@ test("marca pago adiantado ao agendar e depois pelo Financeiro", async ({ page }
   await page.goto(`/financeiro?m=${dia.slice(0, 7)}`);
   await expect(page.getByRole("tab", { name: /A pagar 1/ })).toBeVisible();
   await expect(page.getByRole("tab", { name: /Adiantado 1/ })).toBeVisible();
-  await page.getByRole("tabpanel").getByRole("button", { name: /Bia Souza/ }).click();
+  await page
+    .getByRole("tabpanel")
+    .getByRole("button", { name: /Bia Souza/ })
+    .click();
   await page.getByRole("dialog").getByRole("button", { name: "Já pagou" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Dinheiro" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Salvar" }).click();
@@ -85,4 +88,31 @@ test("sinal ao agendar, receber o resto depois e ver o caixa do mês", async ({ 
   await page.goto(`/financeiro?m=${todayStr().slice(0, 7)}`);
   // Entrou hoje: R$ 30 do sinal + R$ 50 do resto
   await expect(page.getByText("Entrou no caixa").locator("..")).toContainText(/R\$\s80,00/);
+});
+
+test("cancelar o que já foi pago vira crédito, que dá para devolver na ficha", async ({ page }) => {
+  await prepara(page);
+  const dia = addDays(todayStr(), 3);
+  await agenda(page, dia, "10:00", true);
+  await page.getByRole("button", { name: /Bia Souza, Escova, 10:00/ }).click();
+  await page.getByRole("button", { name: "Mais ações" }).click();
+  await page.getByRole("button", { name: "Cancelar" }).click();
+  // com 24 h ou mais de antecedência, tudo vira crédito (Ajustes > Pagamentos)
+  await expect(page.getByText(/Agendamento cancelado\. R\$\s80,00 virou crédito da cliente/)).toBeVisible();
+
+  await page.goto("/clientes");
+  const cartao = page.getByRole("dialog", { name: "Bia Souza" });
+  await expect(async () => {
+    await page.getByRole("button", { name: /^Bia Souza/ }).click({ timeout: 1000 });
+    await expect(cartao).toBeVisible({ timeout: 1000 });
+  }).toPass();
+  const carteira = cartao.getByRole("region", { name: "Crédito da cliente" });
+  await expect(carteira).toContainText(/R\$\s80,00/);
+  await expect(carteira).toContainText("Cancelou");
+  await carteira.getByRole("button", { name: "Devolver" }).click();
+  const folha = page.getByRole("dialog", { name: "Devolver para Bia" });
+  await folha.getByLabel("Valor a devolver").fill("30,00");
+  await folha.getByRole("button", { name: "Devolver", exact: true }).click();
+  await expect(page.getByText("Devolvido para Bia")).toBeVisible();
+  await expect(carteira).toContainText(/R\$\s50,00/);
 });

@@ -7,6 +7,8 @@ import { visitHistory } from "@/features/returns/rules";
 import { formatDayTitle, formatShortDate, formatTime, todayStr } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
 import { clientSummary, deleteClientRow, HISTORY, insertClient, updateClientRow } from "./core";
+import { clientMoves } from "@/features/wallet/core";
+import { walletBalance, walletStatement } from "@/features/wallet/rules";
 import { clientInput } from "./schema";
 
 export async function createClient(_prev: ActionResult<{ id: string }> | null, formData: FormData) {
@@ -67,6 +69,8 @@ export type ClientCard = {
   averageGap: number | null;
   /** retorno previsto da última visita (sem horário marcado e sem "Não precisa") */
   ret: { appointmentId: string; day: string; service: string; late: boolean } | null;
+  /** Carteira: crédito da cliente e os últimos movimentos dele */
+  wallet: { balanceCents: number; moves: { day: string; label: string; cents: number }[] };
 };
 
 /** Dados do cartão da cliente, já em texto para a tela (o fuso é o do servidor, igual à agenda). */
@@ -74,7 +78,7 @@ export async function loadClientCard(id: string): Promise<ActionResult<ClientCar
   const { tenantId } = await requireTenant();
   if (!/^[0-9a-f-]{36}$/i.test(id)) return fail("VALIDATION");
   try {
-    const s = await withTenant(tenantId, (tx) => clientSummary(tx, id));
+    const [s, moves] = await withTenant(tenantId, async (tx) => [await clientSummary(tx, id), await clientMoves(tx, id)] as const);
     const day = (d: Date) => formatDayTitle(todayStr(d));
     const { visits, averageGap } = visitHistory(
       s.history.map((v) => ({ date: todayStr(v.startsAt), service: v.service })),
@@ -98,6 +102,10 @@ export async function loadClientCard(id: string): Promise<ActionResult<ClientCar
               late: s.ret.due < todayStr(),
             }
           : null,
+      wallet: {
+        balanceCents: walletBalance(moves),
+        moves: walletStatement(moves).map((m) => ({ day: formatShortDate(todayStr(m.at)), label: m.label, cents: m.cents })),
+      },
     });
   } catch {
     return fail("UNKNOWN");

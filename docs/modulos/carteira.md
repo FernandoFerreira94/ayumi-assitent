@@ -19,15 +19,24 @@
 - **Financeiro:** "A receber" = soma de (preço − pago) dos não concluídos; caixa **Entrou no caixa** = `cashInRange` (pagamentos − devoluções por `occurred_at`); lista "A pagar" mostra o que falta e "Adiantado e sinais" o que já entrou.
 - Selo no card: "Sinal R$ X · falta R$ Y" (âmbar), ação "Receber o resto".
 
+## PR 3: cancelar, faltar, crédito e devolver (19/11)
+
+- **Status ↔ carteira** (`wallet/core.settleStatusChange`, chamado no `appointments/core.setStatus`): ir para `cancelled`/`no_show` aplica `cancelOutcome` com a política do salão: `credit_in` (vira crédito) e `retained` (sinal fica), os dois com `appointment_id`. Sair de cancelado/faltou anula esses dois (o pago volta ao atendimento). Cancelado/faltou não aceita `setPayment` (NOT_ALLOWED) e o card esconde o selo de pagamento.
+- `setStatus` devolve `{ wallet: Outcome | null }`; o toast do card diz "R$ X virou crédito da cliente; sinal de R$ Y ficou para o salão". Recebe `createdBy`.
+- **Crédito automático:** `insertAppointment` usa o crédito da cliente (`useCredit`, dentro do `lockTenant`) no que o sinal/"já pagou" não cobriu; cobrindo tudo, marca `paid_at`. Devolve `credit` e a folha de agendar avisa "Usou R$ X do crédito da cliente". `setPayment` desconta a parte paga com crédito.
+- Pago do atendimento agora = `appointmentPaidCents` (pagamentos + crédito usado − o que saiu); concluir dá baixa só do que falta disso.
+- **Ficha da cliente** (`ClientWallet`, dentro de `ClientCardContent`): "Crédito no salão", extrato (`rules.walletStatement`, só o que mexe no crédito) e **Devolver** (`refundCreditAction` → `refundCredit`, `refund` sem atendimento, no máximo o crédito, com `lockTenant`). Some quando nunca houve crédito.
+- WhatsApp: a cliente "cancelar" vira `reschedule_requested` (não cancela), então não mexe na carteira.
+
 ## Arquivos
 
-- `features/wallet/rules.ts` (puro): `appointmentPaid`, `walletBalance`, `cashIn`, `remainingCents`, `suggestedDeposit`, `cancelOutcome` (D1/D2), `payXPrice`, `sessionValue`, `packageExpiresOn`, `parsePolicy`, `DEFAULT_POLICY`.
-- `features/wallet/core.ts`: `paidCentsSql`, `cashInRange`, `livePaidCents`, `AUTO_DONE_REASON`, `clientMoves`, `appointmentMoves`, `recordPayment`, `reverseAppointmentPayments`, `getWalletSettings`, `saveWalletSettings`.
+- `features/wallet/rules.ts` (puro): `appointmentPaid`, `walletBalance`, `cashIn`, `remainingCents`, `suggestedDeposit`, `cancelOutcome` (D1/D2), `walletEffect`, `walletStatement`, `payXPrice`, `sessionValue`, `packageExpiresOn`, `parsePolicy`, `DEFAULT_POLICY`.
+- `features/wallet/core.ts`: `settleStatusChange`, `useCredit`, `refundCredit`, `clientBalance`, `appointmentPaidCents`, `paidCentsSql`, `cashInRange`, `livePaidCents`, `AUTO_DONE_REASON`, `clientMoves`, `appointmentMoves`, `recordPayment`, `reverseAppointmentPayments`, `getWalletSettings`, `saveWalletSettings`.
 - Tela: `app/(app)/ajustes/pagamentos`. Linha em Ajustes > "Clientes e agenda".
 
 ## Próximas fases
 
-3 cancelar/faltar com crédito, Devolver e carteira na ficha · 4 pacotes (Pague X leve Y, N sessões; `package_templates`, `client_packages`, `appointments.client_package_id`) · 5 automações (job `client-wallet-daily`) · 6 fidelidade/aniversário. Assinatura só após o Mercado Pago.
+4 pacotes (Pague X leve Y, N sessões; `package_templates`, `client_packages`, `appointments.client_package_id`) · 5 automações (job `client-wallet-daily`) · 6 fidelidade/aniversário. Assinatura só após o Mercado Pago.
 
 ## Cuidados
 
