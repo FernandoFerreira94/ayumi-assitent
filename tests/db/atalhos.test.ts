@@ -42,9 +42,9 @@ d("chave da Siri e Atalhos (Postgres real)", () => {
     await admin.end();
   });
 
-  const call = (auth?: string) =>
+  const call = (auth?: string, qs = "") =>
     srv.handleAtalho(
-      new Request("http://x/api/v1/atalhos/proxima", {
+      new Request(`http://x/api/v1/atalhos/proxima${qs}`, {
         headers: auth ? { authorization: auth, "x-forwarded-for": "1.2.3.4" } : {},
       }),
       async (tenantId, now) => {
@@ -57,15 +57,19 @@ d("chave da Siri e Atalhos (Postgres real)", () => {
     );
 
   it("cada chave lê só o próprio estúdio", async () => {
-    expect(await (await call(`Bearer ${tokA}`)).json()).toEqual({ fala: "Ana Souza" });
-    expect(await (await call(`Bearer ${tokB}`)).json()).toEqual({ fala: "Bia Lima" });
+    const res = await call(`Bearer ${tokA}`);
+    expect(res.headers.get("content-type")).toContain("text/plain");
+    expect(await res.text()).toBe("Ana Souza");
+    expect(await (await call(`Bearer ${tokB}`)).text()).toBe("Bia Lima");
+    // JSON só quando pedido
+    expect(await (await call(`Bearer ${tokB}`, "?formato=json")).json()).toEqual({ fala: "Bia Lima" });
   });
 
   it("sem chave, chave errada ou desligada: o mesmo 401", async () => {
     for (const auth of [undefined, `Bearer ${newApiToken()}`, `Bearer ${tokOff}`, "Basic abc"]) {
       const res = await call(auth);
       expect(res.status).toBe(401);
-      expect((await res.json()).fala).toContain("não está mais ligado");
+      expect(await res.text()).toContain("não está mais ligado");
     }
   });
 

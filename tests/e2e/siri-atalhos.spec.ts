@@ -18,7 +18,8 @@ test("Siri e Atalhos: criar chave, consultar e desligar", async ({ page, request
     const res = await request.get(path, { headers: auth });
     expect(res.status()).toBe(200);
     expect(res.headers()["cache-control"]).toContain("no-store");
-    expect(typeof (await res.json()).fala).toBe("string");
+    expect(res.headers()["content-type"]).toContain("text/plain");
+    expect((await res.text()).length).toBeGreaterThan(10);
   }
   expect((await request.get("/api/v1/atalhos/agenda")).status()).toBe(401);
 
