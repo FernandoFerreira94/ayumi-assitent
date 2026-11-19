@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { sql } from "drizzle-orm";
 import { MascotSync } from "@/components/brand/MascotSync";
 import { DEFAULT_MASCOT, isMascotKind } from "@/components/brand/mascots";
@@ -8,6 +9,7 @@ import { NavHistory } from "@/components/nav/BackButton";
 import { Shortcuts } from "@/components/nav/Shortcuts";
 import { SideNavSlot } from "@/components/nav/SideNavSlot";
 import { TabBar } from "@/components/nav/TabBar";
+import { onboardingPending } from "@/features/onboarding/server";
 import { QuickBook } from "@/features/appointments/QuickBook";
 import { ReturnPrompt } from "@/features/returns/ReturnPrompt";
 import { ConversationHost } from "@/features/messaging/ConversationHost";
@@ -18,11 +20,14 @@ import { requireSession } from "@/lib/session";
 
 // Valida a sessão no servidor sem bloquear o shell (dock e faixa offline ficam estáticos).
 // Aproveita para alinhar o mascote/cores do aparelho com o escolhido em Meu perfil.
+// Quem ainda não fez a entrada de primeiro acesso (horários, avisos, agenda, localização) vai para ela antes da agenda.
 async function AuthGate({ children }: { children: React.ReactNode }) {
   const session = await requireSession();
-  const rows = await getDb().execute<{ mascot: string }>(
-    sql`select mascot from memberships where user_id = ${session.user.id} limit 1`,
-  );
+  const [rows, pending] = await Promise.all([
+    getDb().execute<{ mascot: string }>(sql`select mascot from memberships where user_id = ${session.user.id} limit 1`),
+    onboardingPending(session.user.id),
+  ]);
+  if (pending) redirect("/primeiro-acesso");
   const mascot = rows[0]?.mascot;
   return (
     <>
