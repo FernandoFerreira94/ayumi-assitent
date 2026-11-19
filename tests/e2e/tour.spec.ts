@@ -2,7 +2,7 @@ import { expect, test } from "./fixtures";
 
 test.use({ tourDone: false });
 
-test("primeiro acesso: tour obrigatório vai direto para Ajustes e aponta cada configuração", async ({ page }) => {
+test("primeiro acesso: tour obrigatório vai direto para Ajustes e aponta o que falta", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/agenda");
   const card = page.getByRole("dialog");
@@ -15,13 +15,7 @@ test("primeiro acesso: tour obrigatório vai direto para Ajustes e aponta cada c
   await expect(card).toBeVisible();
   await card.getByRole("button", { name: "Começar" }).click();
 
-  for (const name of [
-    "1. Conecte o WhatsApp",
-    "2. Ligue seus calendários",
-    "3. Ligue a Notificação",
-    "4. Edite suas mensagens",
-    "5. Seus horários",
-  ]) {
+  for (const name of ["Conecte o WhatsApp", "Edite suas mensagens"]) {
     await expect(card.getByRole("heading", { name })).toBeVisible();
     // O cartão fica inteiro na tela, longe da borda de cima (não cola no header)
     await expect
@@ -35,9 +29,6 @@ test("primeiro acesso: tour obrigatório vai direto para Ajustes e aponta cada c
       .toBe(true);
     await card.getByRole("button", { name: "Próximo" }).click();
   }
-  // Passo de instalar é opcional (some quando o ícone não está na tela)
-  const install = card.getByRole("heading", { name: "Instale o app no celular" });
-  if (await install.isVisible()) await card.getByRole("button", { name: "Próximo" }).click();
   await expect(card.getByRole("heading", { name: "Agora é com você!" })).toBeVisible();
   await card.getByRole("button", { name: "Vamos configurar" }).click();
   await expect(card).toBeHidden();
@@ -53,7 +44,7 @@ test("rever o tour por Ajustes pode ser pulado", async ({ page }) => {
   await page.goto("/agenda");
   const card = page.getByRole("dialog");
   await card.getByRole("button", { name: "Começar" }).click();
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 3; i++) {
     const next = card.getByRole("button", { name: "Próximo" });
     if (await next.isVisible()) await next.click();
   }

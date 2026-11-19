@@ -32,7 +32,7 @@ function measure(selector: string | undefined): Box | null {
 
 /**
  * Tour de primeiro acesso: escurece a tela, recorta o destaque e a Bolha explica num cartão. Fica todo em Ajustes
- * e aponta cada linha a configurar (WhatsApp, calendários, notificação, mensagens e horários). No primeiro acesso é obrigatório, sem
+ * e aponta o que ainda falta configurar (WhatsApp e mensagens); horários, avisos e agenda já saem da entrada de primeiro acesso. No primeiro acesso é obrigatório, sem
  * "Pular"; quem reabre por Ajustes pode pular. Nos passos "tap" só o destaque recebe toque e o toque real avança.
  */
 export function Tour({ autoStart }: { autoStart: boolean }) {
@@ -56,9 +56,7 @@ export function Tour({ autoStart }: { autoStart: boolean }) {
   const next = useCallback(() => {
     setStep((s) => {
       if (s === null) return null;
-      let n = s + 1;
-      // Passo opcional sem o destaque na tela (app já instalado) é pulado
-      while (n < TOUR_STEPS.length - 1 && TOUR_STEPS[n].optional && !firstVisible(TOUR_STEPS[n].target ?? "")) n++;
+      const n = s + 1;
       return n < TOUR_STEPS.length ? n : s;
     });
   }, []);
