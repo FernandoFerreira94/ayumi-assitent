@@ -104,7 +104,7 @@ export function PaymentSheet({
           <div className={SHEET_SCROLL}>
             <Drawer.Title className="pb-1 text-xl font-bold">Pagamento de {clientName.split(/\s+/)[0]}</Drawer.Title>
             <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
-              {price} · agora: {payment.label.toLowerCase()}
+              {price} · agora: {payment.label.replace(/^\p{Lu}/u, (c) => c.toLowerCase())}
             </Drawer.Description>
             {payment.state === "deposit" ? (
               <dl className="mb-3 grid grid-cols-2 gap-2 rounded-2xl bg-soft px-4 py-3">

@@ -21,6 +21,7 @@
 ## Pagamentos das clientes (19/11)
 - Caixa "Pagamentos das clientes" (celular e desktop): A pagar (em aberto sem marcação) e Adiantado (pago antes do começo), com totais; tocar abre a `PaymentSheet` da agenda. Regra em `finance/payments.ts` (`splitPayments`), UI `PaymentList.tsx`.
 - Não muda Ganhos/Previsto: recebido continua = concluído.
+- 19/11 (carteira PR 2): "Entrou no caixa" (`wallet/core.cashInRange`, pela data do pagamento) e sinal: A pagar soma o que falta, "Adiantado e sinais" soma o que já entrou; **A receber** desconta o já pago (`paidCents`). Ver [carteira.md](carteira.md).
 
 ## Cuidados
 - Previsto = tudo que não foi cancelado nem faltou (`no_show`); recebido = só `done`; o resumo mostra **A receber** = previsto − recebido (`summary.pending`, 19/11), para não repetir o valor de Ganhos (`appointments/core.forecastCents`/`receivedCents`). Remarcado transfere sem duplicar. Mudança em status ou desconto mexe aqui.
