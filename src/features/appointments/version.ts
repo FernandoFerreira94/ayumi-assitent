@@ -12,6 +12,7 @@ type Row = {
   clientName: string;
   serviceName: string;
   paidAt?: Date | null;
+  paidCents?: number;
 };
 type Block = { id: string; startsAt: Date; endsAt: Date; reason: string | null };
 
@@ -19,7 +20,7 @@ export function dayVersion(rows: Row[], blocks: Block[]): string {
   const parts = [
     ...rows.map(
       (r) =>
-        `a|${r.id}|${r.startsAt.getTime()}|${r.endsAt.getTime()}|${r.priceCents}|${r.status}|${r.clientName}|${r.serviceName}|${r.paidAt ? "p" : ""}`,
+        `a|${r.id}|${r.startsAt.getTime()}|${r.endsAt.getTime()}|${r.priceCents}|${r.status}|${r.clientName}|${r.serviceName}|${r.paidAt ? "p" : ""}${r.paidCents ?? ""}`,
     ),
     ...blocks.map((b) => `b|${b.id}|${b.startsAt.getTime()}|${b.endsAt.getTime()}|${b.reason ?? ""}`),
   ].sort();

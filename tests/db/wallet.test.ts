@@ -36,7 +36,7 @@ d("carteira da cliente (Postgres real)", () => {
     admin`select kind, amount_cents, method, reverses_id from client_ledger where appointment_id = ${appointmentId} order by created_at, amount_cents desc`;
 
   let hour = 9;
-  const book = (payment?: { method: "pix" | "dinheiro" | null } | null) =>
+  const book = (payment?: { method: "pix" | "dinheiro" | null; amountCents?: number } | null) =>
     withTenant(T, (tx) =>
       core.insertAppointment(tx, T, {
         clientId: cli,
@@ -133,5 +133,66 @@ d("carteira da cliente (Postgres real)", () => {
     // Outro estúdio não muda a política deste
     await withTenant(T2, (tx) => wallet.saveWalletSettings(tx, T, { ...s, depositPct: 10 }));
     expect((await withTenant(T, (tx) => wallet.getWalletSettings(tx))).depositPct).toBe(50);
+  });
+  const paid = async (id: string) =>
+    Number(
+      (
+        await admin`select coalesce(sum(amount_cents), 0) as s from client_ledger where appointment_id = ${id} and kind = 'payment'`
+      )[0]!.s,
+    );
+
+  it("sinal ao agendar: grava só o sinal e não marca como pago", async () => {
+    const r = await book({ method: "pix", amountCents: 1500 });
+    if (!r.ok) throw new Error(r.code);
+    expect(await paid(r.data.id)).toBe(1500);
+    const [a] = await admin`select paid_at from appointments where id = ${r.data.id}`;
+    expect(a?.paid_at).toBeNull();
+  });
+
+  it("receber o resto grava só a diferença, na forma nova; baixar para sinal anula e regrava", async () => {
+    const r = await book({ method: "pix", amountCents: 1500 });
+    if (!r.ok) throw new Error(r.code);
+    await withTenant(T, (tx) => core.setPayment(tx, r.data.id, { method: "dinheiro" }));
+    const rows = await ledger(r.data.id);
+    expect(rows.map((x) => [x.amount_cents, x.method])).toEqual([
+      [1500, "pix"],
+      [3500, "dinheiro"],
+    ]);
+    const [a] = await admin`select paid_at, payment_method from appointments where id = ${r.data.id}`;
+    expect(a?.paid_at).toBeInstanceOf(Date);
+    expect(a?.payment_method).toBe("dinheiro");
+    await withTenant(T, (tx) => core.setPayment(tx, r.data.id, { method: null, amountCents: 2000 }));
+    expect(await paid(r.data.id)).toBe(2000);
+    expect((await admin`select paid_at from appointments where id = ${r.data.id}`)[0]?.paid_at).toBeNull();
+  });
+
+  it("concluir dá baixa no que faltava; desfazer anula só essa baixa", async () => {
+    const r = await book({ method: "pix", amountCents: 1500 });
+    if (!r.ok) throw new Error(r.code);
+    await withTenant(T, (tx) => core.setStatus(tx, r.data.id, "done"));
+    expect(await paid(r.data.id)).toBe(5000);
+    const auto =
+      await admin`select amount_cents from client_ledger where appointment_id = ${r.data.id} and reason = 'Recebido ao concluir'`;
+    expect(auto.map((x) => x.amount_cents)).toEqual([3500]);
+    await withTenant(T, (tx) => core.setStatus(tx, r.data.id, "confirmed"));
+    expect(await paid(r.data.id)).toBe(1500);
+    // concluir de novo grava uma baixa nova
+    await withTenant(T, (tx) => core.setStatus(tx, r.data.id, "done"));
+    expect(await paid(r.data.id)).toBe(5000);
+  });
+
+  it("listDay traz o pago do extrato e o caixa soma pagamentos menos devoluções no período", async () => {
+    const r = await book({ method: "pix", amountCents: 1500 });
+    if (!r.ok) throw new Error(r.code);
+    const day = await withTenant(T, (tx) =>
+      core.listDay(tx, [new Date("2030-06-10T00:00:00Z"), new Date("2030-06-11T12:00:00Z")]),
+    );
+    expect(day.find((x) => x.id === r.data.id)?.paidCents).toBe(1500);
+    const now = Date.now();
+    const range: [Date, Date] = [new Date(now - 3_600_000), new Date(now + 3_600_000)];
+    const before = await withTenant(T, (tx) => wallet.cashInRange(tx, range));
+    await admin`insert into client_ledger (tenant_id, client_id, kind, amount_cents) values (${T}, ${cli}, 'refund', 500)`;
+    expect(await withTenant(T, (tx) => wallet.cashInRange(tx, range))).toBe(before - 500);
+    expect(await withTenant(T2, (tx) => wallet.cashInRange(tx, range))).toBe(0);
   });
 });

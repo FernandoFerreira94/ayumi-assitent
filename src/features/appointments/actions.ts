@@ -7,6 +7,7 @@ import { withTenant } from "@/db/client";
 import { appointments } from "@/db/schema";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
+import { getWalletSettings } from "@/features/wallet/core";
 import { syncAppointmentSafe } from "@/features/google/server";
 import { sendBookingMessage } from "@/features/messaging/booking-send";
 import type { SyncResult } from "@/features/google/sync";
@@ -33,11 +34,12 @@ class RollbackWith extends Error {
 export async function loadBookingOptions(): Promise<ActionResult<BookingOptions>> {
   const { tenantId } = await requireTenant();
   try {
-    const [clients, services, hours] = await withTenant(
+    const [clients, services, hours, wallet] = await withTenant(
       tenantId,
-      async (tx) => [await searchClients(tx, ""), await listBookable(tx), await getHours(tx)] as const,
+      async (tx) =>
+        [await searchClients(tx, ""), await listBookable(tx), await getHours(tx), await getWalletSettings(tx)] as const,
     );
-    return ok({ ...bookingOptions(clients, services), week: hours });
+    return ok({ ...bookingOptions(clients, services), week: hours, depositPct: wallet.depositPct });
   } catch {
     return fail("UNKNOWN");
   }
@@ -84,7 +86,8 @@ export async function createAppointment(_prev: ActionResult<{ id: string }> | nu
     String(formData.get("notes") ?? "")
       .trim()
       .slice(0, 300) || null;
-  const payment = parsePayment(formData.get("paid"), formData.get("paymentMethod"));
+  const payment = parsePayment(formData.get("paid"), formData.get("paymentMethod"), formData.get("depositAmount"));
+  if (payment === "invalid") return fail("VALIDATION", "depositAmount");
   // "Transformar em agendamento": o evento de fora (iPhone/Google) que ocupava o horário sai junto
   const fromBlock = z.string().uuid().safeParse(formData.get("fromBlockId"));
   try {
@@ -181,6 +184,8 @@ const paymentInput = z.object({
   id: z.string().uuid(),
   paid: z.boolean(),
   method: z.enum(PAYMENT_METHODS).nullable().optional(),
+  /** Sinal (parte do total), em centavos; sem = pagou tudo */
+  amountCents: z.number().int().positive().max(10_000_000).nullable().optional(),
 });
 
 /** Marca ou desmarca o pagamento da cliente (no detalhe do atendimento ou no Financeiro). */
@@ -188,13 +193,19 @@ export async function updatePayment(input: {
   id: string;
   paid: boolean;
   method?: string | null;
+  amountCents?: number | null;
 }): Promise<ActionResult> {
   const { tenantId, userId } = await requireTenant();
   const p = paymentInput.safeParse(input);
   if (!p.success) return fail("VALIDATION");
   try {
     const res = await withTenant(tenantId, (tx) =>
-      setPayment(tx, p.data.id, p.data.paid ? { method: p.data.method ?? null } : null, userId),
+      setPayment(
+        tx,
+        p.data.id,
+        p.data.paid ? { method: p.data.method ?? null, amountCents: p.data.amountCents ?? null } : null,
+        userId,
+      ),
     );
     if (!res.ok) return res;
     revalidatePath("/agenda");

@@ -126,12 +126,18 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
           payment={payment}
           nested={inSheet}
           triggerClassName={`flex min-h-11 items-center gap-2 rounded-xl px-3 text-left text-sm font-bold ${
-            payment.state === "unpaid" ? "bg-soft text-primary-text" : "bg-ok-bg text-ok"
+            payment.state === "unpaid"
+              ? "bg-soft text-primary-text"
+              : payment.state === "deposit"
+                ? "bg-wait-bg text-wait"
+                : "bg-ok-bg text-ok"
           }`}
         >
-          <Icon name={payment.state === "unpaid" ? "wallet" : "checkCircle"} size={18} />
+          <Icon name={payment.state === "unpaid" || payment.state === "deposit" ? "wallet" : "checkCircle"} size={18} />
           <span className="flex-1">{payment.label}</span>
-          <span className="text-xs font-semibold opacity-80">{payment.state === "unpaid" ? "Marcar pago" : "Mudar"}</span>
+          <span className="text-xs font-semibold opacity-80">
+            {payment.state === "unpaid" ? "Marcar pago" : payment.state === "deposit" ? "Receber o resto" : "Mudar"}
+          </span>
         </PaymentSheet>
       ) : null}
       {discount ? (

@@ -20,12 +20,15 @@ export function BookingServices({
   defaultIds = [],
   discountError,
   onMinutes,
+  onTotal,
 }: {
   services: ServiceOption[];
   defaultIds?: string[];
   discountError?: boolean;
   /** Duração somada dos serviços escolhidos, para a folha conferir o expediente. */
   onMinutes?: (minutes: number) => void;
+  /** Total com desconto, para o sinal sugerido no bloco Pagamento. */
+  onTotal?: (cents: number) => void;
 }) {
   const uid = useId();
   // Uma chave por seletor (para tirar do meio sem embaralhar) e o serviço escolhido em cada um
@@ -42,6 +45,7 @@ export function BookingServices({
   useEffect(() => onMinutes?.(minutes), [minutes, onMinutes]);
   const discount = parseDiscount(kind, raw);
   const { discountCents, totalCents } = applyDiscount(subtotal, discount === "invalid" ? null : discount);
+  useEffect(() => onTotal?.(totalCents), [totalCents, onTotal]);
 
   return (
     <>

@@ -1,6 +1,7 @@
 import { and, asc, eq, isNull, lt, gte, inArray } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { appointments, clients, services } from "@/db/schema";
+import { paidCentsSql } from "@/features/wallet/core";
 import { serviceLabel } from "./core";
 
 const base = (tx: Tx) =>
@@ -17,6 +18,7 @@ const base = (tx: Tx) =>
       serviceName: serviceLabel,
       paidAt: appointments.paidAt,
       paymentMethod: appointments.paymentMethod,
+      paidCents: paidCentsSql,
     })
     .from(appointments)
     .innerJoin(clients, eq(clients.id, appointments.clientId))
