@@ -20,6 +20,16 @@ describe("unionBox", () => {
 });
 
 describe("TOUR_STEPS", () => {
+  it("tem 4 passos: Oi, WhatsApp, Mensagens e fim (o resto virou a entrada de primeiro acesso)", () => {
+    expect(TOUR_STEPS.map((s) => s.title)).toEqual([
+      "Oi, eu sou o Bubbly!",
+      "Conecte o WhatsApp",
+      "Edite suas mensagens",
+      "Agora é com você!",
+    ]);
+    expect(TOUR_STEPS.map((s) => s.target)).toEqual([undefined, "#ajuste-whatsapp", "#ajuste-mensagens", undefined]);
+  });
+
   it("começa e termina sem destaque, e todo passo de toque tem alvo", () => {
     expect(TOUR_STEPS[0].target).toBeUndefined();
     expect(TOUR_STEPS.at(-1)!.target).toBeUndefined();

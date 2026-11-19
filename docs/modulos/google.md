@@ -3,7 +3,7 @@
 **Finalidade:** login com Google, espelhar cada agendamento no Google Agenda da dona (a cliente com e-mail recebe convite) e trazer os eventos do Google como horário ocupado. Também fornece o token para importar Google Contatos.
 
 ## Arquivos
-- `features/google/server.ts`: `googleAccessToken`, `calendarForTenant`, `syncAppointmentSafe` (nunca derruba o agendamento), `isGoogleConnected`, `importExternalEvents`.
+- `features/google/server.ts`: `googleAccessToken`, `calendarForTenant`, `syncAppointmentSafe` (nunca derruba o agendamento), `isGoogleConnected`, `isGoogleCalendarConnected` (exige o escopo da agenda em `account.scope`, `scope.ts`; usado pela entrada de primeiro acesso), `importExternalEvents`.
 - `calendar.ts`: cliente REST mínimo (`fetch` injetável), `refreshAccessToken`, `toExternalEvent`.
 - `sync.ts` (`syncAppointment`: cancelado apaga o evento), `import.ts` (`importGoogleEvents`: janela `[from, to)` vira `blocks.source='google'`, ignora eventos criados pelo app).
 - UI: `GoogleCard.tsx` (`/ajustes/calendarios`; volta do OAuth cai lá), `RetrySyncButton.tsx`, `actions.disconnectGoogle`/`retrySync`.

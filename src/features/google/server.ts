@@ -12,6 +12,7 @@ import {
 } from "./calendar";
 import { readToken, writeToken } from "./token-crypto";
 import { importGoogleEvents } from "./import";
+import { hasCalendarScope } from "./scope";
 import { syncAppointment, type SyncResult } from "./sync";
 
 type AccountRow = {
@@ -19,13 +20,14 @@ type AccountRow = {
   accessToken: string | null;
   refreshToken: string | null;
   expiresAt: Date | string | null;
+  scope: string | null;
 };
 
 /** Conta Google do dono do estúdio (a agenda é dele). */
 async function ownerGoogleAccount(tenantId: string): Promise<AccountRow | null> {
   const rows = await getDb().execute<AccountRow>(sql`
     select a.id, a."accessToken" as "accessToken", a."refreshToken" as "refreshToken",
-           a."accessTokenExpiresAt" as "expiresAt"
+           a."accessTokenExpiresAt" as "expiresAt", a.scope
     from account a join memberships m on m.user_id = a."userId"
     where m.tenant_id = ${tenantId} and m.role = 'owner' and a."providerId" = 'google'
     limit 1`);
@@ -75,6 +77,12 @@ export async function syncAppointmentSafe(tenantId: string, appointmentId: strin
 export async function isGoogleConnected(tenantId: string): Promise<boolean> {
   const acc = await ownerGoogleAccount(tenantId);
   return !!acc && !!(acc.accessToken || acc.refreshToken);
+}
+
+/** Conectado E com a permissão da agenda aceita (usado pela entrada de primeiro acesso). */
+export async function isGoogleCalendarConnected(tenantId: string): Promise<boolean> {
+  const acc = await ownerGoogleAccount(tenantId);
+  return !!acc && !!(acc.accessToken || acc.refreshToken) && hasCalendarScope(acc.scope);
 }
 
 /** Janela importada: um pouco do passado (histórico do mês) e ~6 meses à frente. */
