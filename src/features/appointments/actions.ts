@@ -17,6 +17,7 @@ import { getHours } from "@/features/hours/core";
 import { convertExternalBlock, listBlocks } from "@/features/blocks/core";
 import { forceSyncExternalCalendars } from "@/features/blocks/external-sync";
 import { dayRange, isDateStr, toInstant } from "@/lib/dates";
+import type { Outcome } from "@/features/wallet/rules";
 import { editAppointment, insertAppointment, listDay, moveAppointment, setPayment, setStatus } from "./core";
 import { PAYMENT_METHODS, parsePayment } from "./payment";
 import { dayVersion } from "./version";
@@ -107,7 +108,7 @@ export async function createAppointment(_prev: ActionResult<{ id: string }> | nu
     const sync = await syncAppointmentSafe(tenantId, res.data.id);
     // Avisa a cliente que deu certo (dia, horário e, se a profissional quiser, o valor)
     const message = await sendBookingMessage(tenantId, res.data.id);
-    return ok({ id: res.data.id, sync, message });
+    return ok({ id: res.data.id, credit: res.data.credit, sync, message });
   } catch {
     return fail("UNKNOWN");
   }
@@ -218,17 +219,21 @@ export async function updatePayment(input: {
   }
 }
 
-export async function updateStatus(id: string, status: string): Promise<ActionResult<{ sync: SyncResult }>> {
-  const { tenantId } = await requireTenant();
+export async function updateStatus(
+  id: string,
+  status: string,
+): Promise<ActionResult<{ sync: SyncResult; wallet: Outcome | null }>> {
+  const { tenantId, userId } = await requireTenant();
   const p = z.object({ id: z.string().uuid(), status: z.enum(STATUSES) }).safeParse({ id, status });
   if (!p.success) return fail("VALIDATION");
   try {
-    const res = await withTenant(tenantId, (tx) => setStatus(tx, p.data.id, p.data.status));
+    const res = await withTenant(tenantId, (tx) => setStatus(tx, p.data.id, p.data.status, new Date(), userId));
     if (!res.ok) return res;
     revalidatePath("/agenda");
     revalidatePath("/calendario");
     revalidatePath("/pendencias");
-    return ok({ sync: await syncAppointmentSafe(tenantId, p.data.id) });
+    revalidatePath("/clientes");
+    return ok({ sync: await syncAppointmentSafe(tenantId, p.data.id), wallet: res.data.wallet });
   } catch {
     return fail("UNKNOWN");
   }
@@ -250,14 +255,14 @@ class Rollback {
 export async function updateStatuses(
   items: { id: string; status: string }[],
 ): Promise<ActionResult<{ sync: SyncResult; returns: number }>> {
-  const { tenantId } = await requireTenant();
+  const { tenantId, userId } = await requireTenant();
   const p = manyInput.safeParse(items);
   if (!p.success) return fail("VALIDATION");
   let returns = 0;
   try {
     returns = await withTenant(tenantId, async (tx) => {
       for (const it of p.data) {
-        const r = await setStatus(tx, it.id, it.status);
+        const r = await setStatus(tx, it.id, it.status, new Date(), userId);
         if (!r.ok) throw new Rollback(r);
       }
       // quantos concluídos ganharam data de retorno (o toast avisa; a lista fica em Clientes)

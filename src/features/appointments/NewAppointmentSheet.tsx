@@ -6,7 +6,8 @@ import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/Adapti
 import { LetterPicker, type PickerOption } from "@/components/ui/LetterPicker";
 import { LoadingRegion, Skeleton } from "@/components/ui/Skeleton";
 import { Icon } from "@/components/ui/Icon";
-import { formatDayTitle, isDateStr } from "@/lib/dates";
+import { formatBRL, formatDayTitle, isDateStr } from "@/lib/dates";
+import { notify } from "@/components/feedback/toast";
 import { weekdayOf, type Day } from "@/features/hours/slots";
 import { timeOptions } from "@/lib/time-grid";
 import { messageFor, type ErrorCode } from "@/lib/errors";
@@ -164,6 +165,7 @@ export function NewAppointmentSheet({
 
     const created = r.data;
     warnSync(created.sync);
+    if (created.credit > 0) notify.success(`Usou ${formatBRL(created.credit)} do crédito da cliente`);
     steps(["done", "wait", "wait"]);
     await sleep(200);
     steps(["done", "done", "run"]);

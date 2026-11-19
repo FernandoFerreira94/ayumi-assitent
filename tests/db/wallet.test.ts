@@ -195,4 +195,89 @@ d("carteira da cliente (Postgres real)", () => {
     expect(await withTenant(T, (tx) => wallet.cashInRange(tx, range))).toBe(before - 500);
     expect(await withTenant(T2, (tx) => wallet.cashInRange(tx, range))).toBe(0);
   });
+
+  describe("cancelar, faltar, crédito e devolver (PR 3)", () => {
+    let carla: string;
+    let h = 8;
+    const at = (date: string, time: string) => new Date(`${date}T${time}:00-03:00`);
+    const bookC = (date: string, payment?: { method: "pix" | null; amountCents?: number } | null) =>
+      withTenant(T, (tx) =>
+        core.insertAppointment(tx, T, {
+          clientId: carla,
+          serviceIds: [svc],
+          date,
+          time: `${String(h++).padStart(2, "0")}:00`,
+          payment,
+        }),
+      );
+    const balance = () => withTenant(T, (tx) => wallet.clientBalance(tx, carla));
+
+    beforeAll(async () => {
+      [{ id: carla }] =
+        await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Carla','+5511977775555') returning id`;
+      // padrão aprovado (o teste de Ajustes acima muda a política)
+      await admin`update tenants set deposit_pct = 30, cancel_notice_hours = 24, late_cancel_keeps_deposit = true, no_show_keeps_deposit = true where id = ${T}`;
+    });
+
+    it("cancelar com antecedência: tudo vira crédito; voltar desfaz", async () => {
+      const r = await bookC("2030-07-01", { method: "pix", amountCents: 2000 });
+      if (!r.ok) throw new Error(r.code);
+      const res = await withTenant(T, (tx) => core.setStatus(tx, r.data.id, "cancelled", at("2030-06-20", "10:00")));
+      expect(res).toMatchObject({ ok: true, data: { wallet: { toCredit: 2000, retained: 0 } } });
+      expect(await balance()).toBe(2000);
+      await withTenant(T, (tx) => core.setStatus(tx, r.data.id, "confirmed", at("2030-06-20", "10:01")));
+      expect(await balance()).toBe(0);
+      expect(await withTenant(T, (tx) => wallet.appointmentPaidCents(tx, r.data.id))).toBe(2000);
+      // cancelado não aceita mexer no pagamento
+      await withTenant(T, (tx) => core.setStatus(tx, r.data.id, "cancelled", at("2030-06-20", "10:02")));
+      expect(await withTenant(T, (tx) => core.setPayment(tx, r.data.id, null))).toMatchObject({ ok: false });
+    });
+
+    it("cancelar em cima da hora: o sinal fica e o resto vira crédito", async () => {
+      const before = await balance();
+      const r = await bookC("2030-07-02", { method: "pix" });
+      if (!r.ok) throw new Error(r.code);
+      // pagou tudo antes (R$ 50 + crédito usado); sinal sugerido 30% de R$ 50 = R$ 15
+      const paid = await withTenant(T, (tx) => wallet.appointmentPaidCents(tx, r.data.id));
+      const res = await withTenant(T, (tx) => core.setStatus(tx, r.data.id, "cancelled", at("2030-07-02", "07:00")));
+      expect(res).toMatchObject({ ok: true, data: { wallet: { retained: 1500, toCredit: paid - 1500 } } });
+      expect(await balance()).toBe(before + paid - 1500);
+    });
+
+    it("faltou: sinal fica para o salão", async () => {
+      const r = await bookC("2030-07-03", { method: "pix", amountCents: 4000 });
+      if (!r.ok) throw new Error(r.code);
+      const start = await balance();
+      const res = await withTenant(T, (tx) => core.setStatus(tx, r.data.id, "no_show", at("2030-07-03", "23:00")));
+      expect(res.ok && res.data.wallet).toMatchObject({ retained: 1500 });
+      expect(await balance()).toBe(start + (res.ok ? res.data.wallet!.toCredit : 0));
+    });
+
+    it("crédito paga sozinho o próximo agendamento", async () => {
+      const credit = await balance();
+      expect(credit).toBeGreaterThan(0);
+      const r = await bookC("2030-07-10", null);
+      if (!r.ok) throw new Error(r.code);
+      expect(r.data.credit).toBe(Math.min(credit, 5000));
+      expect(await balance()).toBe(credit - r.data.credit);
+      // receber o resto não cobra de novo o que o crédito pagou
+      await withTenant(T, (tx) => core.setPayment(tx, r.data.id, { method: "pix" }));
+      expect(await withTenant(T, (tx) => wallet.appointmentPaidCents(tx, r.data.id))).toBe(5000);
+      expect(await withTenant(T, (tx) => wallet.livePaidCents(tx, r.data.id))).toBe(5000 - r.data.credit);
+    });
+
+    it("devolver: tira do crédito e do caixa; não passa do crédito", async () => {
+      const r = await bookC("2030-07-20", { method: "pix" });
+      if (!r.ok) throw new Error(r.code);
+      await withTenant(T, (tx) => core.setStatus(tx, r.data.id, "cancelled", at("2030-07-01", "10:00")));
+      const credit = await balance();
+      expect(credit).toBeGreaterThan(0);
+      const base = { tenantId: T, clientId: carla, method: "pix" as const };
+      expect(await withTenant(T, (tx) => wallet.refundCredit(tx, { ...base, amountCents: credit + 1 }))).toBe(
+        "too_much",
+      );
+      expect(await withTenant(T, (tx) => wallet.refundCredit(tx, { ...base, amountCents: credit }))).toBe("ok");
+      expect(await balance()).toBe(0);
+    });
+  });
 });

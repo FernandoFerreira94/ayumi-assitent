@@ -8,6 +8,7 @@ import { notify } from "@/components/feedback/toast";
 import { openNewAppointment } from "@/features/appointments/QuickBook";
 import { openReturnPrompt } from "@/features/returns/ReturnPrompt";
 import { ChatGlyph, ChatSheet } from "@/features/messaging/ChatSheet";
+import { ClientWallet } from "@/features/wallet/ClientWallet";
 import { messageFor, type ActionResult } from "@/lib/errors";
 import { maskPhone } from "@/lib/phone";
 import { deleteClient, loadClientCard, updateClient, type ClientCard } from "./actions";
@@ -585,6 +586,13 @@ export function ClientCardContent({
               </button>
             </div>
           ) : null}
+          <ClientWallet
+            clientId={client.id}
+            clientName={client.name}
+            wallet={data.wallet}
+            nested={nested}
+            onChanged={load}
+          />
           {data.history.length ? (
             <section aria-label="Histórico" className="glass rounded-2xl px-4 py-3">
               <h3 className="flex items-baseline justify-between gap-2 pb-1 text-xs font-bold uppercase tracking-wide text-muted">

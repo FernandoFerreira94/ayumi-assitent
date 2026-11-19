@@ -6,7 +6,8 @@ import { Icon } from "@/components/ui/Icon";
 import type { SyncResult } from "@/features/google/sync";
 import { CHAT_BUTTON, ChatGlyph, ChatSheet } from "@/features/messaging/ChatSheet";
 import { cancelReturnPrompt, openReturnPrompt } from "@/features/returns/ReturnPrompt";
-import { toInstant } from "@/lib/dates";
+import { formatBRL, toInstant } from "@/lib/dates";
+import type { Outcome } from "@/features/wallet/rules";
 import type { ActionResult } from "@/lib/errors";
 import { updateStatus } from "./actions";
 import { EditAppointmentSheet } from "./EditAppointmentSheet";
@@ -46,6 +47,16 @@ type Props = {
 };
 
 /** Mudanças que mostram Desfazer em vez do aviso simples. */
+/** O que aconteceu com o pago ao cancelar/faltar, para o toast: ". R$ 50,00 virou crédito; o sinal R$ 30,00 ficou". */
+function walletNote(w: Outcome | null): string {
+  if (!w) return "";
+  const parts = [
+    w.toCredit > 0 ? `${formatBRL(w.toCredit)} virou crédito da cliente` : "",
+    w.retained > 0 ? `sinal de ${formatBRL(w.retained)} ficou para o salão` : "",
+  ].filter(Boolean);
+  return parts.length ? `. ${parts.join("; ")}` : "";
+}
+
 const UNDO_TEXT: Partial<Record<Status, string>> = {
   cancelled: "Agendamento cancelado",
   no_show: "Marcado como faltou",
@@ -83,7 +94,7 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
   function change(next: Status, undoTo?: Status) {
     setBusy(next);
     start(async () => {
-      const res: ActionResult<{ sync: SyncResult }> = await updateStatus(id, next);
+      const res: ActionResult<{ sync: SyncResult; wallet: Outcome | null }> = await updateStatus(id, next);
       setBusy(null);
       if (!res.ok) {
         notify.error(res.code, () => change(next, undoTo));
@@ -97,7 +108,7 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
           cancelReturnPrompt(id);
           change(undoTo);
         };
-        const toastId = notify.undoable(UNDO_TEXT[next], undo, undefined, next === "done" ? "success" : "warning");
+        const toastId = notify.undoable(UNDO_TEXT[next] + walletNote(res.data.wallet), undo, undefined, next === "done" ? "success" : "warning");
         // Concluiu: pergunta se já marca o retorno (só abre se o serviço tem retorno)
         if (next === "done") openReturnPrompt({ appointmentId: id, undo, toastId });
       } else {
@@ -118,7 +129,7 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
       <p className="text-sm font-semibold text-muted">
         {serviceName} · {LABEL[status]}
       </p>
-      {payment && status !== "cancelled" ? (
+      {payment && status !== "cancelled" && status !== "no_show" ? (
         <PaymentSheet
           id={id}
           clientName={clientName}

@@ -5,11 +5,15 @@ import { lockTenant, overlapsBlock } from "@/features/blocks/core";
 import { returnDue } from "@/features/returns/rules";
 import {
   AUTO_DONE_REASON,
+  appointmentPaidCents,
   livePaidCents,
   paidCentsSql,
   recordPayment,
   reverseAppointmentPayments,
+  settleStatusChange,
+  useCredit,
 } from "@/features/wallet/core";
+import type { Outcome } from "@/features/wallet/rules";
 import { toInstant, todayStr } from "@/lib/dates";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { canMarkNoShow } from "./no-show";
@@ -85,7 +89,7 @@ export async function insertAppointment(
   tx: Tx,
   tenantId: string,
   input: BookingInput,
-): Promise<ActionResult<{ id: string }>> {
+): Promise<ActionResult<{ id: string; credit: number }>> {
   const ids = [...new Set(input.serviceIds?.length ? input.serviceIds : input.serviceId ? [input.serviceId] : [])];
   if (ids.length === 0 || ids.length > 5) return fail("VALIDATION", "serviceIds");
   const list = await bookableServices(tx, ids);
@@ -132,7 +136,16 @@ export async function insertAppointment(
         })
         .returning({ id: appointments.id });
       await writeServices(sp, tenantId, r.id, list);
-      // Carteira: "já pagou" ao agendar vira um pagamento do total no extrato
+      // Carteira: crédito da cliente paga primeiro, sozinho; o "já pagou"/sinal cobre o resto
+      const credit = await useCredit(sp, {
+        tenantId,
+        clientId: cli.id,
+        appointmentId: r.id,
+        upTo: totalCents - paidNow,
+        createdBy: input.createdBy,
+      });
+      if (credit > 0 && paidNow + credit >= totalCents)
+        await sp.update(appointments).set({ paidAt: new Date() }).where(eq(appointments.id, r.id));
       if (input.payment)
         await recordPayment(sp, {
           tenantId,
@@ -142,9 +155,9 @@ export async function insertAppointment(
           method: input.payment.method,
           createdBy: input.createdBy,
         });
-      return r;
+      return { id: r.id, credit };
     });
-    return ok({ id: row.id });
+    return ok(row);
   } catch (e) {
     // 23P01 = exclusion_violation (horário sobreposto)
     if (pgCode(e) === "23P01") return fail("SLOT_TAKEN", "time");
@@ -176,13 +189,20 @@ async function returnDueFor(tx: Tx, id: string): Promise<string | null> {
  * qualquer outro status (inclusive o Desfazer) limpa a data e o "Não precisa".
  * Faltou só vale depois do horário de início (`NO_SHOW_TOO_EARLY` antes disso).
  */
-export async function setStatus(tx: Tx, id: string, status: Status, now: Date = new Date()): Promise<ActionResult> {
-  if (status === "no_show") {
-    // Falta só depois do horário de início (a tela já esconde; aqui é a trava de verdade)
-    const [a] = await tx.select({ startsAt: appointments.startsAt }).from(appointments).where(eq(appointments.id, id));
-    if (!a) return fail("NOT_ALLOWED");
-    if (!canMarkNoShow(a.startsAt, now)) return fail("NO_SHOW_TOO_EARLY");
-  }
+export async function setStatus(
+  tx: Tx,
+  id: string,
+  status: Status,
+  now: Date = new Date(),
+  createdBy?: string | null,
+): Promise<ActionResult<{ wallet: Outcome | null }>> {
+  const [before] = await tx
+    .select({ startsAt: appointments.startsAt, status: appointments.status })
+    .from(appointments)
+    .where(eq(appointments.id, id));
+  if (!before) return fail("NOT_ALLOWED");
+  // Falta só depois do horário de início (a tela já esconde; aqui é a trava de verdade)
+  if (status === "no_show" && !canMarkNoShow(before.startsAt, now)) return fail("NO_SHOW_TOO_EARLY");
   try {
     const returnFields =
       status === "done" ? { returnDueOn: await returnDueFor(tx, id) } : { returnDueOn: null, returnSkippedAt: null };
@@ -202,7 +222,7 @@ export async function setStatus(tx: Tx, id: string, status: Status, now: Date = 
     if (!a) return fail("NOT_ALLOWED");
     // Carteira: concluir dá baixa no que faltava (pago no atendimento); sair de concluído anula essa baixa
     if (status === "done") {
-      const rest = a.priceCents - (await livePaidCents(tx, id));
+      const rest = a.priceCents - (await appointmentPaidCents(tx, id));
       if (rest > 0)
         await recordPayment(tx, {
           tenantId: a.tenantId,
@@ -212,8 +232,17 @@ export async function setStatus(tx: Tx, id: string, status: Status, now: Date = 
           method: a.paymentMethod,
           reason: AUTO_DONE_REASON,
         });
-    } else await reverseAppointmentPayments(tx, id, null, { onlyAuto: true, reason: "Saiu de concluído" });
-    return ok();
+    } else await reverseAppointmentPayments(tx, id, createdBy, { onlyAuto: true, reason: "Saiu de concluído" });
+    // Cancelar/faltar: o pago vira crédito (ou o sinal fica); voltar desfaz
+    const wallet = await settleStatusChange(
+      tx,
+      { id, tenantId: a.tenantId, clientId: a.clientId, startsAt: before.startsAt, priceCents: a.priceCents },
+      before.status,
+      status,
+      now,
+      createdBy,
+    );
+    return ok({ wallet });
   } catch (e) {
     if (pgCode(e) === "23P01") return fail("SLOT_TAKEN");
     throw e;
@@ -243,10 +272,14 @@ export async function setPayment(
     })
     .from(appointments)
     .where(eq(appointments.id, id));
-  if (!a || (payment && a.status === "cancelled")) return fail("NOT_ALLOWED");
+  // Cancelado/faltou: o pago já foi acertado (crédito ou sinal retido); mexer aqui bagunçaria a carteira
+  if (!a || a.status === "cancelled" || a.status === "no_show") return fail("NOT_ALLOWED");
 
   const current = await livePaidCents(tx, id);
-  const target = payment ? Math.min(a.priceCents, payment.amountCents ?? a.priceCents) : 0;
+  // Parte paga com crédito da cliente fica; o pagamento em dinheiro só cobre o resto
+  const credit = Math.max(0, (await appointmentPaidCents(tx, id)) - current);
+  const wanted = payment ? Math.min(a.priceCents, payment.amountCents ?? a.priceCents) : 0;
+  const target = Math.max(0, wanted - credit);
   const sameMethod = !payment || payment.method === null || payment.method === a.paymentMethod;
   // Subiu (sinal → tudo): só a diferença, na forma escolhida agora (sinal no Pix e o resto em dinheiro, por ex.)
   if (payment && target > current) {
@@ -270,7 +303,7 @@ export async function setPayment(
         createdBy,
       });
   }
-  const full = payment !== null && target >= a.priceCents;
+  const full = payment !== null && wanted >= a.priceCents;
   await tx
     .update(appointments)
     .set({

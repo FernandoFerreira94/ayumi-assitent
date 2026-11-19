@@ -12,6 +12,7 @@ import {
   sessionValue,
   suggestedDeposit,
   walletBalance,
+  walletStatement,
 } from "@/features/wallet/rules";
 
 const A = "appt-a";
@@ -158,5 +159,22 @@ describe("formulário de Ajustes > Pagamentos", () => {
     expect(parsePolicy({ ...good, cancelNoticeHours: "200" })).toEqual({ ok: false, field: "cancelNoticeHours" });
     expect(parsePolicy({ ...good, packageValidDays: "abc" })).toEqual({ ok: false, field: "packageValidDays" });
     expect(parsePolicy({ ...good, pixKey: "x".repeat(141) })).toEqual({ ok: false, field: "pixKey" });
+  });
+});
+
+describe("extrato do crédito na ficha", () => {
+  it("mostra só o que mexe no crédito, o mais novo primeiro, com o sinal do efeito", () => {
+    const t = (d: number) => new Date(2030, 0, d);
+    const rows = [
+      { ...m("payment", 5000), reason: null, occurredAt: t(1) },
+      { ...m("credit_in", 5000), reason: "Cancelou", occurredAt: t(2) },
+      { ...m("credit_use", 3000, "outro"), reason: null, occurredAt: t(3) },
+      { ...m("refund", 2000, null), reason: null, occurredAt: t(4) },
+    ];
+    expect(walletStatement(rows)).toEqual([
+      { at: t(4), label: "Devolvido", cents: -2000 },
+      { at: t(3), label: "Usado no agendamento", cents: -3000 },
+      { at: t(2), label: "Cancelou", cents: 5000 },
+    ]);
   });
 });
