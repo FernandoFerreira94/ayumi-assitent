@@ -1,6 +1,6 @@
 import "server-only";
 import { and, asc, desc, eq, gt, gte, inArray, isNotNull, isNull, sql } from "drizzle-orm";
-import { getDb, withTenant } from "@/db/client";
+import { getDb, withTenant, type Tx } from "@/db/client";
 import { appointments, clients, messages, tenants } from "@/db/schema";
 import { sendToAll } from "@/features/push/core";
 import type { PushPort } from "@/features/push/port";
@@ -72,7 +72,35 @@ export type InboundResult =
   | { handled: false; reason: "tenant" | "client" | "duplicate" }
   | { handled: true; intent: Intent | null; appointmentId: string | null };
 
-type Target = { id: string; handedOff: boolean; correction: boolean; status: string; startsAt: Date };
+type Target = {
+  id: string;
+  handedOff: boolean;
+  correction: boolean;
+  status: string;
+  startsAt: Date;
+  /** Quando saiu o último lembrete (ou quando a cliente respondeu, na correção) */
+  since: Date;
+};
+
+/** Folga para o eco do próprio lembrete, que pode chegar pelo webhook antes de ser gravado e virar "phone". */
+const ECHO_GRACE_MS = 2 * 60_000;
+
+/** A dona mandou mensagem (app ou celular) para a cliente depois de `since`. */
+async function ownerWroteSince(tx: Tx, clientId: string, since: Date): Promise<boolean> {
+  const [row] = await tx
+    .select({ id: messages.id })
+    .from(messages)
+    .where(
+      and(
+        eq(messages.clientId, clientId),
+        eq(messages.direction, "out"),
+        inArray(messages.kind, ["phone", "manual"]),
+        gt(messages.createdAt, new Date(since.getTime() + ECHO_GRACE_MS)),
+      ),
+    )
+    .limit(1);
+  return !!row;
+}
 
 /**
  * Uma mensagem chegou pelo webhook. Liga ao estúdio (pela instância) e à cliente (pelo telefone),
@@ -114,6 +142,7 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
         kind: "phone",
         body: msg.text,
         externalId: msg.externalId,
+        createdAt: now,
       });
       return id
         ? ({ kind: "done", intent: null, appointmentId: null } as const)
@@ -150,6 +179,8 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
         handoff: appointments.aiHandoffAt,
         status: appointments.status,
         startsAt: appointments.startsAt,
+        reminderAt: appointments.reminderSentAt,
+        nudgeAt: appointments.nudgeSentAt,
       })
       .from(appointments)
       .where(
@@ -170,6 +201,8 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
         correction: false,
         status: open.status,
         startsAt: open.startsAt,
+        // O 2º lembrete reabre a pergunta: vale o mais recente dos dois
+        since: open.nudgeAt && open.nudgeAt > open.reminderAt! ? open.nudgeAt : open.reminderAt!,
       };
     else {
       const [recent] = await tx
@@ -178,6 +211,7 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
           handoff: appointments.aiHandoffAt,
           status: appointments.status,
           startsAt: appointments.startsAt,
+          replyAt: appointments.replyAt,
         })
         .from(appointments)
         .where(
@@ -197,8 +231,13 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
           correction: true,
           status: recent.status,
           startsAt: recent.startsAt,
+          since: recent.replyAt!,
         };
     }
+
+    // A dona escreveu depois do lembrete (ou da resposta): o que a cliente manda agora responde a ela,
+    // não ao lembrete. "2" para "quantas unhas?" não pode virar pedido de cancelar
+    if (target && (await ownerWroteSince(tx, cli.id, target.since))) target = null;
 
     // Regras simples primeiro: de graça e previsíveis
     const ruleIntent = target && !msg.media ? parseIntent(msg.text) : null;

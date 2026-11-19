@@ -129,6 +129,51 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     expect(sent[0]).toContain("Recebi seu pedido para remarcar o horário de amanhã às 10:00");
   });
 
+  it("a dona escreveu depois do lembrete: '2' ou 'sim' respondem a ela, não mexem no horário", async () => {
+    await reopen();
+    sent.length = 0;
+    const later = new Date(now.getTime() + 10 * 60_000).toISOString();
+    await admin`insert into messages (tenant_id, client_id, direction, kind, body, created_at)
+      values (${T}, ${C}, 'out', 'phone', 'Quantas unhas vamos fazer?', ${later})`;
+    for (const [id, text] of [
+      ["d1", "2"],
+      ["d2", "sim"],
+      ["d3", "não posso falar agora"],
+    ])
+      expect(await handleInbound(msg(id, text), deps), text).toEqual({
+        handled: true,
+        intent: null,
+        appointmentId: null,
+      });
+    expect((await apptRow()).status).toBe("pending_confirmation");
+    expect(sent).toHaveLength(0);
+    // Entra na conversa como mensagem normal
+    const rows = await admin`select intent from messages where external_id in ('d1','d2','d3')`;
+    expect(rows.map((r) => r.intent)).toEqual([null, null, null]);
+  });
+
+  it("2º lembrete depois da conversa com a dona reabre a resposta por número", async () => {
+    await reopen();
+    sent.length = 0;
+    const nudge = new Date(now.getTime() + 20 * 60_000).toISOString();
+    await admin`update appointments set nudge_sent_at = ${nudge} where id = ${A}`;
+    expect(await handleInbound(msg("d4", "1"), { ...deps, now: new Date(now.getTime() + 25 * 60_000) })).toMatchObject({
+      intent: "confirm",
+    });
+    await admin`update appointments set nudge_sent_at = null where id = ${A}`;
+    await admin`delete from messages where external_id like 'd%' or kind = 'phone' and body = 'Quantas unhas vamos fazer?'`;
+  });
+
+  it("eco do próprio lembrete gravado como 'phone' logo após o envio não atrapalha", async () => {
+    await reopen();
+    sent.length = 0;
+    const echo = new Date(now.getTime() + 5_000).toISOString();
+    await admin`insert into messages (tenant_id, client_id, direction, kind, body, created_at)
+      values (${T}, ${C}, 'out', 'phone', 'Oi Bia! Lembrete do seu horário', ${echo})`;
+    expect(await handleInbound(msg("d5", "1"), deps)).toMatchObject({ intent: "confirm", appointmentId: A });
+    await admin`delete from messages where external_id = 'd5' or body = 'Oi Bia! Lembrete do seu horário'`;
+  });
+
   it("de 21h às 6h confirma na hora, mas a resposta à cliente fica guardada e sai às 6h", async () => {
     const { sendPendingReplies } = await import("@/features/messaging/pending");
     const { withTenant } = await import("@/db/client");
