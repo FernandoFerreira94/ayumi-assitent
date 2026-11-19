@@ -73,3 +73,4 @@
 - 19/11 (carteira): marcar/desmarcar pago e agendar já pago também gravam no extrato `client_ledger` (ver [carteira.md](carteira.md)).
 - 19/11 (carteira PR 2): estado `deposit` (sinal), `paidCents` em `listDay`/`pendencias`/`version.ts`; concluir grava o resto no extrato e sair de concluído anula. Ver [carteira.md](carteira.md).
 - 19/11 (carteira PR 3): `setStatus` acerta a carteira ao cancelar/faltar (crédito ou sinal retido) e devolve `wallet`; `insertAppointment` usa o crédito da cliente sozinho. Ver [carteira.md](carteira.md).
+- 19/11 (carteira PR 4): agendar com pacote usa a sessão sozinho; o serviço entra pelo valor da sessão (`appointments.client_package_id`). Ver [carteira.md](carteira.md).

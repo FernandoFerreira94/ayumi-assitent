@@ -199,6 +199,8 @@ export const appointments = pgTable(
     paidAt: timestamp("paid_at", { withTimezone: true }),
     /** Forma de pagamento (opcional, só com paid_at) */
     paymentMethod: text("payment_method").$type<"pix" | "dinheiro" | "cartao">(),
+    /** Pacote da cliente usado neste atendimento (migration 0051) */
+    clientPackageId: uuid("client_package_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("appointments_tenant_start").on(t.tenantId, t.startsAt)],
@@ -402,9 +404,45 @@ export const clientLedger = pgTable(
     method: text("method").$type<"pix" | "dinheiro" | "cartao">(),
     reason: text("reason"),
     reversesId: uuid("reverses_id"),
+    clientPackageId: uuid("client_package_id"),
     createdBy: text("created_by"),
     occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("client_ledger_client").on(t.tenantId, t.clientId, t.occurredAt)],
 );
+
+/** Modelos de pacote do salão (0051): "Pague X, leve Y" e "Pacote de sessões". */
+export const packageTemplates = pgTable("package_templates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  kind: text("kind").notNull().$type<"pay_x" | "sessions">(),
+  name: text("name").notNull(),
+  serviceId: uuid("service_id").notNull(),
+  sessionsPaid: smallint("sessions_paid"),
+  sessionsTotal: smallint("sessions_total").notNull(),
+  priceCents: integer("price_cents").notNull(),
+  validDays: smallint("valid_days"),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Pacote vendido para uma cliente (0051): cópia do modelo; as sessões estão no extrato. */
+export const clientPackages = pgTable("client_packages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  clientId: uuid("client_id").notNull(),
+  templateId: uuid("template_id"),
+  name: text("name").notNull(),
+  serviceId: uuid("service_id").notNull(),
+  sessionsTotal: smallint("sessions_total").notNull(),
+  priceCents: integer("price_cents").notNull(),
+  soldOn: date("sold_on", { mode: "string" }).notNull(),
+  expiresOn: date("expires_on", { mode: "string" }),
+  createdBy: text("created_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});

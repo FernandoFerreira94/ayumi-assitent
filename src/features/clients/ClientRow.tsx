@@ -8,7 +8,7 @@ import { notify } from "@/components/feedback/toast";
 import { openNewAppointment } from "@/features/appointments/QuickBook";
 import { openReturnPrompt } from "@/features/returns/ReturnPrompt";
 import { ChatGlyph, ChatSheet } from "@/features/messaging/ChatSheet";
-import { ClientWallet } from "@/features/wallet/ClientWallet";
+import { ClientPackages, ClientWallet } from "@/features/wallet/ClientWallet";
 import { messageFor, type ActionResult } from "@/lib/errors";
 import { maskPhone } from "@/lib/phone";
 import { deleteClient, loadClientCard, updateClient, type ClientCard } from "./actions";
@@ -590,6 +590,13 @@ export function ClientCardContent({
             clientId={client.id}
             clientName={client.name}
             wallet={data.wallet}
+            nested={nested}
+            onChanged={load}
+          />
+          <ClientPackages
+            clientId={client.id}
+            clientName={client.name}
+            packages={data.packages}
             nested={nested}
             onChanged={load}
           />

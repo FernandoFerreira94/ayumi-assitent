@@ -26,8 +26,8 @@ export const AUTO_DONE_REASON = "Recebido ao concluir";
  * e do Financeiro sem buscar o extrato inteiro.
  */
 export const paidCentsSql = sql<number>`coalesce((
-  select sum(case when l.kind in ('payment', 'credit_use') then l.amount_cents
-                  when l.kind in ('refund', 'credit_in', 'retained') then -l.amount_cents else 0 end)
+  select sum(case when l.kind in ('payment', 'credit_use', 'session_reserve') then l.amount_cents
+                  when l.kind in ('refund', 'credit_in', 'retained', 'session_return') then -l.amount_cents else 0 end)
   from client_ledger l where l.appointment_id = ${appointments.id}
 ), 0)`.mapWith(Number);
 
@@ -55,6 +55,7 @@ export function clientMoves(tx: Tx, clientId: string) {
       method: clientLedger.method,
       reason: clientLedger.reason,
       reversesId: clientLedger.reversesId,
+      clientPackageId: clientLedger.clientPackageId,
       occurredAt: clientLedger.occurredAt,
     })
     .from(clientLedger)
@@ -107,6 +108,7 @@ async function reverseMoves(
       tenantId: m.tenantId,
       clientId: m.clientId,
       appointmentId: m.appointmentId,
+      clientPackageId: m.clientPackageId,
       kind: m.kind,
       amountCents: -m.amountCents,
       sessions: -m.sessions,
@@ -215,16 +217,40 @@ export async function settleStatusChange(
 ): Promise<Outcome | null> {
   if (prev === next) return null;
   if (CLOSED.has(prev))
-    await reverseMoves(tx, await liveMoves(tx, a.id, ["credit_in", "retained"]), "Voltou para a agenda", createdBy);
+    await reverseMoves(
+      tx,
+      await liveMoves(tx, a.id, ["credit_in", "retained", "session_return"]),
+      "Voltou para a agenda",
+      createdBy,
+    );
   if (!CLOSED.has(next)) return null;
-  const paid = await appointmentPaidCents(tx, a.id);
-  if (paid <= 0) return null;
+  const policy = await getWalletSettings(tx);
+  // Sessão de pacote: volta para o pacote ao cancelar; na falta, depende da política. Não vira dinheiro.
+  const reserves = await liveMoves(tx, a.id, ["session_reserve"]);
+  const pkgValue = reserves.reduce((t, m) => t + m.amountCents, 0);
+  const paid = (await appointmentPaidCents(tx, a.id)) - pkgValue;
+  const sessionBack = reserves.length > 0 && (next === "cancelled" || !policy.noShowUsesSession);
+  if (sessionBack)
+    await tx.insert(clientLedger).values(
+      reserves.map((m) => ({
+        tenantId: m.tenantId,
+        clientId: m.clientId,
+        appointmentId: m.appointmentId,
+        clientPackageId: m.clientPackageId,
+        kind: "session_return" as const,
+        amountCents: m.amountCents,
+        sessions: m.sessions,
+        reason: next === "no_show" ? "Faltou: sessão devolvida" : "Cancelou: sessão devolvida",
+        createdBy: createdBy ?? null,
+      })),
+    );
+  if (paid <= 0) return reserves.length ? { toCredit: 0, retained: 0, sessionBack, late: false } : null;
   const out = cancelOutcome({
-    policy: await getWalletSettings(tx),
+    policy,
     status: next as "cancelled" | "no_show",
     startsAt: a.startsAt,
     at: now,
-    totalCents: a.priceCents,
+    totalCents: Math.max(0, a.priceCents - pkgValue),
     paidCents: paid,
   });
   const base = { tenantId: a.tenantId, clientId: a.clientId, appointmentId: a.id, createdBy: createdBy ?? null };
@@ -243,7 +269,7 @@ export async function settleStatusChange(
     },
   ].filter((r) => r.amountCents > 0);
   if (rows.length) await tx.insert(clientLedger).values(rows);
-  return out;
+  return { ...out, sessionBack };
 }
 
 /** Devolve dinheiro do crédito da cliente (estorno manual). No máximo o crédito que ela tem. */

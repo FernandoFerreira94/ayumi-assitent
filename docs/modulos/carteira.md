@@ -28,15 +28,25 @@
 - **Ficha da cliente** (`ClientWallet`, dentro de `ClientCardContent`): "Crédito no salão", extrato (`rules.walletStatement`, só o que mexe no crédito) e **Devolver** (`refundCreditAction` → `refundCredit`, `refund` sem atendimento, no máximo o crédito, com `lockTenant`). Some quando nunca houve crédito.
 - WhatsApp: a cliente "cancelar" vira `reschedule_requested` (não cancela), então não mexe na carteira.
 
+## PR 4: pacotes (19/11)
+
+- **Migration 0051:** `package_templates` (modelo: `pay_x` "Pague X, leve Y" ou `sessions`; um serviço; `sessions_paid`/`sessions_total`/`price_cents`/`valid_days`/`active`), `client_packages` (pacote vendido: cópia de nome, serviço, sessões e preço; `sold_on`, `expires_on`), `client_ledger.client_package_id` e `appointments.client_package_id`. FKs compostas com `tenant_id`; RLS `tenant_isolation`; `client_packages` só SELECT/INSERT.
+- **Sessões no extrato:** venda = `session_grant` (+N) + `payment` com `client_package_id` (entra no caixa, **não** no crédito: `walletEffect` ignora movimento de pacote). Agendar = `session_reserve` (1 sessão, `amount_cents` = preço ÷ sessões, conta como pago). Cancelar (ou faltar com "sessão volta") = `session_return`. Restam = grant − reserve + return (`rules.packageSessionsLeft`).
+- **Agendar** (`insertAppointment`): `packages.pickSession` acha o pacote valendo no dia para um dos serviços (vence primeiro); o serviço entra no total pelo valor da sessão (Ganhos por sessão, D3) e o resto segue sinal/crédito/"já pagou". Devolve `session` e a folha avisa "Usou 1 sessão do pacote X. Restam N de M".
+- **Cancelar/faltar** (`settleStatusChange`): a parte do pacote nunca vira dinheiro; a sessão volta ou fica pela política. Toast: "a sessão voltou para o pacote".
+- **Telas:** Ajustes > Pagamentos > "Pacotes à venda" (`PackageTemplates`, criar com prévia `rules.packagePreview`, Tirar = `active=false`); ficha da cliente > "Pacotes" (`ClientPackages` + `SellPackageSheet`, pago na hora).
+- Fora da v1: venda com parte a receber, pacote com vários serviços, editar atendimento com pacote (não recalcula), vencimento automático (PR 5, job `client-wallet-daily`).
+
 ## Arquivos
 
 - `features/wallet/rules.ts` (puro): `appointmentPaid`, `walletBalance`, `cashIn`, `remainingCents`, `suggestedDeposit`, `cancelOutcome` (D1/D2), `walletEffect`, `walletStatement`, `payXPrice`, `sessionValue`, `packageExpiresOn`, `parsePolicy`, `DEFAULT_POLICY`.
 - `features/wallet/core.ts`: `settleStatusChange`, `useCredit`, `refundCredit`, `clientBalance`, `appointmentPaidCents`, `paidCentsSql`, `cashInRange`, `livePaidCents`, `AUTO_DONE_REASON`, `clientMoves`, `appointmentMoves`, `recordPayment`, `reverseAppointmentPayments`, `getWalletSettings`, `saveWalletSettings`.
+- `features/wallet/packages.ts`: `listTemplates`, `createTemplate`, `archiveTemplate`, `sellPackage`, `clientPackageList`, `pickSession`, `reserveSession`. UI: `PackageSheets.tsx`, `ClientWallet.tsx`.
 - Tela: `app/(app)/ajustes/pagamentos`. Linha em Ajustes > "Clientes e agenda".
 
 ## Próximas fases
 
-4 pacotes (Pague X leve Y, N sessões; `package_templates`, `client_packages`, `appointments.client_package_id`) · 5 automações (job `client-wallet-daily`) · 6 fidelidade/aniversário. Assinatura só após o Mercado Pago.
+5 automações (job `client-wallet-daily`) · 6 fidelidade/aniversário. Assinatura só após o Mercado Pago.
 
 ## Cuidados
 

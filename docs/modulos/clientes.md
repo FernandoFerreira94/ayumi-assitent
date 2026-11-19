@@ -41,3 +41,4 @@
 - Filtros `?f=sumidas|fieis|novas` (`clients/filters.ts`, puro e testado): sumidas = 60+ dias sem vir e sem horário marcado; mais fiéis = top 20 por visitas; novas = cadastro nos últimos 30 dias. Números por cliente em `core.clientStats` (um `group by` em `appointments`); a linha mostra "N visitas · última há X dias" só no desktop.
 - Aniversariantes ficou de fora: `clients` não tem data de nascimento (precisaria de migration).
 - 19/11 (carteira PR 3): a ficha mostra "Crédito no salão" com extrato e Devolver (`wallet/ClientWallet.tsx`; `loadClientCard` traz `wallet`). Ver [carteira.md](carteira.md).
+- 19/11 (carteira PR 4): a ficha mostra "Pacotes" (sessões que restam, validade) e Vender pacote. Ver [carteira.md](carteira.md).

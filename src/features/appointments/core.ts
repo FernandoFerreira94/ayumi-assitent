@@ -14,6 +14,7 @@ import {
   useCredit,
 } from "@/features/wallet/core";
 import type { Outcome } from "@/features/wallet/rules";
+import { pickSession, reserveSession } from "@/features/wallet/packages";
 import { toInstant, todayStr } from "@/lib/dates";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { canMarkNoShow } from "./no-show";
@@ -89,7 +90,9 @@ export async function insertAppointment(
   tx: Tx,
   tenantId: string,
   input: BookingInput,
-): Promise<ActionResult<{ id: string; credit: number }>> {
+): Promise<
+  ActionResult<{ id: string; credit: number; session: { name: string; left: number; total: number } | null }>
+> {
   const ids = [...new Set(input.serviceIds?.length ? input.serviceIds : input.serviceId ? [input.serviceId] : [])];
   if (ids.length === 0 || ids.length > 5) return fail("VALIDATION", "serviceIds");
   const list = await bookableServices(tx, ids);
@@ -100,15 +103,22 @@ export async function insertAppointment(
   const durationMin = list.reduce((m, x) => m + x.durationMin, 0);
   // Um intervalo só, no fim: o maior entre os serviços escolhidos
   const bufferMin = Math.max(...list.map((x) => x.bufferMin));
-  const { discountCents, totalCents } = applyDiscount(
+  const priced = applyDiscount(
     list.reduce((c, x) => c + x.priceCents, 0),
     input.discount ?? null,
   );
-  // Sinal nunca passa do total; sem valor = pagou tudo
-  const paidNow = input.payment ? Math.min(totalCents, input.payment.amountCents ?? totalCents) : 0;
   const startsAt = toInstant(input.date, input.time);
   const endsAt = new Date(startsAt.getTime() + durationMin * 60_000);
   await lockTenant(tx, tenantId);
+  // Pacote da cliente para um dos serviços (valendo no dia): o serviço entra pelo valor da sessão, já pago
+  const pick = await pickSession(tx, cli.id, ids, input.date);
+  const { discountCents } = priced;
+  const totalCents = pick
+    ? Math.max(0, priced.totalCents - (list.find((x) => x.id === pick.serviceId)?.priceCents ?? 0) + pick.valueCents)
+    : priced.totalCents;
+  const owed = totalCents - (pick?.valueCents ?? 0);
+  // Sinal nunca passa do que falta; sem valor = pagou tudo
+  const paidNow = input.payment ? Math.min(owed, input.payment.amountCents ?? owed) : 0;
   const blockedUntil = new Date(endsAt.getTime() + bufferMin * 60_000);
   if (await overlapsBlock(tx, startsAt, blockedUntil)) return fail("SLOT_TAKEN", "time");
   try {
@@ -128,23 +138,25 @@ export async function insertAppointment(
           discountCents,
           notes: input.notes || null,
           // Sinal (menos que o total) não marca como pago: fica "Sinal R$ X · falta R$ Y"
-          paidAt: input.payment && paidNow >= totalCents ? new Date() : null,
+          paidAt: (input.payment || pick) && paidNow >= owed ? new Date() : null,
           // A forma no atendimento é a do pagamento completo (o banco exige paid_at); a do sinal fica no extrato
-          paymentMethod: input.payment && paidNow >= totalCents ? input.payment.method : null,
+          paymentMethod: input.payment && paidNow >= owed ? input.payment.method : null,
+          clientPackageId: pick?.clientPackageId ?? null,
           // Fica confirmado quando a cliente responder "1" ao lembrete da véspera
           status: "pending_confirmation",
         })
         .returning({ id: appointments.id });
       await writeServices(sp, tenantId, r.id, list);
+      if (pick) await reserveSession(sp, { tenantId, clientId: cli.id, appointmentId: r.id, pick, createdBy: input.createdBy });
       // Carteira: crédito da cliente paga primeiro, sozinho; o "já pagou"/sinal cobre o resto
       const credit = await useCredit(sp, {
         tenantId,
         clientId: cli.id,
         appointmentId: r.id,
-        upTo: totalCents - paidNow,
+        upTo: owed - paidNow,
         createdBy: input.createdBy,
       });
-      if (credit > 0 && paidNow + credit >= totalCents)
+      if (credit > 0 && paidNow + credit >= owed)
         await sp.update(appointments).set({ paidAt: new Date() }).where(eq(appointments.id, r.id));
       if (input.payment)
         await recordPayment(sp, {
@@ -155,7 +167,11 @@ export async function insertAppointment(
           method: input.payment.method,
           createdBy: input.createdBy,
         });
-      return { id: r.id, credit };
+      return {
+        id: r.id,
+        credit,
+        session: pick ? { name: pick.name, left: pick.left, total: pick.total } : null,
+      };
     });
     return ok(row);
   } catch (e) {

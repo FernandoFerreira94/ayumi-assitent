@@ -23,6 +23,9 @@ export type Move = {
   amountCents: number;
   /** null = movimento da carteira (sem atendimento) */
   appointmentId: string | null;
+  /** Pacote da cliente (venda, sessões); a venda de pacote não entra no crédito */
+  clientPackageId?: string | null;
+  sessions?: number;
 };
 
 /** Quanto do atendimento já está pago: pagamentos e crédito usado, menos devolvido, retido ou passado ao crédito. */
@@ -30,8 +33,9 @@ export function appointmentPaid(moves: readonly Move[], appointmentId: string): 
   let paid = 0;
   for (const m of moves) {
     if (m.appointmentId !== appointmentId) continue;
-    if (m.kind === "payment" || m.kind === "credit_use") paid += m.amountCents;
-    else if (m.kind === "refund" || m.kind === "credit_in" || m.kind === "retained") paid -= m.amountCents;
+    if (m.kind === "payment" || m.kind === "credit_use" || m.kind === "session_reserve") paid += m.amountCents;
+    else if (m.kind === "refund" || m.kind === "credit_in" || m.kind === "retained" || m.kind === "session_return")
+      paid -= m.amountCents;
   }
   return paid;
 }
@@ -40,7 +44,7 @@ export function appointmentPaid(moves: readonly Move[], appointmentId: string): 
 export function walletEffect(m: Move): number {
   if (m.kind === "credit_in") return m.amountCents;
   if (m.kind === "credit_use" || m.kind === "expire") return -m.amountCents;
-  if (m.appointmentId === null) {
+  if (m.appointmentId === null && !m.clientPackageId) {
     if (m.kind === "payment") return m.amountCents;
     if (m.kind === "refund" || m.kind === "retained") return -m.amountCents;
   }
@@ -170,6 +174,80 @@ export function packageExpiresOn(soldOn: string, days: number): string {
   const d = new Date(`${soldOn}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
+}
+
+/** Sessões que ainda dá para usar no pacote: vendidas − reservadas + devolvidas. */
+export function packageSessionsLeft(moves: readonly Move[], clientPackageId: string): number {
+  let left = 0;
+  for (const m of moves) {
+    if (m.clientPackageId !== clientPackageId) continue;
+    const n = m.sessions ?? 0;
+    if (m.kind === "session_grant" || m.kind === "session_return") left += n;
+    else if (m.kind === "session_reserve" || m.kind === "expire") left -= n;
+  }
+  return left;
+}
+
+export type PackageKind = "pay_x" | "sessions";
+export type PackageDraft = {
+  kind: PackageKind;
+  name: string;
+  serviceId: string;
+  sessionsPaid: number | null;
+  sessionsTotal: number;
+  priceCents: number;
+};
+
+/** Preço do modelo: "Pague X, leve Y" = X × valor do serviço; pacote de sessões = o preço digitado. */
+export const packagePrice = (d: Pick<PackageDraft, "kind" | "sessionsPaid" | "priceCents">, unitCents: number) =>
+  d.kind === "pay_x" ? payXPrice(d.sessionsPaid ?? 0, unitCents) : d.priceCents;
+
+/** Frase pronta do modelo (prévia na hora de criar e na venda). */
+export function packagePreview(
+  d: Pick<PackageDraft, "kind" | "sessionsPaid" | "sessionsTotal" | "priceCents">,
+  service: { name: string; priceCents: number },
+  validDays: number,
+  brl: (cents: number) => string,
+): string {
+  const price = packagePrice(d, service.priceCents);
+  const full = d.sessionsTotal * service.priceCents;
+  const save = full - price;
+  const what = `${d.sessionsTotal} ${d.sessionsTotal === 1 ? "sessão" : "sessões"} de ${service.name}`;
+  const lead = d.kind === "pay_x" ? `Paga ${d.sessionsPaid} e leva ${d.sessionsTotal}: ` : "";
+  return `${lead}cliente paga ${brl(price)} e ganha ${what}${save > 0 ? ` (economiza ${brl(save)})` : ""}. Vale ${validDays} dias.`;
+}
+
+/** Lê o formulário do modelo de pacote. Devolve o campo errado quando algo não fecha. */
+export function parsePackageDraft(raw: {
+  kind?: string;
+  name?: string;
+  serviceId?: string;
+  sessionsPaid?: string;
+  sessionsTotal?: string;
+  priceCents?: number | null;
+}): { ok: true; draft: PackageDraft } | { ok: false; field: string } {
+  const kind = raw.kind === "pay_x" || raw.kind === "sessions" ? raw.kind : null;
+  if (!kind) return { ok: false, field: "kind" };
+  const name = (raw.name ?? "").trim();
+  if (name.length < 1 || name.length > 80) return { ok: false, field: "name" };
+  if (!raw.serviceId || !/^[0-9a-f-]{36}$/i.test(raw.serviceId)) return { ok: false, field: "serviceId" };
+  const total = Number(raw.sessionsTotal);
+  if (!Number.isInteger(total) || total < 1 || total > 100) return { ok: false, field: "sessionsTotal" };
+  if (kind === "pay_x") {
+    const paid = Number(raw.sessionsPaid);
+    if (!Number.isInteger(paid) || paid < 1 || paid >= total) return { ok: false, field: "sessionsPaid" };
+    return {
+      ok: true,
+      draft: { kind, name, serviceId: raw.serviceId, sessionsPaid: paid, sessionsTotal: total, priceCents: 0 },
+    };
+  }
+  const price = raw.priceCents;
+  if (price == null || !Number.isInteger(price) || price < 0 || price > 10_000_000)
+    return { ok: false, field: "priceCents" };
+  return {
+    ok: true,
+    draft: { kind, name, serviceId: raw.serviceId, sessionsPaid: null, sessionsTotal: total, priceCents: price },
+  };
 }
 
 /** Lê o formulário de Ajustes > Pagamentos. Devolve o campo errado quando algo não fecha. */

@@ -8,6 +8,7 @@ import { formatDayTitle, formatShortDate, formatTime, todayStr } from "@/lib/dat
 import { requireTenant } from "@/lib/tenant";
 import { clientSummary, deleteClientRow, HISTORY, insertClient, updateClientRow } from "./core";
 import { clientMoves } from "@/features/wallet/core";
+import { clientPackageList } from "@/features/wallet/packages";
 import { walletBalance, walletStatement } from "@/features/wallet/rules";
 import { clientInput } from "./schema";
 
@@ -71,6 +72,8 @@ export type ClientCard = {
   ret: { appointmentId: string; day: string; service: string; late: boolean } | null;
   /** Carteira: crédito da cliente e os últimos movimentos dele */
   wallet: { balanceCents: number; moves: { day: string; label: string; cents: number }[] };
+  /** Pacotes da cliente (os que ainda têm sessão ou venceram há pouco aparecem primeiro) */
+  packages: { id: string; name: string; left: number; total: number; until: string | null; expired: boolean }[];
 };
 
 /** Dados do cartão da cliente, já em texto para a tela (o fuso é o do servidor, igual à agenda). */
@@ -78,7 +81,11 @@ export async function loadClientCard(id: string): Promise<ActionResult<ClientCar
   const { tenantId } = await requireTenant();
   if (!/^[0-9a-f-]{36}$/i.test(id)) return fail("VALIDATION");
   try {
-    const [s, moves] = await withTenant(tenantId, async (tx) => [await clientSummary(tx, id), await clientMoves(tx, id)] as const);
+    const [s, moves, pkgs] = await withTenant(
+      tenantId,
+      async (tx) =>
+        [await clientSummary(tx, id), await clientMoves(tx, id), await clientPackageList(tx, id, todayStr())] as const,
+    );
     const day = (d: Date) => formatDayTitle(todayStr(d));
     const { visits, averageGap } = visitHistory(
       s.history.map((v) => ({ date: todayStr(v.startsAt), service: v.service })),
@@ -106,6 +113,16 @@ export async function loadClientCard(id: string): Promise<ActionResult<ClientCar
         balanceCents: walletBalance(moves),
         moves: walletStatement(moves).map((m) => ({ day: formatShortDate(todayStr(m.at)), label: m.label, cents: m.cents })),
       },
+      packages: pkgs
+        .filter((p) => p.left > 0 && !p.expired)
+        .map((p) => ({
+          id: p.id,
+          name: p.name,
+          left: p.left,
+          total: p.sessionsTotal,
+          until: p.expiresOn ? formatShortDate(p.expiresOn) : null,
+          expired: p.expired,
+        })),
     });
   } catch {
     return fail("UNKNOWN");
