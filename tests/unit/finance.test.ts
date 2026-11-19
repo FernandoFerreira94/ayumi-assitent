@@ -58,7 +58,7 @@ describe("resumo do ganho", () => {
       row("Pé", 5000, "confirmed"),
       row("Mão", 4000, "no_show"),
     ]);
-    expect(s).toMatchObject({ received: 20000, forecast: 25000, doneCount: 2, averageCents: 10000 });
+    expect(s).toMatchObject({ received: 20000, forecast: 25000, pending: 5000, doneCount: 2, averageCents: 10000 });
     expect(s.slices).toEqual([{ name: "Gel", cents: 20000 }]);
   });
   it("atendimento com dois serviços conta nas duas fatias, com o desconto dividido", () => {
