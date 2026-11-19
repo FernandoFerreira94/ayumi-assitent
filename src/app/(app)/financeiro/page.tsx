@@ -133,6 +133,11 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
           </dl>
         </section>
 
+        {/* Logo abaixo do saldo: lançar gasto é a ação principal da tela */}
+        <div className="lg:col-span-2">
+          <NewExpenseSheet date={sheetDate} />
+        </div>
+
         {/* Coluna da esquerda (tablet/desktop): evolução, quem mais trouxe e faltas */}
         <div className="hidden gap-4 md:grid">
           <section aria-labelledby="seis-meses" className={card}>
@@ -240,8 +245,11 @@ export default async function FinanceiroPage({ searchParams }: PageProps<"/finan
             <h2 id="lancamentos" className={h2}>
               Gastos lançados
             </h2>
-            {spent.length ? <ExpenseList rows={spent} /> : null}
-            <NewExpenseSheet date={sheetDate} />
+            {spent.length ? (
+              <ExpenseList rows={spent} />
+            ) : (
+              <p className="py-2 text-sm font-semibold text-muted">Nenhum gasto lançado nesse mês.</p>
+            )}
           </section>
         </div>
       </div>
