@@ -280,4 +280,95 @@ d("carteira da cliente (Postgres real)", () => {
       expect(await balance()).toBe(0);
     });
   });
+
+  describe("pacotes (PR 4)", () => {
+    let dani: string, tpl: string;
+    let pk: typeof import("@/features/wallet/packages");
+    let h = 8;
+    const bookD = (date: string) =>
+      withTenant(T, (tx) =>
+        core.insertAppointment(tx, T, {
+          clientId: dani,
+          serviceIds: [svc],
+          date,
+          time: `${String(h++).padStart(2, "0")}:00`,
+          payment: null,
+        }),
+      );
+    const left = async () => (await withTenant(T, (tx) => pk.clientPackageList(tx, dani, "2030-08-01")))[0]?.left;
+
+    beforeAll(async () => {
+      pk = await import("@/features/wallet/packages");
+      [{ id: dani }] =
+        await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Dani','+5511977776666') returning id`;
+      await admin`update tenants set no_show_uses_session = true where id = ${T}`;
+      tpl = (await withTenant(T, (tx) =>
+        pk.createTemplate(tx, T, {
+          kind: "pay_x",
+          name: "Pague 3 leve 4",
+          serviceId: svc,
+          sessionsPaid: 3,
+          sessionsTotal: 4,
+          priceCents: 0,
+        }),
+      ))!;
+    });
+
+    it("vender: 4 sessões por 3 × R$ 50; entra no caixa, não no crédito", async () => {
+      const sold = await withTenant(T, (tx) =>
+        pk.sellPackage(tx, { tenantId: T, clientId: dani, templateId: tpl, method: "pix", today: "2030-08-01" }),
+      );
+      expect(sold).toMatchObject({ priceCents: 15000, sessions: 4, expiresOn: "2030-10-30" });
+      expect(await left()).toBe(4);
+      expect(await withTenant(T, (tx) => wallet.clientBalance(tx, dani))).toBe(0);
+    });
+
+    it("agendar usa a sessão sozinho: o serviço entra pelo valor da sessão, já pago", async () => {
+      const r = await bookD("2030-08-05");
+      if (!r.ok) throw new Error(r.code);
+      expect(r.data.session).toMatchObject({ left: 3, total: 4 });
+      const [a] = await admin`select price_cents, paid_at, client_package_id from appointments where id = ${r.data.id}`;
+      expect(a.price_cents).toBe(3750);
+      expect(a.paid_at).not.toBeNull();
+      expect(a.client_package_id).not.toBeNull();
+      expect(await left()).toBe(3);
+      // concluir não cobra nada a mais
+      await withTenant(T, (tx) => core.setStatus(tx, r.data.id, "done", new Date("2030-08-05T20:00:00Z")));
+      expect(await withTenant(T, (tx) => wallet.livePaidCents(tx, r.data.id))).toBe(0);
+    });
+
+    it("cancelar devolve a sessão (sem virar crédito); voltar reserva de novo", async () => {
+      const r = await bookD("2030-08-06");
+      if (!r.ok) throw new Error(r.code);
+      expect(await left()).toBe(2);
+      const res = await withTenant(T, (tx) =>
+        core.setStatus(tx, r.data.id, "cancelled", new Date("2030-08-01T12:00:00Z")),
+      );
+      expect(res.ok && res.data.wallet).toMatchObject({ sessionBack: true, toCredit: 0, retained: 0 });
+      expect(await left()).toBe(3);
+      expect(await withTenant(T, (tx) => wallet.clientBalance(tx, dani))).toBe(0);
+      await withTenant(T, (tx) => core.setStatus(tx, r.data.id, "confirmed", new Date("2030-08-01T12:01:00Z")));
+      expect(await left()).toBe(2);
+    });
+
+    it("faltou: a sessão conta como usada (política padrão)", async () => {
+      const r = await bookD("2030-08-07");
+      if (!r.ok) throw new Error(r.code);
+      const before = await left();
+      const res = await withTenant(T, (tx) =>
+        core.setStatus(tx, r.data.id, "no_show", new Date("2030-08-07T23:00:00Z")),
+      );
+      expect(res.ok && res.data.wallet).toMatchObject({ sessionBack: false });
+      expect(await left()).toBe(before);
+    });
+
+    it("sem sessão sobrando, agenda normal (a pagar)", async () => {
+      while ((await left())! > 0) await bookD("2030-08-08");
+      const r = await bookD("2030-08-09");
+      if (!r.ok) throw new Error(r.code);
+      expect(r.data.session).toBeNull();
+      const [a] = await admin`select price_cents, paid_at from appointments where id = ${r.data.id}`;
+      expect(a).toMatchObject({ price_cents: 5000, paid_at: null });
+    });
+  });
 });

@@ -165,6 +165,10 @@ export function NewAppointmentSheet({
 
     const created = r.data;
     warnSync(created.sync);
+    if (created.session)
+      notify.success(
+        `Usou 1 sessão do pacote ${created.session.name}. Restam ${created.session.left} de ${created.session.total}`,
+      );
     if (created.credit > 0) notify.success(`Usou ${formatBRL(created.credit)} do crédito da cliente`);
     steps(["done", "wait", "wait"]);
     await sleep(200);

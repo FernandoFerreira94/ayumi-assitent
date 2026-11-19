@@ -13,6 +13,9 @@ import {
   suggestedDeposit,
   walletBalance,
   walletStatement,
+  packagePreview,
+  packageSessionsLeft,
+  parsePackageDraft,
 } from "@/features/wallet/rules";
 
 const A = "appt-a";
@@ -176,5 +179,49 @@ describe("extrato do crédito na ficha", () => {
       { at: t(3), label: "Usado no agendamento", cents: -3000 },
       { at: t(2), label: "Cancelou", cents: 5000 },
     ]);
+  });
+});
+
+describe("pacotes", () => {
+  const brl = (c: number) => `R$ ${(c / 100).toFixed(2).replace(".", ",")}`;
+  it("prévia do Pague 3 leve 4 com a economia e a validade", () => {
+    expect(
+      packagePreview(
+        { kind: "pay_x", sessionsPaid: 3, sessionsTotal: 4, priceCents: 0 },
+        { name: "Esmaltação", priceCents: 4500 },
+        90,
+        brl,
+      ),
+    ).toBe(
+      "Paga 3 e leva 4: cliente paga R$ 135,00 e ganha 4 sessões de Esmaltação (economiza R$ 45,00). Vale 90 dias.",
+    );
+  });
+  it("sessões que restam: vendidas − usadas + devolvidas (anulação entra com sinal trocado)", () => {
+    const p = "pk";
+    const mv = (kind: Move["kind"], sessions: number): Move => ({
+      kind,
+      amountCents: 0,
+      appointmentId: null,
+      clientPackageId: p,
+      sessions,
+    });
+    expect(
+      packageSessionsLeft(
+        [mv("session_grant", 4), mv("session_reserve", 1), mv("session_return", 1), mv("session_return", -1)],
+        p,
+      ),
+    ).toBe(3);
+  });
+  it("formulário: paga menos do que leva; pacote de sessões pede preço", () => {
+    const base = { name: "X", serviceId: "00000000-0000-4000-8000-000000000000", sessionsTotal: "4" };
+    expect(parsePackageDraft({ ...base, kind: "pay_x", sessionsPaid: "4" })).toEqual({
+      ok: false,
+      field: "sessionsPaid",
+    });
+    expect(parsePackageDraft({ ...base, kind: "sessions", priceCents: null })).toEqual({
+      ok: false,
+      field: "priceCents",
+    });
+    expect(parsePackageDraft({ ...base, kind: "sessions", priceCents: 40000 })).toMatchObject({ ok: true });
   });
 });

@@ -53,6 +53,7 @@ function walletNote(w: Outcome | null): string {
   const parts = [
     w.toCredit > 0 ? `${formatBRL(w.toCredit)} virou crédito da cliente` : "",
     w.retained > 0 ? `sinal de ${formatBRL(w.retained)} ficou para o salão` : "",
+    w.sessionBack ? "a sessão voltou para o pacote" : "",
   ].filter(Boolean);
   return parts.length ? `. ${parts.join("; ")}` : "";
 }

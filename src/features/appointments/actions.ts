@@ -108,7 +108,7 @@ export async function createAppointment(_prev: ActionResult<{ id: string }> | nu
     const sync = await syncAppointmentSafe(tenantId, res.data.id);
     // Avisa a cliente que deu certo (dia, horário e, se a profissional quiser, o valor)
     const message = await sendBookingMessage(tenantId, res.data.id);
-    return ok({ id: res.data.id, credit: res.data.credit, sync, message });
+    return ok({ id: res.data.id, credit: res.data.credit, session: res.data.session, sync, message });
   } catch {
     return fail("UNKNOWN");
   }

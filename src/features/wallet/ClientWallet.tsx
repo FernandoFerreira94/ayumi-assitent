@@ -10,6 +10,7 @@ import { METHOD_LABEL, PAYMENT_METHODS, type PaymentMethod } from "@/features/ap
 import { formatBRL } from "@/lib/dates";
 import { messageFor, type ErrorCode } from "@/lib/errors";
 import { refundCreditAction } from "./actions";
+import { SellPackageSheet } from "./PackageSheets";
 
 const chip =
   "inline-flex min-h-11 flex-1 items-center justify-center rounded-full border border-line bg-surface px-3 text-sm font-bold transition-colors aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-on-primary";
@@ -205,5 +206,51 @@ function RefundSheet({
         </Drawer.Content>
       </Drawer.Portal>
     </Root>
+  );
+}
+
+export type PackageCard = { id: string; name: string; left: number; total: number; until: string | null }[];
+
+/** Pacotes da cliente na ficha (sessões que restam e validade) e "Vender pacote". */
+export function ClientPackages({
+  clientId,
+  clientName,
+  packages,
+  nested,
+  onChanged,
+}: {
+  clientId: string;
+  clientName: string;
+  packages: PackageCard;
+  nested: boolean;
+  onChanged: () => void;
+}) {
+  return (
+    <section aria-label="Pacotes da cliente" className="glass grid gap-2 rounded-2xl px-4 py-3">
+      <div className="flex items-center gap-3">
+        <span className="flex flex-1 items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted">
+          <Icon name="ticket" size={14} className="text-primary-text" />
+          Pacotes
+        </span>
+        <SellPackageSheet clientId={clientId} clientName={clientName} nested={nested} onSold={onChanged} />
+      </div>
+      {packages.length ? (
+        <ul className="divide-y divide-line border-t border-line">
+          {packages.map((p) => (
+            <li key={p.id} className="flex items-baseline justify-between gap-3 py-2 text-sm">
+              <span className="min-w-0 font-semibold">
+                {p.name}
+                {p.until ? <span className="text-muted"> · até {p.until}</span> : null}
+              </span>
+              <span className="shrink-0 font-bold tabular-nums text-primary-text">
+                {p.left} de {p.total}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm font-semibold text-muted">Nenhum pacote valendo.</p>
+      )}
+    </section>
   );
 }
