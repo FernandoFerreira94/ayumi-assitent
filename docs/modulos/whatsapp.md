@@ -34,6 +34,7 @@
 ## Limites da IA nas respostas (`messaging/ai-policy.ts`, 17/11)
 - Só aplica a intenção sozinha com confiança ≥ 0,9 (`AI_MIN_CONFIDENCE`); abaixo disso, atraso ou "outro assunto" passa para a profissional (`handoff`).
 - Dona escreveu para a cliente nas últimas 12 h (`OWNER_QUIET_HOURS`): a IA fica quieta.
+- Dona escreveu (app ou celular) DEPOIS do lembrete (ou do 2º lembrete, ou da resposta, na correção): a mensagem da cliente responde a ela e vira mensagem normal; nem 1/2/3 nem IA mexem no horário (`inbound.ownerWroteSince`, folga de 2 min para o eco do lembrete, 19/11).
 - No máximo 3 respostas automáticas por cliente em 24 h (`AI_MAX_REPLIES_24H`); correção de intenção vale por 2 h (`CORRECTION_HOURS`).
 - Mídia ou texto acima de 1.000 caracteres (`AI_MAX_CHARS`) vai direto para a dona, sem chamar o modelo.
 - Mapeamento: 1 = confirma (`confirmed`); 2 = cancelar e 3 = remarcar viram `reschedule_requested` (nunca cancela sozinho). O número só vale sozinho ("2", "opção 2").
