@@ -1,17 +1,57 @@
 "use server";
 
-import { and, count, eq, isNull } from "drizzle-orm";
+import { and, count, eq, isNotNull, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { withTenant } from "@/db/client";
+import { withTenant, type Tx } from "@/db/client";
 import { apiTokens } from "@/db/schema";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
 import { MAX_ACTIVE_TOKENS, type TokenItem } from "./tokens-shared";
-import { hashApiToken, newApiToken, tokenLast4 } from "./token";
+import { PAIRING_TTL_MS, hashApiToken, newApiToken, newPairingCode, tokenLast4 } from "./token";
 
 /** "layout" de /ajustes: a seção e o selo da Siri na lista de Conexões. */
 const PATH = "/ajustes";
+
+/** Chaves ligadas de verdade (código de pareamento pendente não conta). */
+async function activeCount(tx: Tx) {
+  const [{ n }] = await tx
+    .select({ n: count() })
+    .from(apiTokens)
+    .where(and(isNull(apiTokens.revokedAt), isNull(apiTokens.pairingExpiresAt)));
+  return n;
+}
+
+/**
+ * "Adicionar à Siri": código de uso único (15 min) que o app copia e o Atalho troca pela chave. Desliga os códigos
+ * anteriores ainda não usados: só o último vale. A chave nasce no aparelho, nunca passa pela tela nem por URL.
+ */
+export async function createSiriPairing(): Promise<ActionResult<{ code: string }>> {
+  const { tenantId, userId } = await requireTenant();
+  try {
+    const code = newPairingCode();
+    const okToCreate = await withTenant(tenantId, async (tx) => {
+      await tx
+        .update(apiTokens)
+        .set({ revokedAt: new Date() })
+        .where(and(isNull(apiTokens.revokedAt), isNotNull(apiTokens.pairingExpiresAt)));
+      if ((await activeCount(tx)) >= MAX_ACTIVE_TOKENS) return false;
+      await tx.insert(apiTokens).values({
+        tenantId,
+        userId,
+        name: "iPhone",
+        tokenHash: hashApiToken(code),
+        last4: tokenLast4(code),
+        pairingExpiresAt: new Date(Date.now() + PAIRING_TTL_MS),
+      });
+      return true;
+    });
+    if (!okToCreate) return fail("API_TOKEN_LIMIT");
+    return ok({ code });
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
 
 /** Cria uma chave só de leitura. Ela volta só agora: o banco guarda o hash. */
 export async function createApiToken(rawName: string): Promise<ActionResult<{ token: string; item: TokenItem }>> {
@@ -21,8 +61,7 @@ export async function createApiToken(rawName: string): Promise<ActionResult<{ to
   try {
     const token = newApiToken();
     const res = await withTenant(tenantId, async (tx) => {
-      const [{ n }] = await tx.select({ n: count() }).from(apiTokens).where(isNull(apiTokens.revokedAt));
-      if (n >= MAX_ACTIVE_TOKENS) return null;
+      if ((await activeCount(tx)) >= MAX_ACTIVE_TOKENS) return null;
       const [row] = await tx
         .insert(apiTokens)
         .values({ tenantId, userId, name: p.data, tokenHash: hashApiToken(token), last4: tokenLast4(token) })

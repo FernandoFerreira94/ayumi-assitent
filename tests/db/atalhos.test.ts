@@ -87,4 +87,52 @@ d("chave da Siri e Atalhos (Postgres real)", () => {
     expect(rows.every((r) => r.t === A)).toBe(true);
     expect(rows).toHaveLength(2);
   });
+
+  describe("pareamento (Adicionar à Siri)", () => {
+    const pair = (body: string, type = "application/json") =>
+      srv.handlePairing(
+        new Request("http://x/api/v1/atalhos/parear", {
+          method: "POST",
+          body,
+          headers: { "content-type": type, "x-forwarded-for": "5.6.7.8" },
+        }),
+      );
+
+    it("troca o código pela chave uma vez só, e a chave lê o estúdio certo", async () => {
+      const { newPairingCode, hashApiToken: h } = await import("@/features/atalhos/token");
+      const code = newPairingCode();
+      await admin`insert into api_tokens (tenant_id,name,token_hash,last4,pairing_expires_at)
+        values (${B},'iPhone',${h(code)},${code.slice(-4)},now() + interval '15 minutes')`;
+      // Pendente ainda não abre a agenda
+      expect((await call(`Bearer ${code}`)).status).toBe(401);
+
+      const res = await pair(JSON.stringify({ codigo: code }));
+      expect(res.status).toBe(200);
+      expect(res.headers.get("cache-control")).toContain("no-store");
+      const token = await res.text();
+      expect(token).toMatch(/^bub_[A-Za-z0-9_-]{43}$/);
+      expect(await (await call(`Bearer ${token}`)).text()).toBe("Bia Lima");
+
+      // Uso único
+      const again = await pair(JSON.stringify({ codigo: code }));
+      expect(again.status).toBe(400);
+      expect(await again.text()).toContain("venceu");
+      const [row] = await admin`select pairing_expires_at from api_tokens where token_hash = ${h(token)}`;
+      expect(row!.pairing_expires_at).toBeNull();
+    });
+
+    it("código vencido, desligado ou lixo: 400 com a frase", async () => {
+      const { newPairingCode, hashApiToken: h } = await import("@/features/atalhos/token");
+      const old = newPairingCode();
+      const off = newPairingCode();
+      await admin`insert into api_tokens (tenant_id,name,token_hash,last4,pairing_expires_at)
+        values (${B},'iPhone',${h(old)},${old.slice(-4)},now() - interval '1 minute')`;
+      await admin`insert into api_tokens (tenant_id,name,token_hash,last4,pairing_expires_at,revoked_at)
+        values (${B},'iPhone',${h(off)},${off.slice(-4)},now() + interval '15 minutes',now())`;
+      for (const body of [JSON.stringify({ codigo: old }), off, "lixo", "{"]) {
+        const res = await pair(body, "text/plain");
+        expect(res.status).toBe(400);
+      }
+    });
+  });
 });

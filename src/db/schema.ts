@@ -181,6 +181,10 @@ export const appointments = pgTable(
     returnDueOn: date("return_due_on"),
     /** "Não precisa": a dona dispensou o retorno deste atendimento */
     returnSkippedAt: timestamp("return_skipped_at", { withTimezone: true }),
+    /** Quando a dona marcou que a cliente pagou (antes do começo = pago adiantado); null = não marcado */
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    /** Forma de pagamento (opcional, só com paid_at) */
+    paymentMethod: text("payment_method").$type<"pix" | "dinheiro" | "cartao">(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("appointments_tenant_start").on(t.tenantId, t.startsAt)],
@@ -348,4 +352,6 @@ export const apiTokens = pgTable("api_tokens", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
   revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  /** Preenchido = código de pareamento ainda não trocado (não vale como chave). */
+  pairingExpiresAt: timestamp("pairing_expires_at", { withTimezone: true }),
 });

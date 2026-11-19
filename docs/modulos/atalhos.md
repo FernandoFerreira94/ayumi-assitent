@@ -11,6 +11,7 @@
 - `actions.ts`: `createApiToken(nome)` (máx. 3 ligadas, devolve a chave só nessa hora), `revokeApiToken(id)`.
 - `tokens-shared.ts`: `MAX_ACTIVE_TOKENS`, tipo `TokenItem` (fora do `"use server"`).
 - `atalho-guide.tsx`: `ATALHO_STEPS`, 7 passos ilustrados (SVG com `GuideArt`, no `StepGuide`) de como montar o Atalho no app Atalhos; aparecem na tela e no sheet depois de criar a chave.
+- `SiriQuickConnect.tsx`: **"Adicionar à Siri" (2 toques)**, só quando `SIRI_SHORTCUT_URL` (link `https://www.icloud.com/shortcuts/…`, checado por `isShortcutLink`) existe. Toque → `createSiriPairing` cria um **código de uso único** `bubpar_…` (15 min, hash na mesma `api_tokens`, só o último vale) → copia (ClipboardItem com Promise, para o Safari não perder o toque) → abre o link do iCloud. "Já tenho o Atalho: ligar de novo" copia e abre `shortcuts://run-shortcut?name=Bubbly&input=clipboard`. Ao voltar, `router.refresh` mostra o iPhone na lista. Sem a variável, só o caminho manual.
 - `AtalhosCard.tsx`: tela `/ajustes/siri` (seção `siri` em `settings/sections.ts`, linha em Conexões). Criar no sheet (vaul): nome do aparelho → **autorização** (`Bearer bub_…`, pronta para o valor do cabeçalho) + endereços dos 3 Atalhos com Copiar + passo a passo ilustrado. Colunas do sheet com `grid-cols-1 min-w-0` (o endereço longo estourava a largura no celular). Lista "•••• a9F2 · usada há X" e Desligar com confirmação na linha.
 
 ## Rotas (GET, `Authorization: Bearer bub_…`)
@@ -26,9 +27,12 @@ Resposta padrão: **texto puro** (`text/plain`), só a frase. Assim "Obter Conte
 - Sem chave, chave errada ou desligada: **o mesmo 401** com a frase "Esse atalho não está mais ligado…". Limite: 429 com frase. Erro: 500 com frase, log só `errInfo` (nunca chave nem nome).
 - `Cache-Control: private, no-store`, `noindex`, sem CORS. `/api` fica fora do `proxy.ts`.
 
+| `POST /api/v1/atalhos/parear` | corpo `{"codigo":"bubpar_…"}` ou o código em texto (nunca na URL) | 200: a chave `bub_…` em texto puro (o Atalho salva em arquivo). Vencido/usado/lixo: 400 com frase. Limite por IP. |
+
 ## Dados
 
 - Tabela `api_tokens` (migration `0047_api_tokens.sql`, RLS por estúdio): `token_hash` único, `scope` (só `read`), `last4`, `name`, `user_id`, `last_used_at`, `revoked_at`. Separada do `tenants.calendar_token_hash`: desligar uma não derruba a outra.
+- `pairing_expires_at` (migration `0048`): preenchido = código de pareamento pendente (não abre a agenda, não conta no limite de 3, não aparece na lista). `redeemPairing` troca numa UPDATE atômica: grava o hash da chave nova e zera o prazo.
 
 ## Atalho no iPhone (manual, fase 1)
 
@@ -36,7 +40,9 @@ Resposta padrão: **texto puro** (`text/plain`), só a frase. Assim "Obter Conte
 2. "Obter Conteúdo do URL": endereço copiado na tela, método GET, cabeçalho `Authorization` = `Bearer <chave>`.
 3. "Falar" (já usa o "Conteúdo do URL"). Sem dicionário.
 
-Próximo passo: Atalhos prontos publicados por link do iCloud com **pergunta de importação** para a chave (o link nunca carrega a chave de ninguém). Só publicar depois da troca para `app.bubbly.app.br` (a URL fica dentro do Atalho).
+## Atalho pronto "Bubbly" (link do iCloud)
+
+Um Atalho só, com menu (Agenda de hoje, Próxima cliente, Resumo do dia, Agenda de amanhã). Na 1ª vez sem chave salva, lê a Entrada do Atalho ou a área de transferência; se começar com `bubpar_`, faz o POST `/parear` e salva a chave em `Atalhos/bubbly-chave.txt` (iCloud Drive). Depois: lê o arquivo → menu → GET com `Authorization: Bearer` → Falar. Chave inválida: apaga o arquivo. O link é criado à mão no iPhone (Atalhos só são assinados pela Apple) e vai para a variável `SIRI_SHORTCUT_URL` do web. A URL do app fica dentro do Atalho: trocar de domínio = publicar o Atalho de novo.
 
 ## Ligações
 

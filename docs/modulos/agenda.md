@@ -63,3 +63,11 @@
 
 ## Pendências no desktop (18/11)
 - `/pendencias` com `PageShell wide` (loading também). No `lg` as seções viram colunas de quadro (`auto-fit, minmax(300px)`) com fundo suave e contador no título. Celular igual.
+
+## Pagamento da cliente (19/11)
+- Manual, sem gateway. `appointments.paid_at` (quando a dona marcou; antes de `starts_at` = "Pago adiantado") e `payment_method` opcional (`pix` | `dinheiro` | `cartao`, só com `paid_at`; migration 0048).
+- Regras puras em `appointments/payment.ts` (`paymentState`, `paymentView`, `parsePayment`). Sem marcação: concluído = "Pago no atendimento"; em aberto = "A pagar".
+- Marcar: na folha de agendar (`PaymentFields form`, campos `paid`/`paymentMethod`) ou depois pelo selo do `AppointmentCard` → `PaymentSheet` → `actions.updatePayment` → `core.setPayment` (não mexe em status nem valor; cancelado não aceita marcação nova). Toast com Desfazer.
+- `listDay` e `pendencias` trazem `paidAt`/`paymentMethod`; `version.ts` inclui o pago.
+- Testes: `tests/unit/payment.test.ts`, `tests/db/payment.test.ts`, `tests/e2e/pagamento.spec.ts`.
+

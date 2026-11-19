@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/feedback/EmptyState";
 import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
 import { AppointmentCard } from "@/features/appointments/AppointmentCard";
+import { paymentView } from "@/features/appointments/payment";
 import { CloseAllButton } from "@/features/appointments/CloseAllButton";
 import { countPendencias, listPendencias } from "@/features/appointments/pendencias";
 import { RetrySyncButton } from "@/features/google/RetrySyncButton";
@@ -47,6 +48,7 @@ export default async function PendenciasPage() {
       serviceName={r.serviceName}
       price={formatBRL(r.priceCents)}
       status={r.status}
+      payment={paymentView(r)}
       past={past}
     />
   );

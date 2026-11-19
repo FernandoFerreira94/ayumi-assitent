@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { getDb } from "@/db/client";
 import { tenants } from "@/db/schema";
 import { AtalhosCard } from "@/features/atalhos/AtalhosCard";
+import { isShortcutLink } from "@/features/atalhos/tokens-shared";
 import { listApiTokens } from "@/features/atalhos/server";
 import { IphoneCalendarCard } from "@/features/calendar-feed/IphoneCalendarCard";
 import { GoogleCard } from "@/features/google/GoogleCard";
@@ -116,7 +117,11 @@ export async function SiriBody({ tenantId }: { tenantId: string }) {
   const [tokens, base] = await Promise.all([listApiTokens(tenantId), baseUrl()]);
   return (
     <section id="siri" aria-label="Siri e Atalhos" className="scroll-mt-6">
-      <AtalhosCard initial={tokens} baseUrl={base} />
+      <AtalhosCard
+        initial={tokens}
+        baseUrl={base}
+        shortcutUrl={isShortcutLink(process.env.SIRI_SHORTCUT_URL) ? process.env.SIRI_SHORTCUT_URL : null}
+      />
     </section>
   );
 }

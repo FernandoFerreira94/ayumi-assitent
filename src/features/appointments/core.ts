@@ -6,6 +6,7 @@ import { returnDue } from "@/features/returns/rules";
 import { toInstant, todayStr } from "@/lib/dates";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { canMarkNoShow } from "./no-show";
+import type { PaymentMethod } from "./payment";
 import { applyDiscount, type Discount } from "./pricing";
 import type { Status } from "./schema";
 
@@ -34,6 +35,8 @@ export type BookingInput = {
   discount?: Discount | null;
   /** Observação livre, ex.: motivo do desconto. */
   notes?: string | null;
+  /** Já pagou (adiantado) ao agendar; a forma é opcional. */
+  payment?: { method: PaymentMethod | null } | null;
 };
 
 /** Busca os serviços na ordem pedida; null se algum não existe, está pausado ou foi excluído. */
@@ -109,6 +112,8 @@ export async function insertAppointment(
           discountValue: input.discount?.value ?? null,
           discountCents,
           notes: input.notes || null,
+          paidAt: input.payment ? new Date() : null,
+          paymentMethod: input.payment?.method ?? null,
           // Fica confirmado quando a cliente responder "1" ao lembrete da véspera
           status: "pending_confirmation",
         })
@@ -170,6 +175,23 @@ export async function setStatus(tx: Tx, id: string, status: Status, now: Date = 
     if (pgCode(e) === "23P01") return fail("SLOT_TAKEN");
     throw e;
   }
+}
+
+/**
+ * Marca (ou desmarca) que a cliente pagou. Não mexe no status nem no valor: pagamento e
+ * atendimento andam separados (pode pagar antes, no dia ou depois). Cancelado não aceita marcação nova.
+ */
+export async function setPayment(
+  tx: Tx,
+  id: string,
+  payment: { method: PaymentMethod | null } | null,
+): Promise<ActionResult> {
+  const rows = await tx
+    .update(appointments)
+    .set(payment ? { paidAt: new Date(), paymentMethod: payment.method } : { paidAt: null, paymentMethod: null })
+    .where(and(eq(appointments.id, id), payment ? ne(appointments.status, "cancelled") : undefined))
+    .returning({ id: appointments.id });
+  return rows.length ? ok() : fail("NOT_ALLOWED");
 }
 
 /**
@@ -274,6 +296,8 @@ export function listDay(tx: Tx, [from, to]: [Date, Date]) {
       discountValue: appointments.discountValue,
       discountCents: appointments.discountCents,
       notes: appointments.notes,
+      paidAt: appointments.paidAt,
+      paymentMethod: appointments.paymentMethod,
       serviceParts,
     })
     .from(appointments)

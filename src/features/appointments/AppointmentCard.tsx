@@ -11,6 +11,8 @@ import type { ActionResult } from "@/lib/errors";
 import { updateStatus } from "./actions";
 import { EditAppointmentSheet } from "./EditAppointmentSheet";
 import { canMarkNoShow, noShowHint } from "./no-show";
+import type { PaymentView } from "./payment";
+import { PaymentSheet } from "./PaymentSheet";
 import { warnSync } from "./sync-warning";
 import type { Status } from "./schema";
 
@@ -30,6 +32,8 @@ type Props = {
   /** Desconto dado e observação: ficam à vista para lembrar o motivo do valor. */
   discount?: { label: string; from: string; off: string } | null;
   notes?: string | null;
+  /** Pagamento da cliente (selo que abre a folha de marcar). Sem = não mostra. */
+  payment?: PaymentView | null;
   /** Já está dentro de uma folha (a da linha do dia): a conversa abre como folha aninhada. */
   inSheet?: boolean;
   /** Já passou (Pendências → Para fechar): a ação principal é Concluir, mesmo sem confirmação. */
@@ -57,7 +61,7 @@ const LABEL: Record<Status, string> = {
   reschedule_requested: "Quer remarcar",
 };
 
-export function AppointmentCard({ id, time, date, start: startHHMM, clientId, clientName, clientPhone, serviceId, serviceName, price, status, discount, notes, inSheet = false, past = false, onSettled }: Props) {
+export function AppointmentCard({ id, time, date, start: startHHMM, clientId, clientName, clientPhone, serviceId, serviceName, price, status, discount, notes, payment, inSheet = false, past = false, onSettled }: Props) {
   const [pending, start] = useTransition();
   const [busy, setBusy] = useState<Status | null>(null);
   const open = status === "pending_confirmation" || status === "confirmed" || status === "reschedule_requested";
@@ -114,6 +118,22 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
       <p className="text-sm font-semibold text-muted">
         {serviceName} · {LABEL[status]}
       </p>
+      {payment && status !== "cancelled" ? (
+        <PaymentSheet
+          id={id}
+          clientName={clientName}
+          price={price}
+          payment={payment}
+          nested={inSheet}
+          triggerClassName={`flex min-h-11 items-center gap-2 rounded-xl px-3 text-left text-sm font-bold ${
+            payment.state === "unpaid" ? "bg-soft text-primary-text" : "bg-ok-bg text-ok"
+          }`}
+        >
+          <Icon name={payment.state === "unpaid" ? "wallet" : "checkCircle"} size={18} />
+          <span className="flex-1">{payment.label}</span>
+          <span className="text-xs font-semibold opacity-80">{payment.state === "unpaid" ? "Marcar pago" : "Mudar"}</span>
+        </PaymentSheet>
+      ) : null}
       {discount ? (
         <p className="rounded-xl bg-ok-bg px-3 py-2 text-sm font-semibold text-ok">
           Desconto de {discount.label}: <s>{discount.from}</s> − {discount.off} = {price}
