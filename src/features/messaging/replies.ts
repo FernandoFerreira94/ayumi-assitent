@@ -13,7 +13,9 @@ const plain = (s: string) =>
 
 // Texto já normalizado (sem acento, minúsculo). Ordem importa: "nao vou" antes de "vou"
 const RESCHEDULE = /\b(reagend\w*|remarc\w*|outro (horario|dia)|mudar (o )?horario|trocar (o )?horario)\b/;
-const CANCEL = /\b(cancel\w*|desmarc\w*|nao (vou|posso|consigo|da)|nao vai dar|nao irei)\b/;
+// "não vou/posso/consigo/dá" só cancela quando fala de ir: "não consigo achar o endereço" é outro assunto
+const CANCEL =
+  /\b(cancel\w*|desmarc\w*|nao (vou|posso|consigo|da)( (mais|mesmo|pra|para))*( (poder|conseguir|ir|vir|comparecer|amanha|hoje)\b|$)|nao vai dar|nao irei)\b/;
 // Não disse "cancela", mas contou por que não vai conseguir ir ("estou na faculdade", "surgiu um imprevisto"):
 // vale como pedido de remarcar. Ressalva ("chego depois", "?") continua indo para a dona ler.
 const UNABLE =
@@ -26,6 +28,10 @@ const NEGATED_ACTION =
 const WILL_ATTEND = /\bnao (vou|iria) (faltar|esquecer|me esquecer|deixar de ir|perder)\b/;
 const CONFIRM =
   /\b(o+k+a*y?|oks|si+m+|confirm\w*|certo|combinado|beleza|blz|pode ser|estarei|irei|vou sim|vou|claro|perfeito|fechado|fechou|ta bom|ta otimo|tudo certo|com certeza|certeza|pode deixar|pode crer|positivo|aham|uhum|isso|yes|show|top|dale|presente|ciente)\b/;
+const CONFIRM_ALL = new RegExp(CONFIRM.source, "g");
+// O que pode vir junto do sim sem mudar o sentido ("Ok, obrigada!", "Bom dia! Confirmo", "estarei lá")
+const COURTESY =
+  /\b(oi|ola|bom dia|boa tarde|boa noite|obrigad[ao]s?|brigad[ao]|grat[ao]|valeu|ate (amanha|mais|logo|la)|beijos?|bjs?|amiga|querida|flor|entao|eu|pode|la|ai|sim|amanha|hoje|tchau)\b/g;
 // Ressalva, dúvida, pergunta, adiamento ou ajuste de horário: "ok, mas dá pra ser às 15h?" não é confirmação
 const HEDGE =
   /\b(mas|porem|talvez|se der|se puder|acho que|nao sei|depende|duvida|atras\w*|adiantar|vou ver|deixa eu ver|te (aviso|falo|retorno|confirmo)|depois|ainda|mais (tarde|cedo)|\d+ ?(h|hr|hrs|horas?|min|minutos?))\b/;
@@ -57,6 +63,8 @@ export function parseIntent(raw: string): Intent | null {
   const option = OPTION.exec(t);
   if (option) return BY_OPTION[option[2]];
   if (NEGATED_ACTION.test(t)) return null;
+  // "posso cancelar?", "você cancelou meu outro horário?": pergunta sobre cancelar não é pedido
+  if (trimmed.includes("?") && /\b(cancel|desmarc)\w*/.test(t) && !/\b(remarc|reagend)\w*/.test(t)) return null;
   const doubtful = trimmed.includes("?") || HEDGE.test(t);
   if (WILL_ATTEND.test(t)) return doubtful ? null : "confirm";
   if (RESCHEDULE.test(t)) return "reschedule";
@@ -69,7 +77,9 @@ export function parseIntent(raw: string): Intent | null {
   }
   // Qualquer "não" que sobrou ("não confirmo", "não esqueci") não é confirmação
   if (doubtful || /\bnao\b/.test(t)) return null;
-  return CONFIRM.test(t) ? "confirm" : null;
+  // Só confirma se a mensagem é o sim e nada mais: "vou te mandar a foto" tem "vou", mas é outro assunto
+  if (!CONFIRM.test(t)) return null;
+  return t.replace(CONFIRM_ALL, " ").replace(COURTESY, " ").trim() ? null : "confirm";
 }
 
 // A mensagem inteira tem que ser o pedido: "não quero sair agora" não é opt-out

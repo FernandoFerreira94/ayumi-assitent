@@ -93,6 +93,27 @@ describe("resposta ao lembrete", () => {
     for (const t of ["quanto custa?", "onde fica?", "posso ir às 16h?", "tô doente", "bom dia", "obrigada", "kkk", "?"])
       expect(parseIntent(t), t).toBeNull();
   });
+  it("mensagem solta com palavra de sim ou de não no meio não vira resposta ao lembrete", () => {
+    // Antes: "vou" ou "isso" no meio confirmava; "não consigo"/"não dá" no meio cancelava
+    for (const t of [
+      "vou te mandar a foto da unha",
+      "isso é muito caro",
+      "claro que quero fazer a sobrancelha também",
+      "certo, qual é o pix",
+      "não consigo achar o endereço",
+      "não dá pra mandar áudio agora",
+      "não posso esquecer de levar a foto",
+      "você cancelou meu outro horário?",
+      "posso cancelar?",
+    ])
+      expect(parseIntent(t), t).toBeNull();
+  });
+  it("resposta curta com cumprimento ou agradecimento continua valendo", () => {
+    for (const t of ["Ok, obrigada!", "sim, até amanhã", "Bom dia! Confirmo", "confirmado, obrigada 💜", "Oi, confirmo sim"])
+      expect(parseIntent(t), t).toBe("confirm");
+    for (const t of ["infelizmente não vou poder", "não vou conseguir ir amanhã", "não vai dar"])
+      expect(parseIntent(t), t).toBe("cancel");
+  });
   it("conversa que não é resposta fica sem intenção", () => {
     expect(parseIntent("Oi! Você faz unha de fibra também?")).toBeNull();
     expect(

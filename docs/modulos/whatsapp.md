@@ -37,5 +37,6 @@
 - Dona escreveu (app ou celular) DEPOIS do lembrete (ou do 2º lembrete, ou da resposta, na correção): a mensagem da cliente responde a ela e vira mensagem normal; nem 1/2/3 nem IA mexem no horário (`inbound.ownerWroteSince`, folga de 2 min para o eco do lembrete, 19/11).
 - No máximo 3 respostas automáticas por cliente em 24 h (`AI_MAX_REPLIES_24H`); correção de intenção vale por 2 h (`CORRECTION_HOURS`).
 - Mídia ou texto acima de 1.000 caracteres (`AI_MAX_CHARS`) vai direto para a dona, sem chamar o modelo.
+- Regras fixas (`replies.parseIntent`, 19/11): o sim só vale se a mensagem for o sim e nada mais (cortesia como "obrigada", "bom dia", "até amanhã" pode vir junto); "não vou/posso/consigo/dá" só cancela quando fala de ir ("não consigo achar o endereço" não cancela); pergunta sobre cancelar ("posso cancelar?") não é pedido. O que sobra vai para a IA.
 - Mapeamento: 1 = confirma (`confirmed`); 2 = cancelar e 3 = remarcar viram `reschedule_requested` (nunca cancela sozinho). O número só vale sozinho ("2", "opção 2").
 - Dívida: texto de 501 a 1.000 caracteres chega ao modelo cortado em 500 (`quota.AI_TEXT_MAX`), então a IA pode decidir com metade da mensagem. Alinhar os dois limites.
