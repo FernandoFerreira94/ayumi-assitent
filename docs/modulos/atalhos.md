@@ -5,7 +5,7 @@
 ## Arquivos
 
 - `features/atalhos/token.ts`: `newApiToken` (`bub_` + 32 bytes base64url), `hashApiToken` (SHA-256), `isApiTokenShape`, `tokenLast4`, `bearerToken` (lê `Authorization: Bearer`).
-- `core.ts` (puro, testável): `falaAgenda`, `falaProxima`, `falaResumo`, `nextOf`, `spokenTime` ("9h", "10h30"), `parseDia`, `dayOf`, `publicRow`. A frase nasce no servidor: dá para melhorar o texto sem reinstalar o Atalho. **Só o primeiro nome da cliente** (a Siri fala alto), sem telefone.
+- `core.ts` (puro, testável): `falaAgenda`, `falaProxima`, `falaResumo`, `nextOf`, `spokenHour` ("às duas e meia da tarde", "ao meio-dia"), `numberWords` (0–59 por extenso), `spokenTime` ("9h", só nos dados). Fala corrida para a Siri: números e horas por extenso, poucos pontos, valor sem ",00", `parseDia`, `dayOf`, `publicRow`. A frase nasce no servidor: dá para melhorar o texto sem reinstalar o Atalho. **Só o primeiro nome da cliente** (a Siri fala alto), sem telefone.
 - `rate.ts`: limite em memória: 60/min por IP **antes do banco**, 30/min e 500/dia por chave. Zera a cada deploy; com mais de uma instância do web, mover para o Postgres.
 - `server.ts`: `activeTokenByHash` (como dono do banco: ainda não se sabe o estúdio), `markTokenUsed` (no máximo a cada 10 min), `loadRows` (via `withTenant` + `appointments/core.listDay`), `handleAtalho` (casca das rotas), `listApiTokens`.
 - `actions.ts`: `createApiToken(nome)` (máx. 3 ligadas, devolve a chave só nessa hora), `revokeApiToken(id)`.
