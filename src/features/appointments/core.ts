@@ -204,7 +204,11 @@ export async function setPayment(
     .update(appointments)
     .set(payment ? { paidAt: new Date(), paymentMethod: payment.method } : { paidAt: null, paymentMethod: null })
     .where(and(eq(appointments.id, id), payment ? ne(appointments.status, "cancelled") : undefined))
-    .returning({ tenantId: appointments.tenantId, clientId: appointments.clientId, priceCents: appointments.priceCents });
+    .returning({
+      tenantId: appointments.tenantId,
+      clientId: appointments.clientId,
+      priceCents: appointments.priceCents,
+    });
   const a = rows[0];
   if (!a) return fail("NOT_ALLOWED");
   // Carteira: o extrato segue a marcação. Marcar de novo (outra forma) anula o pagamento antigo e grava o novo.

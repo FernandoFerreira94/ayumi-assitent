@@ -109,7 +109,9 @@ export function WalletSettingsForm({ settings }: { settings: WalletSettings }) {
           checked={noShowSession}
           onChange={setNoShowSession}
           label="Faltou, a sessão do pacote conta como usada"
-          hint={noShowSession ? "Quem tem pacote perde a sessão do horário." : "A sessão volta para o pacote da cliente."}
+          hint={
+            noShowSession ? "Quem tem pacote perde a sessão do horário." : "A sessão volta para o pacote da cliente."
+          }
         />
         <p className="text-sm font-semibold text-muted">
           Remarcar nunca perde nada: o que foi pago acompanha o horário novo.

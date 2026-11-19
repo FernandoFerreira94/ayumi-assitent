@@ -10,6 +10,7 @@ Atualizado em 17/11/2026 (main em #162, auditoria completa). Ache o módulo da t
 | Vagas e expediente | [vagas.md](vagas.md) | `features/hours`, tela `vagas`, Ajustes > Expediente | Expediente/pausa por dia, horários livres, texto para divulgar | Agenda e bloqueios (ocupado), Google importado, avisos do dia (folga/fim do expediente) |
 | Retorno da cliente | [agenda.md](agenda.md) (seção Retorno) e [servicos.md](servicos.md) | `features/returns` | Retorno aproximado por serviço, data prevista ao concluir, pergunta "Marcar o retorno?" com vagas | Serviços (`return_days`), agenda (`setStatus`), vagas (`freeSlots`), QuickBook |
 | Financeiro | [financeiro.md](financeiro.md) | `features/finance`, tela `financeiro` | Previsto/recebido por período, despesas, pizza por serviço | Agenda (valores, desconto, status), serviços |
+| Carteira da cliente | [carteira.md](carteira.md) | `features/wallet`, tela `ajustes/pagamentos` | Extrato imutável do dinheiro da cliente (sinal, crédito, devolução, pacotes), política de cancelamento/falta, Pix | Agenda (`insertAppointment`, `setPayment`), clientes (anonimizar), financeiro (caixa x ganhos), Ajustes |
 | WhatsApp e conversas | [whatsapp.md](whatsapp.md) | `features/messaging`, `features/whatsapp`, `features/notifications`, `api/whatsapp/webhook` | Conectar número (Evolution), receber/enviar, IA lê respostas, sino | Lembretes, agenda (status muda), push, Ajustes |
 | Lembretes | [lembretes.md](lembretes.md) | `features/reminders`, worker | 1º/2º aviso, "não respondeu", textos editáveis | WhatsApp (porta de envio), push, agenda (status), worker |
 | Avisos do dia e push | [avisos-push.md](avisos-push.md) | `features/owner-notices`, `features/push`, worker | Push para a profissional (bom dia, folga, fim do expediente, semana, feriados) | Vagas (expediente), agenda, clima/localização, worker, VAPID |
@@ -49,6 +50,7 @@ Gerada por varredura de `@/features/*`. "Usa" = depende de; "Usado por" = quem q
 | shell | appointments, google, messaging, whatsapp | nav, ajustes | — |
 | tour / install / update | — | layout, ajustes, login | — |
 | support | admin (guard, audit, alerts), push | telas agenda, ajustes, admin | support_messages, platform_notices, platform_notice_dismissals |
+| wallet | appointments (tipo PaymentMethod) | appointments (core), settings (summary) | client_ledger, tenants (política) |
 | whatsapp | messaging | appointments, shell | tenants (instância) |
 | admin | messaging, push, support | telas admin, nav (`isAdmin`), `lib/auth` (2FA), retention, support, worker | admin_step_up, admin_audit_log, "twoFactor", leitura de todas as tabelas como dono do banco |
 | native | install | layout, login, `.well-known`, `api/native-auth`, clients, contacts | verification (código de uso único do Better Auth) |

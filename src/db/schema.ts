@@ -383,7 +383,9 @@ export const clientLedger = pgTable(
       .references(() => tenants.id, { onDelete: "cascade" }),
     clientId: uuid("client_id").notNull(),
     appointmentId: uuid("appointment_id"),
-    kind: text("kind").notNull().$type<
+    kind: text("kind")
+      .notNull()
+      .$type<
         | "payment"
         | "refund"
         | "credit_in"

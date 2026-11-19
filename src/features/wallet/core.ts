@@ -33,7 +33,11 @@ export function clientMoves(tx: Tx, clientId: string) {
 export function appointmentMoves(tx: Tx, appointmentIds: string[]): Promise<Move[]> {
   if (!appointmentIds.length) return Promise.resolve([]);
   return tx
-    .select({ kind: clientLedger.kind, amountCents: clientLedger.amountCents, appointmentId: clientLedger.appointmentId })
+    .select({
+      kind: clientLedger.kind,
+      amountCents: clientLedger.amountCents,
+      appointmentId: clientLedger.appointmentId,
+    })
     .from(clientLedger)
     .where(inArray(clientLedger.appointmentId, appointmentIds));
 }

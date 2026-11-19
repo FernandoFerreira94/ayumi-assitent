@@ -35,10 +35,16 @@ d("carteira da cliente (Postgres real)", () => {
   const ledger = (appointmentId: string) =>
     admin`select kind, amount_cents, method, reverses_id from client_ledger where appointment_id = ${appointmentId} order by created_at, amount_cents desc`;
 
-  let hour = 8;
+  let hour = 9;
   const book = (payment?: { method: "pix" | "dinheiro" | null } | null) =>
     withTenant(T, (tx) =>
-      core.insertAppointment(tx, T, { clientId: cli, serviceIds: [svc], date: "2030-06-10", time: `${hour++}:00`, payment }),
+      core.insertAppointment(tx, T, {
+        clientId: cli,
+        serviceIds: [svc],
+        date: "2030-06-10",
+        time: `${String(hour++).padStart(2, "0")}:00`,
+        payment,
+      }),
     );
 
   it("agendar já pago grava um pagamento do total no extrato", async () => {
@@ -66,7 +72,9 @@ d("carteira da cliente (Postgres real)", () => {
     const r = await book({ method: null });
     if (!r.ok) throw new Error(r.code);
     await expect(
-      withTenant(T, (tx) => tx.execute(sql`update client_ledger set amount_cents = 1 where appointment_id = ${r.data.id}`)),
+      withTenant(T, (tx) =>
+        tx.execute(sql`update client_ledger set amount_cents = 1 where appointment_id = ${r.data.id}`),
+      ),
     ).rejects.toThrow();
     await expect(
       withTenant(T, (tx) => tx.execute(sql`delete from client_ledger where appointment_id = ${r.data.id}`)),

@@ -92,9 +92,10 @@ describe("cancelar ou faltar com valor pago", () => {
   });
   it("em cima da hora com a política desligada: tudo vira crédito", () => {
     const policy = { ...DEFAULT_POLICY, lateCancelKeepsDeposit: false };
-    expect(cancelOutcome({ ...base, policy, status: "cancelled", at: hoursBefore(1), paidCents: 3000 })).toMatchObject(
-      { toCredit: 3000, retained: 0 },
-    );
+    expect(cancelOutcome({ ...base, policy, status: "cancelled", at: hoursBefore(1), paidCents: 3000 })).toMatchObject({
+      toCredit: 3000,
+      retained: 0,
+    });
   });
   it("faltou: sinal fica e a sessão é consumida (padrão); dá para devolver a sessão", () => {
     expect(cancelOutcome({ ...base, status: "no_show", at: startsAt, paidCents: 3000 })).toMatchObject({
@@ -134,7 +135,13 @@ describe("pacotes", () => {
 });
 
 describe("formulário de Ajustes > Pagamentos", () => {
-  const good = { depositPct: "30", cancelNoticeHours: "24", packageValidDays: "90", pixKey: "  salao@pix.com ", lateCancelKeepsDeposit: "on" };
+  const good = {
+    depositPct: "30",
+    cancelNoticeHours: "24",
+    packageValidDays: "90",
+    pixKey: "  salao@pix.com ",
+    lateCancelKeepsDeposit: "on",
+  };
   it("lê os valores e as chaves ligadas", () => {
     const r = parsePolicy(good);
     expect(r).toMatchObject({

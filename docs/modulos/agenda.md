@@ -70,4 +70,4 @@
 - Marcar: na folha de agendar (`PaymentFields form`, campos `paid`/`paymentMethod`) ou depois pelo selo do `AppointmentCard` → `PaymentSheet` → `actions.updatePayment` → `core.setPayment` (não mexe em status nem valor; cancelado não aceita marcação nova). Toast com Desfazer.
 - `listDay` e `pendencias` trazem `paidAt`/`paymentMethod`; `version.ts` inclui o pago.
 - Testes: `tests/unit/payment.test.ts`, `tests/db/payment.test.ts`, `tests/e2e/pagamento.spec.ts`.
-
+- 19/11 (carteira): marcar/desmarcar pago e agendar já pago também gravam no extrato `client_ledger` (ver [carteira.md](carteira.md)).
