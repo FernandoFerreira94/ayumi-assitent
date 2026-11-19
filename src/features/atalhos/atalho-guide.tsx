@@ -169,8 +169,8 @@ function Header() {
   );
 }
 
-/** Passo 6: pegar a frase (chave "fala") e mostrar o resultado. */
-function ShowResult() {
+/** Passo 6: a Siri fala o que veio do endereço. */
+function SpeakResult() {
   return (
     <Art>
       <Phone x={24} y={0}>
@@ -179,27 +179,19 @@ function ShowResult() {
           <Bar x={36} y={42} w={90} h={6} />
         </Action>
         <Action y={68} h={44}>
-          <rect x={14} y={75} width={16} height={16} rx={4} fill="#ff9500" />
+          <rect x={14} y={75} width={16} height={16} rx={4} fill="#ff3b30" />
           <T x={36} y={86} size={8.5} weight={600}>
-            Obter Valor de
+            Falar
           </T>
-          <rect x={36} y={92} width={30} height={14} rx={5} fill="#dbe9ff" />
-          <T x={51} y={102} size={8} fill={BLUE} anchor="middle">
-            fala
-          </T>
-        </Action>
-        <Action y={120}>
-          <rect x={14} y={127} width={16} height={16} rx={4} fill="#ffcc00" />
-          <T x={36} y={139} size={8.5} weight={600}>
-            Mostrar Resultado
+          <rect x={36} y={92} width={96} height={14} rx={5} fill="#dbe9ff" />
+          <T x={84} y={102} size={8} fill={BLUE} anchor="middle">
+            Conteúdos do URL
           </T>
         </Action>
       </Phone>
-      <Ring x={62} y={94} w={38} h={20} r={7} />
-      <Badge x={108} y={104} n={1} />
-      <Ring x={34} y={122} w={140} h={26} r={9} />
-      <Badge x={34} y={122} n={2} />
-      <Callout x={192} y={30} w={124} lines={["1 Dicionário: fala", "2 Mostrar Resultado"]} />
+      <Ring x={34} y={70} w={140} h={42} r={10} />
+      <Callout x={196} y={30} w={118} lines={["Adicione Falar", "e toque em OK"]} />
+      <Arrow x1={226} y1={66} x2={178} y2={88} bend={-8} />
     </Art>
   );
 }
@@ -279,11 +271,10 @@ export const ATALHO_STEPS: GuideStep[] = [
     ),
   },
   {
-    art: <ShowResult />,
+    art: <SpeakResult />,
     text: (
       <>
-        Adicione <b>Obter Valor do Dicionário</b> com a chave <b>fala</b> e depois <b>Mostrar Resultado</b>. Toque em{" "}
-        <b>OK</b>.
+        Adicione a ação <b>Falar</b> (ela já usa o <b>Conteúdo do URL</b>) e toque em <b>OK</b>.
       </>
     ),
   },

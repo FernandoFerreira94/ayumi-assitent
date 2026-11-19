@@ -46,7 +46,17 @@ export async function loadRows(tenantId: string, range: [Date, Date]): Promise<A
 }
 
 const HEADERS = { "Cache-Control": "private, no-store, max-age=0", "X-Robots-Tag": "noindex, nofollow" };
-const reply = (status: number, fala: string) => Response.json({ fala }, { status, headers: HEADERS });
+/**
+ * Por padrão a resposta é só a frase, em texto puro: o Atalho fala direto o "Conteúdo do URL", sem passo de
+ * dicionário (com JSON a Siri lia chaves e aspas). `?formato=json` ou `Accept: application/json` devolve os dados.
+ */
+export const wantsJson = (req: Request) =>
+  new URL(req.url).searchParams.get("formato") === "json" || /application\/json/i.test(req.headers.get("accept") ?? "");
+
+function respond(req: Request, status: number, body: Record<string, unknown> & { fala: string }) {
+  if (wantsJson(req)) return Response.json(body, { status, headers: HEADERS });
+  return new Response(body.fala, { status, headers: { ...HEADERS, "Content-Type": "text/plain; charset=utf-8" } });
+}
 
 /** IP de quem chama (Railway põe o cliente primeiro no x-forwarded-for). */
 const clientIp = (req: Request) => req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
@@ -59,23 +69,27 @@ export async function handleAtalho(
   req: Request,
   answer: (tenantId: string, now: Date) => Promise<Record<string, unknown> & { fala: string }>,
 ): Promise<Response> {
-  if (!allowIp(clientIp(req))) return reply(429, "Muitas consultas seguidas. Tenta de novo daqui a um minuto.");
+  if (!allowIp(clientIp(req)))
+    return respond(req, 429, { fala: "Muitas consultas seguidas. Tenta de novo daqui a um minuto." });
   const token = bearerToken(req.headers.get("authorization"));
   const off = () =>
-    reply(401, "Esse atalho não está mais ligado. Gere uma chave nova no Bubbly, em Ajustes, Siri e Atalhos.");
+    respond(req, 401, {
+      fala: "Esse atalho não está mais ligado. Gere uma chave nova no Bubbly, em Ajustes, Siri e Atalhos.",
+    });
   if (!token) return off();
   try {
     const t = await activeTokenByHash(hashApiToken(token));
     if (!t || t.scope !== "read") return off();
-    if (!allowToken(t.id)) return reply(429, "Muitas consultas seguidas. Tenta de novo daqui a um minuto.");
+    if (!allowToken(t.id))
+      return respond(req, 429, { fala: "Muitas consultas seguidas. Tenta de novo daqui a um minuto." });
     const [body] = await Promise.all([
       answer(t.tenantId, new Date()),
       markTokenUsed(t.id).catch((e) => log("warn", "api_token_mark_failed", errInfo(e))),
     ]);
-    return Response.json(body, { headers: HEADERS });
+    return respond(req, 200, body);
   } catch (e) {
     log("error", "atalho_failed", errInfo(e));
-    return reply(500, "Não consegui ler sua agenda agora. Tenta de novo em instantes.");
+    return respond(req, 500, { fala: "Não consegui ler sua agenda agora. Tenta de novo em instantes." });
   }
 }
 
