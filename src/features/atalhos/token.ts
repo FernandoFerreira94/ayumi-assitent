@@ -19,3 +19,9 @@ export function bearerToken(header: string | null): string | null {
   const m = /^Bearer\s+(\S+)$/i.exec(header?.trim() ?? "");
   return m && isApiTokenShape(m[1]!) ? m[1]! : null;
 }
+
+/** Código de pareamento (uso único, 15 min): o app copia, o Atalho troca pela chave. Não abre a agenda sozinho. */
+export const PAIRING_PREFIX = "bubpar_";
+export const PAIRING_TTL_MS = 15 * 60_000;
+export const newPairingCode = () => `${PAIRING_PREFIX}${randomBytes(16).toString("base64url")}`;
+export const isPairingCodeShape = (v: string) => /^bubpar_[A-Za-z0-9_-]{22}$/.test(v);

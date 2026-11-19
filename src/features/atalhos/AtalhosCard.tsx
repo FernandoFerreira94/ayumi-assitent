@@ -8,6 +8,7 @@ import { Icon, TileTitle } from "@/components/ui/Icon";
 import { StepGuide } from "@/components/ui/StepGuide";
 import { ATALHO_STEPS } from "./atalho-guide";
 import { createApiToken, revokeApiToken } from "./actions";
+import { SiriQuickConnect } from "./SiriQuickConnect";
 import { MAX_ACTIVE_TOKENS, type TokenItem } from "./tokens-shared";
 
 /** Os três Atalhos da fase 1 (só leitura). O nome é a frase que a pessoa fala para a Siri. */
@@ -35,7 +36,16 @@ async function copyText(text: string, what: string) {
 }
 
 /** Ajustes > Siri e Atalhos: criar a chave só de leitura (mostrada uma vez), ver as ligadas e desligar. */
-export function AtalhosCard({ initial, baseUrl }: { initial: TokenItem[]; baseUrl: string }) {
+export function AtalhosCard({
+  initial,
+  baseUrl,
+  shortcutUrl,
+}: {
+  initial: TokenItem[];
+  baseUrl: string;
+  /** Link do Atalho pronto no iCloud (SIRI_SHORTCUT_URL). Sem ele, só o caminho manual. */
+  shortcutUrl: string | null;
+}) {
   const side = useSheetSide();
   const [items, setItems] = useState(initial);
   const [open, setOpen] = useState(false);
@@ -45,6 +55,12 @@ export function AtalhosCard({ initial, baseUrl }: { initial: TokenItem[]; baseUr
   const [asking, setAsking] = useState<string | null>(null);
   const [revoking, setRevoking] = useState<string | null>(null);
   const full = items.length >= MAX_ACTIVE_TOKENS;
+  // Volta do app Atalhos (router.refresh): a chave criada pelo pareamento aparece na lista.
+  const [prevInitial, setPrevInitial] = useState(initial);
+  if (initial !== prevInitial) {
+    setPrevInitial(initial);
+    setItems(initial);
+  }
 
   async function create() {
     setBusy(true);
@@ -73,21 +89,26 @@ export function AtalhosCard({ initial, baseUrl }: { initial: TokenItem[]; baseUr
           Siri e Atalhos do iPhone
         </TileTitle>
         <p className="text-sm font-semibold text-muted">
-          Pergunte para a Siri &quot;Agenda de hoje&quot;, &quot;Próxima cliente&quot; ou &quot;Resumo do dia&quot; e
-          ouça a resposta sem abrir o app. A Siri só consulta: ela não marca, muda nem cancela nada. Ela fala só o
-          primeiro nome da cliente.
+          {shortcutUrl
+            ? "Pergunte para a Siri sobre a agenda de hoje, a próxima cliente ou o resumo do dia e ouça a resposta sem abrir o app."
+            : 'Pergunte para a Siri "Agenda de hoje", "Próxima cliente" ou "Resumo do dia" e ouça a resposta sem abrir o app.'}{" "}
+          A Siri só consulta: ela não marca, muda nem cancela nada. Ela fala só o primeiro nome da cliente.
         </p>
-        <button
-          type="button"
-          className="btn-tint min-h-12 rounded-2xl px-5 font-bold disabled:opacity-60"
-          onClick={() => {
-            setToken(null);
-            setOpen(true);
-          }}
-          disabled={full}
-        >
-          {items.length ? "Criar outra chave" : "Ligar a Siri"}
-        </button>
+        {shortcutUrl ? (
+          <SiriQuickConnect shortcutUrl={shortcutUrl} disabled={full} />
+        ) : (
+          <button
+            type="button"
+            className="btn-tint min-h-12 rounded-2xl px-5 font-bold disabled:opacity-60"
+            onClick={() => {
+              setToken(null);
+              setOpen(true);
+            }}
+            disabled={full}
+          >
+            {items.length ? "Criar outra chave" : "Ligar a Siri"}
+          </button>
+        )}
         {full ? (
           <p className="text-sm font-semibold text-muted">
             Limite de {MAX_ACTIVE_TOKENS} chaves. Desligue uma para criar outra.
@@ -148,10 +169,30 @@ export function AtalhosCard({ initial, baseUrl }: { initial: TokenItem[]; baseUr
         </ul>
       ) : null}
 
-      <section className="grid min-w-0 gap-2" aria-label="Como funciona">
-        <h2 className="px-3 text-xs font-bold uppercase tracking-wide text-muted">Como montar o Atalho</h2>
-        <StepGuide steps={ATALHO_STEPS} label="Como montar o Atalho no iPhone" />
-      </section>
+      {shortcutUrl ? (
+        <details className="glass group min-w-0 rounded-2xl px-4 py-3 text-sm font-semibold">
+          <summary className="cursor-pointer font-bold">Prefere montar o Atalho à mão?</summary>
+          <div className="mt-3 grid min-w-0 gap-3">
+            <button
+              type="button"
+              className="btn-glass min-h-11 rounded-full px-4 text-sm font-bold disabled:opacity-60"
+              onClick={() => {
+                setToken(null);
+                setOpen(true);
+              }}
+              disabled={full}
+            >
+              Criar chave para montar à mão
+            </button>
+            <StepGuide steps={ATALHO_STEPS} label="Como montar o Atalho no iPhone" />
+          </div>
+        </details>
+      ) : (
+        <section className="grid min-w-0 gap-2" aria-label="Como funciona">
+          <h2 className="px-3 text-xs font-bold uppercase tracking-wide text-muted">Como montar o Atalho</h2>
+          <StepGuide steps={ATALHO_STEPS} label="Como montar o Atalho no iPhone" />
+        </section>
+      )}
 
       <Drawer.Root direction={side} repositionInputs={false} open={open} onOpenChange={setOpen}>
         <Drawer.Portal>

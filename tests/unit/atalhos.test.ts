@@ -143,3 +143,27 @@ describe("limite", () => {
     expect(allow("k", 1001)).toBe(true);
   });
 });
+
+describe("pareamento da Siri (Adicionar à Siri)", () => {
+  it("código bubpar_ com formato próprio, que não vale como chave", async () => {
+    const { newPairingCode, isPairingCodeShape } = await import("@/features/atalhos/token");
+    const c = newPairingCode();
+    expect(isPairingCodeShape(c)).toBe(true);
+    expect(isApiTokenShape(c)).toBe(false);
+    expect(bearerToken(`Bearer ${c}`)).toBeNull();
+    expect(isPairingCodeShape(newApiToken())).toBe(false);
+  });
+
+  it("só aceita link de Atalho do iCloud", async () => {
+    const { isShortcutLink } = await import("@/features/atalhos/tokens-shared");
+    expect(isShortcutLink("https://www.icloud.com/shortcuts/0123456789abcdef0123456789abcdef")).toBe(true);
+    for (const v of [
+      undefined,
+      "",
+      "http://www.icloud.com/shortcuts/0123456789abcdef0123456789abcdef",
+      "https://evil.com/shortcuts/0123456789abcdef0123456789abcdef",
+      "https://www.icloud.com/shortcuts/abc?x=1",
+    ])
+      expect(isShortcutLink(v)).toBe(false);
+  });
+});
