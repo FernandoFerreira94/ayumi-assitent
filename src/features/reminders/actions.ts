@@ -6,10 +6,14 @@ import { withTenant } from "@/db/client";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
 import { saveMessageSettings } from "./core";
-import { TEMPLATE_MAX } from "./text";
+import { DEFAULT_BOOKING, DEFAULT_REMINDER, DEFAULT_SECOND, TEMPLATE_MAX } from "./text";
 
 const hours = z.coerce.number().int().min(1).max(72);
-const template = z.string().trim().max(TEMPLATE_MAX);
+const template = z
+  .string()
+  .transform((s) => s.replace(/\r\n?/g, "\n").trim())
+  .pipe(z.string().max(TEMPLATE_MAX));
+const DEFAULTS = { bookingTemplate: DEFAULT_BOOKING, reminderTemplate: DEFAULT_REMINDER, secondTemplate: DEFAULT_SECOND };
 
 /**
  * Cartão "Mensagens no WhatsApp" de Ajustes: como chamar a cliente, texto de agendamento, 1º aviso e 2º aviso
@@ -35,7 +39,8 @@ export async function saveMessages(_prev: ActionResult | null, fd: FormData): Pr
   for (const key of Object.keys(texts) as (keyof typeof texts)[]) {
     const p = template.safeParse(fd.get(key) ?? "");
     if (!p.success) return fail("VALIDATION", key);
-    texts[key] = p.data || null;
+    // Igual ao padrão = null: quando o padrão do app mudar, ela recebe o novo
+    texts[key] = p.data && p.data !== DEFAULTS[key] ? p.data : null;
   }
   try {
     await withTenant(tenantId, (tx) =>

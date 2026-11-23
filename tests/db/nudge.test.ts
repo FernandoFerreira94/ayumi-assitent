@@ -43,7 +43,7 @@ d("reforço único de confirmação (Postgres real)", () => {
     const now = at("2026-11-10T15:30:00Z");
     await runReminders(portFor, now);
     expect(sent).toEqual([
-      "+5511987655555|Oi, Bia! Passando para lembrar do seu horário de Gel hoje às 15:00 😊 Pode me confirmar?\n\nResponda com o número:\n1 - Confirmo\n2 - Cancelar\n3 - Reagendar",
+      "+5511987655555|Oi! Passando para lembrar do seu horário de Gel hoje às 15:00 😊 Pode me confirmar?\n\nResponda com o número:\n1 - Confirmo\n2 - Cancelar\n3 - Reagendar",
     ]);
     expect(
       (await admin`select status, nudge_sent_at from appointments where id = ${a}`)[0].nudge_sent_at,
@@ -59,7 +59,7 @@ d("reforço único de confirmação (Postgres real)", () => {
     await add("2026-11-10T16:30:00Z", "2026-11-09T18:00:00Z", "confirmed");
     await runReminders(portFor, at("2026-11-10T15:30:00Z"));
     expect(sent).toEqual([
-      "+5511987655555|Oi, Bia! Passando para lembrar do seu horário de Gel hoje às 13:30 😊 Te espero com carinho! 💜",
+      "+5511987655555|Oi! Passando para lembrar do seu horário de Gel hoje às 13:30 😊 Te espero com carinho! 💜",
     ]);
   });
 

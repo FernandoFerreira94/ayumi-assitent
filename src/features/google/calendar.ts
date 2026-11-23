@@ -2,6 +2,8 @@
 export type CalendarEventInput = {
   summary: string;
   description?: string;
+  /** Endereço do estúdio: aparece no evento (e no convite da cliente) */
+  location?: string;
   startsAt: Date;
   endsAt: Date;
   timeZone: string;
@@ -34,6 +36,7 @@ const NOTIFY = "?sendUpdates=all";
 const body = (e: CalendarEventInput) => ({
   summary: e.summary,
   description: e.description,
+  ...(e.location ? { location: e.location } : {}),
   start: { dateTime: e.startsAt.toISOString(), timeZone: e.timeZone },
   end: { dateTime: e.endsAt.toISOString(), timeZone: e.timeZone },
   ...(e.attendeeEmail ? { attendees: [{ email: e.attendeeEmail }] } : {}),

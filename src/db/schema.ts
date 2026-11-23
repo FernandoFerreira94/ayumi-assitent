@@ -21,7 +21,16 @@ export const tenants = pgTable("tenants", {
   name: text("name").notNull(),
   timezone: text("timezone").notNull().default("America/Sao_Paulo"),
   whatsappInstance: text("whatsapp_instance").unique(),
+  /** Linha pronta do endereço do estúdio (formatAddress): convite .ics, Google e {endereco}/{mapa}. null = sem endereço */
   address: text("address"),
+  /** Endereço do estúdio em campos (0054), editado em Ajustes > Endereço. CEP só com os 8 dígitos. */
+  addressCep: text("address_cep"),
+  addressStreet: text("address_street"),
+  addressNumber: text("address_number"),
+  addressComplement: text("address_complement"),
+  addressDistrict: text("address_district"),
+  addressCity: text("address_city"),
+  addressState: text("address_state"),
   instagram: text("instagram"),
   /** Um dos BUSINESS_TYPES de features/salon/schema */
   businessType: text("business_type"),

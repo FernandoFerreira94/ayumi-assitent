@@ -5,7 +5,7 @@
 ## Arquivos
 - `features/reminders/run.ts` (`runReminders`: todos os estúdios; erro de um não para os outros).
 - `core.ts`: `claimDue`/`release` (claim para não mandar duas vezes), `sendReminders`, `getReminderSettings`, `getMessageSettings`, `saveMessageSettings`.
-- `nudge.ts` (2º aviso, `isQuietHour`, `claimNudges`), `no-reply.ts` (`claimNoReplies`, `notifyNoReplies`), `text.ts` (modelos com `{chaves}`), `actions.saveMessages`, `MessagesForm.tsx`.
+- `nudge.ts` (2º aviso, `isQuietHour`, `claimNudges`), `no-reply.ts` (`claimNoReplies`, `notifyNoReplies`), `text.ts` (modelos com `{chaves}`: nome, servico, dia, hora, valor, salao, endereco, mapa; desde 23/11 os padrões não têm `{nome}`, a dona põe se quiser), `actions.saveMessages` (texto igual ao padrão vira null; salvar volta para `/ajustes`), `MessagesForm.tsx`.
 - Worker: `src/worker/index.ts`, fila a cada 5 min.
 
 ## Dados

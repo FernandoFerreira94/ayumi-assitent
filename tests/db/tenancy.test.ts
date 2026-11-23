@@ -369,7 +369,7 @@ d("lembretes (núcleo)", () => {
       },
     };
     expect(await withTenant(T, (tx) => sendReminders(tx, ok, now))).toEqual({ sent: 1, failed: 0, offline: false });
-    expect(sent[0]).toContain("+5511900005555|Oi, Bia!");
+    expect(sent[0]).toContain("+5511900005555|Oi! Passando para lembrar");
     // segunda rodada: nada novo
     expect(await withTenant(T, (tx) => sendReminders(tx, ok, now))).toEqual({ sent: 0, failed: 0, offline: false });
 

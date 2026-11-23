@@ -15,13 +15,13 @@ export default async function MensagensPage() {
   const { tenantId } = await requireTenant();
   const [messages, [salon]] = await Promise.all([
     withTenant(tenantId, (tx) => getMessageSettings(tx)),
-    getDb().select({ name: tenants.name }).from(tenants).where(eq(tenants.id, tenantId)),
+    getDb().select({ name: tenants.name, address: tenants.address }).from(tenants).where(eq(tenants.id, tenantId)),
   ]);
   return (
     <PageShell back backHref="/ajustes" title="Mensagens">
       <div className="grid gap-3">
         <section id="mensagens" aria-label="Mensagens no WhatsApp" className="scroll-mt-6">
-          <MessagesForm settings={messages} salonName={salon?.name ?? ""} />
+          <MessagesForm settings={messages} salonName={salon?.name ?? ""} address={salon?.address ?? ""} />
         </section>
         <section id="ia" aria-label="Leitura das respostas" className="scroll-mt-6">
           <AiRepliesForm />

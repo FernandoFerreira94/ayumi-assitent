@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useActionState, useRef, useState } from "react";
 import { SubmitButton } from "@/components/feedback/SubmitButton";
 import { notify } from "@/components/feedback/toast";
@@ -27,6 +29,8 @@ const CHIPS = [
   ["{hora}", "horário"],
   ["{valor}", "valor do atendimento"],
   ["{salao}", "nome do salão"],
+  ["{endereco}", "endereço do estúdio"],
+  ["{mapa}", "link do mapa do estúdio"],
 ] as const;
 
 const hoursInput = "min-h-11 w-20 rounded-xl border border-line px-3 text-center text-base font-bold tabular-nums";
@@ -49,7 +53,17 @@ const SAMPLE: MessageData = {
  * não confirmou). O valor entra pela
  * chave {valor}: estando no texto, aparece; fora dele, não.
  */
-export function MessagesForm({ settings, salonName }: { settings: MessageSettings; salonName: string }) {
+export function MessagesForm({
+  settings,
+  salonName,
+  address,
+}: {
+  settings: MessageSettings;
+  salonName: string;
+  /** Endereço do estúdio (Ajustes > Endereço); vazio = {endereco}/{mapa} somem da mensagem */
+  address: string;
+}) {
+  const router = useRouter();
   const [fullName, setFullName] = useState(settings.fullName);
   const [firstOn, setFirstOn] = useState(settings.first);
   const [hours, setHours] = useState(String(settings.hours));
@@ -57,12 +71,15 @@ export function MessagesForm({ settings, salonName }: { settings: MessageSetting
   const [secondHours, setSecondHours] = useState(String(settings.secondHours ?? 3));
   const [state, action] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
     const res = await saveMessages(prev, fd);
-    if (res.ok) notify.success("Mensagens salvas");
-    else if (res.code !== "VALIDATION") notify.error(res.code);
+    if (res.ok) {
+      notify.success("Mensagens salvas");
+      // Salvou: volta para a lista de Ajustes
+      router.push("/ajustes");
+    } else if (res.code !== "VALIDATION") notify.error(res.code);
     return res;
   }, null);
   const err = state && !state.ok && state.code === "VALIDATION" ? state.field : undefined;
-  const salon: SalonMessageOpts = { name: salonName, fullName };
+  const salon: SalonMessageOpts = { name: salonName, fullName, address };
 
   return (
     <form action={action} className="glass grid gap-5 rounded-[1.75rem] px-5 py-4">
@@ -105,8 +122,18 @@ export function MessagesForm({ settings, salonName }: { settings: MessageSetting
           ))}
         </div>
         <p className="text-sm font-semibold text-muted">
-          Contato salvo como “Maria Silva Cliente”: a mensagem diz “Oi, {fullName ? "Maria Silva Cliente" : "Maria"}!”.
+          Vale onde o texto tiver {"{nome}"}. Contato salvo como “Maria Silva Cliente”: {"{nome}"} vira “
+          {fullName ? "Maria Silva Cliente" : "Maria"}”.
         </p>
+        {!address ? (
+          <p className="text-sm font-semibold text-muted">
+            Para usar {"{endereco}"} e {"{mapa}"}, cadastre o{" "}
+            <Link href="/ajustes/endereco" className="font-bold text-primary-text underline">
+              endereço do estúdio
+            </Link>
+            .
+          </p>
+        ) : null}
       </fieldset>
 
       <Step

@@ -1,3 +1,4 @@
+import { mapsUrl } from "@/features/salon/address";
 import { addDays, formatBRL, formatTime, todayStr } from "@/lib/dates";
 
 /**
@@ -7,19 +8,19 @@ import { addDays, formatBRL, formatTime, todayStr } from "@/lib/dates";
 
 /** Mensagem de agendamento confirmado (sai ao criar o agendamento). */
 export const DEFAULT_BOOKING =
-  "Oi, {nome}! Seu agendamento de {servico} está confirmado 💜\n📅 {dia}\n🕒 {hora}\n\nTe esperamos com carinho!";
+  "Oi! Seu agendamento de {servico} está confirmado 💜\n📅 {dia}\n🕒 {hora}\n\nTe esperamos com carinho!";
 /** 1º aviso: pede a confirmação do horário. */
 export const DEFAULT_REMINDER =
-  "Oi, {nome}! Passando para lembrar do seu horário de {servico} {dia} às {hora}. Te espero com carinho! 💜";
+  "Oi! Passando para lembrar do seu horário de {servico} {dia} às {hora}. Te espero com carinho! 💜";
 /** 2º aviso para quem ainda não confirmou (vai com as opções 1/2/3). */
 export const DEFAULT_SECOND =
-  "Oi, {nome}! Passando para lembrar do seu horário de {servico} {dia} às {hora} 😊 Pode me confirmar?";
+  "Oi! Passando para lembrar do seu horário de {servico} {dia} às {hora} 😊 Pode me confirmar?";
 /** 2º aviso para quem já confirmou: só lembra, sem pedir resposta. */
 export const DEFAULT_SECOND_CONFIRMED =
-  "Oi, {nome}! Passando para lembrar do seu horário de {servico} {dia} às {hora} 😊 Te espero com carinho! 💜";
+  "Oi! Passando para lembrar do seu horário de {servico} {dia} às {hora} 😊 Te espero com carinho! 💜";
 
 export const TEMPLATE_MAX = 600;
-export const REMINDER_VARS = ["nome", "servico", "dia", "hora", "valor", "salao"] as const;
+export const REMINDER_VARS = ["nome", "servico", "dia", "hora", "valor", "salao", "endereco", "mapa"] as const;
 type Var = (typeof REMINDER_VARS)[number];
 
 /** Opções que vão sempre no fim dos avisos: é por elas que o webhook entende a resposta (messaging/replies.ts). */
@@ -62,9 +63,26 @@ export type MessageData = {
   /** Link do convite (.ics) para a cliente salvar na agenda; só na mensagem de agendamento */
   calendarUrl?: string | null;
 };
-export type SalonMessageOpts = { template?: string | null; name?: string | null; fullName?: boolean };
+export type SalonMessageOpts = {
+  template?: string | null;
+  name?: string | null;
+  fullName?: boolean;
+  /** Linha pronta do endereço do estúdio (Ajustes > Endereço); vazio = {endereco} e {mapa} somem */
+  address?: string | null;
+};
 
-function fill(template: string, a: MessageData, salon: SalonMessageOpts, day: string): string {
+/** Sem endereço cadastrado, a linha que só tinha {endereco}/{mapa} (e emoji/pontuação) sai inteira. */
+function dropEmptyAddressLines(template: string, address: string): string {
+  if (address) return template;
+  return template
+    .split("\n")
+    .filter((l) => !/\{(endereco|mapa)\}/.test(l) || /[\p{L}\p{N}]/u.test(l.replace(/\{(endereco|mapa)\}/g, "")))
+    .join("\n");
+}
+
+function fill(rawTemplate: string, a: MessageData, salon: SalonMessageOpts, day: string): string {
+  const address = salon.address?.trim() || "";
+  const template = dropEmptyAddressLines(rawTemplate, address);
   const values: Record<Var, string> = {
     nome: clientCall(a.client, salon.fullName),
     servico: a.service,
@@ -72,6 +90,8 @@ function fill(template: string, a: MessageData, salon: SalonMessageOpts, day: st
     hora: formatTime(a.startsAt),
     valor: a.priceCents == null ? "" : formatBRL(a.priceCents),
     salao: salon.name?.trim() || "",
+    endereco: address,
+    mapa: address ? mapsUrl(address) : "",
   };
   return template
     .replace(/\{(\w+)\}/g, (whole, key: string) => (key in values ? values[key as Var] : whole))

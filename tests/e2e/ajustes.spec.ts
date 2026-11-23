@@ -75,6 +75,7 @@ for (const href of [
   "/ajustes/notificacoes",
   "/ajustes/mensagens",
   "/ajustes/expediente",
+  "/ajustes/endereco",
 ]) {
   test(`acessibilidade: ${href} sem violações sérias`, async ({ page }) => {
     await page.goto(href);
