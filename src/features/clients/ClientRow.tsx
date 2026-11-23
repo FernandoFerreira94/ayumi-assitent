@@ -14,6 +14,7 @@ import { maskPhone } from "@/lib/phone";
 import { deleteClient, loadClientCard, updateClient, type ClientCard } from "./actions";
 import { formatBRL } from "@/lib/dates";
 import { useClientSelection } from "./ClientsDesk";
+import { HistorySheet } from "./HistorySheet";
 
 const input = "min-h-13 w-full rounded-2xl border px-4 text-base font-semibold";
 /** Largura de cada botão revelado. */
@@ -637,16 +638,24 @@ export function ClientCardContent({
         >
           Agendar
         </button>
-        <ChatSheet
-          clientId={client.id}
-          clientName={client.name}
-          phone={client.phone}
-          nested={nested}
-          triggerClassName={`btn-glass w-full ${action}`}
-        >
-          <ChatGlyph />
-          Conversar
-        </ChatSheet>
+        <div className="grid grid-cols-2 gap-2">
+          <ChatSheet
+            clientId={client.id}
+            clientName={client.name}
+            phone={client.phone}
+            nested={nested}
+            triggerClassName={`btn-glass w-full ${action}`}
+          >
+            <ChatGlyph />
+            Conversar
+          </ChatSheet>
+          <HistorySheet
+            clientId={client.id}
+            clientName={client.name}
+            nested={nested}
+            triggerClassName={`btn-glass w-full ${action}`}
+          />
+        </div>
         <div className="grid grid-cols-2 gap-2">
           <button type="button" onClick={onEdit} className={`btn-glass ${action}`}>
             Editar
