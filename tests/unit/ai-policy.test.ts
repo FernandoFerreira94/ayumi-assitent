@@ -1,19 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
-import { handoffText, mediaText, planAiReply, type AiContext, type AiVerdict } from "@/features/messaging/ai-policy";
+import { looksLikeAnswer, planAiReply, type AiContext, type AiVerdict } from "@/features/messaging/ai-policy";
 import { parseVerdict } from "@/features/messaging/classify";
 
 const ctx = (over: Partial<AiContext> = {}): AiContext => ({
   media: false,
-  clientName: "Bia Souza",
-  text: "Oi, tudo bem? Posso ir um pouquinho depois?",
+  text: "pode contar comigo, até amanhã",
   ownerWroteRecently: false,
   autoRepliesLast24h: 0,
   alreadyHandedOff: false,
   ...over,
 });
 const says = (v: AiVerdict | null) => vi.fn(async () => v);
+const silentToOwner = (guess: string | null = null) => ({ action: "silent", guess, quiet: false });
 
-describe("planAiReply", () => {
+describe("planAiReply (silêncio por padrão)", () => {
   it("confirma sozinha com confiança >= 0.9", async () => {
     expect(await planAiReply(ctx(), says({ intent: "confirm", confidence: 0.9 }))).toEqual({
       action: "apply",
@@ -22,55 +22,43 @@ describe("planAiReply", () => {
     });
   });
 
-  it("cancelar e remarcar também são aplicados (o chamador transforma em 'quer remarcar')", async () => {
-    expect(await planAiReply(ctx(), says({ intent: "cancel", confidence: 0.95 }))).toMatchObject({ intent: "cancel" });
-    expect(await planAiReply(ctx(), says({ intent: "reschedule", confidence: 0.95 }))).toMatchObject({
-      intent: "reschedule",
-    });
-  });
-
-  it("baixa confiança passa para a profissional e guarda o palpite", async () => {
-    expect(await planAiReply(ctx(), says({ intent: "confirm", confidence: 0.89 }))).toEqual({
-      action: "handoff",
-      text: handoffText("Bia Souza"),
-      guess: "confirm",
-    });
+  it("cancelar e remarcar pela IA nunca são aplicados nem respondidos: só avisa a dona com o palpite", async () => {
+    expect(await planAiReply(ctx(), says({ intent: "cancel", confidence: 0.99 }))).toEqual(silentToOwner("cancel"));
+    expect(await planAiReply(ctx(), says({ intent: "reschedule", confidence: 0.99 }))).toEqual(
+      silentToOwner("reschedule"),
+    );
   });
 
   it.each<[string, AiVerdict | null]>([
+    ["baixa confiança", { intent: "confirm", confidence: 0.89 }],
     ["atraso", { intent: "late", confidence: 0.99 }],
     ["outro assunto", { intent: "other", confidence: 0.99 }],
     ["erro ou sem chave", null],
-  ])("%s passa para a profissional", async (_n, v) => {
-    expect(await planAiReply(ctx(), says(v))).toMatchObject({
-      action: "handoff",
-      text: handoffText("Bia Souza"),
+  ])("%s: nada para a cliente, aviso para a dona", async (_n, v) => {
+    const plan = await planAiReply(ctx(), says(v));
+    expect(plan).toMatchObject({ action: "silent", quiet: false });
+  });
+
+  it("avisa a dona uma vez por pergunta: depois fica em silêncio total", async () => {
+    expect(await planAiReply(ctx({ alreadyHandedOff: true }), says({ intent: "other", confidence: 1 }))).toEqual({
+      action: "silent",
       guess: null,
+      quiet: true,
     });
   });
 
-  it("textos de passagem dizem quem responde e que o horário continua reservado", () => {
-    expect(handoffText("Bia", "amanhã às 14:00")).toContain("Não consegui entender sua mensagem");
-    expect(handoffText("Bia", "amanhã às 14:00")).toContain("Seu horário de amanhã às 14:00 continua reservado.");
-    expect(mediaText("Bia")).toContain("ainda não consigo ouvir áudios");
-    expect(mediaText("Bia")).toContain("1 para confirmar, 2 para cancelar ou 3 para remarcar");
-  });
-
-  it("áudio/foto não chama o modelo e avisa que a profissional continua", async () => {
+  it("áudio/foto não chama o modelo e não responde à cliente", async () => {
     const classify = says({ intent: "confirm", confidence: 1 });
-    expect(await planAiReply(ctx({ media: true, text: "[áudio]" }), classify)).toEqual({
-      action: "handoff",
-      text: mediaText("Bia Souza"),
-      guess: null,
-    });
+    expect(await planAiReply(ctx({ media: true, text: "[áudio]" }), classify)).toEqual(silentToOwner());
     expect(classify).not.toHaveBeenCalled();
   });
 
-  it("mensagem com mais de 1000 caracteres vai direto para a profissional; 1000 ainda vai para o modelo", async () => {
+  it("lista ou texto longo (caso real: contas do mês) é conversa: nem modelo, nem aviso", async () => {
     const classify = says({ intent: "confirm", confidence: 1 });
-    expect(await planAiReply(ctx({ text: "a".repeat(1001) }), classify)).toMatchObject({ action: "handoff" });
+    const lista = "Contas dezembro\n\nCartão dia 1\n124,95 12/12\n455,81 3/3\n100 gasolina\n\n902,31";
+    expect(await planAiReply(ctx({ text: lista }), classify)).toEqual({ action: "silent", guess: null, quiet: true });
+    expect(await planAiReply(ctx({ text: "a".repeat(201) }), classify)).toMatchObject({ quiet: true });
     expect(classify).not.toHaveBeenCalled();
-    expect(await planAiReply(ctx({ text: "a".repeat(1000) }), classify)).toMatchObject({ action: "apply" });
   });
 
   it("fica quieta se a dona escreveu nas últimas 12h, sem nem chamar o modelo", async () => {
@@ -83,25 +71,22 @@ describe("planAiReply", () => {
     expect(classify).not.toHaveBeenCalled();
   });
 
-  it("depois de 3 respostas automáticas em 24h não responde mais, mas ainda aplica o que entendeu", async () => {
+  it("depois de 3 respostas automáticas em 24h ainda confirma, mas sem agradecer", async () => {
     expect(await planAiReply(ctx({ autoRepliesLast24h: 3 }), says({ intent: "confirm", confidence: 1 }))).toEqual({
       action: "apply",
       intent: "confirm",
       sendAck: false,
     });
-    expect(await planAiReply(ctx({ autoRepliesLast24h: 3 }), says({ intent: "other", confidence: 1 }))).toEqual({
-      action: "silent",
-      guess: null,
-      quiet: false,
-    });
   });
+});
 
-  it("uma passagem por agendamento: a segunda fica em silêncio", async () => {
-    expect(await planAiReply(ctx({ alreadyHandedOff: true }), says({ intent: "other", confidence: 1 }))).toEqual({
-      action: "silent",
-      guess: null,
-      quiet: false,
-    });
+describe("looksLikeAnswer", () => {
+  it("curta e em até 3 linhas", () => {
+    expect(looksLikeAnswer("1")).toBe(true);
+    expect(looksLikeAnswer("Oi! Confirmo sim, obrigada")).toBe(true);
+    expect(looksLikeAnswer("a\nb\nc\nd")).toBe(false);
+    expect(looksLikeAnswer("x".repeat(201))).toBe(false);
+    expect(looksLikeAnswer("   ")).toBe(false);
   });
 });
 

@@ -125,22 +125,6 @@ export function ackText(intent: Intent, clientName: string, fullName = false, wh
 }
 
 /**
- * Texto livre que parece pedir cancelar/remarcar não muda nada sozinho: o sistema pergunta, citando o horário, e só
- * a resposta pelo número (2 ou 3) vale. Se não era isso, a profissional responde.
- */
-export function askText(
-  intent: "cancel" | "reschedule",
-  clientName: string,
-  fullName = false,
-  when?: string | null,
-): string {
-  const first = clientCall(clientName, fullName);
-  const slot = when ? ` de ${when}` : "";
-  const what = intent === "cancel" ? "cancelar" : "remarcar";
-  return `Oi, ${first}! Só para eu não entender errado: você quer ${what} o horário${slot}? Responda 2 para cancelar ou 3 para remarcar. Se não for isso, a profissional te responde por aqui 💜`;
-}
-
-/**
  * Números possíveis de um telefone brasileiro vindo do WhatsApp: o WhatsApp às vezes manda
  * celular sem o nono dígito (55 11 8765-4321), e a cliente foi cadastrada com ele (55 11 98765-4321).
  */
