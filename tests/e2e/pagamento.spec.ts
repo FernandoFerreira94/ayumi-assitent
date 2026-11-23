@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
+import { preencheAgendar } from "./agendar";
 import { addDays, todayStr } from "../../src/lib/dates";
 
 async function prepara(page: Page) {
@@ -21,30 +22,33 @@ async function prepara(page: Page) {
 async function agenda(page: Page, dia: string, hora: string, pago: boolean | "sinal" | "pedir") {
   await page.goto(`/calendario?d=${dia}`);
   await page.getByRole("button", { name: "Agendar", exact: true }).first().click();
-  await page.getByRole("button", { name: "Cliente" }).click();
-  await page.getByRole("button", { name: /Bia Souza/ }).click();
-  await page.getByRole("button", { name: "Serviço" }).click();
-  await page.getByRole("button", { name: /Escova/ }).click();
-  if (pago === "sinal") {
-    await page.getByRole("button", { name: "Sinal", exact: true }).click();
-    await page.getByRole("button", { name: "Já recebi" }).click();
-    // sugestão de Ajustes > Pagamentos: 30% de R$ 80 = R$ 24
-    await expect(page.getByLabel("Valor do sinal")).toHaveValue("24,00");
-    await page.getByLabel("Valor do sinal").fill("30,00");
-    await expect(page.getByText(/Falta R\$\s50,00 para pagar no dia/)).toBeVisible();
-    await page.getByRole("button", { name: "Pix" }).click();
-  } else if (pago === "pedir") {
-    await page.getByRole("button", { name: "Sinal", exact: true }).click();
-    // "Pedir à cliente" é o padrão: vai no WhatsApp com o Pix, sem forma de pagamento
-    await expect(page.getByRole("button", { name: "Pedir à cliente" })).toHaveAttribute("aria-pressed", "true");
-    await page.getByLabel("Valor do sinal").fill("30,00");
-    await expect(page.getByText(/a receber/)).toBeVisible();
-    await expect(page.getByRole("group", { name: "Forma de pagamento" })).toHaveCount(0);
+  await preencheAgendar(page, { cliente: /Bia Souza/, servicos: [/Escova/], hora });
+  if (pago === "sinal" || pago === "pedir") {
+    await page.getByRole("button", { name: /^Sinal/ }).click();
+    const s = page.getByRole("dialog", { name: "Sinal" });
+    // "Pedir à cliente" é o padrão, com a sugestão de Ajustes > Pagamentos: 30% de R$ 80 = R$ 24
+    await expect(s.getByRole("button", { name: "Pedir à cliente" })).toHaveAttribute("aria-pressed", "true");
+    await expect(s.getByLabel("Valor do sinal")).toHaveValue("24,00");
+    await s.getByLabel("Valor do sinal").fill("30,00");
+    await expect(s.getByText(/Falta R\$\s50,00 no dia/)).toBeVisible();
+    if (pago === "sinal") {
+      await s.getByRole("button", { name: "Já recebi" }).click();
+      await s.getByRole("button", { name: "Pix" }).click();
+    } else {
+      // vai no WhatsApp com o Pix, sem forma de pagamento
+      await expect(s.getByText(/a receber/)).toBeVisible();
+      await expect(s.getByRole("group", { name: "Forma de pagamento" })).toHaveCount(0);
+    }
+    await s.getByRole("button", { name: "Pronto" }).click();
+    await expect(
+      page.getByRole("button", { name: pago === "sinal" ? /Sinal.*Recebido R\$\s30,00/ : /Sinal.*Pedir R\$\s30,00/ }),
+    ).toBeVisible();
   } else if (pago) {
-    await page.getByRole("button", { name: "Já pagou" }).click();
-    await page.getByRole("button", { name: "Pix" }).click();
+    await page.getByRole("button", { name: /Já pagou tudo/ }).click();
+    const s = page.getByRole("dialog", { name: "Já pagou tudo?" });
+    await s.getByRole("button", { name: "Pix" }).click();
+    await s.getByRole("button", { name: "Marcar como pago" }).click();
   }
-  await page.getByLabel("Horário").selectOption(hora);
   await page.getByRole("button", { name: "Agendar", exact: true }).last().click();
   await expect(page.getByRole("heading", { name: /Agendado/ })).toBeVisible();
   await page.getByRole("button", { name: "Fechar" }).click();

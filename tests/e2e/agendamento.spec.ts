@@ -26,37 +26,45 @@ async function prepara(page: Page) {
 
 test("agenda dois serviços com desconto: soma duração e valor", async ({ page }) => {
   await prepara(page);
-  const dia = addDays(todayStr(), 1);
+  // Expediente padrão fecha no domingo: pula para segunda
+  let dia = addDays(todayStr(), 1);
+  if (new Date(`${dia}T12:00:00Z`).getUTCDay() === 0) dia = addDays(dia, 1);
   await page.goto(`/calendario?d=${dia}`);
   await page.getByRole("button", { name: "Agendar", exact: true }).first().click();
-  await page.getByRole("button", { name: "Cliente" }).click();
-  await page.getByRole("button", { name: /Ana Lima/ }).click();
-  await page.getByRole("button", { name: "Serviço" }).click();
-  await page.getByRole("button", { name: /Escova/ }).click();
-  await page.getByRole("button", { name: "Adicionar mais um" }).click();
-  await page.getByRole("button", { name: "Serviço 2" }).click();
-  await page.getByRole("button", { name: /Hidratação/ }).click();
-  await expect(page.getByText("Total R$ 150,00")).toBeVisible();
+  const sheet = page.getByRole("dialog", { name: "Novo agendamento" });
+  // Passo 1: uma pergunta por vez; tocar na cliente avança
+  await expect(sheet.getByRole("heading", { name: "Para quem?" })).toBeVisible();
+  await sheet
+    .getByRole("button", { name: /Ana Lima/ })
+    .last()
+    .click();
+  // Passo 2: vários serviços, total e duração no rodapé
+  await expect(sheet.getByRole("heading", { name: "Qual serviço?" })).toBeVisible();
+  await sheet.getByRole("button", { name: /Escova/ }).click();
+  await sheet.getByRole("button", { name: /Hidratação/ }).click();
+  await expect(sheet.getByText(/2 serviços · 2h/)).toBeVisible();
+  await expect(sheet.getByText("R$ 150,00")).toBeVisible();
+  await sheet.getByRole("button", { name: "Continuar" }).click();
+  // Passo 3: só os horários livres que cabem; tocar num horário avança
+  await expect(sheet.getByRole("heading", { name: "Quando?" })).toBeVisible();
+  await expect(sheet.getByText(/Só aparecem horários com 2h livres/)).toBeVisible();
+  await sheet.getByRole("group", { name: "Manhã" }).getByRole("button", { name: "10:00", exact: true }).click();
+  // Passo 4: resumo com o total, desconto opcional num diálogo
+  await expect(sheet.getByRole("heading", { name: "Tudo certo?" })).toBeVisible();
+  await page.getByRole("button", { name: /^Desconto/ }).click();
+  const desc = page.getByRole("dialog", { name: "Desconto" });
+  await desc.getByLabel("Desconto em porcentagem").fill("10");
+  await expect(desc.getByText(/fica R\$\s135,00/)).toBeVisible();
+  await desc.getByRole("button", { name: "Aplicar" }).click();
+  await expect(sheet.getByText("R$ 135,00").first()).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "Agendar", exact: true })).toBeInViewport({ ratio: 0.99 });
 
-  await page.getByText("%", { exact: true }).click();
-  await page.getByLabel("Desconto em porcentagem").fill("10");
-  await expect(page.getByText("Total R$ 135,00")).toBeVisible();
+  // Voltar e trocar o horário mantém o resto
+  await sheet.getByRole("button", { name: /^Quando:/ }).click();
+  await sheet.getByRole("group", { name: "Manhã" }).getByRole("button", { name: "10:00", exact: true }).click();
+  await expect(sheet.getByText("R$ 135,00").first()).toBeVisible();
 
-  // Dia e horário lado a lado, e a folha (com desconto e 2 serviços) rola até o botão Agendar
-  const [dia2, hora] = await page.locator("[data-vaul-drawer]").evaluate((el) =>
-    ['input[name="date"]', 'select[name="time"]'].map((q) => {
-      const r = el.querySelector(q)!.getBoundingClientRect();
-      return { y: r.top, x: r.left, right: r.right };
-    }),
-  );
-  expect(Math.abs(dia2.y - hora.y)).toBeLessThan(2);
-  expect(hora.x).toBeGreaterThan(dia2.right);
-  const folha = page.locator("[data-vaul-drawer]");
-  await folha.evaluate((el) => (el.scrollTop = el.scrollHeight));
-  await expect(page.getByRole("button", { name: "Agendar", exact: true }).last()).toBeInViewport({ ratio: 0.99 });
-
-  await page.getByLabel("Horário").selectOption("10:00");
-  await page.getByRole("button", { name: "Agendar", exact: true }).last().click();
+  await sheet.getByRole("button", { name: "Agendar", exact: true }).click();
   await expect(page.getByRole("heading", { name: /Agendado/ })).toBeVisible();
   await page.getByRole("button", { name: "Fechar" }).click();
 
@@ -85,6 +93,13 @@ test("tocar num horário de Vagas abre o agendamento já preenchido", async ({ p
     await slot.click({ timeout: 1000 });
     await expect(sheet).toBeVisible({ timeout: 1000 });
   }).toPass();
-  await expect(sheet.getByLabel("Horário")).toHaveValue("21:00");
-  await expect(sheet.getByText("Total R$ 80,00")).toBeVisible();
+  // Serviço e horário vieram de Vagas: só falta a cliente
+  await expect(sheet.getByRole("heading", { name: "Para quem?" })).toBeVisible();
+  await sheet
+    .getByRole("button", { name: /Ana Lima/ })
+    .last()
+    .click();
+  await expect(sheet.getByRole("heading", { name: "Tudo certo?" })).toBeVisible();
+  await expect(sheet.getByRole("button", { name: /^Quando: .* às 21:00/ })).toBeVisible();
+  await expect(sheet.getByText("R$ 80,00").first()).toBeVisible();
 });

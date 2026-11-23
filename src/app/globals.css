@@ -2838,3 +2838,16 @@ textarea {
     opacity: 0;
   }
 }
+
+/* Agendar em passos: a pergunta nova entra deslizando no sentido do passo */
+.bk-step[data-in="fwd"] {
+  animation: ag-in-fwd 0.28s var(--ease);
+}
+.bk-step[data-in="back"] {
+  animation: ag-in-back 0.28s var(--ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  .bk-step[data-in] {
+    animation: none;
+  }
+}

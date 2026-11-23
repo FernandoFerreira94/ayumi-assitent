@@ -252,10 +252,9 @@ export function AgendaDay({
     // Aviso à cliente no WhatsApp depois do Desfazer; voltou ao horário que ela conhece = nada sai
     if (res.data.moved || isUndo) scheduleRescheduleNotice(id, name);
     if (isUndo) return notify.success(`${name} voltou para ${hhmm(span.start)}`);
-    const notes = [
-      pauseHit(span, pause) && "Pega sua pausa",
-      outsideHours(span, hours) && "Fora do expediente",
-    ].filter(Boolean);
+    const notes = [pauseHit(span, pause) && "Pega sua pausa", outsideHours(span, hours) && "Fora do expediente"].filter(
+      Boolean,
+    );
     notify.undoable(
       mode === "move" ? `${name} foi para ${hhmm(span.start)}` : `${name}: ${range(span)}`,
       () => void save(id, from, span, mode, true),
@@ -430,8 +429,12 @@ export function AgendaDay({
     };
   }
 
-  function openNew(start: number | null) {
+  /** O horário veio de um toque na linha do dia (pula o "Quando?"); o do botão Agendar é só sugestão. */
+  const [timeTapped, setTimeTapped] = useState(true);
+
+  function openNew(start: number | null, tapped = true) {
     setSelId(null);
+    setTimeTapped(tapped);
     setTemp(start === null ? null : { start, end: start + NEW_LEN });
     setNewKey((k) => k + 1);
   }
@@ -457,7 +460,7 @@ export function AgendaDay({
           {blockButton}
           <button
             type="button"
-            onClick={() => openNew(nextFree(nowMin ?? 0, NEW_LEN, hours, occupants))}
+            onClick={() => openNew(nextFree(nowMin ?? 0, NEW_LEN, hours, occupants), false)}
             className="btn-tint flex min-h-12 items-center justify-center gap-2 rounded-full px-4 text-sm font-bold"
           >
             <svg
@@ -627,6 +630,7 @@ export function AgendaDay({
         depositPct={depositPct}
         openKey={newKey}
         time={temp ? hhmm(temp.start) : undefined}
+        timeTapped={timeTapped}
         clientId={convert?.clientId}
         serviceIds={convert?.serviceIds}
         fromBlockId={convert?.blockId}
@@ -636,15 +640,22 @@ export function AgendaDay({
         }}
       />
 
-      <Drawer.Root direction={side}
+      <Drawer.Root
+        direction={side}
         repositionInputs={false}
         open={Boolean(detailAppt || detailBlock)}
         onOpenChange={(open) => !open && setDetailId(null)}
       >
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
-          <Drawer.Content className={sheetClass(side, "fixed inset-x-0 bottom-0 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none", "sheet z-50")}>
-<SidePanelClose />
+          <Drawer.Content
+            className={sheetClass(
+              side,
+              "fixed inset-x-0 bottom-0 mx-auto max-w-[520px] rounded-t-3xl px-5 pb-[max(env(safe-area-inset-bottom),20px)] pt-4 outline-none",
+              "sheet z-50",
+            )}
+          >
+            <SidePanelClose />
             <Drawer.Title className="pb-1 text-xl font-bold">
               {detailAppt
                 ? detailAppt.clientName

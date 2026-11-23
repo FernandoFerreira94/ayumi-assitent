@@ -1,4 +1,5 @@
 import { expect, test } from "./fixtures";
+import { preencheAgendar } from "./agendar";
 import { addDays, todayStr } from "../../src/lib/dates";
 
 const shot = async (page: import("@playwright/test").Page, name: string) => {
@@ -47,16 +48,12 @@ test("promoção de desconto: as 2 primeiras ganham 20%, aplica ao agendar, paus
   const dia = addDays(todayStr(), 2);
   await page.goto(`/calendario?d=${dia}`);
   await page.getByRole("button", { name: "Agendar", exact: true }).first().click();
-  await page.getByRole("button", { name: "Cliente" }).click();
-  await page.getByRole("button", { name: /Carla Dias/ }).click();
-  await page.getByRole("button", { name: "Serviço" }).click();
-  await page.getByRole("button", { name: /Esmaltação/ }).click();
+  await preencheAgendar(page, { cliente: /Carla Dias/, servicos: [/Esmaltação/], hora: "10:00" });
   const promo = page.getByRole("group", { name: "Promoção" });
   await expect(promo).toContainText("Natal: −20%");
   await expect(promo).toContainText("restam 2 de 2");
-  await expect(page.getByText("Total R$ 36,00")).toBeVisible();
+  await expect(page.getByText("R$ 36,00").first()).toBeVisible();
   await shot(page, "8-agendar-com-promo");
-  await page.getByLabel("Horário").selectOption("10:00");
   await page.getByRole("button", { name: "Agendar", exact: true }).last().click();
   await expect(page.getByText("Promoção Natal aplicada: −R$ 9,00")).toBeVisible();
 

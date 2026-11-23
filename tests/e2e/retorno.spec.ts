@@ -41,8 +41,9 @@ test("concluir pergunta o retorno e um horário abre o agendamento preenchido", 
     .first()
     .click();
   const form = page.getByRole("dialog", { name: "Novo agendamento" });
-  await expect(form.getByRole("button", { name: "Cliente" })).toContainText("Ana Souza");
-  await expect(form.getByRole("button", { name: "Serviço" })).toContainText("Unha");
+  await expect(form.getByRole("heading", { name: "Tudo certo?" })).toBeVisible();
+  await expect(form.getByRole("button", { name: /^Cliente: Ana Souza/ })).toBeVisible();
+  await expect(form.getByText("Unha", { exact: true })).toBeVisible();
   await sql.end();
 });
 

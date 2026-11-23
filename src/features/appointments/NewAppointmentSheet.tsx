@@ -3,27 +3,20 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Drawer } from "vaul";
 import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
-import { LetterPicker, type PickerOption } from "@/components/ui/LetterPicker";
+import type { PickerOption } from "@/components/ui/LetterPicker";
 import { LoadingRegion, Skeleton } from "@/components/ui/Skeleton";
-import { Icon } from "@/components/ui/Icon";
-import { formatBRL, formatDayTitle, isDateStr } from "@/lib/dates";
+import { formatBRL, formatDayTitle } from "@/lib/dates";
 import { notify } from "@/components/feedback/toast";
-import { weekdayOf, type Day } from "@/features/hours/slots";
-import { timeOptions } from "@/lib/time-grid";
-import { messageFor, type ErrorCode } from "@/lib/errors";
+import type { Day } from "@/features/hours/slots";
+import type { ErrorCode } from "@/lib/errors";
 import { whatsappStatus } from "@/features/whatsapp/actions";
+import { DEFAULT_POLICY } from "@/features/wallet/rules";
 import { BookingOverlay, type Booking, type Step } from "./BookingOverlay";
-import { BookingServices } from "./BookingServices";
-import { PauseConfirm } from "./PauseConfirm";
-import { PaymentFields } from "./PaymentFields";
-import { daySpan, OUTSIDE_HOURS, outsideHours, pauseOverlap, pauseWarning } from "./agenda-grid";
-import { hhmm } from "./timeline";
+import { BookingSteps } from "./BookingSteps";
 import type { ServiceOption } from "./options";
 import { warnSync } from "./sync-warning";
 import { createAppointment } from "./actions";
 
-/** Dia e horário na mesma linha: altura fixa (o select do iOS ignora min-height) e texto centrado na vertical. */
-const pair = "h-13 w-full min-w-0 rounded-2xl border px-3 py-3 text-base font-semibold";
 /** Mesmo com resposta instantânea a Bolha trabalha um pouco, para a tela não piscar. */
 const MIN_MS = 900;
 const SLOW_MS = 4000;
@@ -31,7 +24,6 @@ const GIVE_UP_MS = 15000;
 /** Tempo do "Agendado!" antes de a tela fechar sozinha. */
 const DONE_MS = 2500;
 
-const toMinutes = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Resolve com o valor, "network" se a chamada falhar ou "timeout" se passar do prazo. */
 const settle = <T,>(p: Promise<T>, ms: number) =>
@@ -56,6 +48,7 @@ export function NewAppointmentSheet({
   services,
   openKey,
   time,
+  timeTapped = true,
   clientId,
   serviceIds,
   fromBlockId,
@@ -71,6 +64,8 @@ export function NewAppointmentSheet({
   openKey?: number;
   /** Horário já escolhido (toque num vazio da linha do dia). */
   time?: string;
+  /** false = o horário é só sugestão (botão Agendar): o passo "Quando?" aparece com ele marcado. */
+  timeTapped?: boolean;
   /** Cliente já escolhida (deslizar a linha em Clientes). */
   clientId?: string;
   /** Serviços já escolhidos (toque num horário em Vagas). */
@@ -101,30 +96,10 @@ export function NewAppointmentSheet({
   }
   const loading = clients === null || services === null;
   const missing = !loading && (clients.length === 0 || services.length === 0);
-  const ready = !loading && !missing;
   // O botão Agendar fica fora do <form> (no rodapé fixo) e aponta para ele pelo id
   const formDomId = useId();
   const working = booking !== null && booking.result === null;
-  const times = timeOptions({ include: time });
-  const formId = `${formKey}-${date}-${time ?? ""}-${clientId ?? ""}-${serviceIds?.join(",") ?? ""}-${fromBlockId ?? ""}`;
-  // Dia, horário e duração escolhidos agora, para o aviso de fora do expediente
-  const [pick, setPick] = useState({ form: formId, date, time: time ?? "09:00" });
-  const [minutes, setMinutes] = useState(0);
-  const [totalCents, setTotalCents] = useState(0);
-  if (pick.form !== formId) setPick({ form: formId, date, time: time ?? "09:00" });
-  const startMin = toMinutes(pick.time);
-  const outside =
-    !!week &&
-    isDateStr(pick.date) &&
-    outsideHours({ start: startMin, end: startMin + Math.max(minutes, 1) }, daySpan(week[weekdayOf(pick.date)]));
-  // Pega a pausa (ex.: almoço): aviso na folha e confirmação antes de salvar (não impede)
-  const pause = pauseOverlap({ date: pick.date, time: pick.time, minutes, week });
-  const pickKey = `${pick.date}|${pick.time}|${minutes}`;
-  /** Combinação de dia/horário/duração que a pessoa já confirmou mesmo pegando a pausa. */
-  const [pauseOk, setPauseOk] = useState<string | null>(null);
-  const [askPause, setAskPause] = useState(false);
-  const asking = askPause && pause !== null && pauseOk !== pickKey;
-  const timeDomId = `${formDomId}-time`;
+  const formId = `${openKey ?? ""}-${formKey}-${date}-${time ?? ""}-${clientId ?? ""}-${serviceIds?.join(",") ?? ""}-${fromBlockId ?? ""}`;
   const closedRef = useRef(onClosed);
   useEffect(() => {
     closedRef.current = onClosed;
@@ -266,155 +241,60 @@ export function NewAppointmentSheet({
               ? "booking-ov fixed inset-0 z-50 overflow-y-auto outline-none"
               : sheetClass(
                   side,
-                  "fixed inset-x-0 bottom-0 mx-auto max-h-[min(86dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] rounded-t-3xl outline-none",
-                  "sheet z-50 flex flex-col",
+                  // altura fixa: a folha não pula de tamanho a cada passo
+                  "fixed inset-x-0 bottom-0 mx-auto h-[min(88dvh,calc(100dvh-env(safe-area-inset-top)-28px))] max-w-[520px] rounded-t-3xl outline-none",
+                  // no desktop o painel ganha a coluna do resumo
+                  "sheet z-50 flex flex-col md:w-[min(720px,100vw)]!",
                 )
           }
         >
           {booking ? null : <SidePanelClose />}
-          {/* Só os campos rolam; o botão Agendar fica fixo no rodapé da folha, sempre à vista
-              (o aviso de fora do expediente, desconto e 2+ serviços empurravam ele para fora da tela) */}
+          {/* Passos curtos, uma pergunta por vez; o botão de cada passo fica fixo no rodapé, sempre à vista */}
           <div hidden={booking !== null} className="flex min-h-0 flex-1 flex-col">
-            <div
-              className={`min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-4 ${ready ? "pb-3" : "pb-[max(env(safe-area-inset-bottom),20px)]"}`}
-            >
-              <Drawer.Title className="pb-1 text-xl font-bold">Novo agendamento</Drawer.Title>
-              <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
-                {missing
-                  ? "Cadastre ao menos uma cliente (em Clientes) e um serviço (em Serviços)."
-                  : "Escolha cliente, serviço e horário."}
-              </Drawer.Description>
-              {loading ? (
+            <Drawer.Title className="sr-only">Novo agendamento</Drawer.Title>
+            <Drawer.Description className="sr-only">
+              {missing
+                ? "Cadastre ao menos uma cliente (em Clientes) e um serviço (em Serviços)."
+                : "Para quem, qual serviço, quando e conferir."}
+            </Drawer.Description>
+            {loading ? (
+              <div className="px-5 pt-6 pb-[max(env(safe-area-inset-bottom),20px)] md:px-0">
                 <LoadingRegion label="Carregando clientes e serviços">
                   <div className="grid gap-3">
-                    <Skeleton className="h-13 w-full rounded-2xl" />
+                    <Skeleton className="h-8 w-40 rounded-xl" />
+                    <Skeleton className="h-12 w-full rounded-2xl" />
                     <Skeleton className="h-13 w-full rounded-2xl" />
                     <Skeleton className="h-13 w-full rounded-2xl" />
                   </div>
                 </LoadingRegion>
-              ) : missing ? null : (
-                // Fica montado por trás da Bolha: se der erro, a folha volta preenchida
-                <form
-                  key={formId}
-                  id={formDomId}
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (working) return;
-                    if (pause && pauseOk !== pickKey) return setAskPause(true);
-                    void book(new FormData(e.currentTarget));
-                  }}
-                  className="grid gap-3"
-                >
-                  {fromBlockId ? <input type="hidden" name="fromBlockId" value={fromBlockId} /> : null}
-                  <LetterPicker
-                    name="clientId"
-                    label="Cliente"
-                    placeholder="Escolha a cliente…"
-                    options={clients}
-                    defaultId={clientId}
-                  />
-                  <BookingServices
-                    services={services}
-                    defaultIds={serviceIds}
-                    discountError={fieldErr?.field === "discountValue"}
-                    onMinutes={setMinutes}
-                    onTotal={setTotalCents}
-                  />
-                  <PaymentFields
-                    form
-                    totalCents={totalCents}
-                    depositPct={depositPct}
-                    amountError={fieldErr?.field === "depositAmount"}
-                  />
-                  {/* Dia e horário lado a lado: a folha fica mais curta e o botão Agendar aparece sem rolar tanto */}
-                  <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] gap-3">
-                    <label className="grid min-w-0 gap-1 text-sm font-bold">
-                      Dia
-                      <input
-                        name="date"
-                        type="date"
-                        required
-                        defaultValue={date}
-                        className={pair}
-                        onChange={(e) => setPick((p) => ({ ...p, date: e.target.value }))}
-                      />
-                    </label>
-                    <label className="grid min-w-0 gap-1 text-sm font-bold">
-                      Horário
-                      <select
-                        id={timeDomId}
-                        name="time"
-                        required
-                        className={pair}
-                        defaultValue={time ?? "09:00"}
-                        aria-invalid={fieldErr?.field === "time"}
-                        aria-describedby={
-                          [outside && "fora-expediente", pause && "pega-pausa"].filter(Boolean).join(" ") || undefined
-                        }
-                        onChange={(e) => setPick((p) => ({ ...p, time: e.target.value }))}
-                      >
-                        {times.map((t) => (
-                          <option key={t}>{t}</option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                  {outside ? (
-                    <p
-                      id="fora-expediente"
-                      role="status"
-                      className="flex items-center gap-2 rounded-2xl bg-wait-bg px-4 py-3 text-sm font-semibold text-wait"
-                    >
-                      <Icon name="alert" size={18} />
-                      {OUTSIDE_HOURS}. Dá para agendar mesmo assim.
-                    </p>
-                  ) : null}
-                  {pause ? (
-                    <p
-                      id="pega-pausa"
-                      role="status"
-                      className="flex items-center gap-2 rounded-2xl bg-wait-bg px-4 py-3 text-sm font-semibold text-wait"
-                    >
-                      <Icon name="alert" size={18} />
-                      {pauseWarning(pause)}. Dá para agendar mesmo assim.
-                    </p>
-                  ) : null}
-                  {fieldErr && fieldErr.field !== "discountValue" ? (
-                    <p role="alert" className="rounded-2xl bg-soft px-4 py-3 text-sm font-semibold">
-                      {messageFor(fieldErr.code)}
-                    </p>
-                  ) : null}
-                </form>
-              )}
-            </div>
-            {ready ? (
-              <div className="border-t border-line px-5 pt-3 pb-[max(env(safe-area-inset-bottom),20px)]">
-                {asking && pause ? (
-                  <PauseConfirm
-                    pause={`${hhmm(pause.start)} às ${hhmm(pause.end)}`}
-                    onPickAnother={() => {
-                      setAskPause(false);
-                      document.getElementById(timeDomId)?.focus();
-                    }}
-                    onConfirm={() => {
-                      setPauseOk(pickKey);
-                      setAskPause(false);
-                      const form = document.getElementById(formDomId);
-                      if (form instanceof HTMLFormElement && !working) void book(new FormData(form));
-                    }}
-                  />
-                ) : (
-                  <button
-                    type="submit"
-                    form={formDomId}
-                    disabled={working}
-                    className="btn-tint flex min-h-13 w-full items-center justify-center rounded-full px-5 font-bold"
-                  >
-                    Agendar
-                  </button>
-                )}
               </div>
-            ) : null}
+            ) : missing ? (
+              <div className="px-5 pt-6 pb-[max(env(safe-area-inset-bottom),20px)] md:px-0">
+                <p className="text-xl font-bold">Novo agendamento</p>
+                <p className="pt-1 text-sm font-semibold text-muted">
+                  Cadastre ao menos uma cliente (em Clientes) e um serviço (em Serviços).
+                </p>
+              </div>
+            ) : (
+              // Fica montado por trás da Bolha: se der erro, a folha volta preenchida
+              <BookingSteps
+                key={formId}
+                formDomId={formDomId}
+                clients={clients}
+                services={services}
+                date={date}
+                time={time}
+                timeTapped={timeTapped}
+                clientId={clientId}
+                serviceIds={serviceIds}
+                fromBlockId={fromBlockId}
+                week={week}
+                depositPct={depositPct ?? DEFAULT_POLICY.depositPct}
+                working={working}
+                fieldErr={fieldErr}
+                onSubmit={(fd) => void book(fd)}
+              />
+            )}
           </div>
           {booking ? (
             <BookingOverlay

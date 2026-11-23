@@ -37,9 +37,11 @@ test("evento do iPhone aparece cinza, mostra a origem e vira agendamento", async
   await det.getByRole("button", { name: "Transformar em agendamento" }).click();
 
   const form = page.getByRole("dialog", { name: "Novo agendamento" });
-  await expect(form.getByRole("button", { name: "Cliente" })).toContainText("Maria Souza");
-  await expect(form.getByRole("button", { name: "Serviço" })).toContainText("Corte");
-  await expect(form.getByLabel("Horário")).toHaveValue("14:00");
+  // Tudo veio preenchido: abre direto no resumo
+  await expect(form.getByRole("heading", { name: "Tudo certo?" })).toBeVisible();
+  await expect(form.getByRole("button", { name: /^Cliente: Maria Souza/ })).toBeVisible();
+  await expect(form.getByRole("button", { name: /^Quando: .* às 14:00/ })).toBeVisible();
+  await expect(form.getByText("Corte", { exact: true })).toBeVisible();
   await form.getByRole("button", { name: "Agendar", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Agendado, sem lembrete" })).toBeVisible();
   await page.getByRole("button", { name: "Fechar" }).click();
@@ -64,7 +66,10 @@ test("Ajustes: o interruptor abre o passo a passo e recusa link que não é do i
   await expect(sheet.getByText("Use o link do Compartilhar Link do iCloud.")).toBeVisible();
 });
 
-test("Calendário (mês): eventos de fora aparecem cinza todos os dias e o toque abre o dia", async ({ page, context }) => {
+test("Calendário (mês): eventos de fora aparecem cinza todos os dias e o toque abre o dia", async ({
+  page,
+  context,
+}) => {
   const { sql, tid } = await tenantOf(await context.cookies());
   const days = [1, 2, 3].map((n) => addDays(todayStr(), n));
   for (const [i, d] of days.entries())
