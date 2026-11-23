@@ -1,6 +1,6 @@
 # Lembretes (1º e 2º aviso, não respondeu)
 
-**Finalidade:** o worker manda o 1º aviso (padrão 24 h antes) e o 2º aviso (padrão 3 h) pelo WhatsApp, respeitando horário de silêncio, e avisa a dona quando a cliente não respondeu. A dona edita os três textos (agendamento, 1º, 2º) e as horas em Ajustes > Mensagens.
+**Finalidade:** o worker manda o 1º aviso (padrão 24 h antes) e o 2º aviso (padrão 3 h) pelo WhatsApp, respeitando horário de silêncio, e avisa a dona quando a cliente não respondeu. A dona edita os textos (agendamento, 1º, 2º e aviso ao remarcar, que pode ser desligado) e as horas em Ajustes > Mensagens.
 
 ## Arquivos
 - `features/reminders/run.ts` (`runReminders`: todos os estúdios; erro de um não para os outros).
@@ -29,3 +29,8 @@
 - Silêncio: 21h–6h no fuso do estúdio (`reminders/quiet.ts`), vale para 2º aviso e respostas automáticas.
 - Não respondeu (push à dona): 60 min depois do 2º aviso, ou 120 min depois do 1º quando não há 2º (`no-reply.ts`).
 - Respostas da noite: a resposta automática para quem escreveu no silêncio fica em `appointments.pending_reply` (migration `0029_pending_reply`) e sai na primeira rodada depois das 6h (`messaging/pending.sendPendingReplies`, chamada pelo `runReminders`).
+
+## Aviso ao remarcar (23/11)
+- `tenants.reschedule_notice` (padrão ligado) e `reschedule_template` (null = `text.DEFAULT_RESCHEDULE`, sem {nome}, com 📍 {endereco} que some sem endereço). Texto: `text.rescheduleText` + link do convite ("Atualize na sua agenda").
+- Dentro da janela do 1º aviso e pendente de confirmação: o aviso vai com 1/2/3 e grava `reminder_sent_at` (vale como 1º aviso; `reschedule-send.asFirstReminder`).
+- `runReminders` chama `sendDueRescheduleNotices` antes do 1º aviso (rede de segurança do arraste; falha temporária volta em 5 min, `RETRY_MS`). Desconectado/número recusado não repete. Mensagem gravada como `kind = reminder` (não gasta o limite de respostas da IA). Fluxo completo em `agenda.md`.

@@ -155,6 +155,9 @@ export type MessageSettings = ReminderSettings & {
   bookingTemplate: string | null;
   reminderTemplate: string | null;
   secondTemplate: string | null;
+  /** Aviso à cliente quando a dona remarca (ligado por padrão) e o texto dele (null = padrão) */
+  rescheduleOn: boolean;
+  rescheduleTemplate: string | null;
 };
 
 export async function getMessageSettings(tx: Tx): Promise<MessageSettings> {
@@ -167,6 +170,8 @@ export async function getMessageSettings(tx: Tx): Promise<MessageSettings> {
       booking: tenants.bookingTemplate,
       reminder: tenants.reminderTemplate,
       secondTemplate: tenants.secondReminderTemplate,
+      rescheduleOn: tenants.rescheduleNotice,
+      rescheduleTemplate: tenants.rescheduleTemplate,
     })
     .from(tenants);
   return {
@@ -177,6 +182,8 @@ export async function getMessageSettings(tx: Tx): Promise<MessageSettings> {
     bookingTemplate: row?.booking ?? null,
     reminderTemplate: row?.reminder ?? null,
     secondTemplate: row?.secondTemplate ?? null,
+    rescheduleOn: row?.rescheduleOn ?? true,
+    rescheduleTemplate: row?.rescheduleTemplate ?? null,
   };
 }
 
@@ -191,5 +198,7 @@ export const saveMessageSettings = (tx: Tx, tenantId: string, s: MessageSettings
       bookingTemplate: s.bookingTemplate,
       reminderTemplate: s.reminderTemplate,
       secondReminderTemplate: s.secondTemplate,
+      rescheduleNotice: s.rescheduleOn,
+      rescheduleTemplate: s.rescheduleTemplate,
     })
     .where(eq(tenants.id, tenantId));

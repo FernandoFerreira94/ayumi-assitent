@@ -35,7 +35,7 @@ d("remarcar pelo arraste (Postgres real)", () => {
 
   it("muda o horário e zera o lembrete para sair de novo", async () => {
     const id = await insert("2030-01-10T12:00:00Z", "2030-01-10T13:00:00Z");
-    expect(await move(id, "2030-01-10T14:15:00Z", "2030-01-10T15:30:00Z")).toEqual({ ok: true, data: undefined });
+    expect(await move(id, "2030-01-10T14:15:00Z", "2030-01-10T15:30:00Z")).toEqual({ ok: true, data: { moved: true } });
     const [row] = await admin`select starts_at, ends_at, reminder_sent_at from appointments where id = ${id}`;
     expect(new Date(row.starts_at).toISOString()).toBe("2030-01-10T14:15:00.000Z");
     expect(new Date(row.ends_at).toISOString()).toBe("2030-01-10T15:30:00.000Z");

@@ -49,6 +49,23 @@ test("horário fora da meia hora continua o mesmo ao abrir Remarcar", async ({ p
   await expect(page.getByLabel("Horário")).toHaveValue("09:15");
 });
 
+test("Remarcar traz o aviso no WhatsApp ligado e dá para desligar só desta vez", async ({ page }) => {
+  await prepara(page);
+  const dia = addDays(todayStr(), 3);
+  await agenda(page, dia, "11:00");
+
+  await page.getByRole("button", { name: /Ana Lima, Escova, 11:00/ }).click();
+  await page.getByRole("button", { name: "Mais ações" }).click();
+  await page.getByRole("button", { name: "Remarcar" }).click();
+  const aviso = page.getByRole("switch", { name: "Avisar a cliente no WhatsApp" });
+  await expect(aviso).toHaveAttribute("aria-checked", "true");
+  await aviso.click();
+  await expect(aviso).toHaveAttribute("aria-checked", "false");
+  await page.getByLabel("Horário").selectOption("12:00");
+  await page.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByText("Agendamento atualizado")).toBeVisible();
+});
+
 test("o dia abre no topo, sem rolar sozinho", async ({ page }) => {
   await prepara(page);
   const dia = addDays(todayStr(), 2);

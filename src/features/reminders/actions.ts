@@ -6,18 +6,23 @@ import { withTenant } from "@/db/client";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
 import { saveMessageSettings } from "./core";
-import { DEFAULT_BOOKING, DEFAULT_REMINDER, DEFAULT_SECOND, TEMPLATE_MAX } from "./text";
+import { DEFAULT_BOOKING, DEFAULT_REMINDER, DEFAULT_RESCHEDULE, DEFAULT_SECOND, TEMPLATE_MAX } from "./text";
 
 const hours = z.coerce.number().int().min(1).max(72);
 const template = z
   .string()
   .transform((s) => s.replace(/\r\n?/g, "\n").trim())
   .pipe(z.string().max(TEMPLATE_MAX));
-const DEFAULTS = { bookingTemplate: DEFAULT_BOOKING, reminderTemplate: DEFAULT_REMINDER, secondTemplate: DEFAULT_SECOND };
+const DEFAULTS = {
+  bookingTemplate: DEFAULT_BOOKING,
+  reminderTemplate: DEFAULT_REMINDER,
+  secondTemplate: DEFAULT_SECOND,
+  rescheduleTemplate: DEFAULT_RESCHEDULE,
+};
 
 /**
  * Cartão "Mensagens no WhatsApp" de Ajustes: como chamar a cliente, texto de agendamento, 1º aviso e 2º aviso
- * opcional (mais perto do horário que o 1º). Texto em branco = volta ao padrão do app.
+ * opcional (mais perto do horário que o 1º) e aviso ao remarcar. Texto em branco = volta ao padrão do app.
  */
 export async function saveMessages(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   const { tenantId } = await requireTenant();
@@ -31,10 +36,11 @@ export async function saveMessages(_prev: ActionResult | null, fd: FormData): Pr
     if (!second.success || (firstOn && second.data >= first.data)) return fail("VALIDATION", "secondHours");
     secondHours = second.data;
   }
-  const texts: Record<"bookingTemplate" | "reminderTemplate" | "secondTemplate", string | null> = {
+  const texts: Record<keyof typeof DEFAULTS, string | null> = {
     bookingTemplate: null,
     reminderTemplate: null,
     secondTemplate: null,
+    rescheduleTemplate: null,
   };
   for (const key of Object.keys(texts) as (keyof typeof texts)[]) {
     const p = template.safeParse(fd.get(key) ?? "");
@@ -49,6 +55,7 @@ export async function saveMessages(_prev: ActionResult | null, fd: FormData): Pr
         hours: first.data,
         secondHours,
         fullName: fd.get("fullName") === "1",
+        rescheduleOn: fd.get("rescheduleOn") === "1",
         ...texts,
       }),
     );

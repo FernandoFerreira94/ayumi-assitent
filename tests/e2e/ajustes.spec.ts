@@ -84,3 +84,16 @@ for (const href of [
     expect(violations.filter((v) => v.impact === "serious" || v.impact === "critical")).toEqual([]);
   });
 }
+
+test("Mensagens: aviso ao remarcar ligado, com prévia sem o nome da cliente, e desliga salvando", async ({ page }) => {
+  await page.goto("/ajustes/mensagens");
+  const passo = page.getByRole("region", { name: "Ao remarcar" });
+  const aviso = passo.getByRole("switch", { name: "Avisar a cliente ao remarcar" });
+  await expect(aviso).toHaveAttribute("aria-checked", "true");
+  await expect(passo.getByText(/Seu horário de Alongamento foi remarcado/)).toBeVisible();
+  await aviso.click();
+  await page.getByRole("button", { name: "Salvar mensagens" }).click();
+  await expect(page).toHaveURL(/\/ajustes$/);
+  await page.goto("/ajustes/mensagens");
+  await expect(page.getByRole("switch", { name: "Avisar a cliente ao remarcar" })).toHaveAttribute("aria-checked", "false");
+});

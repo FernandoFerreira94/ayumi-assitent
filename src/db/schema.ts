@@ -58,6 +58,10 @@ export const tenants = pgTable("tenants", {
   reminderHours: integer("reminder_hours").notNull().default(24),
   /** 1º aviso do WhatsApp ligado (padrão); desligado, só vale o 2º aviso */
   firstReminder: boolean("first_reminder").notNull().default(true),
+  /** Avisar a cliente no WhatsApp quando a dona remarca (padrão ligado) */
+  rescheduleNotice: boolean("reschedule_notice").notNull().default(true),
+  /** Texto do aviso de remarcação; null = o padrão do app */
+  rescheduleTemplate: text("reschedule_template"),
   /** SHA-256 do token do link de calendário assinado (Calendário do iPhone); null = link desligado */
   calendarTokenHash: text("calendar_token_hash").unique(),
   /** No link do calendário, título sem o nome da cliente (só o serviço) */
@@ -194,6 +198,10 @@ export const appointments = pgTable(
     noReplyAt: timestamp("no_reply_at", { withTimezone: true }),
     /** Resposta automática guardada porque a cliente escreveu entre 21h e 6h; sai às 6h */
     pendingReply: text("pending_reply"),
+    /** Aviso de remarcação pendente: pode sair a partir deste instante (o arraste espera o Desfazer); null = nada a avisar */
+    rescheduleNoticeAt: timestamp("reschedule_notice_at", { withTimezone: true }),
+    /** Horário que a cliente conhece (da última mensagem); igual ao atual = não há o que avisar */
+    notifiedStartsAt: timestamp("notified_starts_at", { withTimezone: true }),
     /** Desconto do agendamento: "pct" (value = %) ou "brl" (value = centavos). price_cents já vem descontado. */
     discountKind: text("discount_kind").$type<"pct" | "brl">(),
     discountValue: integer("discount_value"),

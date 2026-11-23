@@ -1,15 +1,18 @@
 "use server";
 
-import { and, count, inArray, isNotNull } from "drizzle-orm";
+import { and, count, eq, inArray, isNotNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { withTenant } from "@/db/client";
-import { appointments } from "@/db/schema";
+import { getDb, withTenant } from "@/db/client";
+import { appointments, tenants } from "@/db/schema";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
 import { getWalletSettings } from "@/features/wallet/core";
 import { syncAppointmentSafe } from "@/features/google/server";
 import { sendBookingMessage } from "@/features/messaging/booking-send";
+import { sendRescheduleNotice } from "@/features/messaging/reschedule-send";
+import type { RescheduleNoticeResult } from "@/features/messaging/reschedule-result";
+import { messagingForInstance } from "@/features/messaging/evolution";
 import type { SyncResult } from "@/features/google/sync";
 import { searchClients } from "@/features/clients/core";
 import { listBookable } from "@/features/services/core";
@@ -138,7 +141,7 @@ export async function rescheduleAppointment(
   date: string,
   time: string,
   durationMin: number,
-): Promise<ActionResult<{ sync: SyncResult }>> {
+): Promise<ActionResult<{ sync: SyncResult; moved: boolean }>> {
   const { tenantId } = await requireTenant();
   const p = z
     .object({
@@ -157,11 +160,12 @@ export async function rescheduleAppointment(
   const startsAt = toInstant(p.data.date, p.data.time);
   const endsAt = new Date(startsAt.getTime() + p.data.durationMin * 60_000);
   try {
-    const res = await withTenant(tenantId, (tx) => moveAppointment(tx, tenantId, p.data.id, startsAt, endsAt));
+    const res = await withTenant(tenantId, (tx) => moveAppointment(tx, tenantId, p.data.id, startsAt, endsAt, "later"));
     if (!res.ok) return res;
     revalidatePath("/agenda");
     revalidatePath("/calendario");
-    return ok({ sync: await syncAppointmentSafe(tenantId, p.data.id) });
+    // O aviso à cliente espera o Desfazer: a tela chama flushRescheduleNotice depois (moved diz se vale esperar)
+    return ok({ sync: await syncAppointmentSafe(tenantId, p.data.id), moved: res.data.moved });
   } catch {
     return fail("UNKNOWN");
   }
@@ -173,6 +177,8 @@ const editInput = z.object({
   date: z.string().refine(isDateStr),
   time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   single: z.boolean().optional(),
+  /** false = a dona não quer avisar a cliente desta vez */
+  notify: z.boolean().optional(),
 });
 
 /** Reagenda e/ou troca o serviço pelo card da agenda (a cliente pediu "3" ou combinou por conversa). */
@@ -183,20 +189,47 @@ export async function editAppointmentAction(input: {
   time: string;
   /** Tinha vários serviços e a pessoa escolheu um só. */
   single?: boolean;
-}): Promise<ActionResult<{ sync: SyncResult }>> {
+  /** Avisar a cliente no WhatsApp se o horário mudou (padrão sim). */
+  notify?: boolean;
+}): Promise<ActionResult<{ sync: SyncResult; notice: RescheduleNoticeResult | null }>> {
   const { tenantId } = await requireTenant();
   const p = editInput.safeParse(input);
   if (!p.success) return fail("VALIDATION", String(p.error.issues[0]?.path[0] ?? ""));
   try {
-    const { id, ...fields } = p.data;
-    const res = await withTenant(tenantId, (tx) => editAppointment(tx, tenantId, id, fields));
+    const { id, notify, ...fields } = p.data;
+    const res = await withTenant(tenantId, (tx) =>
+      editAppointment(tx, tenantId, id, fields, notify === false ? "skip" : "now"),
+    );
     if (!res.ok) return res;
     revalidatePath("/agenda");
     revalidatePath("/pendencias");
-    return ok({ sync: await syncAppointmentSafe(tenantId, p.data.id) });
+    const sync = await syncAppointmentSafe(tenantId, id);
+    const notice = res.data.moved && notify !== false ? await notifyReschedule(tenantId, id) : null;
+    return ok({ sync, notice });
   } catch {
     return fail("UNKNOWN");
   }
+}
+
+/** Manda o aviso de remarcação pendente pelo WhatsApp do próprio estúdio. Nunca lança. */
+async function notifyReschedule(tenantId: string, id: string): Promise<RescheduleNoticeResult> {
+  try {
+    const [t] = await getDb()
+      .select({ instance: tenants.whatsappInstance })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId));
+    const port = t?.instance ? messagingForInstance(t.instance) : null;
+    return await withTenant(tenantId, (tx) => sendRescheduleNotice(tx, tenantId, id, port));
+  } catch {
+    return "error";
+  }
+}
+
+/** Depois do Desfazer do arraste: manda o aviso de remarcação, se ainda houver (o worker cobre se a tela fechar). */
+export async function flushRescheduleNotice(id: string): Promise<ActionResult<{ notice: RescheduleNoticeResult }>> {
+  const { tenantId } = await requireTenant();
+  if (!z.string().uuid().safeParse(id).success) return fail("VALIDATION");
+  return ok({ notice: await notifyReschedule(tenantId, id) });
 }
 
 const paymentInput = z.object({
