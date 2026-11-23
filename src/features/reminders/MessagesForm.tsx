@@ -8,6 +8,7 @@ import { notify } from "@/components/feedback/toast";
 import { TileTitle } from "@/components/ui/Icon";
 import { Switch } from "@/components/ui/Switch";
 import type { ActionResult } from "@/lib/errors";
+import { sessionMessageLine } from "@/features/wallet/session-use";
 import { saveMessages } from "./actions";
 import type { MessageSettings } from "./core";
 import {
@@ -72,6 +73,7 @@ export function MessagesForm({
   const [second, setSecond] = useState(settings.secondHours !== null);
   const [secondHours, setSecondHours] = useState(String(settings.secondHours ?? 3));
   const [rescheduleOn, setRescheduleOn] = useState(settings.rescheduleOn);
+  const [packageLine, setPackageLine] = useState(settings.packageLine);
   const [state, action] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
     const res = await saveMessages(prev, fd);
     if (res.ok) {
@@ -99,6 +101,7 @@ export function MessagesForm({
       <input type="hidden" name="second" value={second ? "1" : ""} />
       <input type="hidden" name="firstOn" value={firstOn ? "1" : ""} />
       <input type="hidden" name="rescheduleOn" value={rescheduleOn ? "1" : ""} />
+      <input type="hidden" name="packageLine" value={packageLine ? "1" : ""} />
 
       <fieldset className="grid gap-2">
         <legend className="pb-2 font-bold">Como chamar a cliente</legend>
@@ -238,6 +241,20 @@ export function MessagesForm({
             note="Se o horário novo já estiver na hora do 1º aviso, as opções 1, 2 e 3 vão no fim e ele vale como o 1º aviso."
           />
         </div>
+      </Step>
+
+      <Step
+        title="Sessão do pacote"
+        hint="Quando o horário usa um pacote, a confirmação e os avisos ganham uma linha curta no fim, sem valores."
+        aside={<Switch checked={packageLine} onChange={setPackageLine} label="Mostrar a sessão do pacote" />}
+      >
+        {packageLine ? (
+          <p className="rounded-2xl bg-soft px-4 py-3 text-sm font-semibold" aria-label="Exemplo da linha">
+            {sessionMessageLine({ n: 3, total: 6 })}
+          </p>
+        ) : (
+          <p className="text-sm font-semibold text-muted">A cliente não vê o uso do pacote nas mensagens.</p>
+        )}
       </Step>
 
       {err ? (

@@ -8,6 +8,7 @@ import { CHAT_BUTTON, ChatGlyph, ChatSheet } from "@/features/messaging/ChatShee
 import { cancelReturnPrompt, openReturnPrompt } from "@/features/returns/ReturnPrompt";
 import { formatBRL, toInstant } from "@/lib/dates";
 import type { Outcome } from "@/features/wallet/rules";
+import { sessionUseText, type SessionUse } from "@/features/wallet/session-use";
 import type { ActionResult } from "@/lib/errors";
 import { updateStatus } from "./actions";
 import { EditAppointmentSheet } from "./EditAppointmentSheet";
@@ -37,6 +38,8 @@ type Props = {
   notes?: string | null;
   /** Pagamento da cliente (selo que abre a folha de marcar). Sem = não mostra. */
   payment?: PaymentView | null;
+  /** Sessão de pacote que este horário usa: selo "Pelo pacote · Sessão 3 de 6 · restam 3". */
+  session?: SessionUse | null;
   /** Já está dentro de uma folha (a da linha do dia): a conversa abre como folha aninhada. */
   inSheet?: boolean;
   /** Já passou (Pendências → Para fechar): a ação principal é Concluir, mesmo sem confirmação. */
@@ -75,7 +78,7 @@ const LABEL: Record<Status, string> = {
   reschedule_requested: "Quer remarcar",
 };
 
-export function AppointmentCard({ id, time, date, start: startHHMM, minutes, clientId, clientName, clientPhone, serviceId, serviceName, price, status, discount, notes, payment, inSheet = false, past = false, onSettled }: Props) {
+export function AppointmentCard({ id, time, date, start: startHHMM, minutes, clientId, clientName, clientPhone, serviceId, serviceName, price, status, discount, notes, payment, session, inSheet = false, past = false, onSettled }: Props) {
   const [pending, start] = useTransition();
   const [busy, setBusy] = useState<Status | null>(null);
   const open = status === "pending_confirmation" || status === "confirmed" || status === "reschedule_requested";
@@ -166,6 +169,18 @@ export function AppointmentCard({ id, time, date, start: startHHMM, minutes, cli
                   : "Mudar"}
           </span>
         </PaymentSheet>
+      ) : null}
+      {session && status !== "cancelled" ? (
+        <p
+          className="flex items-center gap-2 rounded-xl bg-soft px-3 py-2 text-sm font-semibold text-primary-text"
+          aria-label={`Pelo pacote ${session.name}: ${sessionUseText(session)}`}
+        >
+          <Icon name="ticket" size={18} />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-xs text-muted">Pelo pacote {session.name}</span>
+            <b className="text-base">{sessionUseText(session)}</b>
+          </span>
+        </p>
       ) : null}
       {discount ? (
         <p className="rounded-xl bg-ok-bg px-3 py-2 text-sm font-semibold text-ok">

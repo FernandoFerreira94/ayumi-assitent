@@ -15,7 +15,14 @@ import { weekdayOf, type Day } from "@/features/hours/slots";
 import { formatDuration } from "@/features/services/catalog";
 import { bookingText } from "@/features/reminders/text";
 import { suggestedDeposit } from "@/features/wallet/rules";
-import { loadRunningPromotions, type RunningPromotion } from "@/features/wallet/actions";
+import { loadClientPackages, loadRunningPromotions, type RunningPromotion } from "@/features/wallet/actions";
+import {
+  chooseSession,
+  sessionUseText,
+  totalWithSession,
+  type PackageOnHand,
+  type PickedSession,
+} from "@/features/wallet/session-use";
 import { bestPromotion } from "@/features/wallet/promotion-rules";
 import { bookingExtras, bookingSlots, type BookingExtras } from "./actions";
 import { daySpan, OUTSIDE_HOURS, outsideHours, pauseOverlap, pauseWarning } from "./agenda-grid";
@@ -108,6 +115,9 @@ export function BookingSteps(p: BookingStepsProps) {
   const [extras, setExtras] = useState<BookingExtras | null>(null);
   const [promos, setPromos] = useState<RunningPromotion[]>([]);
   const [usePromo, setUsePromo] = useState(true);
+  /** Pacotes da cliente escolhida (com sessão sobrando) e se esta vez usa o pacote. */
+  const [pkgs, setPkgs] = useState<{ clientId: string; list: PackageOnHand[] } | null>(null);
+  const [usePkg, setUsePkg] = useState(true);
   /** Dia/horário/duração que a pessoa já confirmou mesmo pegando a pausa. */
   const [pauseOk, setPauseOk] = useState<string | null>(null);
   const [askPause, setAskPause] = useState(false);
@@ -129,6 +139,17 @@ export function BookingSteps(p: BookingStepsProps) {
       alive = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!clientId) return;
+    let alive = true;
+    void loadClientPackages(clientId)
+      .then((r) => alive && setPkgs({ clientId, list: r.ok ? r.data : [] }))
+      .catch(() => alive && setPkgs({ clientId, list: [] }));
+    return () => {
+      alive = false;
+    };
+  }, [clientId]);
 
   // Erro do servidor: volta ao passo do campo
   const errField = p.fieldErr?.field;
@@ -170,12 +191,19 @@ export function BookingSteps(p: BookingStepsProps) {
   const minutes = picked.reduce((m, s) => m + s.durationMin, 0);
   const discount = parseDiscount(kind, raw);
   // Promoção valendo: só sem desconto digitado (não somam); o servidor confere a vaga e se a cliente já usou
-  const promo = kind ? null : bestPromotion(promos, picked);
+  // Pacote da cliente que cobre um dos serviços: mesma regra do servidor (session-use.chooseSession)
+  const pkgPick =
+    pkgs && pkgs.clientId === clientId && isDateStr(date) ? chooseSession(pkgs.list, serviceIds, date) : null;
+  const pkgOn = !!pkgPick && usePkg;
+  // Promoção não soma com sessão de pacote
+  const promo = kind || pkgOn ? null : bestPromotion(promos, picked);
   const promoOn = !!promo && usePromo;
-  const { discountCents, totalCents } = applyDiscount(
+  const priced = applyDiscount(
     subtotal,
     promoOn ? { kind: "brl", value: promo.offCents } : discount === "invalid" ? null : discount,
   );
+  const { discountCents } = priced;
+  const { totalCents, owedCents } = totalWithSession(priced.totalCents, picked, pkgOn ? pkgPick : null);
   // Pega a pausa (ex.: almoço): aviso e confirmação antes de salvar (não impede)
   const pause = time ? pauseOverlap({ date, time, minutes, week: p.week }) : null;
   const pickKey = `${date}|${time}|${minutes}`;
@@ -199,6 +227,10 @@ export function BookingSteps(p: BookingStepsProps) {
         service: picked.map((s) => s.label).join(" + "),
         startsAt: toInstant(date, time),
         priceCents: totalCents,
+        session:
+          pkgOn && extras?.message.packageLine !== false
+            ? { n: pkgPick.total - pkgPick.left, total: pkgPick.total }
+            : null,
         deposit:
           pay.choice === "request" && depositCents ? { cents: depositCents, pixKey: extras?.message.pixKey } : null,
       },
@@ -237,6 +269,7 @@ export function BookingSteps(p: BookingStepsProps) {
       <input type="hidden" name="discountValue" value={kind ? raw : ""} />
       <input type="hidden" name="notes" value={notes} />
       {promoOn ? <input type="hidden" name="usePromotion" value="1" /> : null}
+      {pkgPick && !usePkg ? <input type="hidden" name="usePackage" value="0" /> : null}
       <input type="hidden" name="paid" value={paidField} />
       <input type="hidden" name="depositAmount" value={depositCents !== null ? pay.amount : ""} />
       <input
@@ -354,6 +387,10 @@ export function BookingSteps(p: BookingStepsProps) {
                 setUsePromo={setUsePromo}
                 pauseText={pause ? pauseWarning(pause) : null}
                 totalCents={totalCents}
+                owedCents={owedCents}
+                pkg={pkgPick}
+                usePkg={usePkg}
+                setUsePkg={setUsePkg}
                 outside={outside}
                 kind={kind}
                 raw={raw}
@@ -911,6 +948,11 @@ function ReviewStep(props: {
   discountCents: number;
   discountLabel: string | null;
   totalCents: number;
+  /** O que a cliente ainda paga (total menos a sessão do pacote) */
+  owedCents: number;
+  pkg: PickedSession | null;
+  usePkg: boolean;
+  setUsePkg: (v: boolean) => void;
   outside: boolean;
   pauseText: string | null;
   promo: { promo: RunningPromotion; offCents: number } | null;
@@ -996,6 +1038,34 @@ function ReviewStep(props: {
           {props.pauseText}. Dá para agendar mesmo assim.
         </p>
       ) : null}
+      {props.pkg ? (
+        <div
+          className="mt-3 grid gap-2 rounded-2xl border-2 border-primary/30 bg-soft px-4 py-3"
+          role="group"
+          aria-label="Pacote da cliente"
+        >
+          <div className="flex items-start gap-3">
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-surface text-primary-text">
+              <Icon name="ticket" size={18} />
+            </span>
+            <p className="min-w-0 flex-1 text-sm font-semibold">
+              <span className="block text-muted">Pelo pacote {props.pkg.name}</span>
+              <b className="block text-lg text-primary-text">
+                {sessionUseText({ n: props.pkg.total - props.pkg.left, total: props.pkg.total, left: props.pkg.left })}
+              </b>
+              {props.usePkg
+                ? `${formatBRL(props.pkg.valueCents)} já pago pelo pacote${
+                    props.owedCents > 0 ? ` · falta ${formatBRL(props.owedCents)}` : ""
+                  }`
+                : "Desligado: cobra o serviço normal e a sessão fica no pacote."}
+            </p>
+          </div>
+          <div className="flex min-h-11 items-center justify-between gap-3 text-sm font-bold">
+            Usar sessão do pacote
+            <Switch checked={props.usePkg} onChange={props.setUsePkg} label="Usar sessão do pacote" />
+          </div>
+        </div>
+      ) : null}
       {props.promo ? (
         <div
           className="mt-3 grid gap-2 rounded-2xl border-2 border-primary/30 bg-soft px-4 py-3"
@@ -1031,7 +1101,7 @@ function ReviewStep(props: {
           value={props.discountCents ? `− ${formatBRL(props.discountCents)}` : null}
           onClick={() => setSheet("discount")}
         />
-        {pay.choice === "full" ? null : (
+        {pay.choice === "full" || props.owedCents === 0 ? null : (
           <OptionButton
             icon="💜"
             label="Sinal"
@@ -1046,7 +1116,7 @@ function ReviewStep(props: {
             onClick={() => setSheet("deposit")}
           />
         )}
-        {pay.choice === "request" || pay.choice === "deposit" ? null : (
+        {pay.choice === "request" || pay.choice === "deposit" || props.owedCents === 0 ? null : (
           <OptionButton
             icon="✓"
             label="Já pagou tudo?"
@@ -1099,7 +1169,7 @@ function ReviewStep(props: {
       <DepositSheet
         open={sheet === "deposit"}
         onOpenChange={(o) => setSheet(o ? "deposit" : null)}
-        totalCents={totalCents}
+        totalCents={props.owedCents}
         depositPct={props.depositPct}
         pay={pay}
         pixKey={props.pixKey}
@@ -1110,7 +1180,7 @@ function ReviewStep(props: {
         open={sheet === "full"}
         onOpenChange={(o) => setSheet(o ? "full" : null)}
         title="Já pagou tudo?"
-        description={`${formatBRL(totalCents)} · a forma é opcional`}
+        description={`${formatBRL(props.owedCents)} · a forma é opcional`}
         footer={
           <div className="flex gap-2">
             {pay.choice === "full" ? (

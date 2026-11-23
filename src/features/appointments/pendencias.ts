@@ -2,6 +2,7 @@ import { and, asc, eq, isNull, lt, gte, inArray } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { appointments, clients, services } from "@/db/schema";
 import { paidCentsSql } from "@/features/wallet/core";
+import { sessionUseSql } from "@/features/wallet/packages";
 import { serviceLabel } from "./core";
 
 const base = (tx: Tx) =>
@@ -21,6 +22,7 @@ const base = (tx: Tx) =>
       paymentMethod: appointments.paymentMethod,
       paidCents: paidCentsSql,
       depositRequestedCents: appointments.depositRequestedCents,
+      session: sessionUseSql(appointments.id, appointments.clientPackageId, appointments.startsAt),
     })
     .from(appointments)
     .innerJoin(clients, eq(clients.id, appointments.clientId))

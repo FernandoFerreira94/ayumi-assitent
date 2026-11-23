@@ -1,4 +1,4 @@
-import { and, asc, countDistinct, eq, inArray } from "drizzle-orm";
+import { and, asc, countDistinct, eq, inArray, sql, type Column, type SQL } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { clientLedger, clientPackages, packageTemplates, services } from "@/db/schema";
 import type { PaymentMethod } from "@/features/appointments/payment";
@@ -9,9 +9,9 @@ import {
   packageSessionsLeft,
   promoStatus,
   referenceService,
-  sessionValue,
   type PackageDraft,
 } from "./rules";
+import { chooseSession, type PickedSession } from "./session-use";
 
 /**
  * Pacotes (carteira, PR 4): modelos do salão, venda para a cliente e sessões no extrato.
@@ -279,40 +279,39 @@ export async function clientPackageList(tx: Tx, clientId: string, today: string)
   }));
 }
 
-export type PickedSession = {
-  clientPackageId: string;
-  name: string;
-  /** serviços em que a sessão vale */
-  serviceIds: string[];
-  valueCents: number;
-  /** sessões que restam depois desta */
-  left: number;
-  total: number;
-};
+export type { PickedSession } from "./session-use";
 
-/**
- * Pacote valendo da cliente para um dos serviços (o que vence primeiro) e o valor da próxima sessão
- * (preço ÷ sessões; a sobra dos centavos vai na última). null = sem pacote para usar.
- */
+/** Pacote valendo da cliente para um dos serviços no dia (regra em `session-use.chooseSession`). */
 export async function pickSession(
   tx: Tx,
   clientId: string,
   serviceIds: string[],
   today: string,
 ): Promise<PickedSession | null> {
-  const pkg = (await clientPackageList(tx, clientId, today)).find(
-    (p) => !p.expired && p.left > 0 && p.serviceIds.some((id) => serviceIds.includes(id)),
-  );
-  if (!pkg) return null;
-  const used = pkg.sessionsTotal - pkg.left;
-  return {
-    clientPackageId: pkg.id,
-    name: pkg.name,
-    serviceIds: pkg.serviceIds,
-    valueCents: sessionValue(pkg.priceCents, pkg.sessionsTotal, Math.min(used, pkg.sessionsTotal - 1)),
-    left: pkg.left - 1,
-    total: pkg.sessionsTotal,
-  };
+  return chooseSession(await clientPackageList(tx, clientId, today), serviceIds, today);
+}
+
+/**
+ * Sessão de pacote do atendimento, em SQL (para listas e mensagens sem buscar o extrato): nome do pacote, total,
+ * qual sessão é esta (contando, em ordem de horário, os atendimentos que seguram sessão desse pacote), quantas
+ * restam hoje e se este atendimento segura a sessão (cancelado devolve). Ler com `parseSessionUse`.
+ */
+export function sessionUseSql(id: SQL | Column, pkg: SQL | Column, startsAt: SQL | Column) {
+  const net = (appt: SQL | Column) => sql`(select coalesce(sum(case when l.kind = 'session_reserve' then l.sessions
+      when l.kind = 'session_return' then -l.sessions else 0 end), 0)
+    from client_ledger l where l.appointment_id = ${appt} and l.client_package_id = cp.id)`;
+  return sql<unknown>`case when ${pkg} is null then null else (
+    select json_build_object(
+      'name', cp.name,
+      'total', cp.sessions_total,
+      'held', ${net(id)} > 0,
+      'n', (select count(*) from appointments a2 where a2.client_package_id = cp.id
+              and (a2.starts_at < ${startsAt} or (a2.starts_at = ${startsAt} and a2.id <= ${id}))
+              and ${net(sql`a2.id`)} > 0),
+      'left', (select coalesce(sum(case when l.kind in ('session_grant', 'session_return') then l.sessions
+                 when l.kind in ('session_reserve', 'expire') then -l.sessions else 0 end), 0)
+               from client_ledger l where l.client_package_id = cp.id))
+    from client_packages cp where cp.id = ${pkg}) end`;
 }
 
 /** Grava a sessão usada no atendimento: conta como pago nele e vira Ganho ao concluir. */

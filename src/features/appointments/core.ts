@@ -14,7 +14,8 @@ import {
   useCredit,
 } from "@/features/wallet/core";
 import type { Outcome } from "@/features/wallet/rules";
-import { pickSession, reserveSession } from "@/features/wallet/packages";
+import { pickSession, reserveSession, sessionUseSql } from "@/features/wallet/packages";
+import { totalWithSession } from "@/features/wallet/session-use";
 import { pickPromotion } from "@/features/wallet/promotions";
 import { toInstant, todayStr } from "@/lib/dates";
 import { fail, ok, type ActionResult } from "@/lib/errors";
@@ -56,6 +57,8 @@ export type BookingInput = {
   createdBy?: string | null;
   /** Usar a promoção de desconto que estiver valendo (a folha mostra e deixa desligar). */
   usePromotion?: boolean;
+  /** Usar a sessão do pacote da cliente (padrão sim; a folha mostra e deixa desligar). */
+  usePackage?: boolean;
 };
 
 /** Busca os serviços na ordem pedida; null se algum não existe, está pausado ou foi excluído. */
@@ -117,7 +120,7 @@ export async function insertAppointment(
   const endsAt = new Date(startsAt.getTime() + durationMin * 60_000);
   await lockTenant(tx, tenantId);
   // Pacote da cliente para um dos serviços (valendo no dia): o serviço entra pelo valor da sessão, já pago
-  const pick = await pickSession(tx, cli.id, ids, input.date);
+  const pick = input.usePackage === false ? null : await pickSession(tx, cli.id, ids, input.date);
   // Promoção de desconto: não soma com desconto digitado nem com sessão de pacote; a vaga é contada aqui (lock)
   const promo =
     input.usePromotion && !input.discount && !pick
@@ -130,16 +133,8 @@ export async function insertAppointment(
     discount,
   );
   const { discountCents } = priced;
-  const totalCents = pick
-    ? Math.max(
-        0,
-        // a sessão cobre 1 serviço do pacote (o mais caro entre os agendados)
-        priced.totalCents -
-          Math.max(0, ...list.filter((x) => pick.serviceIds.includes(x.id)).map((x) => x.priceCents)) +
-          pick.valueCents,
-      )
-    : priced.totalCents;
-  const owed = totalCents - (pick?.valueCents ?? 0);
+  // a sessão cobre 1 serviço do pacote (o mais caro entre os agendados) e entra pelo valor da sessão
+  const { totalCents, owedCents: owed } = totalWithSession(priced.totalCents, list, pick);
   // Sinal nunca passa do que falta; sem valor = pagou tudo
   const paidNow = input.payment ? Math.min(owed, input.payment.amountCents ?? owed) : 0;
   // Sinal pedido: nunca o total (aí é "a pagar"); sem nada a pagar (pacote cobre tudo), não pede
@@ -507,6 +502,7 @@ export function listDay(tx: Tx, [from, to]: [Date, Date]) {
       paymentMethod: appointments.paymentMethod,
       paidCents: paidCentsSql,
       depositRequestedCents: appointments.depositRequestedCents,
+      session: sessionUseSql(appointments.id, appointments.clientPackageId, appointments.startsAt),
       serviceParts,
     })
     .from(appointments)

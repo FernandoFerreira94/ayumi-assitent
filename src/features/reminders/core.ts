@@ -1,5 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import type { Tx } from "@/db/client";
+import { sessionUseSql } from "@/features/wallet/packages";
+import { parseSessionUse, type SessionUse } from "@/features/wallet/session-use";
 import { tenants } from "@/db/schema";
 import type { MessagingPort } from "@/features/messaging/port";
 import { MessagingOfflineError, MessagingRejectedError, sendFailReason } from "@/features/messaging/port";
@@ -22,6 +24,8 @@ type Due = {
   service: string;
   /** Valor do atendimento, para a chave {valor} */
   priceCents: number;
+  /** Sessão de pacote deste horário ("3 de 6"); null = não usa pacote */
+  session: SessionUse | null;
 };
 
 /**
@@ -39,6 +43,7 @@ export async function claimDue(tx: Tx, now: Date, hours = DEFAULT_REMINDER_HOURS
     phone: string;
     service: string;
     price_cents: number;
+    session: unknown;
   }>(sql`
     with claimed as (
       update appointments set reminder_sent_at = ${now.toISOString()}
@@ -49,8 +54,9 @@ export async function claimDue(tx: Tx, now: Date, hours = DEFAULT_REMINDER_HOURS
           and starts_at > ${now.toISOString()} and starts_at <= ${until.toISOString()}
           and client_id not in (select id from clients where opted_out_at is not null)
         for update skip locked)
-      returning id, tenant_id, starts_at, client_id, service_id, price_cents)
-    select c.id, c.tenant_id, c.client_id, c.starts_at, c.price_cents, cl.name as client, cl.phone_e164 as phone, s.name as service
+      returning id, tenant_id, starts_at, client_id, service_id, price_cents, client_package_id)
+    select c.id, c.tenant_id, c.client_id, c.starts_at, c.price_cents,
+      ${sessionUseSql(sql`c.id`, sql`c.client_package_id`, sql`c.starts_at`)} as session, cl.name as client, cl.phone_e164 as phone, s.name as service
     from claimed c join clients cl on cl.id = c.client_id join services s on s.id = c.service_id
     order by c.starts_at`);
   return rows.map((r) => ({
@@ -62,6 +68,7 @@ export async function claimDue(tx: Tx, now: Date, hours = DEFAULT_REMINDER_HOURS
     phone: r.phone,
     service: r.service,
     priceCents: Number(r.price_cents),
+    session: parseSessionUse(r.session),
   }));
 }
 
@@ -94,6 +101,7 @@ export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Pro
       template: tenants.reminderTemplate,
       fullName: tenants.clientNameFull,
       address: tenants.address,
+      packageLine: tenants.packageLine,
     })
     .from(tenants);
   const failedIds: string[] = [];
@@ -106,7 +114,7 @@ export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Pro
       continue;
     }
     try {
-      const text = reminderText(a, now, salon);
+      const text = reminderText({ ...a, session: salon?.packageLine ? a.session : null }, now, salon);
       const { id } = await port.sendText(a.phone, text);
       sent++;
       // Entra na conversa da cliente. Num savepoint e fora do catch de envio: se gravar falhar,
@@ -158,6 +166,8 @@ export type MessageSettings = ReminderSettings & {
   /** Aviso à cliente quando a dona remarca (ligado por padrão) e o texto dele (null = padrão) */
   rescheduleOn: boolean;
   rescheduleTemplate: string | null;
+  /** Linha "Sessão 3 de 6 do seu pacote" na confirmação e nos avisos (ligada por padrão) */
+  packageLine: boolean;
 };
 
 export async function getMessageSettings(tx: Tx): Promise<MessageSettings> {
@@ -172,6 +182,7 @@ export async function getMessageSettings(tx: Tx): Promise<MessageSettings> {
       secondTemplate: tenants.secondReminderTemplate,
       rescheduleOn: tenants.rescheduleNotice,
       rescheduleTemplate: tenants.rescheduleTemplate,
+      packageLine: tenants.packageLine,
     })
     .from(tenants);
   return {
@@ -184,6 +195,7 @@ export async function getMessageSettings(tx: Tx): Promise<MessageSettings> {
     secondTemplate: row?.secondTemplate ?? null,
     rescheduleOn: row?.rescheduleOn ?? true,
     rescheduleTemplate: row?.rescheduleTemplate ?? null,
+    packageLine: row?.packageLine ?? true,
   };
 }
 
@@ -200,5 +212,6 @@ export const saveMessageSettings = (tx: Tx, tenantId: string, s: MessageSettings
       secondReminderTemplate: s.secondTemplate,
       rescheduleNotice: s.rescheduleOn,
       rescheduleTemplate: s.rescheduleTemplate,
+      packageLine: s.packageLine,
     })
     .where(eq(tenants.id, tenantId));

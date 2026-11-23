@@ -12,6 +12,7 @@ import { formatShortDate, todayStr } from "@/lib/dates";
 import { getWalletSettings, refundCredit, saveWalletSettings } from "./core";
 import {
   archiveTemplate,
+  clientPackageList,
   createTemplate,
   listTemplates,
   sellPackage,
@@ -21,6 +22,7 @@ import {
 import { createPromotion, endPromotion, listPromotions, setPromotionPaused } from "./promotions";
 import { parsePromotionDraft } from "./promotion-rules";
 import { parsePackageDraft, parsePolicy } from "./rules";
+import type { PackageOnHand } from "./session-use";
 import { promotionView, templateView, type PromotionView, type TemplateView } from "./views";
 
 /** Ajustes > Pagamentos: sinal sugerido, política de cancelamento/falta, validade de pacote e chave Pix. */
@@ -275,6 +277,33 @@ export async function loadRunningPromotions(): Promise<ActionResult<RunningPromo
           label,
           left,
           maxClients,
+        })),
+    );
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+/**
+ * Pacotes da cliente com sessão sobrando (folha de agendar): a tela mostra antes de salvar "Sessão 3 de 6" e o
+ * total certo, com a mesma regra que o servidor usa ao gravar (`session-use.chooseSession`).
+ */
+export async function loadClientPackages(clientId: string): Promise<ActionResult<PackageOnHand[]>> {
+  const { tenantId } = await requireTenant();
+  if (!z.string().uuid().safeParse(clientId).success) return fail("VALIDATION", "clientId");
+  try {
+    const rows = await withTenant(tenantId, (tx) => clientPackageList(tx, clientId, todayStr()));
+    return ok(
+      rows
+        .filter((p) => p.left > 0)
+        .map(({ id, name, serviceIds, sessionsTotal, priceCents, expiresOn, left }) => ({
+          id,
+          name,
+          serviceIds,
+          sessionsTotal,
+          priceCents,
+          expiresOn,
+          left,
         })),
     );
   } catch {

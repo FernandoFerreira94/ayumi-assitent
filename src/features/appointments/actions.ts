@@ -92,7 +92,14 @@ export async function bookingSlots(
 /** O que a folha de agendar mostra além das opções: clientes recentes e o texto para a prévia do WhatsApp. */
 export type BookingExtras = {
   recentClientIds: string[];
-  message: { template: string | null; name: string | null; fullName: boolean; pixKey: string | null };
+  message: {
+    template: string | null;
+    name: string | null;
+    fullName: boolean;
+    pixKey: string | null;
+    /** "Sessão 3 de 6 do seu pacote" vai na mensagem (Ajustes > Mensagens) */
+    packageLine: boolean;
+  };
 };
 
 export async function bookingExtras(): Promise<ActionResult<BookingExtras>> {
@@ -112,6 +119,7 @@ export async function bookingExtras(): Promise<ActionResult<BookingExtras>> {
             name: tenants.name,
             fullName: tenants.clientNameFull,
             pixKey: tenants.pixKey,
+            packageLine: tenants.packageLine,
           })
           .from(tenants)
           .where(eq(tenants.id, tenantId));
@@ -122,6 +130,7 @@ export async function bookingExtras(): Promise<ActionResult<BookingExtras>> {
             name: t?.name ?? null,
             fullName: t?.fullName ?? false,
             pixKey: t?.pixKey ?? null,
+            packageLine: t?.packageLine ?? true,
           },
         };
       }),
@@ -190,6 +199,8 @@ export async function createAppointment(_prev: ActionResult<{ id: string }> | nu
         depositRequestCents,
         createdBy: userId,
         usePromotion: formData.get("usePromotion") === "1",
+        // Desligado na folha = "0"; sem o campo (outras telas), usa o pacote como antes
+        usePackage: formData.get("usePackage") !== "0",
       });
       // sem agendamento, o evento volta como estava (desfaz a transação)
       if (!r.ok && fromBlock.success) throw new RollbackWith(r);
