@@ -43,6 +43,10 @@ const nextConfig: NextConfig = {
       { source: "/admin/:path*", headers: ADMIN_HEADERS },
     ];
   },
+  // A Siri saiu do PWA (vai nativa no app da loja, sem ligar/desligar): link antigo cai na lista de Ajustes.
+  async redirects() {
+    return [{ source: "/ajustes/siri", destination: "/ajustes", permanent: false }];
+  },
   env: { NEXT_PUBLIC_BUILD_ID: BUILD_ID },
   cacheComponents: true,
   partialPrefetching: true,

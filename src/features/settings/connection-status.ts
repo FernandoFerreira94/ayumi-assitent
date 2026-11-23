@@ -1,7 +1,7 @@
 /**
  * Selo de estado das conexões em Ajustes, para a dona ver de longe o que está ligado sem abrir nada.
  * ok = verde (ligado), warn = âmbar (precisa de ação), off = cinza (opcional e desligado).
- * Funções puras: o servidor resolve WhatsApp, calendários e Siri; a Notificação depende do aparelho e é resolvida
+ * Funções puras: o servidor resolve WhatsApp e calendários; a Notificação depende do aparelho e é resolvida
  * no cliente (`notificationsLine`) com o estado do push deste aparelho e a localização do salão.
  */
 export type Tone = "ok" | "warn" | "off";
@@ -25,12 +25,6 @@ export function calendarsLine(google: boolean, iphone: boolean): ResolvedLine {
   return { status: "Google Agenda e Calendário do iPhone", badge: { tone: "off", label: "Não conectado" } };
 }
 
-export function siriLine(on: boolean): ResolvedLine {
-  return on
-    ? { status: "Pergunte sua agenda para a Siri", badge: { tone: "ok", label: "Ligada" } }
-    : { status: "Pergunte sua agenda para a Siri", badge: { tone: "off", label: "Desligada" } };
-}
-
 /** Notificação junta os avisos deste aparelho e a localização (previsão do tempo do bom dia). */
 export function notificationsLine(push: PushState, locationOn: boolean): ResolvedLine {
   const loc = locationOn ? "localização ligada" : "localização desligada";
@@ -52,7 +46,7 @@ export function notificationsLine(push: PushState, locationOn: boolean): Resolve
   }
 }
 
-/** Resumo do grupo: "3 de 4 ativas" e quantas pedem ação. Linhas ainda sem selo (verificando) não contam. */
+/** Resumo do grupo: "2 de 3 ativas" e quantas pedem ação. Linhas ainda sem selo (verificando) não contam. */
 export function connectionsSummary(badges: ReadonlyArray<Badge | undefined>) {
   const known = badges.filter((b): b is Badge => !!b);
   return {

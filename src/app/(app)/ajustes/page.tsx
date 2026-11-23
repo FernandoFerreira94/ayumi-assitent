@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PageShell } from "@/components/ui/PageShell";
 import { InstallGuide } from "@/features/install/InstallGuide";
-import { CalendarsBody, NotificationsBody, SiriBody, WhatsAppBody } from "@/features/settings/connection-bodies";
+import { CalendarsBody, NotificationsBody, WhatsAppBody } from "@/features/settings/connection-bodies";
 import { ConnectionsAccordion } from "@/features/settings/ConnectionsAccordion";
 import { LegacyHashRedirect } from "@/features/settings/LegacyHashRedirect";
 import { SettingsGroup, SettingsRow } from "@/features/settings/SettingsList";
@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Ajustes" };
 
 /**
  * Ajustes é a lista de partida, como os Ajustes do iPhone: cada linha diz o estado e abre a sua seção.
- * Conexões (WhatsApp, Calendários, Notificações, Siri) abrem em acordeão ali mesmo, com selo de estado; as outras
+ * Conexões (WhatsApp, Calendários, Notificações) abrem em acordeão ali mesmo, com selo de estado; as outras
  * linhas abrem a tela da seção.
  * Desktop: lista à esquerda e "Este aparelho" à direita; dentro das seções a lista vira a coluna lateral.
  */
@@ -37,7 +37,6 @@ export default async function AjustesPage() {
                   whatsapp: <WhatsAppBody tenantId={tenantId} />,
                   calendarios: <CalendarsBody tenantId={tenantId} />,
                   notificacoes: <NotificationsBody tenantId={tenantId} />,
-                  siri: <SiriBody tenantId={tenantId} />,
                 }}
               />
             ) : (
