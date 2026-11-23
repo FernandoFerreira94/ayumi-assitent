@@ -273,9 +273,55 @@ h1 em{font-style:normal;color:var(--primary)}
 /* sem JS: nada escondido */
 html:not(.js) .feat,html:not(.js) #cap{display:none}
 html:not(.js) #ph{display:none}
+/* Splash "cortina de bolhas" (~3 s, 1x por sessão): o nome sobe entre bolhas e a cortina sobe como uma bolha,
+   revelando o hero, que só começa a entrar quando ela levanta. Camada por cima: o hero já está renderizado embaixo. */
+.splash{position:fixed;inset:0;z-index:200;display:grid;place-items:center;overflow:hidden;background:linear-gradient(180deg,#7b5bff 0%,var(--primary) 55%,var(--primary-text) 100%);animation:sp-lift .9s cubic-bezier(.65,0,.35,1) 2.1s both}
+.splash.gone,html:not(.js) .splash{display:none}
+html.splashing{overflow:hidden}
+.sp-name{position:relative;z-index:2;font:900 clamp(56px,11vw,128px)/1 var(--brand);letter-spacing:-.04em;color:#fff;display:flex;animation:sp-out .45s ease 2s both}
+.sp-name span{display:inline-block;animation:sp-up .8s cubic-bezier(.22,1,.36,1) .15s both}
+.sp-name span:nth-child(2){animation-delay:.25s}.sp-name span:nth-child(3){animation-delay:.35s}.sp-name span:nth-child(4){animation-delay:.45s}.sp-name span:nth-child(5){animation-delay:.55s}.sp-name span:nth-child(6){animation-delay:.65s}
+.sp-name i{position:absolute;right:-.34em;top:-.12em;width:.2em;height:.2em;border-radius:50%;border:.035em solid var(--lilac);animation:sp-blow .5s var(--spring) 1s both}
+.sp-name i+i{right:-.18em;top:.12em;width:.12em;height:.12em;border-color:var(--pink);animation-delay:1.15s}
+.sp-tag{position:absolute;top:calc(50% + clamp(48px,7vw,84px));left:50%;translate:-50% 0;color:#e9e2ff;font:700 13px/1 var(--mono);letter-spacing:.12em;white-space:nowrap;animation:sp-fade .6s ease .9s both,sp-out .45s ease 2s forwards}
+.sp-b{position:absolute;bottom:-60px;border-radius:50%;border:2px solid rgba(255,255,255,.55);box-shadow:inset -4px -4px 0 rgba(255,143,177,.35);animation:sp-float 2.6s cubic-bezier(.3,.1,.3,1) both}
+.sp-b:nth-of-type(1){left:12%;width:46px;height:46px}.sp-b:nth-of-type(2){left:26%;width:22px;height:22px;animation-delay:.3s}
+.sp-b:nth-of-type(3){left:44%;width:64px;height:64px;animation-delay:.15s}.sp-b:nth-of-type(4){left:63%;width:30px;height:30px;animation-delay:.45s}
+.sp-b:nth-of-type(5){left:78%;width:52px;height:52px;animation-delay:.06s}.sp-b:nth-of-type(6){left:90%;width:18px;height:18px;animation-delay:.36s}
+.sp-skip{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));min-height:44px;padding:0 18px;border-radius:999px;border:1.5px solid rgba(255,255,255,.5);background:rgba(255,255,255,.16);color:#fff;font:700 14px/1 var(--display);cursor:pointer}
+.sp-skip:hover{background:rgba(255,255,255,.26)}
+@keyframes sp-up{from{opacity:0;transform:translateY(.5em) scale(.9)}to{opacity:1;transform:none}}
+@keyframes sp-blow{from{transform:scale(0)}to{transform:scale(1)}}
+@keyframes sp-fade{from{opacity:0}to{opacity:1}}
+@keyframes sp-out{to{opacity:0;transform:translateY(-14px)}}
+@keyframes sp-float{from{transform:translateY(0)}to{transform:translateY(-75vh)}}
+@keyframes sp-lift{to{transform:translateY(-105%);border-radius:0 0 50% 50% / 0 0 22% 22%;visibility:hidden}}
 </style>
 </head>
 <body>
+<div class="splash" id="splash">
+  <span class="sp-b" aria-hidden="true"></span><span class="sp-b" aria-hidden="true"></span><span class="sp-b" aria-hidden="true"></span><span class="sp-b" aria-hidden="true"></span><span class="sp-b" aria-hidden="true"></span><span class="sp-b" aria-hidden="true"></span>
+  <div class="sp-name" aria-hidden="true"><span>b</span><span>u</span><span>b</span><span>b</span><span>l</span><span>y</span><i></i><i></i></div>
+  <span class="sp-tag" aria-hidden="true">A BOLHA LEMBRA. VOCÊ SÓ ATENDE.</span>
+  <button class="sp-skip" type="button">Pular</button>
+</div>
+<script>
+/* Roda antes do resto do body: decide na hora se o splash aparece, sem piscar.
+   Avisa o hero com "splash:lift" (cortina começa a subir) para a entrada dele casar com a revelação. */
+(function(){
+  var el=document.getElementById("splash"), root=document.documentElement, seen=false, lifted=false;
+  try{seen=sessionStorage.getItem("bubbly-splash")==="1";sessionStorage.setItem("bubbly-splash","1");}catch(e){}
+  if(seen||matchMedia("(prefers-reduced-motion: reduce)").matches){el.remove();return;}
+  root.classList.add("splashing");
+  function lift(){if(lifted)return;lifted=true;root.classList.add("splash-lifted");document.dispatchEvent(new Event("splash:lift"));}
+  function done(){lift();el.classList.add("gone");root.classList.remove("splashing");removeEventListener("keydown",esc);}
+  function esc(e){if(e.key==="Escape")done();}
+  el.addEventListener("animationstart",function(e){if(e.target===el)lift();});
+  el.addEventListener("animationend",function(e){if(e.target===el)done();});
+  el.querySelector(".sp-skip").addEventListener("click",done);
+  addEventListener("keydown",esc);
+})();
+</script>
 <a class="skip" href="#dia">Pular para o conteúdo</a>
 <header class="top gut" id="top"><div class="seg">
 <div class="seg-logo seg-p"><a href="#hero" class="word" style="font-size:26px">bubbly</a></div>
@@ -504,8 +550,12 @@ html:not(.js) #ph{display:none}
   gsap.registerPlugin(ScrollTrigger); smooth();
 
   /* entrada */
-  gsap.from("#copy > *",{y:40,autoAlpha:0,duration:1,stagger:.08,ease:"power3.out"});
-  gsap.from("#bw",{yPercent:60,scale:.6,duration:1.4,ease:"elastic.out(1,.6)",delay:.2});
+  /* com splash na tela, a entrada espera a cortina começar a subir */
+  var rc=document.documentElement.classList, waiting=rc.contains("splashing")&&!rc.contains("splash-lifted");
+  var intro=gsap.timeline({paused:waiting});
+  intro.from("#copy > *",{y:40,autoAlpha:0,duration:1,stagger:.08,ease:"power3.out"},0)
+    .from("#bw",{yPercent:60,scale:.6,duration:1.4,ease:"elastic.out(1,.6)"},.2);
+  if(waiting)document.addEventListener("splash:lift",function(){intro.play();},{once:true});
 
   var S=mob?.75:1, lobes={0:[-170,120],1:[170,-170],2:[-170,-150],3:[170,110]};
   var tl=gsap.timeline({defaults:{ease:"none"},scrollTrigger:{trigger:"#hero",start:"top top",end:"+=2800",scrub:.8,pin:true,anticipatePin:1,
