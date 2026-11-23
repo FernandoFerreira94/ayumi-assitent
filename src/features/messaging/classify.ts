@@ -11,6 +11,8 @@ import { errCode } from "@/lib/log";
  */
 const MODEL = "claude-haiku-5-5";
 const TIMEOUT_MS = 8_000;
+/** O JSON tem ~20 tokens; folga para não cortar a resposta no meio. */
+const MAX_TOKENS = 100;
 
 const SYSTEM = `Você ajuda um estúdio de beleza a entender a resposta de uma cliente ao lembrete do horário dela.
 Responda SOMENTE com um JSON: {"intent":"...","confidence":0.0}
@@ -50,12 +52,24 @@ export async function classifyReply(text: string, rules: string | null): Promise
     const context = r ? `<regras_da_profissional>\n${r}\n</regras_da_profissional>\n\n` : "";
     const res = await client.messages.create({
       model: MODEL,
-      max_tokens: 40,
+      max_tokens: MAX_TOKENS,
+      // O Haiku 5.5 pensa por padrão: o raciocínio gastaria o limite de tokens e viria como primeiro bloco,
+      // e a resposta caía calada na passagem para a profissional. Classificar não precisa de raciocínio.
+      thinking: { type: "disabled" },
       system: SYSTEM,
       messages: [{ role: "user", content: `${context}<mensagem_da_cliente>\n${clip(text, AI_TEXT_MAX)}\n</mensagem_da_cliente>` }],
     });
-    const block = res.content[0];
-    return block?.type === "text" ? parseVerdict(block.text) : null;
+    const answer = res.content.find((b) => b.type === "text")?.text ?? "";
+    const verdict = parseVerdict(answer);
+    // Só intenção e confiança, nunca o texto da cliente: serve para medir quanto a IA resolve sozinha
+    console.log(
+      JSON.stringify(
+        verdict
+          ? { level: "info", msg: "classify_reply", intent: verdict.intent, confidence: verdict.confidence }
+          : { level: "warn", msg: "classify_reply_unparsed", stopReason: res.stop_reason },
+      ),
+    );
+    return verdict;
   } catch (e) {
     console.error(JSON.stringify({ level: "warn", msg: "classify_reply_failed", ...errCode(e) }));
     return null;
