@@ -8,6 +8,7 @@ const shot = async (page: import("@playwright/test").Page, name: string) => {
 };
 
 test("criar Pague 3 leve 4, vender na ficha e agendar usando a sessão", async ({ page }) => {
+  test.setTimeout(60_000);
   await page.goto("/servicos");
   await page.getByRole("button", { name: "Criar serviço" }).click();
   await page.getByRole("dialog").getByRole("textbox", { name: "Nome", exact: true }).fill("Esmaltação");
@@ -98,8 +99,28 @@ test("criar Pague 3 leve 4, vender na ficha e agendar usando a sessão", async (
   await page.goto(`/calendario?d=${dia}`);
   await page.getByRole("button", { name: "Agendar", exact: true }).first().click();
   await preencheAgendar(page, { cliente: /Bia Souza/, servicos: [/Esmaltação/], hora: "10:00" });
+  // Antes de salvar, a folha avisa que vai pelo pacote: qual sessão e quantas restam
+  const plano = page.getByRole("group", { name: "Pacote da cliente" });
+  await expect(plano).toContainText("Pelo pacote Pague 3 leve 4 Esmaltação");
+  await expect(plano).toContainText("Sessão 1 de 4 · restam 3");
+  await expect(plano).toContainText(/R\$\s33,75 já pago pelo pacote/);
+  await expect(plano.getByRole("switch", { name: "Usar sessão do pacote" })).toBeChecked();
+  await shot(page, "pacote-1-agendar");
+  // A mensagem leva só uma linha sutil
+  await page.getByRole("button", { name: /Ver o que Bia recebe no WhatsApp/ }).click();
+  await expect(page.getByText("✨ Sessão 1 de 4 do seu pacote")).toBeVisible();
+  await shot(page, "pacote-2-mensagem");
+  await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Agendar", exact: true }).last().click();
   await expect(page.getByText("Usou 1 sessão do pacote Pague 3 leve 4 Esmaltação. Restam 3 de 4")).toBeVisible();
+
+  // No cartão do atendimento: pelo pacote, sessão 1 de 4
+  await page.goto(`/agenda?d=${dia}`);
+  await page.getByRole("button", { name: /Bia Souza, Esmaltação, 10:00/ }).click();
+  await expect(page.getByText("Pelo pacote Pague 3 leve 4 Esmaltação")).toBeVisible();
+  await expect(page.getByText("Sessão 1 de 4 · restam 3")).toBeVisible();
+  await shot(page, "pacote-3-cartao");
+  await page.keyboard.press("Escape");
 
   // Venda entra no caixa de hoje
   await page.goto(`/financeiro?m=${todayStr().slice(0, 7)}`);

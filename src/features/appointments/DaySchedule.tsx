@@ -5,6 +5,7 @@ import { AgendaRefresh } from "@/features/appointments/AgendaRefresh";
 import { dayVersion } from "@/features/appointments/version";
 import { forecastCents, listDay } from "@/features/appointments/core";
 import { paymentView } from "@/features/appointments/payment";
+import { parseSessionUse } from "@/features/wallet/session-use";
 import { minuteOf } from "@/features/appointments/timeline";
 import { WeekStrip } from "@/features/appointments/WeekStrip";
 import { listBlocks } from "@/features/blocks/core";
@@ -86,6 +87,7 @@ export async function DaySchedule({
         : null,
     notes: r.notes,
     payment: paymentView(r),
+    session: parseSessionUse(r.session),
   }));
   const blocks = dayBlocks.map((b) => {
     const external: ExternalSource | undefined = b.source === "google" || b.source === "icloud" ? b.source : undefined;

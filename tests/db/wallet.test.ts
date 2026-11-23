@@ -396,6 +396,49 @@ d("carteira da cliente (Postgres real)", () => {
       expect(await left()).toBe(before);
     });
 
+    it("listDay diz qual sessão é cada horário e quantas restam; cancelado não segura sessão", async () => {
+      const { parseSessionUse } = await import("@/features/wallet/session-use");
+      const rows = await withTenant(T, (tx) =>
+        core.listDay(tx, [new Date("2030-08-05T00:00:00Z"), new Date("2030-08-08T00:00:00Z")]),
+      );
+      const uses = rows.map((r) => parseSessionUse(r.session));
+      // 05/08 (concluído) = 1ª, 06/08 (voltou para a agenda) = 2ª, 07/08 (faltou, conta) = 3ª; restam 1 de 4
+      expect(uses).toEqual([
+        { name: "Pague 3 leve 4", n: 1, total: 4, left: 1 },
+        { name: "Pague 3 leve 4", n: 2, total: 4, left: 1 },
+        { name: "Pague 3 leve 4", n: 3, total: 4, left: 1 },
+      ]);
+      const cancelled = await bookD("2030-08-07");
+      if (!cancelled.ok) throw new Error(cancelled.code);
+      await withTenant(T, (tx) => core.setStatus(tx, cancelled.data.id, "cancelled", new Date("2030-08-01T12:00:00Z")));
+      const [raw] = await withTenant(T, (tx) =>
+        tx
+          .select({ s: pk.sessionUseSql(sql`a.id`, sql`a.client_package_id`, sql`a.starts_at`) })
+          .from(sql`appointments a`)
+          .where(sql`a.id = ${cancelled.data.id}`),
+      );
+      expect(parseSessionUse(raw.s)).toBeNull();
+      expect(await left()).toBe(1);
+    });
+
+    it("desligar o pacote no agendar: cobra o serviço normal e a sessão fica", async () => {
+      const r = await withTenant(T, (tx) =>
+        core.insertAppointment(tx, T, {
+          clientId: dani,
+          serviceIds: [svc],
+          date: "2030-08-10",
+          time: "08:00",
+          payment: null,
+          usePackage: false,
+        }),
+      );
+      if (!r.ok) throw new Error(r.code);
+      expect(r.data.session).toBeNull();
+      const [a] = await admin`select price_cents, paid_at, client_package_id from appointments where id = ${r.data.id}`;
+      expect(a).toMatchObject({ price_cents: 5000, paid_at: null, client_package_id: null });
+      expect(await left()).toBe(1);
+    });
+
     it("sem sessão sobrando, agenda normal (a pagar)", async () => {
       while ((await left())! > 0) await bookD("2030-08-08");
       const r = await bookD("2030-08-09");

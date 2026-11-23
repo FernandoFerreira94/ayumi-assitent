@@ -60,6 +60,8 @@ export const tenants = pgTable("tenants", {
   firstReminder: boolean("first_reminder").notNull().default(true),
   /** Avisar a cliente no WhatsApp quando a dona remarca (padrão ligado) */
   rescheduleNotice: boolean("reschedule_notice").notNull().default(true),
+  /** Linha "Sessão 3 de 6 do seu pacote" nas mensagens de WhatsApp (Ajustes > Mensagens). */
+  packageLine: boolean("package_line").notNull().default(true),
   /** Texto do aviso de remarcação; null = o padrão do app */
   rescheduleTemplate: text("reschedule_template"),
   /** SHA-256 do token do link de calendário assinado (Calendário do iPhone); null = link desligado */

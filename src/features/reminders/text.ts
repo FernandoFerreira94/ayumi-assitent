@@ -1,4 +1,5 @@
 import { mapsUrl } from "@/features/salon/address";
+import { sessionMessageLine } from "@/features/wallet/session-use";
 import { addDays, formatBRL, formatTime, todayStr } from "@/lib/dates";
 
 /**
@@ -64,6 +65,8 @@ export type MessageData = {
   calendarUrl?: string | null;
   /** Sinal pedido ao agendar (centavos) e a chave Pix do salão; só na mensagem de agendamento */
   deposit?: { cents: number; pixKey?: string | null } | null;
+  /** Sessão de pacote deste horário ("3 de 6"): vira uma linha sutil (Ajustes > Mensagens liga/desliga) */
+  session?: { n: number; total: number } | null;
 };
 export type SalonMessageOpts = {
   template?: string | null;
@@ -113,6 +116,10 @@ export function depositLines(cents: number, pixKey?: string | null): string {
     .join("\n");
 }
 
+/** Sessão do pacote: uma linha curta depois do texto (sem valor nem nome do pacote), mesmo com texto editado. */
+const withSession = (template: string, a: MessageData) =>
+  a.session ? `${template}\n\n${sessionMessageLine(a.session)}` : template;
+
 /** Linha do convite: vai no fim, ou onde a dona puser {agenda}. */
 export const calendarLine = (url: string) => `📲 Salve na sua agenda: ${url}`;
 
@@ -121,7 +128,7 @@ export const calendarLine = (url: string) => `📲 Salve na sua agenda: ${url}`;
  * a linha "Salve na sua agenda" vai no lugar de {agenda} ou, sem a chave, no fim (vale para textos já editados).
  */
 export function bookingText(a: MessageData, now: Date, salon: SalonMessageOpts = {}): string {
-  const base = salon.template?.trim() || DEFAULT_BOOKING;
+  const base = withSession(salon.template?.trim() || DEFAULT_BOOKING, a);
   const template = a.deposit?.cents ? `${base}\n\n${depositLines(a.deposit.cents, a.deposit.pixKey)}` : base;
   const line = a.calendarUrl ? calendarLine(a.calendarUrl) : "";
   const withLink = template.includes("{agenda}")
@@ -134,7 +141,7 @@ export function bookingText(a: MessageData, now: Date, salon: SalonMessageOpts =
 
 /** 1º aviso. As opções 1/2/3 vão sempre no fim, mesmo com texto personalizado. */
 export function reminderText(a: MessageData, now: Date, salon: SalonMessageOpts = {}): string {
-  const body = fill(salon.template?.trim() || DEFAULT_REMINDER, a, salon, dayWord(a.startsAt, now));
+  const body = fill(withSession(salon.template?.trim() || DEFAULT_REMINDER, a), a, salon, dayWord(a.startsAt, now));
   return [body, ...OPTIONS].join("\n");
 }
 
@@ -151,7 +158,7 @@ export function secondReminderText(
   const custom = salon.template?.trim();
   const usesDefault = !custom || custom === DEFAULT_SECOND;
   const template = confirmed && usesDefault ? DEFAULT_SECOND_CONFIRMED : custom || DEFAULT_SECOND;
-  const body = fill(template, a, salon, dayWord(a.startsAt, now));
+  const body = fill(withSession(template, a), a, salon, dayWord(a.startsAt, now));
   return confirmed ? body : [body, ...OPTIONS].join("\n");
 }
 

@@ -70,6 +70,13 @@
 - **Mensagem:** `sendBookingMessage` lê o pedido, o pago (`paidCentsSql`, crédito pode cobrir) e `tenants.pix_key`; `bookingText` acrescenta `depositLines` (valor, Pix, "Me manda o comprovante") antes do link do convite, mesmo com texto editado.
 - **Estado:** `paymentState` = `deposit_requested` enquanto pago < pedido (sem `paid_at`, não concluído). Selo âmbar "Sinal pedido R$ X", ação "Sinal recebido": a `PaymentSheet` abre no sinal com o valor pedido. Financeiro: fica em "A pagar", não em "Adiantado"; caixa só muda quando marcar recebido.
 
+## Uso do pacote à vista (23/11)
+
+- **Regra única** em `wallet/session-use.ts` (puro): `chooseSession` (qual pacote cobre, mesma regra no navegador e no `packages.pickSession`), `totalWithSession` (total e o que falta), `parseSessionUse`, `sessionUseText` ("Sessão 3 de 6 · restam 3") e `sessionMessageLine` ("✨ Sessão 3 de 6 do seu pacote").
+- **Agendar** (`BookingSteps`): ao escolher a cliente carrega `loadClientPackages`; no "Tudo certo?" mostra o grupo "Pacote da cliente" (pacote, sessão N de M, restam, "R$ X já pago pelo pacote · falta R$ Y") com o interruptor **Usar sessão do pacote**. Desligado manda `usePackage=0` → `insertAppointment` não usa o pacote (cobra normal, sessão fica). Com o pacote, promoção some (não somam) e Sinal/"Já pagou" usam o que falta; sem nada a pagar, somem.
+- **Cartão** (`AppointmentCard`): selo "Pelo pacote X · Sessão 3 de 6 · restam 3". Vem de `packages.sessionUseSql` (no `listDay` e na Pendências): N = ordem por horário entre os atendimentos que **seguram** sessão do pacote (reserve − return > 0); cancelado não segura.
+- **WhatsApp:** confirmação, 1º e 2º aviso ganham a linha sutil no fim do texto (antes das opções 1/2/3), sem valor nem nome do pacote. Liga/desliga em Ajustes > Mensagens > "Sessão do pacote" (`tenants.package_line`, migration 0057, padrão ligado).
+
 ## Arquivos
 
 - `features/wallet/rules.ts` (puro): `appointmentPaid`, `walletBalance`, `cashIn`, `remainingCents`, `suggestedDeposit`, `cancelOutcome` (D1/D2), `walletEffect`, `walletStatement`, `payXPrice`, `sessionValue`, `packageExpiresOn`, `parsePolicy`, `DEFAULT_POLICY`.

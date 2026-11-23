@@ -56,6 +56,7 @@ export async function saveMessages(_prev: ActionResult | null, fd: FormData): Pr
         secondHours,
         fullName: fd.get("fullName") === "1",
         rescheduleOn: fd.get("rescheduleOn") === "1",
+        packageLine: fd.get("packageLine") === "1",
         ...texts,
       }),
     );

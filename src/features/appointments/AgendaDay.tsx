@@ -18,6 +18,7 @@ import { BlockCard } from "@/features/blocks/BlockCard";
 import { formatDayTitle, formatShortDate, todayStr } from "@/lib/dates";
 import { AppointmentCard } from "./AppointmentCard";
 import type { PaymentView } from "./payment";
+import type { SessionUse } from "@/features/wallet/session-use";
 import { rescheduleAppointment } from "./actions";
 import { scheduleRescheduleNotice } from "./reschedule-notice";
 import {
@@ -71,6 +72,8 @@ export type AgendaAppointment = Span & {
   discount: { label: string; from: string; off: string } | null;
   notes: string | null;
   payment: PaymentView;
+  /** Sessão de pacote deste horário ("Sessão 3 de 6 · restam 3"); null = não usa pacote. */
+  session?: SessionUse | null;
 };
 /** Origem do evento de fora: "google" (Google Agenda) ou "icloud" (Calendário do iPhone). Sem = bloqueio do app. */
 export type ExternalSource = "google" | "icloud";
@@ -690,6 +693,7 @@ export function AgendaDay({
                   discount={detailAppt.discount}
                   notes={detailAppt.notes}
                   payment={detailAppt.payment}
+                  session={detailAppt.session}
                   onSettled={() => setDetailId(null)}
                 />
               ) : detailBlock?.external ? (

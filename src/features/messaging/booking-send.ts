@@ -10,6 +10,8 @@ import { serviceLabel } from "@/features/appointments/core";
 import { inviteUrl } from "@/features/calendar-feed/invite-token";
 import { errCode } from "@/lib/log";
 import { paidCentsSql } from "@/features/wallet/core";
+import { sessionUseSql } from "@/features/wallet/packages";
+import { parseSessionUse } from "@/features/wallet/session-use";
 
 /** sent = a cliente recebeu; failed = o WhatsApp não enviou; skipped = nada a enviar (sem WhatsApp configurado) */
 export type BookingMessageResult = "sent" | "failed" | "skipped";
@@ -32,6 +34,7 @@ export async function sendBookingMessage(
         fullName: tenants.clientNameFull,
         pixKey: tenants.pixKey,
         address: tenants.address,
+        packageLine: tenants.packageLine,
       })
       .from(tenants)
       .where(eq(tenants.id, tenantId));
@@ -50,6 +53,7 @@ export async function sendBookingMessage(
           priceCents: appointments.priceCents,
           depositRequestedCents: appointments.depositRequestedCents,
           paidCents: paidCentsSql,
+          session: sessionUseSql(appointments.id, appointments.clientPackageId, appointments.startsAt),
         })
         .from(appointments)
         .innerJoin(clients, eq(clients.id, appointments.clientId))
@@ -64,7 +68,9 @@ export async function sendBookingMessage(
       a.depositRequestedCents && a.paidCents < a.depositRequestedCents
         ? { cents: a.depositRequestedCents - a.paidCents, pixKey: t?.pixKey }
         : null;
-    const text = bookingText({ ...a, calendarUrl, deposit }, now, {
+    // Sessão do pacote ("Sessão 3 de 6 do seu pacote"), se a dona deixou ligado em Ajustes > Mensagens
+    const session = t?.packageLine ? parseSessionUse(a.session) : null;
+    const text = bookingText({ ...a, calendarUrl, deposit, session }, now, {
       template: t?.template,
       name: t?.name,
       fullName: t?.fullName,

@@ -1,5 +1,7 @@
 import { sql } from "drizzle-orm";
 import type { Tx } from "@/db/client";
+import { sessionUseSql } from "@/features/wallet/packages";
+import { parseSessionUse, type SessionUse } from "@/features/wallet/session-use";
 import { tenants } from "@/db/schema";
 import type { MessagingPort } from "@/features/messaging/port";
 import { MessagingOfflineError, MessagingRejectedError, sendFailReason } from "@/features/messaging/port";
@@ -21,6 +23,8 @@ type Due = {
   service: string;
   startsAt: Date;
   priceCents: number;
+  /** Sessão de pacote deste horário ("3 de 6"); null = não usa pacote */
+  session: SessionUse | null;
   /** Já confirmou: o 2º aviso vai só como lembrete, sem as opções 1/2/3 */
   confirmed: boolean;
 };
@@ -45,6 +49,7 @@ export async function claimNudges(tx: Tx, now: Date, hours: number, firstOn = tr
     service: string;
     starts_at: Date;
     price_cents: number;
+    session: unknown;
     confirmed: boolean;
   }>(sql`
     with claimed as (
@@ -63,8 +68,9 @@ export async function claimNudges(tx: Tx, now: Date, hours: number, firstOn = tr
           and starts_at > ${iso} and starts_at <= ${until}
           and client_id not in (select id from clients where opted_out_at is not null)
         for update skip locked)
-      returning id, tenant_id, client_id, starts_at, service_id, price_cents, status)
-    select c.id, c.tenant_id, c.client_id, c.starts_at, c.price_cents, cl.name as client, cl.phone_e164 as phone,
+      returning id, tenant_id, client_id, starts_at, service_id, price_cents, client_package_id, status)
+    select c.id, c.tenant_id, c.client_id, c.starts_at, c.price_cents,
+      ${sessionUseSql(sql`c.id`, sql`c.client_package_id`, sql`c.starts_at`)} as session, cl.name as client, cl.phone_e164 as phone,
       s.name as service, c.status = 'confirmed' as confirmed
     from claimed c join clients cl on cl.id = c.client_id join services s on s.id = c.service_id
     order by c.starts_at`);
@@ -77,6 +83,7 @@ export async function claimNudges(tx: Tx, now: Date, hours: number, firstOn = tr
     service: r.service,
     startsAt: new Date(r.starts_at),
     priceCents: Number(r.price_cents),
+    session: parseSessionUse(r.session),
     confirmed: r.confirmed === true,
   }));
 }
@@ -107,6 +114,7 @@ export async function sendNudges(tx: Tx, port: MessagingPort, now: Date): Promis
       template: tenants.secondReminderTemplate,
       fullName: tenants.clientNameFull,
       address: tenants.address,
+      packageLine: tenants.packageLine,
     })
     .from(tenants);
   const failedIds: string[] = [];
@@ -119,7 +127,7 @@ export async function sendNudges(tx: Tx, port: MessagingPort, now: Date): Promis
       continue;
     }
     try {
-      const text = secondReminderText(a, now, salon, a.confirmed);
+      const text = secondReminderText({ ...a, session: salon?.packageLine ? a.session : null }, now, salon, a.confirmed);
       const { id } = await port.sendText(a.phone, text);
       sent++;
       await tx
