@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addressInput, formatAddress, fromViaCep, mapsUrl, maskCep } from "@/features/salon/address";
+import { addressInput, formatAddress, fromBrasilApi, fromViaCep, mapsUrl, maskCep } from "@/features/salon/address";
 
 describe("endereço do estúdio", () => {
   it("máscara do CEP enquanto digita", () => {
@@ -54,5 +54,17 @@ describe("endereço do estúdio", () => {
   });
   it("link do mapa com o endereço codificado", () => {
     expect(mapsUrl("Rua A, 1")).toBe("https://www.google.com/maps/search/?api=1&query=Rua%20A%2C%201");
+  });
+  it("lê a resposta da BrasilAPI (segunda fonte)", () => {
+    expect(
+      fromBrasilApi({
+        cep: "12245000",
+        street: "Rua A",
+        neighborhood: "Centro",
+        city: "São José dos Campos",
+        state: "SP",
+      }),
+    ).toEqual({ cep: "12245000", street: "Rua A", district: "Centro", city: "São José dos Campos", state: "SP" });
+    expect(fromBrasilApi({ message: "CEP não encontrado" })).toBeNull();
   });
 });

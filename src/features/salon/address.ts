@@ -114,3 +114,16 @@ export function fromViaCep(json: unknown): Omit<StudioAddress, "number" | "compl
   if (cep.length !== 8 || !(UFS as readonly string[]).includes(state)) return null;
   return { cep, street: s("logradouro"), district: s("bairro"), city: s("localidade"), state };
 }
+
+/** Resposta da BrasilAPI (https://brasilapi.com.br/api/cep/v1), a segunda fonte quando o ViaCEP falha. */
+export function fromBrasilApi(json: unknown): Omit<StudioAddress, "number" | "complement"> | null {
+  if (!json || typeof json !== "object") return null;
+  const r = json as Record<string, unknown>;
+  return fromViaCep({
+    cep: r.cep,
+    logradouro: r.street,
+    bairro: r.neighborhood,
+    localidade: r.city,
+    uf: r.state,
+  });
+}

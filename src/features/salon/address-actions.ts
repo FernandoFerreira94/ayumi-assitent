@@ -6,30 +6,40 @@ import { getDb } from "@/db/client";
 import { tenants } from "@/db/schema";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
-import { addressInput, cepDigits, formatAddress, fromViaCep, type StudioAddress } from "./address";
+import { addressInput, cepDigits, formatAddress, fromBrasilApi, fromViaCep, type StudioAddress } from "./address";
 
 type CepResult = Omit<StudioAddress, "number" | "complement">;
 
 /**
- * Busca o CEP no ViaCEP (gratuito, sem chave) pelo servidor: o navegador não precisa liberar outro domínio e só
- * quem está logado usa. Falhou ou demorou: a dona preenche à mão.
+ * Busca o CEP no ViaCEP e, se falhar, na BrasilAPI (gratuitos, sem chave), pelo servidor: o navegador não precisa
+ * liberar outro domínio e só quem está logado usa. Falhou ou demorou: a dona preenche à mão.
  */
 export async function lookupCep(cep: string): Promise<ActionResult<CepResult>> {
   await requireTenant();
   const digits = cepDigits(String(cep ?? ""));
   if (digits.length !== 8) return fail("VALIDATION", "cep");
-  try {
-    const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`, {
-      signal: AbortSignal.timeout(5000),
-      cache: "force-cache",
-    });
-    if (res.status === 400) return fail("CEP_NOT_FOUND");
-    if (!res.ok) return fail("CEP_FAILED");
-    const found = fromViaCep(await res.json());
-    return found ? ok(found) : fail("CEP_NOT_FOUND");
-  } catch {
-    return fail("CEP_FAILED");
+  // ViaCEP primeiro; fora do ar ou lento, a BrasilAPI. Alguma dizendo "não existe" e nenhuma achando = não existe.
+  const sources = [
+    { url: `https://viacep.com.br/ws/${digits}/json/`, parse: fromViaCep },
+    { url: `https://brasilapi.com.br/api/cep/v1/${digits}`, parse: fromBrasilApi },
+  ];
+  let notFound = 0;
+  for (const s of sources) {
+    try {
+      const res = await fetch(s.url, { signal: AbortSignal.timeout(4000), cache: "force-cache" });
+      if (res.status === 400 || res.status === 404) {
+        notFound++;
+        continue;
+      }
+      if (!res.ok) continue;
+      const found = s.parse(await res.json());
+      if (found) return ok(found);
+      notFound++;
+    } catch {
+      // rede/timeout: tenta a próxima fonte
+    }
   }
+  return fail(notFound > 0 ? "CEP_NOT_FOUND" : "CEP_FAILED");
 }
 
 /** Salva o endereço do estúdio em campos e a linha pronta (`address`). O papel do app só lê `tenants`: grava pelo dono. */

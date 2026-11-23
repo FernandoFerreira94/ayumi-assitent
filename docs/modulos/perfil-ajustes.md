@@ -49,7 +49,7 @@ Links internos apontam direto para a seção (`/ajustes/whatsapp`, `/ajustes/cal
 - Testes: `tests/unit/connection-status.test.ts`, `app-menu.test.tsx`; e2e `ajustes.spec.ts` e `largura.spec.ts`.
 
 ## Endereço do estúdio (23/11)
-- `/ajustes/endereco` (grupo "Clientes e agenda"; selo "Cadastrar" sem endereço). `salon/AddressCard.tsx` mostra a linha pronta + "Ver no mapa" e edita num sheet (vaul): CEP → `address-actions.lookupCep` busca no ViaCEP **pelo servidor** (timeout 5s, só logado; falhou = preenche à mão), depois rua, número, complemento, bairro, cidade, UF. `saveAddress` valida com `salon/address.addressInput` e grava pelo dono do banco.
+- `/ajustes/endereco` (grupo "Clientes e agenda"; selo "Cadastrar" sem endereço). `salon/AddressCard.tsx` mostra a linha pronta + "Ver no mapa" e edita num sheet (vaul): CEP → `address-actions.lookupCep` busca no ViaCEP e, se falhar, na BrasilAPI, **pelo servidor** (timeout 4s cada, só logado; falhou = preenche à mão), depois rua, número, complemento, bairro, cidade, UF. `saveAddress` valida com `salon/address.addressInput` e grava pelo dono do banco.
 - Colunas `tenants.address_cep/street/number/complement/district/city/state` (migration 0054) + `tenants.address` = linha pronta (`formatAddress`). A 0054 copiou `city/state` (localização dos avisos do dia) para `address_city/state`; `city/state/latitude/longitude` continuam só para previsão do tempo e feriados.
 - Quem usa `tenants.address`: convite da cliente (`calendar-feed/invite.ts`, LOCATION do .ics), evento do Google (`google/sync.ts`, `location`) e as chaves `{endereco}`/`{mapa}` das mensagens (`reminders/text.ts`; sem endereço, a linha só com a chave some).
 - Testes: unit `studio-address`, `booking-text`; e2e `endereco.spec.ts`.
