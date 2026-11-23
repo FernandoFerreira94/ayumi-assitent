@@ -79,6 +79,30 @@ const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
 export const breakSpan = (day: Day): Span | null =>
   day?.breakStart && day.breakEnd ? { start: toMin(day.breakStart), end: toMin(day.breakEnd) } : null;
 
+/** Id da pausa fixa na lista de ocupados da linha do dia. */
+export const PAUSE_ID = "pausa";
+
+/**
+ * Pausa do dia (ex.: almoço) que o horário invade, ou null. Encostar não conta: terminar às 12:00
+ * com pausa das 12:00 às 13:00 não avisa. É só aviso; dá para agendar ou mover mesmo assim.
+ */
+export const pauseHit = (span: Span, pause: Span | null): Span | null =>
+  pause && span.start < pause.end && pause.start < span.end ? pause : null;
+
+/**
+ * Pausa invadida por um atendimento que começa em `date` às `time` e dura `minutes`
+ * (soma de todos os serviços; 0 = serviço ainda não escolhido, conta só o começo).
+ */
+export function pauseOverlap(args: { date: string; time: string; minutes: number; week: Day[] | null | undefined }) {
+  const { date, time, minutes, week } = args;
+  if (!week || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) return null;
+  const start = toMin(time);
+  return pauseHit({ start, end: start + Math.max(minutes, 1) }, breakSpan(week[weekdayOf(date)] ?? null));
+}
+
+/** Texto do aviso de pausa: "Esse horário pega sua pausa (12:00 às 13:00)". */
+export const pauseWarning = (p: Span) => `Esse horário pega sua pausa (${hhmm(p.start)} às ${hhmm(p.end)})`;
+
 /** Expediente do dia em minutos; null = salão fechado. */
 export const daySpan = (day: Day): Span | null => (day ? { start: toMin(day.opens), end: toMin(day.closes) } : null);
 

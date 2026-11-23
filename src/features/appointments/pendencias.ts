@@ -9,6 +9,7 @@ const base = (tx: Tx) =>
     .select({
       id: appointments.id,
       startsAt: appointments.startsAt,
+      endsAt: appointments.endsAt,
       priceCents: appointments.priceCents,
       status: appointments.status,
       clientId: clients.id,

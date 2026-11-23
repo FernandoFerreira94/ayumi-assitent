@@ -41,6 +41,7 @@ export default async function PendenciasPage() {
       time={when(r.startsAt)}
       date={todayStr(r.startsAt)}
       start={formatTime(r.startsAt)}
+      minutes={Math.round((r.endsAt.getTime() - r.startsAt.getTime()) / 60_000)}
       clientId={r.clientId}
       clientName={r.clientName}
       clientPhone={maskPhone(r.clientPhone.replace(/^\+55/, ""))}

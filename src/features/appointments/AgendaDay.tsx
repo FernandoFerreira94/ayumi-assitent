@@ -25,6 +25,8 @@ import {
   layoutColumns,
   nextFree,
   OUTSIDE_HOURS,
+  PAUSE_ID,
+  pauseHit,
   outsideHours,
   SNAP_MIN,
   type DragMode,
@@ -157,7 +159,7 @@ export function AgendaDay({
   win: Span;
   /** Expediente; null = salão fechado. */
   hours: Span | null;
-  /** Pausa fixa do expediente (ex.: almoço): faixa sem toque, que o arraste evita. */
+  /** Pausa fixa do expediente (ex.: almoço): faixa sem toque; arrastar para cima dela só avisa. */
   pause?: Span | null;
   appointments: AgendaAppointment[];
   blocks: AgendaBlock[];
@@ -181,9 +183,14 @@ export function AgendaDay({
     setMoved({});
   }
   const [selId, setSelId] = useState<string | null>(null);
-  const [drag, setDrag] = useState<{ id: string; span: Span; from: Span; bad: string | null; out: boolean } | null>(
-    null,
-  );
+  const [drag, setDrag] = useState<{
+    id: string;
+    span: Span;
+    from: Span;
+    bad: string | null;
+    out: boolean;
+    lunch: boolean;
+  } | null>(null);
   const [shakeId, setShakeId] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [showTip, setShowTip] = useState(false);
@@ -199,8 +206,10 @@ export function AgendaDay({
   const occupants: Occupant[] = [
     ...appts.map((a) => ({ id: a.id, kind: "appointment" as const, label: a.clientName, start: a.start, end: a.end })),
     ...blocks.map((b) => ({ id: b.id, kind: "block" as const, label: b.reason ?? "", start: b.start, end: b.end })),
-    ...(pause ? [{ id: "pausa", kind: "block" as const, label: "Pausa", ...pause }] : []),
+    ...(pause ? [{ id: PAUSE_ID, kind: "block" as const, label: "Pausa", ...pause }] : []),
   ];
+  /** Para mover um atendimento: a pausa não impede (só avisa), o resto continua ocupando. */
+  const movable = occupants.filter((o) => o.id !== PAUSE_ID);
   const lay = layoutColumns([...occupants, ...(temp ? [{ id: "temp", ...temp }] : [])]);
 
   const detailAppt = appts.find((a) => a.id === detailId);
@@ -213,9 +222,9 @@ export function AgendaDay({
   const suppressClickUntil = useRef(0);
   const keyMove = useRef<{ id: string; from: Span; span: Span; timer: ReturnType<typeof setTimeout> } | null>(null);
   // O que os ouvintes da janela precisam ler da renderização mais recente
-  const live = useRef({ win, hours, occupants });
+  const live = useRef({ win, hours, pause, movable });
   useEffect(() => {
-    live.current = { win, hours, occupants };
+    live.current = { win, hours, pause, movable };
   });
 
   const y = (m: number) => (m - win.start) * PPM;
@@ -240,10 +249,14 @@ export function AgendaDay({
     }
     warnSync(res.data.sync);
     if (isUndo) return notify.success(`${name} voltou para ${hhmm(span.start)}`);
+    const notes = [
+      pauseHit(span, pause) && "Pega sua pausa",
+      outsideHours(span, hours) && "Fora do expediente",
+    ].filter(Boolean);
     notify.undoable(
       mode === "move" ? `${name} foi para ${hhmm(span.start)}` : `${name}: ${range(span)}`,
       () => void save(id, from, span, mode, true),
-      outsideHours(span, hours) ? "Fora do expediente · lembrete reprogramado" : "Lembrete do WhatsApp reprogramado",
+      notes.length ? `${notes.join(" · ")} · lembrete reprogramado` : "Lembrete do WhatsApp reprogramado",
     );
   }
 
@@ -256,10 +269,17 @@ export function AgendaDay({
     handlers.current.track = () => {
       const g = gesture.current;
       if (!g?.active) return;
-      const { win, hours, occupants } = live.current;
+      const { win, hours, pause, movable } = live.current;
       g.span = dragSpan(g.mode, g.from, (g.cy - g.y0 + window.scrollY - g.scroll0) / PPM, win);
-      g.bad = conflictReason({ id: g.id, ...g.span }, occupants);
-      setDrag({ id: g.id, span: g.span, from: g.from, bad: g.bad, out: outsideHours(g.span, hours) });
+      g.bad = conflictReason({ id: g.id, ...g.span }, movable);
+      setDrag({
+        id: g.id,
+        span: g.span,
+        from: g.from,
+        bad: g.bad,
+        out: outsideHours(g.span, hours),
+        lunch: !!pauseHit(g.span, pause),
+      });
     };
     handlers.current.finish = (g, cancelled) => {
       clearTimeout(g.timer);
@@ -333,7 +353,14 @@ export function AgendaDay({
     }
     navigator.vibrate?.(8);
     setSelId(null);
-    setDrag({ id: g.id, span: g.from, from: g.from, bad: null, out: outsideHours(g.from, live.current.hours) });
+    setDrag({
+      id: g.id,
+      span: g.from,
+      from: g.from,
+      bad: null,
+      out: outsideHours(g.from, live.current.hours),
+      lunch: !!pauseHit(g.from, live.current.pause),
+    });
     const scroll = () => {
       if (gesture.current !== g) return;
       // Perto do topo ou do fim da tela, a página rola sozinha
@@ -382,7 +409,7 @@ export function AgendaDay({
     e.preventDefault();
     if (!canDrag(a.status)) return;
     const span = dragSpan("move", a, e.key === "ArrowUp" ? -SNAP_MIN : SNAP_MIN, win);
-    const bad = conflictReason({ id: a.id, ...span }, occupants);
+    const bad = conflictReason({ id: a.id, ...span }, movable);
     if (bad) return notify.warning("Não dá para mover", bad);
     const k = keyMove.current;
     if (k) clearTimeout(k.timer);
@@ -565,11 +592,12 @@ export function AgendaDay({
 
           {drag ? (
             <div
-              className={`ag-tip ${drag.bad ? "bad" : drag.out ? "out" : ""}`}
+              className={`ag-tip ${drag.bad ? "bad" : drag.out || drag.lunch ? "out" : ""}`}
               style={{ top: y(drag.span.start) }}
               aria-live="polite"
             >
-              {drag.bad ?? `${range(drag.span)} · ${drag.out ? "fora do expediente" : duration(drag.span)}`}
+              {drag.bad ??
+                `${range(drag.span)} · ${drag.lunch ? "pega a pausa" : drag.out ? "fora do expediente" : duration(drag.span)}`}
             </div>
           ) : null}
 
@@ -637,6 +665,7 @@ export function AgendaDay({
                   time={hhmm(detailAppt.start)}
                   date={date}
                   start={hhmm(detailAppt.start)}
+                  minutes={detailAppt.end - detailAppt.start}
                   clientId={detailAppt.clientId}
                   clientName={detailAppt.clientName}
                   clientPhone={detailAppt.clientPhone}
