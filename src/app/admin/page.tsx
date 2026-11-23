@@ -1,126 +1,116 @@
 import type { Metadata } from "next";
-import { logAdminAccess } from "@/features/admin/audit";
-import { monthKey } from "@/features/admin/demo-data";
-import { requireAdmin } from "@/features/admin/guard";
-import {
-  cancellations,
-  delinquencyBuckets,
-  healthLevel,
-  receivedInMonth,
-  summarize,
-  trialConversion,
-  trialsEnding,
-  upcomingDue,
-} from "@/features/admin/metrics";
-import { getBillingHealth, getEvents, getMrrMonths, getOverview, getPayments, IS_DEMO } from "@/features/admin/queries";
-import { AdminShell } from "@/features/admin/ui/AdminShell";
 import { TileTitle } from "@/components/ui/Icon";
-import { DemoBanner } from "@/features/admin/ui/DemoBanner";
-import { fmtPct, formatBRL } from "@/features/admin/ui/format";
-import { HealthBar } from "@/features/admin/ui/HealthBar";
+import { logAdminAccess } from "@/features/admin/audit";
+import { requireAdmin } from "@/features/admin/guard";
+import { getPlatformStats } from "@/features/admin/platform";
+import { idleSalons, pctChange, recentSalons } from "@/features/admin/platform-rules";
+import { AdminShell } from "@/features/admin/ui/AdminShell";
+import { BillingPending } from "@/features/admin/ui/BillingPending";
+import { fmtPct } from "@/features/admin/ui/format";
 import { KpiCard } from "@/features/admin/ui/KpiCard";
-import { MrrChart, MrrMovements } from "@/features/admin/ui/MrrChart";
-import { CancellationsCard, DueSoonCard, OverdueCard, TrialsCard } from "@/features/admin/ui/OverviewLists";
+import { MonthBars } from "@/features/admin/ui/MonthBars";
+import { IdleSalonsCard, NewSalonsCard } from "@/features/admin/ui/SalonLists";
 import { adminCard } from "@/features/admin/ui/styles";
+import { getUsage } from "@/features/admin/usage";
+import { summarizeUsage } from "@/features/admin/usage-rules";
 
 export const metadata: Metadata = { title: "Visão geral" };
 
-const DAY = 86_400_000;
+const num = (n: number) => new Intl.NumberFormat("pt-BR").format(n);
 
-/** Visão geral: saúde da cobrança, números do mês, MRR de 12 meses e as listas que pedem ação. */
+/** Texto da variação contra o mês passado ("+12% vs out"). */
+function vsPrev(cur: number, prev: number): string {
+  const p = pctChange(cur, prev);
+  if (p === null) return prev === 0 && cur === 0 ? "nenhum ainda" : "primeiro mês com dados";
+  return `${p > 0 ? "+" : ""}${fmtPct(p)} vs anterior`;
+}
+
+/**
+ * Visão geral com números REAIS da plataforma (salões, uso, agendamentos e WhatsApp). Só agregados e nome do salão:
+ * nenhum dado de cliente final. A parte de cobrança mostra estado vazio até o Mercado Pago entrar.
+ */
 export default async function AdminOverviewPage() {
   const { userId } = await requireAdmin();
   await logAdminAccess({ userId, action: "view_overview" });
   const now = new Date();
-  const [rows, months, payments, events, health] = await Promise.all([
-    getOverview(now),
-    getMrrMonths(now),
-    getPayments(monthKey(now), now),
-    getEvents(now),
-    getBillingHealth(now),
-  ]);
-
-  const s = summarize(rows, now);
-  const got = receivedInMonth(payments);
-  const last = months.at(-1)!;
-  const prev = months.at(-2);
-  const churnRate = prev && prev.mrrCents ? last.churnCents / prev.mrrCents : null;
-  const monthAgo = new Date(now.getTime() - 30 * DAY);
-  const late = rows.filter((r) => r.status === "past_due").sort((a, b) => (b.daysPastDue ?? 0) - (a.daysPastDue ?? 0));
+  const [usage, { totals: t, months }] = await Promise.all([getUsage(), getPlatformStats()]);
+  const u = summarizeUsage(usage, now);
+  const newThisMonth = months.at(-1)?.salons ?? 0;
 
   return (
-    <AdminShell title="Visão geral" subtitle="Assinaturas e receita do Bubbly" icon="compass">
-      {IS_DEMO ? <DemoBanner /> : null}
-      <HealthBar health={health} level={healthLevel(health, now)} now={now} />
-
+    <AdminShell title="Visão geral" subtitle="Números reais do Bubbly, atualizados a cada visita" icon="compass">
       <h2 className="sr-only">Números do mês</h2>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <KpiCard
-          icon="forecast"
+          icon="users"
           tint="lavender"
           tone="brand"
-          label="MRR"
-          value={formatBRL(s.mrrCents)}
-          note={s.mrrAtRiskCents ? `${formatBRL(s.mrrAtRiskCents)} em risco` : s.arpaCents ? `${formatBRL(s.arpaCents)} por salão` : undefined}
-          alert={s.mrrAtRiskCents > 0}
+          label="Salões"
+          value={num(u.salons)}
+          note={newThisMonth ? `+${num(newThisMonth)} neste mês` : "nenhum novo neste mês"}
         />
         <KpiCard
-          icon="wallet"
+          icon="checkCircle"
           tint="green"
           tone="ok"
-          label="Recebido no mês"
-          value={formatBRL(got.netCents)}
-          note={`Bruto ${formatBRL(got.grossCents)} · taxa ${formatBRL(got.feeCents)}`}
+          label="Ativos em 7 dias"
+          value={num(u.active7)}
+          note={u.salons ? `${fmtPct(u.active7 / u.salons)} dos salões` : "sem salões ainda"}
+        />
+        <KpiCard
+          icon="chat"
+          tint="teal"
+          tone={u.salons && u.whatsapp < u.salons ? "wait" : "fg"}
+          label="WhatsApp ligado"
+          value={num(u.whatsapp)}
+          note={`de ${num(u.salons)} salões`}
+        />
+        <KpiCard
+          icon="calendar"
+          tint="blue"
+          tone="brand"
+          label="Agendamentos"
+          value={num(t.apptsMonth)}
+          note={`no mês · ${vsPrev(t.apptsMonth, t.apptsPrevMonth)}`}
+        />
+        <KpiCard
+          icon="message"
+          tint="pink"
+          label="Mensagens"
+          value={num(t.msgsOutMonth)}
+          note={`enviadas no mês · ${num(t.msgsInMonth)} recebidas`}
         />
         <KpiCard
           icon="users"
-          tint="blue"
-          label="Pagantes"
-          value={String(s.payingCount)}
-          note={s.courtesyCount ? `+ ${s.courtesyCount} cortesia${s.courtesyCount > 1 ? "s" : ""}` : undefined}
-        />
-        <KpiCard
-          icon="sparkles"
-          tint="pink"
-          label="Em teste"
-          value={String(s.trialCount)}
-          note={s.trialsEndingSoon ? `${s.trialsEndingSoon} acaba${s.trialsEndingSoon > 1 ? "m" : ""} em 3 dias` : "nenhum acaba em 3 dias"}
-        />
-        <KpiCard
-          icon="alert"
-          tint="red"
-          tone={s.pastDueCount > 0 ? "fail" : "fg"}
-          label="Em atraso"
-          value={String(s.pastDueCount)}
-          note={s.pastDueCount ? `${formatBRL(s.mrrAtRiskCents)} por mês` : "ninguém devendo"}
-          alert={s.pastDueCount > 0}
-        />
-        <KpiCard
-          icon="userX"
           tint="orange"
-          tone={last.churnCount > 0 ? "wait" : "fg"}
-          label="Churn do mês"
-          value={churnRate === null ? "—" : fmtPct(churnRate)}
-          note={`${last.churnCount} salão${last.churnCount === 1 ? "" : "s"} · ${formatBRL(last.churnCents)}`}
+          label="Clientes"
+          value={num(t.clients)}
+          note={`nos salões · ${num(t.users)} ${t.users === 1 ? "pessoa usa" : "pessoas usam"} o app`}
         />
       </div>
 
-      <section className={`${adminCard} mt-5`} aria-labelledby="ov-mrr">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <TileTitle as="h2" id="ov-mrr" icon="forecast" tint="lavender" className="text-lg">
-            MRR em 12 meses
+      <div className="mt-5 grid gap-5 lg:grid-cols-2">
+        <section className={adminCard} aria-labelledby="ov-appts">
+          <TileTitle as="h2" id="ov-appts" icon="calendar" tint="blue" className="text-lg">
+            Agendamentos em 12 meses
           </TileTitle>
-          <p className="text-sm font-semibold text-muted">Receita mensal recorrente (anual dividido por 12)</p>
-        </div>
-        <MrrChart months={months} />
-        <MrrMovements month={last} />
-      </section>
+          <MonthBars label="Agendamentos" points={months.map((m) => ({ month: m.month, value: m.appts }))} />
+        </section>
+        <section className={adminCard} aria-labelledby="ov-salons">
+          <TileTitle as="h2" id="ov-salons" icon="sparkles" tint="pink" className="text-lg">
+            Salões novos em 12 meses
+          </TileTitle>
+          <MonthBars label="Salões novos" points={months.map((m) => ({ month: m.month, value: m.salons }))} />
+        </section>
+      </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-2">
-        <DueSoonCard rows={upcomingDue(rows, now, 7)} />
-        <OverdueCard buckets={delinquencyBuckets(rows)} rows={late} />
-        <TrialsCard rows={trialsEnding(rows, now, 3)} conversion={trialConversion(events, monthAgo, now)} />
-        <CancellationsCard events={cancellations(events, monthAgo, now)} />
+        <NewSalonsCard rows={recentSalons(usage, now, 30)} />
+        <IdleSalonsCard rows={idleSalons(usage, now, 7)} now={now} />
+      </div>
+
+      <div className="mt-5">
+        <BillingPending what="MRR, recebido no mês, pagantes, atraso e churn" />
       </div>
     </AdminShell>
   );

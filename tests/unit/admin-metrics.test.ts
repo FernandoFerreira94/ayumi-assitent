@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { demoEvents, demoMrr, demoOverview, demoPayments, monthKey, shiftMonth } from "@/features/admin/demo-data";
+import { monthKey, shiftMonth } from "@/features/admin/month";
+import { demoEvents, demoMrr, demoOverview, demoPayments } from "../fixtures/admin-demo";
 import {
   cancellations,
   delinquencyBuckets,
