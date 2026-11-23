@@ -22,7 +22,7 @@ Atualizado em 17/11/2026 (main em #162, auditoria completa). Ache o módulo da t
 | Suporte e avisos do dono | [suporte.md](suporte.md) | `features/support`, telas `ajustes/suporte`, `admin/suporte`, `admin/avisos` | Conversa salão ↔ dono, avisos do dono no Painel de todos os salões | Painel (cartões no topo), Ajustes (linha Ajuda), admin (menu, registro), push (`notifyAdmins`, `sendToAll`) |
 | Apps da loja | [apps-loja.md](apps-loja.md) | `mobile/`, `codemagic.yaml`, `features/native`, `app/.well-known` | Casca Capacitor do Android e iPhone que carrega o app web; links do domínio abrem o app | Domínio do app (`server.url`), instalar PWA (`isNativeShell`), login Google e push no app, regras de loja (sem venda no app) |
 | Siri e Atalhos | [atalhos.md](atalhos.md) | `features/atalhos`, rotas `api/v1/atalhos/*` (sem tela no PWA desde 23/11; Siri só no app nativo) | Chave pessoal só leitura; a Siri lê agenda de hoje/amanhã, próxima cliente e resumo do dia | Agenda (`listDay`), tabela `api_tokens` |
-| Plataforma | [plataforma.md](plataforma.md) | `db`, `lib`, `worker`, `proxy.ts`, `api/*`, `scripts`, `features/auth` (esqueci a senha), `features/retention`, `features/legal` | Auth, estúdio/RLS, migrations, worker, retenção LGPD, privacidade/termos, deploy, backup | Tudo |
+| Plataforma | [plataforma.md](plataforma.md) | `db`, `lib`, `worker`, `proxy.ts`, `api/*`, `scripts`, `features/auth` (esqueci a senha), `features/retention`, `lib/legal.ts` | Auth, estúdio/RLS, migrations, worker, retenção LGPD, privacidade/termos, deploy, backup | Tudo |
 
 ## Matriz de ligações (imports entre features)
 

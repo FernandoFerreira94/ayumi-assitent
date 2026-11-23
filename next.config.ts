@@ -49,6 +49,9 @@ const nextConfig: NextConfig = {
       { source: "/ajustes/siri", destination: "/ajustes", permanent: false },
       // 23/11: endereço do estúdio mudou para o Meu perfil
       { source: "/ajustes/endereco", destination: "/perfil#endereco", permanent: false },
+      // 23/11: privacidade e termos moram no site público (URLs do Branding do Google OAuth)
+      { source: "/privacidade", destination: "https://bubbly.app.br/privacidade", permanent: false },
+      { source: "/termos", destination: "https://bubbly.app.br/termos", permanent: false },
     ];
   },
   env: { NEXT_PUBLIC_BUILD_ID: BUILD_ID },

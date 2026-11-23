@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
-import { SUPPORT_EMAIL } from "@/features/legal/LegalPage";
+import { SUPPORT_EMAIL } from "@/lib/legal";
 import { markSupportRead, sendSupport } from "@/features/support/actions";
 import { listSupportMessages, unreadSupportReplies } from "@/features/support/core";
 import { FAQ } from "@/features/support/ui/faq";
