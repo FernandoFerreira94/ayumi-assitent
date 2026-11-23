@@ -11,6 +11,8 @@ type Row = {
   paymentMethod: PaymentMethod | null;
   /** Do extrato da carteira (sinal ou tudo) */
   paidCents?: number;
+  /** Sinal pedido à cliente (ainda não é dinheiro no caixa) */
+  depositRequestedCents?: number | null;
 };
 
 export type PaymentItem = {
@@ -43,11 +45,11 @@ export function splitPayments(rows: Row[]) {
       payment: paymentView(r),
     };
     const { state, paidCents, remainingCents } = item.payment;
-    if (state === "unpaid" || state === "deposit") {
+    if (state === "unpaid" || state === "deposit" || state === "deposit_requested") {
       toPay.push(item);
       toPayCents += remainingCents;
     }
-    if (state === "advance" || state === "deposit") {
+    if (state === "advance" || state === "deposit" || (state === "deposit_requested" && paidCents > 0)) {
       advance.push(item);
       advanceCents += paidCents;
     }

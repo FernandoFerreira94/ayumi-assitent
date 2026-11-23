@@ -61,6 +61,8 @@ export type MessageData = {
   priceCents?: number | null;
   /** Link do convite (.ics) para a cliente salvar na agenda; só na mensagem de agendamento */
   calendarUrl?: string | null;
+  /** Sinal pedido ao agendar (centavos) e a chave Pix do salão; só na mensagem de agendamento */
+  deposit?: { cents: number; pixKey?: string | null } | null;
 };
 export type SalonMessageOpts = { template?: string | null; name?: string | null; fullName?: boolean };
 
@@ -79,6 +81,18 @@ function fill(template: string, a: MessageData, salon: SalonMessageOpts, day: st
     .trim();
 }
 
+/** Pedido do sinal: valor e Pix. Vai sempre (mesmo com texto editado), antes do link do convite. */
+export function depositLines(cents: number, pixKey?: string | null): string {
+  const pix = pixKey?.trim();
+  return [
+    `Para garantir o seu horário, o sinal é de ${formatBRL(cents)}.`,
+    pix ? `Pix: ${pix}` : null,
+    "Me manda o comprovante por aqui 😊",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 /** Linha do convite: vai no fim, ou onde a dona puser {agenda}. */
 export const calendarLine = (url: string) => `📲 Salve na sua agenda: ${url}`;
 
@@ -87,7 +101,8 @@ export const calendarLine = (url: string) => `📲 Salve na sua agenda: ${url}`;
  * a linha "Salve na sua agenda" vai no lugar de {agenda} ou, sem a chave, no fim (vale para textos já editados).
  */
 export function bookingText(a: MessageData, now: Date, salon: SalonMessageOpts = {}): string {
-  const template = salon.template?.trim() || DEFAULT_BOOKING;
+  const base = salon.template?.trim() || DEFAULT_BOOKING;
+  const template = a.deposit?.cents ? `${base}\n\n${depositLines(a.deposit.cents, a.deposit.pixKey)}` : base;
   const line = a.calendarUrl ? calendarLine(a.calendarUrl) : "";
   const withLink = template.includes("{agenda}")
     ? template.replace(/\{agenda\}/g, line)

@@ -18,7 +18,7 @@ async function prepara(page: Page) {
   await expect(page.getByText("Cliente cadastrada")).toBeVisible();
 }
 
-async function agenda(page: Page, dia: string, hora: string, pago: boolean | "sinal") {
+async function agenda(page: Page, dia: string, hora: string, pago: boolean | "sinal" | "pedir") {
   await page.goto(`/calendario?d=${dia}`);
   await page.getByRole("button", { name: "Agendar", exact: true }).first().click();
   await page.getByRole("button", { name: "Cliente" }).click();
@@ -27,11 +27,19 @@ async function agenda(page: Page, dia: string, hora: string, pago: boolean | "si
   await page.getByRole("button", { name: /Escova/ }).click();
   if (pago === "sinal") {
     await page.getByRole("button", { name: "Sinal", exact: true }).click();
+    await page.getByRole("button", { name: "Já recebi" }).click();
     // sugestão de Ajustes > Pagamentos: 30% de R$ 80 = R$ 24
     await expect(page.getByLabel("Valor do sinal")).toHaveValue("24,00");
     await page.getByLabel("Valor do sinal").fill("30,00");
     await expect(page.getByText(/Falta R\$\s50,00 para pagar no dia/)).toBeVisible();
     await page.getByRole("button", { name: "Pix" }).click();
+  } else if (pago === "pedir") {
+    await page.getByRole("button", { name: "Sinal", exact: true }).click();
+    // "Pedir à cliente" é o padrão: vai no WhatsApp com o Pix, sem forma de pagamento
+    await expect(page.getByRole("button", { name: "Pedir à cliente" })).toHaveAttribute("aria-pressed", "true");
+    await page.getByLabel("Valor do sinal").fill("30,00");
+    await expect(page.getByText(/a receber/)).toBeVisible();
+    await expect(page.getByRole("group", { name: "Forma de pagamento" })).toHaveCount(0);
   } else if (pago) {
     await page.getByRole("button", { name: "Já pagou" }).click();
     await page.getByRole("button", { name: "Pix" }).click();
@@ -88,6 +96,23 @@ test("sinal ao agendar, receber o resto depois e ver o caixa do mês", async ({ 
   await page.goto(`/financeiro?m=${todayStr().slice(0, 7)}`);
   // Entrou hoje: R$ 30 do sinal + R$ 50 do resto
   await expect(page.getByText("Entrou no caixa").locator("..")).toContainText(/R\$\s80,00/);
+});
+
+test("pedir sinal ao agendar: fica a receber até marcar Sinal recebido", async ({ page }) => {
+  await prepara(page);
+  const dia = addDays(todayStr(), 1);
+  await agenda(page, dia, "15:00", "pedir");
+  await page.getByRole("button", { name: /Bia Souza, Escova, 15:00/ }).click();
+  const selo = page.getByRole("button", { name: /Sinal pedido R\$\s30,00.*Sinal recebido/ });
+  await expect(selo).toBeVisible();
+  await selo.click();
+  const folha = page.getByRole("dialog", { name: /Pagamento de Bia/ });
+  // abre no sinal com o valor pedido
+  await expect(folha.getByLabel("Valor do sinal")).toHaveValue("30,00");
+  await folha.getByRole("button", { name: "Pix" }).click();
+  await folha.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByText("Sinal marcado")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Sinal R\$\s30,00 · falta R\$\s50,00/ })).toBeVisible();
 });
 
 test("cancelar o que já foi pago vira crédito, que dá para devolver na ficha", async ({ page }) => {

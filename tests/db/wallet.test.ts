@@ -149,6 +149,37 @@ d("carteira da cliente (Postgres real)", () => {
     expect(a?.paid_at).toBeNull();
   });
 
+  it("pedir sinal ao agendar: guarda o pedido, nada entra no caixa; sinal recebido grava o pagamento", async () => {
+    const r = await withTenant(T, (tx) =>
+      core.insertAppointment(tx, T, {
+        clientId: cli,
+        serviceIds: [svc],
+        date: "2030-06-10",
+        time: `${String(hour++).padStart(2, "0")}:00`,
+        depositRequestCents: 1500,
+      }),
+    );
+    if (!r.ok) throw new Error(r.code);
+    const [a] = await admin`select paid_at, deposit_requested_cents from appointments where id = ${r.data.id}`;
+    expect(a).toMatchObject({ paid_at: null, deposit_requested_cents: 1500 });
+    expect(await paid(r.data.id)).toBe(0);
+    await withTenant(T, (tx) => core.setPayment(tx, r.data.id, { method: "pix", amountCents: 1500 }));
+    expect(await paid(r.data.id)).toBe(1500);
+  });
+
+  it("pedir sinal do valor todo é recusado (é a pagar)", async () => {
+    const r = await withTenant(T, (tx) =>
+      core.insertAppointment(tx, T, {
+        clientId: cli,
+        serviceIds: [svc],
+        date: "2030-06-10",
+        time: `${String(hour++).padStart(2, "0")}:00`,
+        depositRequestCents: 5000,
+      }),
+    );
+    expect(r).toMatchObject({ ok: false, code: "VALIDATION", field: "depositAmount" });
+  });
+
   it("receber o resto grava só a diferença, na forma nova; baixar para sinal anula e regrava", async () => {
     const r = await book({ method: "pix", amountCents: 1500 });
     if (!r.ok) throw new Error(r.code);

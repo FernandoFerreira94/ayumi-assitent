@@ -23,4 +23,16 @@ describe("mensagem de agendamento confirmado", () => {
       /^Oi, Maria Zona Norte!/,
     );
   });
+  it("sinal pedido vai com valor e Pix, mesmo com texto editado, antes do link do convite", () => {
+    const t = bookingText({ ...a, deposit: { cents: 3000, pixKey: "salao@pix.com" }, calendarUrl: "https://x/c" }, eve, {
+      template: "Oi, {nome}!",
+    });
+    expect(t).toMatch(/^Oi, Maria!\n\nPara garantir o seu horário, o sinal é de R\$\s30,00\.\nPix: salao@pix\.com\n/);
+    expect(t.indexOf("Pix:")).toBeLessThan(t.indexOf("📲"));
+  });
+  it("sem chave Pix, pede o sinal sem a linha do Pix", () => {
+    const t = bookingText({ ...a, deposit: { cents: 3000, pixKey: null } }, eve);
+    expect(t).toContain("o sinal é de");
+    expect(t).not.toContain("Pix:");
+  });
 });

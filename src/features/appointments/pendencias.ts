@@ -19,6 +19,7 @@ const base = (tx: Tx) =>
       paidAt: appointments.paidAt,
       paymentMethod: appointments.paymentMethod,
       paidCents: paidCentsSql,
+      depositRequestedCents: appointments.depositRequestedCents,
     })
     .from(appointments)
     .innerJoin(clients, eq(clients.id, appointments.clientId))

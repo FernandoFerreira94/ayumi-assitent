@@ -13,6 +13,9 @@ import { formatBRL } from "@/lib/dates";
 /** O que estava marcado, para o Desfazer e para abrir a folha. */
 function pickOf(p: PaymentView): PaymentPick {
   if (p.state === "deposit") return { choice: "deposit", method: p.method, amount: centsToField(p.paidCents) };
+  // Sinal pedido: abre no sinal com o valor pedido ("Sinal recebido")
+  if (p.state === "deposit_requested")
+    return { choice: "deposit", method: p.method, amount: centsToField(Math.max(p.requestedCents, p.paidCents)) };
   if (p.state === "advance" || p.state === "paid") return { choice: "full", method: p.method, amount: "" };
   return { choice: "none", method: null, amount: "" };
 }
@@ -48,7 +51,9 @@ export function PaymentSheet({
   const Root = nested ? Drawer.NestedRoot : Drawer.Root;
   const total = payment.paidCents + payment.remainingCents;
   const [open, setOpen] = useState(false);
-  const [pick, setPick] = useState<PaymentPick>({ ...pickOf(payment), choice: "full" });
+  const [pick, setPick] = useState<PaymentPick>(
+    payment.state === "deposit_requested" ? pickOf(payment) : { ...pickOf(payment), choice: "full" },
+  );
   const [error, setError] = useState<ErrorCode | null>(null);
   const [badAmount, setBadAmount] = useState(false);
   const [pending, start] = useTransition();
@@ -57,8 +62,9 @@ export function PaymentSheet({
     setOpen(next);
     setError(null);
     setBadAmount(false);
-    // abre já em "Já pagou": é o motivo mais comum de abrir (marcar pago ou receber o resto do sinal)
-    if (next) setPick({ ...pickOf(payment), choice: "full" });
+    // abre já em "Já pagou": é o motivo mais comum de abrir (marcar pago ou receber o resto do sinal);
+    // com sinal pedido, abre no sinal com o valor pedido (o mais comum é "Sinal recebido")
+    if (next) setPick(payment.state === "deposit_requested" ? pickOf(payment) : { ...pickOf(payment), choice: "full" });
   }
 
   function save() {

@@ -201,6 +201,8 @@ export const appointments = pgTable(
     paymentMethod: text("payment_method").$type<"pix" | "dinheiro" | "cartao">(),
     /** Pacote da cliente usado neste atendimento (migration 0051) */
     clientPackageId: uuid("client_package_id"),
+    /** Sinal pedido à cliente ao agendar, em centavos (migration 0054); só vira caixa ao marcar recebido */
+    depositRequestedCents: integer("deposit_requested_cents"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("appointments_tenant_start").on(t.tenantId, t.startsAt)],

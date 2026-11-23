@@ -140,15 +140,28 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
           triggerClassName={`flex min-h-11 items-center gap-2 rounded-xl px-3 text-left text-sm font-bold ${
             payment.state === "unpaid"
               ? "bg-soft text-primary-text"
-              : payment.state === "deposit"
+              : payment.state === "deposit" || payment.state === "deposit_requested"
                 ? "bg-wait-bg text-wait"
                 : "bg-ok-bg text-ok"
           }`}
         >
-          <Icon name={payment.state === "unpaid" || payment.state === "deposit" ? "wallet" : "checkCircle"} size={18} />
+          <Icon
+            name={
+              payment.state === "unpaid" || payment.state === "deposit" || payment.state === "deposit_requested"
+                ? "wallet"
+                : "checkCircle"
+            }
+            size={18}
+          />
           <span className="flex-1">{payment.label}</span>
           <span className="text-xs font-semibold opacity-80">
-            {payment.state === "unpaid" ? "Marcar pago" : payment.state === "deposit" ? "Receber o resto" : "Mudar"}
+            {payment.state === "unpaid"
+              ? "Marcar pago"
+              : payment.state === "deposit"
+                ? "Receber o resto"
+                : payment.state === "deposit_requested"
+                  ? "Sinal recebido"
+                  : "Mudar"}
           </span>
         </PaymentSheet>
       ) : null}

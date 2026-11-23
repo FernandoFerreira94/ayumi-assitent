@@ -87,14 +87,17 @@ export async function createAppointment(_prev: ActionResult<{ id: string }> | nu
     String(formData.get("notes") ?? "")
       .trim()
       .slice(0, 300) || null;
-  const payment = parsePayment(formData.get("paid"), formData.get("paymentMethod"), formData.get("depositAmount"));
-  if (payment === "invalid") return fail("VALIDATION", "depositAmount");
+  const picked = parsePayment(formData.get("paid"), formData.get("paymentMethod"), formData.get("depositAmount"));
+  if (picked === "invalid") return fail("VALIDATION", "depositAmount");
+  // "Pedir sinal" não é pagamento: vai na mensagem de agendamento e fica "Sinal pedido"
+  const depositRequestCents = picked && "requestCents" in picked ? picked.requestCents : null;
+  const payment = picked && "requestCents" in picked ? null : picked;
   // "Transformar em agendamento": o evento de fora (iPhone/Google) que ocupava o horário sai junto
   const fromBlock = z.string().uuid().safeParse(formData.get("fromBlockId"));
   try {
     const res = await withTenant(tenantId, async (tx) => {
       if (fromBlock.success && !(await convertExternalBlock(tx, fromBlock.data))) return fail("NOT_FOUND");
-      const r = await insertAppointment(tx, tenantId, { ...parsed.data, discount, notes, payment, createdBy: userId });
+      const r = await insertAppointment(tx, tenantId, { ...parsed.data, discount, notes, payment, depositRequestCents, createdBy: userId });
       // sem agendamento, o evento volta como estava (desfaz a transação)
       if (!r.ok && fromBlock.success) throw new RollbackWith(r);
       return r;
