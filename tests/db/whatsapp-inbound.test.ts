@@ -368,6 +368,52 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
       expect(await handoffAt()).not.toBeNull();
     });
 
+    it("guarda só a possível resposta não entendida (sem telefone), para o dono rotular", async () => {
+      await admin`delete from unclear_replies`;
+      await fresh();
+      verdict = { intent: "cancel", confidence: 0.99 };
+      await handleInbound(m("acho melhor deixar pra outra semana viu"), ai);
+      await fresh();
+      verdict = { intent: "other", confidence: 0.9 };
+      await handleInbound(m("vocês trabalham no sábado?"), ai);
+      // Não guarda: lista longa, áudio, confirmação aplicada
+      await fresh();
+      await handleInbound(m("Contas dezembro\n\nCartão dia 1\n124,95\n455,81\n100 gasolina"), ai);
+      await handleInbound(m("[áudio]", { media: true }), ai);
+      await fresh();
+      verdict = { intent: "confirm", confidence: 0.95 };
+      await handleInbound(m("pode contar comigo, até amanhã"), ai);
+      const rows = await admin`select client_id, appointment_id, question, body, ai_intent, decision, label
+        from unclear_replies order by created_at`;
+      expect(rows).toEqual([
+        {
+          client_id: C,
+          appointment_id: A,
+          question: "reminder",
+          body: "acho melhor deixar pra outra semana viu",
+          ai_intent: "cancel",
+          decision: "guess",
+          label: null,
+        },
+        {
+          client_id: C,
+          appointment_id: A,
+          question: "reminder",
+          body: "vocês trabalham no sábado?",
+          ai_intent: "other",
+          decision: "alerted",
+          label: null,
+        },
+      ]);
+      // A dona na conversa: não guarda
+      await admin`delete from unclear_replies`;
+      await fresh();
+      await handleInbound(m("Oi Bia, tudo bem?", { fromMe: true }), ai);
+      verdict = { intent: "other", confidence: 1 };
+      await handleInbound(m("tudo sim e vc?"), ai);
+      expect(await admin`select 1 from unclear_replies`).toHaveLength(0);
+    });
+
     it("outro assunto, erro do modelo ou áudio logo após o lembrete: nenhuma resposta; a dona é avisada uma vez", async () => {
       for (const [text, v, over] of [
         ["vocês trabalham no sábado?", { intent: "other", confidence: 0.99 }, {}],

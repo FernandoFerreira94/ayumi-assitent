@@ -1,6 +1,6 @@
 import { and, asc, between, count, desc, eq, gte, ilike, inArray, isNull, lt, ne, or, sql, sum } from "drizzle-orm";
 import type { Tx } from "@/db/client";
-import { appointments, clientLedger, clients, messages, services } from "@/db/schema";
+import { appointments, clientLedger, clients, messages, services, unclearReplies } from "@/db/schema";
 import { serviceLabel } from "@/features/appointments/core";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import type { ClientInput } from "./schema";
@@ -35,7 +35,12 @@ export async function searchClients(tx: Tx, q: string) {
     ? or(ilike(clients.name, `%${term}%`), digits ? ilike(clients.phoneE164, `%${digits}%`) : undefined)
     : undefined;
   // Anonimizadas (excluídas com histórico) não aparecem em listas nem seletores
-  return tx.select().from(clients).where(and(isNull(clients.anonymizedAt), filter)).orderBy(asc(clients.name)).limit(200);
+  return tx
+    .select()
+    .from(clients)
+    .where(and(isNull(clients.anonymizedAt), filter))
+    .orderBy(asc(clients.name))
+    .limit(200);
 }
 
 export async function updateClientRow(tx: Tx, id: string, input: ClientInput): Promise<ActionResult> {
@@ -77,6 +82,8 @@ export async function deleteClientRow(tx: Tx, id: string): Promise<ActionResult>
     return ok();
   }
   await tx.delete(messages).where(eq(messages.clientId, id));
+  // Respostas não entendidas guardadas para análise também saem (LGPD)
+  await tx.delete(unclearReplies).where(eq(unclearReplies.clientId, id));
   await tx
     .update(clients)
     .set({ name: "Cliente removida", phoneE164: anonPhone(id), email: null, notes: null, anonymizedAt: new Date() })
@@ -186,8 +193,14 @@ export function clientStats(tx: Tx, now = new Date()) {
       lastVisit: sql<Date | null>`max(${appointments.startsAt}) filter (where ${appointments.status} = 'done')`.mapWith(
         (v) => (v ? new Date(v) : null),
       ),
-      spentCents: sql<number>`coalesce(sum(${appointments.priceCents}) filter (where ${appointments.status} = 'done'), 0)`.mapWith(Number),
-      hasNext: sql<boolean>`bool_or(${appointments.status} <> 'cancelled' and ${appointments.startsAt} > ${at}::timestamptz)`.mapWith(Boolean),
+      spentCents:
+        sql<number>`coalesce(sum(${appointments.priceCents}) filter (where ${appointments.status} = 'done'), 0)`.mapWith(
+          Number,
+        ),
+      hasNext:
+        sql<boolean>`bool_or(${appointments.status} <> 'cancelled' and ${appointments.startsAt} > ${at}::timestamptz)`.mapWith(
+          Boolean,
+        ),
     })
     .from(appointments)
     .groupBy(appointments.clientId);

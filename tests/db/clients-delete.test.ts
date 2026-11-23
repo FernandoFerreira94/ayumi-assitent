@@ -36,6 +36,8 @@ d("excluir cliente (Postgres real)", () => {
     await admin`insert into appointments (tenant_id,client_id,service_id,starts_at,ends_at,price_cents,status)
       values (${T},${id},${S},'2026-10-01T12:00:00Z','2026-10-01T13:00:00Z',10000,'done')`;
     await admin`insert into messages (tenant_id,client_id,direction,kind,body) values (${T},${id},'in','client','oi')`;
+    await admin`insert into unclear_replies (tenant_id,client_id,question,body,decision)
+      values (${T},${id},'reminder','talvez','alerted')`;
 
     const r = await withTenant(T, (tx) => core.deleteClientRow(tx, id));
     expect(r.ok).toBe(true);
@@ -46,6 +48,7 @@ d("excluir cliente (Postgres real)", () => {
     expect(c.notes).toBeNull();
     expect(c.anonymized_at).not.toBeNull();
     expect(await admin`select id from messages where client_id = ${id}`).toHaveLength(0);
+    expect(await admin`select id from unclear_replies where client_id = ${id}`).toHaveLength(0);
     expect(await admin`select id from appointments where client_id = ${id}`).toHaveLength(1);
     // some das listas e do seletor de agendamento
     const list = await withTenant(T, (tx) => core.searchClients(tx, ""));

@@ -15,6 +15,8 @@ export type AdminAction =
   | "view_support"
   | "support_reply"
   | "view_notices"
+  | "view_unclear"
+  | "unclear_labeled"
   | "notice_created"
   | "notice_ended"
   | "sessions_revoked"
@@ -34,6 +36,8 @@ export const ADMIN_ACTION_LABEL: Record<AdminAction, string> = {
   view_support: "Abriu o suporte",
   support_reply: "Respondeu no suporte",
   view_notices: "Abriu avisos",
+  view_unclear: "Abriu respostas não entendidas",
+  unclear_labeled: "Rotulou respostas não entendidas",
   notice_created: "Publicou um aviso",
   notice_ended: "Encerrou um aviso",
   sessions_revoked: "Encerrou outras sessões",
@@ -84,8 +88,11 @@ export type AdminAccessRow = { action: AdminAction; target: string | null; ip: s
 
 /** Últimos acessos ao painel (tela Segurança). Chame só depois do requireAdmin. */
 export async function recentAdminAccess(limit = 50): Promise<AdminAccessRow[]> {
-  const rows = await getDb().execute<{ action: AdminAction; target: string | null; ip: string | null; created_at: string | Date }>(
-    sql`select action, target, ip, created_at from admin_audit_log order by created_at desc limit ${limit}`,
-  );
+  const rows = await getDb().execute<{
+    action: AdminAction;
+    target: string | null;
+    ip: string | null;
+    created_at: string | Date;
+  }>(sql`select action, target, ip, created_at from admin_audit_log order by created_at desc limit ${limit}`);
   return rows.map((r) => ({ action: r.action, target: r.target, ip: r.ip, createdAt: new Date(r.created_at) }));
 }

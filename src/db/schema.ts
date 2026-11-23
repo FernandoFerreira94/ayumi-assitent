@@ -7,6 +7,7 @@ import {
   integer,
   pgEnum,
   pgTable,
+  real,
   text,
   timestamp,
   unique,
@@ -319,6 +320,30 @@ export const messages = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [unique().on(t.tenantId, t.externalId), index("messages_client_created").on(t.clientId, t.createdAt)],
+);
+
+/** Possível resposta a uma pergunta do sistema que ele não entendeu (migration 0057). Só o painel do dono lê. */
+export const unclearReplies = pgTable(
+  "unclear_replies",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    appointmentId: uuid("appointment_id").references(() => appointments.id, { onDelete: "set null" }),
+    question: text("question").notNull().$type<"reminder" | "ambiguous">(),
+    body: text("body").notNull(),
+    aiIntent: text("ai_intent"),
+    aiConfidence: real("ai_confidence"),
+    decision: text("decision").notNull().$type<"alerted" | "silent" | "guess" | "ambiguous">(),
+    label: text("label").$type<"confirm" | "cancel" | "reschedule" | "late" | "question" | "other">(),
+    labeledAt: timestamp("labeled_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("unclear_replies_created").on(t.createdAt), index("unclear_replies_client").on(t.clientId)],
 );
 
 export const expenses = pgTable(
