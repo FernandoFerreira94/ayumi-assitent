@@ -19,6 +19,9 @@
 - Sempre claim antes de enviar e `release` em falha; dois workers não podem mandar o mesmo aviso.
 - Falha **recusada** (`MessagingRejectedError`, 400 da Evolution, ex.: número sem WhatsApp) não volta para a fila: fica como tentado. Só falha temporária/offline faz `release`. Toda falha loga `reminder_send_failed`/`nudge_send_failed`/`pending_send_failed` com o id do agendamento e o motivo (nunca o telefone).
 - Não reenviar aviso de horário que já passou; remarcar/cancelar precisa invalidar aviso pendente.
+- **Horário mudou** (`appointments/core.SCHEDULE_RESET`, 23/11): volta a aguardar confirmação e zera 1º e 2º aviso, não respondeu, resposta, pedido de cancelar, `ai_handoff_at` e `pending_reply`. Editar e "remarcar agora" zeram na hora; o arraste ("later") só zera quando o aviso de remarcação é processado (`reschedule-send`), então arrastar e desfazer não mexe em nada. Mudar só a duração não zera.
+- **Sem lembrete logo após a confirmação:** agendou dentro da janela do 1º aviso → a confirmação vai com 1/2/3, grava `reminder_sent_at` e entra como `kind = reminder` (`booking-send` + `asFirstReminder`). Fora da janela, a confirmação é só informativa (`auto_reply`).
+- Cancelar, falta ou concluir apagam `pending_reply` (resposta da noite não sai com data velha).
 - Mudou aqui: Redeploy do **worker** também.
 - Testes: `tests/db/nudge.test.ts`, `tests/unit/reminder-text.test.ts`, `nudge.test.ts`, `booking-text.test.ts`.
 - Opt-out: cliente que responde só `SAIR`/`PARAR`/`PARE`/`STOP` ganha `clients.opted_out_at` (`replies.parseOptOut`, tratado no `inbound.ts` antes da IA) e sai da confirmação (`booking-send`) e do 1º/2º aviso (`claimDue`/`claimNudges` filtram); `VOLTAR` desfaz. Resposta automática uma vez, fora do silêncio 21h–6h. Mensagem manual da dona continua saindo.

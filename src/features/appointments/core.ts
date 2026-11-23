@@ -253,7 +253,8 @@ export async function setStatus(
     const rows = await tx.transaction((sp) =>
       sp
         .update(appointments)
-        .set({ status, ...returnFields })
+        // Fechou o atendimento (cancelado, falta, concluído): resposta guardada da noite não sai mais
+        .set({ status, ...returnFields, ...(CLOSED.has(status) ? { pendingReply: null } : {}) })
         .where(eq(appointments.id, id))
         .returning({
           tenantId: appointments.tenantId,
@@ -359,8 +360,27 @@ export async function setPayment(
 }
 
 /**
- * Muda começo e fim de um atendimento (arrastar na agenda). Zera o lembrete enviado,
- * para o worker mandar de novo com o horário novo.
+ * O horário mudou: tudo o que a cliente respondeu ou recebeu valia para o horário antigo. Volta a aguardar
+ * confirmação e zera 1º e 2º aviso, "não respondeu", resposta, pedido de cancelar, conversa passada à dona e
+ * resposta guardada da noite (que citaria a data velha). Usado ao editar, arrastar e ao mandar o aviso de remarcação.
+ */
+const CLOSED: ReadonlySet<Status> = new Set<Status>(["cancelled", "no_show", "done"]);
+
+export const SCHEDULE_RESET = {
+  status: "pending_confirmation" as const,
+  reminderSentAt: null,
+  replyAt: null,
+  nudgeSentAt: null,
+  noReplyAt: null,
+  cancelAskedAt: null,
+  aiHandoffAt: null,
+  pendingReply: null,
+};
+
+/**
+ * Muda começo e fim de um atendimento (arrastar na agenda). Com o aviso esperando o Desfazer ("later"), o estado das
+ * mensagens só é zerado quando o aviso sai (`sendRescheduleNotice`): arrastar e desfazer não mexe em nada. Só mudar a
+ * duração também não.
  */
 export async function moveAppointment(
   tx: Tx,
@@ -372,13 +392,20 @@ export async function moveAppointment(
 ): Promise<ActionResult<{ moved: boolean }>> {
   await lockTenant(tx, tenantId);
   if (await overlapsBlock(tx, startsAt, endsAt)) return fail("SLOT_TAKEN", "time");
-  const [before] = await tx.select({ startsAt: appointments.startsAt }).from(appointments).where(eq(appointments.id, id));
+  const [before] = await tx
+    .select({ startsAt: appointments.startsAt })
+    .from(appointments)
+    .where(eq(appointments.id, id));
   const moved = !!before && before.startsAt.getTime() !== startsAt.getTime();
   try {
     const rows = await tx.transaction((sp) =>
       sp
         .update(appointments)
-        .set({ startsAt, endsAt, reminderSentAt: null, ...(moved ? noticeFields(notice, startsAt) : {}) })
+        .set({
+          startsAt,
+          endsAt,
+          ...(moved ? { ...(notice === "later" ? {} : SCHEDULE_RESET), ...noticeFields(notice, startsAt) } : {}),
+        })
         .where(and(eq(appointments.id, id), ne(appointments.status, "cancelled")))
         .returning({ id: appointments.id }),
     );
@@ -465,9 +492,7 @@ export async function editAppointment(
                 promotionId: null,
               }
             : {}),
-          ...(moved
-            ? { status: "pending_confirmation" as const, reminderSentAt: null, replyAt: null, ...noticeFields(notice, startsAt) }
-            : {}),
+          ...(moved ? { ...SCHEDULE_RESET, ...noticeFields(notice, startsAt) } : {}),
         })
         .where(eq(appointments.id, id)),
     );

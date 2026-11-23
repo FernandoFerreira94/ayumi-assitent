@@ -1,5 +1,5 @@
 import "server-only";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { getDb, withTenant } from "@/db/client";
 import { appointments, clients, services, tenants } from "@/db/schema";
 import { bookingText } from "./booking";
@@ -12,6 +12,8 @@ import { errCode } from "@/lib/log";
 import { paidCentsSql } from "@/features/wallet/core";
 import { sessionUseSql } from "@/features/wallet/packages";
 import { parseSessionUse } from "@/features/wallet/session-use";
+import { OPTIONS } from "@/features/reminders/text";
+import { asFirstReminder } from "./reschedule-send";
 
 /** sent = a cliente recebeu; failed = o WhatsApp não enviou; skipped = nada a enviar (sem WhatsApp configurado) */
 export type BookingMessageResult = "sent" | "failed" | "skipped";
@@ -35,6 +37,8 @@ export async function sendBookingMessage(
         pixKey: tenants.pixKey,
         address: tenants.address,
         packageLine: tenants.packageLine,
+        first: tenants.firstReminder,
+        hours: tenants.reminderHours,
       })
       .from(tenants)
       .where(eq(tenants.id, tenantId));
@@ -50,6 +54,7 @@ export async function sendBookingMessage(
           optedOut: clients.optedOutAt,
           service: serviceLabel,
           startsAt: appointments.startsAt,
+          status: appointments.status,
           priceCents: appointments.priceCents,
           depositRequestedCents: appointments.depositRequestedCents,
           paidCents: paidCentsSql,
@@ -70,28 +75,42 @@ export async function sendBookingMessage(
         : null;
     // Sessão do pacote ("Sessão 3 de 6 do seu pacote"), se a dona deixou ligado em Ajustes > Mensagens
     const session = t?.packageLine ? parseSessionUse(a.session) : null;
-    const text = bookingText({ ...a, calendarUrl, deposit, session }, now, {
+    const body = bookingText({ ...a, calendarUrl, deposit, session }, now, {
       template: t?.template,
       name: t?.name,
       fullName: t?.fullName,
       address: t?.address,
     });
+    // Agendou já dentro da janela do 1º aviso: esta mensagem vale como o 1º aviso (pede a confirmação com 1/2/3),
+    // senão o worker mandaria o lembrete minutos depois da confirmação
+    const asReminder = !!t && asFirstReminder(a, t, now);
+    const text = asReminder ? [body, ...OPTIONS].join("\n") : body;
     const res = await sendDirect(port, a.phone, text);
     if (!res.ok) {
       console.error(JSON.stringify({ level: "warn", msg: "booking_message_failed", code: res.code }));
       return "failed";
     }
-    // Já saiu: falha ao gravar na conversa não pode virar "não enviada"
-    await withTenant(tenantId, (tx) =>
-      recordMessage(tx, tenantId, {
+    // Já saiu: falha ao gravar na conversa não pode virar "não enviada". Como 1º aviso, entra como lembrete
+    // (responder citando esta mensagem vale); senão é só a confirmação (citá-la é conversa com a dona)
+    if (asReminder)
+      await withTenant(tenantId, (tx) =>
+        tx
+          .update(appointments)
+          .set({ reminderSentAt: now })
+          .where(and(eq(appointments.id, appointmentId), isNull(appointments.reminderSentAt))),
+      ).catch((e) =>
+        console.error(JSON.stringify({ level: "warn", msg: "booking_reminder_mark_failed", ...errCode(e) })),
+      );
+    await withTenant(tenantId, async (tx) => {
+      await recordMessage(tx, tenantId, {
         clientId: a.clientId,
         appointmentId,
         direction: "out",
-        kind: "auto_reply",
+        kind: asReminder ? "reminder" : "auto_reply",
         body: text,
         externalId: res.data.id,
-      }),
-    ).catch((e) =>
+      });
+    }).catch((e) =>
       console.error(JSON.stringify({ level: "warn", msg: "booking_message_record_failed", ...errCode(e) })),
     );
     return "sent";
