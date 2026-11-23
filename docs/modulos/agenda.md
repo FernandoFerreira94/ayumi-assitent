@@ -32,7 +32,7 @@
 
 - A mensagem de agendamento leva "📲 Salve na sua agenda: <link>" no fim, ou onde a dona puser `{agenda}` no texto (Ajustes > Mensagens). Sem `BETTER_AUTH_URL`/segredo, sai sem o link.
 - Link: `/api/agenda/convite/<token>.ics` (`calendar-feed/invite-token.ts`): token = ids do estúdio e do agendamento + HMAC do `BETTER_AUTH_SECRET` (12 bytes). Sem nome/telefone; não dá para montar o link de outro agendamento. Inválido, apagado ou 7 dias após o fim: 404 igual.
-- ICS (`ics.inviteIcs`, montado em `calendar-feed/invite.ts`): título "Serviço · Estúdio", endereço do estúdio em LOCATION, alarme 2h antes, UID fixo `invite-<id>@bubbly`, SEQUENCE = segundos desde a criação (sempre a versão mais nova). Cancelado = `STATUS:CANCELLED`, sem alarme. Remarcou/cancelou: o mesmo link já serve o novo estado, mas o evento salvo só muda se a cliente abrir o link de novo (não há mensagem extra).
+- ICS (`ics.inviteIcs`, montado em `calendar-feed/invite.ts`): título "Serviço · Estúdio", endereço do estúdio em LOCATION, alarme 2h antes, UID fixo `invite-<id>@bubbly`, SEQUENCE = segundos desde a criação e DTSTAMP/LAST-MODIFIED = agora (sempre a versão mais nova; mesmo UID substitui o evento salvo). Cancelado = `STATUS:CANCELLED`, sem alarme. Remarcou/cancelou: o mesmo link já serve o novo estado; ao remarcar, o aviso no WhatsApp leva o link de novo ("Atualize na sua agenda"), e abrir atualiza o evento salvo (mesmo UID). Cancelar não manda mensagem.
 
 ## Retorno ao concluir (16/11)
 
@@ -82,3 +82,9 @@
 - Pula o que veio escolhido: cliente (ficha), serviços (Vagas/retorno), horário tocado (`timeTapped`). O horário do botão Agendar da agenda é só sugestão (`timeTapped=false`): o "Quando?" aparece com ele marcado. Erro do servidor volta ao passo do campo (`SLOT_TAKEN` → Quando?).
 - Desktop/tablet: painel de 720 px com a coluna "Resumo" sempre à vista. Passo novo desliza (`.bk-step`, sem animação com movimento reduzido) e recebe o foco.
 - Testes: `tests/e2e/agendar.ts` (`preencheAgendar`) usado pelos specs que agendam; `agendamento.spec.ts` cobre os passos, horários livres e o diálogo de desconto.
+
+## Aviso de remarcação no WhatsApp (23/11)
+- `core.moveAppointment`/`editAppointment` devolvem `{ moved }` e recebem `notice` (`now` folha Remarcar, `later` arraste, `skip` a dona desligou o switch "Avisar ... no WhatsApp" só desta vez). Horário mudou: grava `appointments.reschedule_notice_at` (pendente; arraste = agora + 8 s, `NOTICE_UNDO_MS`) e `notified_starts_at = coalesce(notified_starts_at, horário antigo)` (o horário que a cliente conhece). Migration 0056.
+- Envio: `messaging/reschedule-send.sendRescheduleNotice` (claim atômico do pendente; igual ao conhecido = `unchanged`, então arrastar e Desfazer não manda nada). Folha Remarcar manda na hora (`editAppointmentAction` devolve `notice`); arraste: `reschedule-notice.scheduleRescheduleNotice` chama `flushRescheduleNotice` 8,5 s depois (só o horário final vai); o worker (`send-reminders`) manda o que ficou vencido.
+- Toast do resultado: `messaging/reschedule-result.rescheduleNoticeToast` (enviado, WhatsApp desconectado, número sem WhatsApp, tenta de novo, cliente pediu SAIR; cala em não mudou/desligado/sem WhatsApp). Remarcar nunca falha por causa do aviso.
+- Testes: `tests/db/reschedule-notice.test.ts`, `tests/unit/reschedule-text.test.ts`, e2e em `agenda-dia.spec.ts` e `ajustes.spec.ts`.

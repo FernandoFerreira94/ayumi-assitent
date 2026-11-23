@@ -15,6 +15,8 @@ import { hhmm } from "./timeline";
 import type { ServiceOption } from "./options";
 import { PauseConfirm } from "./PauseConfirm";
 import { warnSync } from "./sync-warning";
+import { Switch } from "@/components/ui/Switch";
+import { showRescheduleNotice } from "./reschedule-notice";
 
 const input = "min-h-13 w-full rounded-2xl border px-4 text-base font-semibold";
 /** Dia e horário na mesma linha: altura fixa (o select do iOS ignora min-height) e texto centrado na vertical. */
@@ -53,6 +55,8 @@ export function EditAppointmentSheet({
   const [askPause, setAskPause] = useState(false);
   const [error, setError] = useState<ErrorCode | null>(null);
   const [pending, startTransition] = useTransition();
+  /** Avisar a cliente no WhatsApp se o dia/horário mudar (desliga só desta vez) */
+  const [notifyClient, setNotifyClient] = useState(true);
   const Root = nested ? Drawer.NestedRoot : Drawer.Root;
   /** Mais de um serviço: a primeira opção mantém todos; escolher outra deixa só aquele. */
   const multi = serviceName.includes(" + ");
@@ -70,6 +74,7 @@ export function EditAppointmentSheet({
     setError(null);
     setAskPause(false);
     if (next) setPick({ date, time: start, serviceId: "" });
+    if (next) setNotifyClient(true);
     // Serviços só ao abrir: a linha do dia não carrega a lista para cada card
     if (next && !services)
       void loadBookingOptions().then((r) => {
@@ -87,6 +92,7 @@ export function EditAppointmentSheet({
         single: multi && form.get("serviceId") !== "keep",
         date: String(form.get("date")),
         time: String(form.get("time")),
+        notify: notifyClient,
       }).catch(() => null);
       if (!res?.ok) {
         setError(res && !res.ok ? res.code : "NETWORK");
@@ -94,6 +100,7 @@ export function EditAppointmentSheet({
       }
       warnSync(res.data.sync);
       notify.success("Agendamento atualizado");
+      showRescheduleNotice(res.data.notice, clientName);
       setOpen(false);
     });
   }
@@ -111,7 +118,7 @@ export function EditAppointmentSheet({
           <div className={SHEET_SCROLL}>
             <Drawer.Title className="pb-1 text-xl font-bold">Editar {clientName.split(/\s+/)[0]}</Drawer.Title>
             <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
-              Mudou o horário? Ela recebe um lembrete novo para confirmar.
+              Mudou o horário? Ela recebe o aviso no WhatsApp e confirma o horário novo.
             </Drawer.Description>
             <form
               id={formId}
@@ -184,6 +191,12 @@ export function EditAppointmentSheet({
                   {pauseWarning(pause)}. Dá para salvar mesmo assim.
                 </p>
               ) : null}
+              <div className="flex min-h-11 items-center justify-between gap-3">
+                <span className="text-sm font-bold">
+                  Avisar {clientName.split(/\s+/)[0]} no WhatsApp
+                </span>
+                <Switch checked={notifyClient} onChange={setNotifyClient} label="Avisar a cliente no WhatsApp" />
+              </div>
               {error ? (
                 <p role="alert" className="rounded-2xl bg-fail-bg px-4 py-3 text-sm font-semibold text-fail">
                   {messageFor(error)}

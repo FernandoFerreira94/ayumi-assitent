@@ -24,7 +24,7 @@ export const REMINDER_VARS = ["nome", "servico", "dia", "hora", "valor", "salao"
 type Var = (typeof REMINDER_VARS)[number];
 
 /** Opções que vão sempre no fim dos avisos: é por elas que o webhook entende a resposta (messaging/replies.ts). */
-const OPTIONS = ["", "Responda com o número:", "1 - Confirmo", "2 - Cancelar", "3 - Reagendar"];
+export const OPTIONS = ["", "Responda com o número:", "1 - Confirmo", "2 - Cancelar", "3 - Reagendar"];
 
 /** Como a cliente é chamada: só o primeiro nome ("Maria") ou o nome inteiro salvo no contato. */
 export function clientCall(name: string, fullName = false): string {
@@ -153,4 +153,26 @@ export function secondReminderText(
   const template = confirmed && usesDefault ? DEFAULT_SECOND_CONFIRMED : custom || DEFAULT_SECOND;
   const body = fill(template, a, salon, dayWord(a.startsAt, now));
   return confirmed ? body : [body, ...OPTIONS].join("\n");
+}
+
+/** Aviso de remarcação (sai quando a dona muda o dia/horário). Sem endereço cadastrado, a linha 📍 some. */
+export const DEFAULT_RESCHEDULE =
+  "Oi! Seu horário de {servico} foi remarcado 💜\n📅 {dia}\n🕒 {hora}\n📍 {endereco}\n\nQualquer dúvida, é só me chamar!";
+
+/** Linha do convite no aviso de remarcação: o mesmo link atualiza o evento que a cliente já salvou. */
+export const calendarUpdateLine = (url: string) => `📲 Atualize na sua agenda: ${url}`;
+
+/**
+ * Aviso de remarcação. Não pede resposta (o lembrete do horário novo pede). O link do convite vai no lugar de
+ * {agenda} ou no fim, como na mensagem de agendamento.
+ */
+export function rescheduleText(a: MessageData, now: Date, salon: SalonMessageOpts = {}): string {
+  const template = salon.template?.trim() || DEFAULT_RESCHEDULE;
+  const line = a.calendarUrl ? calendarUpdateLine(a.calendarUrl) : "";
+  const withLink = template.includes("{agenda}")
+    ? template.replace(/\{agenda\}/g, line)
+    : line
+      ? `${template}\n\n${line}`
+      : template;
+  return fill(withLink, a, salon, dayLabel(a.startsAt, now)).replace(/\n{3,}/g, "\n\n");
 }

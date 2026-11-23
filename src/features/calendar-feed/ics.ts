@@ -150,6 +150,8 @@ export function inviteIcs(i: InviteInput): string {
     `UID:invite-${i.appointmentId}@bubbly`,
     `SEQUENCE:${sequence}`,
     `DTSTAMP:${icsDate(now)}`,
+    // Remarcou: mesmo UID com SEQUENCE/LAST-MODIFIED maiores = o calendário troca o evento salvo em vez de duplicar
+    `LAST-MODIFIED:${icsDate(now)}`,
     `DTSTART:${icsDate(i.start)}`,
     `DTEND:${icsDate(i.end)}`,
     `SUMMARY:${escapeText(title)}`,

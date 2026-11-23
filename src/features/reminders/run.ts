@@ -3,6 +3,7 @@ import { getDb, withTenant } from "@/db/client";
 import { tenants } from "@/db/schema";
 import type { MessagingPort } from "@/features/messaging/port";
 import { sendPendingReplies } from "@/features/messaging/pending";
+import { sendDueRescheduleNotices } from "@/features/messaging/reschedule-send";
 import type { PushPort } from "@/features/push/port";
 import { getReminderSettings, sendReminders, type ReminderRun } from "./core";
 import { notifyNoReplies } from "./no-reply";
@@ -25,7 +26,15 @@ export async function runReminders(
     const port = t.instance ? portFor(t.instance) : null;
     if (!port) continue; // estúdio sem WhatsApp conectado
     try {
+      // Avisos de remarcação que a tela não mandou (app fechado no Desfazer, nova tentativa): antes do lembrete,
+      // porque o aviso dentro da janela já vale como 1º aviso
+      const rs = await withTenant(t.id, (tx) => sendDueRescheduleNotices(tx, t.id, port, now)).catch((e) => {
+        console.error(JSON.stringify({ level: "warn", msg: "reschedule_tenant_failed", tenant: t.id, ...errCode(e) }));
+        return { sent: 0, failed: 0 };
+      });
       const r = await withTenant(t.id, (tx) => sendReminders(tx, port, now));
+      r.sent += rs.sent;
+      r.failed += rs.failed;
       // Reforço único de confirmação (mesma rodada de 5 min); falha aqui não derruba o lembrete
       const n = await withTenant(t.id, (tx) => sendNudges(tx, port, now)).catch((e) => {
         console.error(JSON.stringify({ level: "warn", msg: "nudge_tenant_failed", tenant: t.id, ...errCode(e) }));

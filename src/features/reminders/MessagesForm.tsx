@@ -14,8 +14,10 @@ import {
   bookingText,
   DEFAULT_BOOKING,
   DEFAULT_REMINDER,
+  DEFAULT_RESCHEDULE,
   DEFAULT_SECOND,
   reminderText,
+  rescheduleText,
   secondReminderText,
   TEMPLATE_MAX,
   type MessageData,
@@ -69,6 +71,7 @@ export function MessagesForm({
   const [hours, setHours] = useState(String(settings.hours));
   const [second, setSecond] = useState(settings.secondHours !== null);
   const [secondHours, setSecondHours] = useState(String(settings.secondHours ?? 3));
+  const [rescheduleOn, setRescheduleOn] = useState(settings.rescheduleOn);
   const [state, action] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
     const res = await saveMessages(prev, fd);
     if (res.ok) {
@@ -88,13 +91,14 @@ export function MessagesForm({
           Mensagens no WhatsApp
         </TileTitle>
         <p className="text-sm font-semibold text-muted">
-          O Bubbly manda a confirmação do agendamento e os avisos para a cliente confirmar o horário. Cancelar ou
-          remarcar fica com você.
+          O Bubbly manda a confirmação do agendamento, os avisos para a cliente confirmar o horário e o aviso quando
+          você remarca. Cancelar ou remarcar fica com você.
         </p>
       </div>
       <input type="hidden" name="fullName" value={fullName ? "1" : ""} />
       <input type="hidden" name="second" value={second ? "1" : ""} />
       <input type="hidden" name="firstOn" value={firstOn ? "1" : ""} />
+      <input type="hidden" name="rescheduleOn" value={rescheduleOn ? "1" : ""} />
 
       <fieldset className="grid gap-2">
         <legend className="pb-2 font-bold">Como chamar a cliente</legend>
@@ -213,6 +217,25 @@ export function MessagesForm({
               label: "Quem já confirmou recebe",
               render: (template) => secondReminderText(SAMPLE, sampleNow, { ...salon, template }, true),
             }}
+          />
+        </div>
+      </Step>
+
+      <Step
+        title="Ao remarcar"
+        hint="Sai quando você muda o dia ou o horário (no arraste, depois do Desfazer). Vai com o mesmo link da agenda, que atualiza o horário salvo pela cliente."
+        aside={<Switch checked={rescheduleOn} onChange={setRescheduleOn} label="Avisar a cliente ao remarcar" />}
+      >
+        {/* Desligado, o texto continua guardado para quando ela ligar de novo */}
+        <div hidden={!rescheduleOn}>
+          <TemplateField
+            name="rescheduleTemplate"
+            label="Texto do aviso de remarcação"
+            initial={settings.rescheduleTemplate}
+            fallback={DEFAULT_RESCHEDULE}
+            invalid={err === "rescheduleTemplate"}
+            preview={(template) => rescheduleText(SAMPLE, sampleNow, { ...salon, template })}
+            note="Se o horário novo já estiver na hora do 1º aviso, as opções 1, 2 e 3 vão no fim e ele vale como o 1º aviso."
           />
         </div>
       </Step>

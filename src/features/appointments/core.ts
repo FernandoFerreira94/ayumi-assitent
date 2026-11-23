@@ -373,22 +373,43 @@ export async function moveAppointment(
   id: string,
   startsAt: Date,
   endsAt: Date,
-): Promise<ActionResult> {
+  notice: RescheduleNotice = "later",
+): Promise<ActionResult<{ moved: boolean }>> {
   await lockTenant(tx, tenantId);
   if (await overlapsBlock(tx, startsAt, endsAt)) return fail("SLOT_TAKEN", "time");
+  const [before] = await tx.select({ startsAt: appointments.startsAt }).from(appointments).where(eq(appointments.id, id));
+  const moved = !!before && before.startsAt.getTime() !== startsAt.getTime();
   try {
     const rows = await tx.transaction((sp) =>
       sp
         .update(appointments)
-        .set({ startsAt, endsAt, reminderSentAt: null })
+        .set({ startsAt, endsAt, reminderSentAt: null, ...(moved ? noticeFields(notice, startsAt) : {}) })
         .where(and(eq(appointments.id, id), ne(appointments.status, "cancelled")))
         .returning({ id: appointments.id }),
     );
-    return rows.length ? ok() : fail("NOT_ALLOWED");
+    return rows.length ? ok({ moved }) : fail("NOT_ALLOWED");
   } catch (e) {
     if (pgCode(e) === "23P01") return fail("SLOT_TAKEN", "time");
     throw e;
   }
+}
+
+/** Arraste: o aviso espera o Desfazer (6 s) antes de sair; a tela manda logo depois, o worker é a rede de segurança. */
+export const NOTICE_UNDO_MS = 8_000;
+
+/**
+ * Aviso à cliente ao remarcar: "now" sai já (folha Remarcar), "later" espera o Desfazer (arraste),
+ * "skip" = a dona preferiu não avisar (o horário novo passa a ser o que a cliente conhece).
+ */
+export type RescheduleNotice = "now" | "later" | "skip";
+
+function noticeFields(notice: RescheduleNotice, startsAt: Date) {
+  if (notice === "skip") return { rescheduleNoticeAt: null, notifiedStartsAt: startsAt };
+  return {
+    rescheduleNoticeAt: notice === "now" ? new Date() : new Date(Date.now() + NOTICE_UNDO_MS),
+    // O horário que a cliente conhecia antes da 1ª remarcação (agendamentos antigos não têm a coluna preenchida)
+    notifiedStartsAt: sql`coalesce(${appointments.notifiedStartsAt}, ${appointments.startsAt})`,
+  };
 }
 
 /**
@@ -401,7 +422,8 @@ export async function editAppointment(
   tenantId: string,
   id: string,
   input: { date: string; time: string; serviceId: string; single?: boolean },
-): Promise<ActionResult> {
+  notice: RescheduleNotice = "now",
+): Promise<ActionResult<{ moved: boolean }>> {
   const [a] = await tx
     .select({
       startsAt: appointments.startsAt,
@@ -448,12 +470,14 @@ export async function editAppointment(
                 promotionId: null,
               }
             : {}),
-          ...(moved ? { status: "pending_confirmation" as const, reminderSentAt: null, replyAt: null } : {}),
+          ...(moved
+            ? { status: "pending_confirmation" as const, reminderSentAt: null, replyAt: null, ...noticeFields(notice, startsAt) }
+            : {}),
         })
         .where(eq(appointments.id, id)),
     );
     if (newService) await writeServices(tx, tenantId, id, [newService]);
-    return ok();
+    return ok({ moved });
   } catch (e) {
     if (pgCode(e) === "23P01") return fail("SLOT_TAKEN", "time");
     throw e;

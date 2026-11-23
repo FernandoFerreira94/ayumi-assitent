@@ -19,6 +19,7 @@ import { formatDayTitle, formatShortDate, todayStr } from "@/lib/dates";
 import { AppointmentCard } from "./AppointmentCard";
 import type { PaymentView } from "./payment";
 import { rescheduleAppointment } from "./actions";
+import { scheduleRescheduleNotice } from "./reschedule-notice";
 import {
   conflictReason,
   dragSpan,
@@ -248,6 +249,8 @@ export function AgendaDay({
       return;
     }
     warnSync(res.data.sync);
+    // Aviso à cliente no WhatsApp depois do Desfazer; voltou ao horário que ela conhece = nada sai
+    if (res.data.moved || isUndo) scheduleRescheduleNotice(id, name);
     if (isUndo) return notify.success(`${name} voltou para ${hhmm(span.start)}`);
     const notes = [pauseHit(span, pause) && "Pega sua pausa", outsideHours(span, hours) && "Fora do expediente"].filter(
       Boolean,
