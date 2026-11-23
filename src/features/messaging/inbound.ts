@@ -28,6 +28,7 @@ import {
   type Intent,
 } from "./replies";
 import { recordMessage } from "./store";
+import { recordUnclear } from "./unclear";
 import { errCode } from "@/lib/log";
 
 /**
@@ -256,8 +257,18 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
         .orderBy(asc(appointments.startsAt))
         .limit(2);
       const open = opens[0];
-      // Dois lembretes esperando resposta (dias diferentes): sem citação não dá para saber qual; a dona decide
-      if (opens.length > 1) ambiguous = true;
+      // Dois lembretes esperando resposta (dias diferentes): sem citação não dá para saber qual; a dona decide.
+      // Vale só dentro da janela de resposta e se a dona não escreveu depois da pergunta mais nova
+      if (opens.length > 1) {
+        const latest = new Date(
+          Math.max(...opens.map((o) => Math.max(o.reminderAt!.getTime(), o.nudgeAt?.getTime() ?? 0))),
+        );
+        ambiguous =
+          now.getTime() - latest.getTime() <= ANSWER_WINDOW_HOURS * 3_600_000 &&
+          !msg.media &&
+          looksLikeAnswer(msg.text) &&
+          !(await ownerWroteSince(tx, cli.id, latest));
+      }
       else if (open)
         target = {
           id: open.id,
@@ -357,6 +368,8 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
 
   // Decisão. Fora da transação: o modelo vai para a rede e não deve segurar o banco
   let plan: AiPlan;
+  // O que a IA achou (só para guardar a resposta não entendida; nunca vai para log com o texto)
+  let seen: AiVerdict | null = null;
   if (ruleIntent) plan = { action: "apply", intent: ruleIntent, sendAck: true };
   else if (ai && target && deps.classify) {
     const classify = deps.classify;
@@ -367,7 +380,7 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
         text: msg.text,
         alreadyHandedOff: target.handedOff,
       },
-      () => classify(msg.text, t.aiRules),
+      async () => (seen = await classify(msg.text, t.aiRules)),
     );
   } else if (target && !ruleIntent && looksLikeAnswer(msg.text))
     // IA desligada (ou sem modelo): parece resposta mas não deu para entender; a dona fica sabendo uma vez
@@ -424,6 +437,31 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
         .set({ aiHandoffAt: now })
         .where(and(eq(appointments.id, apptId), isNull(appointments.aiHandoffAt))),
     );
+  }
+
+  // Possível resposta que o sistema não entendeu: guarda para o dono analisar e rotular (/admin/respostas).
+  // Só dentro da janela, curta, sem mídia e sem a dona na conversa; nada foi aplicado
+  const ownerTalking = ai?.ownerWroteRecently ?? false;
+  if ((target || ambiguous) && !intent && !msg.media && looksLikeAnswer(msg.text) && !ownerTalking) {
+    const decision = ambiguous
+      ? "ambiguous"
+      : plan.action === "silent" && plan.guess && plan.guess !== "confirm"
+        ? "guess"
+        : plan.action === "silent" && !plan.quiet
+          ? "alerted"
+          : "silent";
+    await withTenant(tenantId, (tx) =>
+      recordUnclear(tx, {
+        tenantId,
+        clientId: client.id,
+        appointmentId: target?.id ?? null,
+        question: ambiguous ? "ambiguous" : "reminder",
+        body: msg.text,
+        aiIntent: seen?.intent ?? null,
+        aiConfidence: seen?.confidence ?? null,
+        decision,
+      }),
+    ).catch(() => {});
   }
 
   // De 21h às 6h nada automático sai: a resposta fica guardada no agendamento e sai às 6h (messaging/pending.ts)

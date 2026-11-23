@@ -25,8 +25,11 @@ d("retenção de dados (Postgres real)", () => {
     await admin`insert into access_log (user_id, created_at) values ('u', '2026-04-01T00:00:00Z'), ('u', '2026-10-01T00:00:00Z')`;
     await admin`insert into messages (tenant_id,client_id,direction,kind,body,created_at)
       values (${T},${C},'in','client','velha','2025-10-01T00:00:00Z'), (${T},${C},'in','client','nova','2026-10-01T00:00:00Z')`;
+    await admin`insert into unclear_replies (tenant_id,client_id,question,body,decision,created_at)
+      values (${T},${C},'reminder','velha','alerted','2026-08-01T00:00:00Z'), (${T},${C},'reminder','nova','silent','2026-10-01T00:00:00Z')`;
     const r = await runRetention(now);
-    expect(r).toMatchObject({ accessLogs: 1, messages: 1 });
+    expect(r).toMatchObject({ accessLogs: 1, messages: 1, unclear: 1 });
+    expect((await admin`select body from unclear_replies`).map((m) => m.body)).toEqual(["nova"]);
     expect((await admin`select body from messages`).map((m) => m.body)).toEqual(["nova"]);
     expect(await admin`select id from access_log`).toHaveLength(1);
   });
