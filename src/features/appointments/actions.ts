@@ -211,6 +211,7 @@ export async function createAppointment(_prev: ActionResult<{ id: string }> | nu
     });
     if (!res.ok) return res;
     revalidatePath("/agenda");
+    revalidatePath("/agendamentos");
     revalidatePath("/calendario");
     const sync = await syncAppointmentSafe(tenantId, res.data.id);
     // Avisa a cliente que deu certo (dia, horário e, se a profissional quiser, o valor)
@@ -256,6 +257,7 @@ export async function rescheduleAppointment(
     const res = await withTenant(tenantId, (tx) => moveAppointment(tx, tenantId, p.data.id, startsAt, endsAt, "later"));
     if (!res.ok) return res;
     revalidatePath("/agenda");
+    revalidatePath("/agendamentos");
     revalidatePath("/calendario");
     // O aviso à cliente espera o Desfazer: a tela chama flushRescheduleNotice depois (moved diz se vale esperar)
     return ok({ sync: await syncAppointmentSafe(tenantId, p.data.id), moved: res.data.moved });
@@ -295,6 +297,7 @@ export async function editAppointmentAction(input: {
     );
     if (!res.ok) return res;
     revalidatePath("/agenda");
+    revalidatePath("/agendamentos");
     revalidatePath("/pendencias");
     const sync = await syncAppointmentSafe(tenantId, id);
     const notice = res.data.moved && notify !== false ? await notifyReschedule(tenantId, id) : null;
@@ -354,6 +357,7 @@ export async function updatePayment(input: {
     );
     if (!res.ok) return res;
     revalidatePath("/agenda");
+    revalidatePath("/agendamentos");
     revalidatePath("/calendario");
     revalidatePath("/pendencias");
     revalidatePath("/financeiro");
@@ -374,6 +378,7 @@ export async function updateStatus(
     const res = await withTenant(tenantId, (tx) => setStatus(tx, p.data.id, p.data.status, new Date(), userId));
     if (!res.ok) return res;
     revalidatePath("/agenda");
+    revalidatePath("/agendamentos");
     revalidatePath("/calendario");
     revalidatePath("/pendencias");
     revalidatePath("/clientes");
@@ -422,6 +427,7 @@ export async function updateStatuses(
     return e instanceof Rollback ? e.res : fail("UNKNOWN");
   }
   revalidatePath("/agenda");
+    revalidatePath("/agendamentos");
   revalidatePath("/calendario");
   revalidatePath("/pendencias");
   let sync: SyncResult = "synced";
