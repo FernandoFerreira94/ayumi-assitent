@@ -1,9 +1,10 @@
 "use server";
 
-import { sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import { getDb } from "@/db/client";
+import { getDb, withTenant } from "@/db/client";
+import { blocks } from "@/db/schema";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { fail, ok, type ActionResult } from "@/lib/errors";
@@ -14,7 +15,8 @@ import { syncAppointmentSafe } from "./server";
 import { readToken } from "./token-crypto";
 
 /**
- * Desliga o Google Agenda: apaga o vínculo (e os tokens) da conta Google do dono do estúdio.
+ * Desliga o Google Agenda: apaga o vínculo (e os tokens) da conta Google do dono do estúdio
+ * e os eventos do Google trazidos como horário ocupado.
  * Não apaga se for a única forma de entrar no app (a conta ficaria sem acesso).
  */
 export async function disconnectGoogle(): Promise<ActionResult<{ onlyLogin?: boolean }>> {
@@ -33,6 +35,10 @@ export async function disconnectGoogle(): Promise<ActionResult<{ onlyLogin?: boo
     const token = (await readToken(acc.refresh).catch(() => null)) ?? (await readToken(acc.access).catch(() => null));
     if (token) await revokeToken(token).catch(() => undefined);
     await getDb().execute(sql`delete from account where id = ${acc.id}`);
+    // Uso Limitado do Google: os eventos trazidos como horário ocupado saem junto (política de privacidade, seção 5)
+    await withTenant(tenantId, (tx) =>
+      tx.delete(blocks).where(and(eq(blocks.tenantId, tenantId), eq(blocks.source, "google"))),
+    );
     revalidatePath("/ajustes", "layout");
     return ok();
   } catch (e) {

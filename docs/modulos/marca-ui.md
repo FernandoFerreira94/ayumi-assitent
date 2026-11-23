@@ -10,7 +10,7 @@
 - UI: `components/ui/Icon.tsx` (único conjunto de ícones), `LetterPicker.tsx`, `MultiSelect.tsx`, `Switch.tsx` (estilo iPhone), `PageShell.tsx`, `Skeleton.tsx`.
 - Passo a passo ilustrado: `components/ui/StepGuide.tsx` (carrossel com encaixe nativo, botões e pontos, texto sempre embaixo, ilustração `aria-hidden`, `data-vaul-no-drag`) + `GuideArt.tsx` (peças SVG: `Phone`, `Ring` que pulsa, `Callout`, `Arrow`, `Badge`, `Toggle`; área 320×190). Guias: `whatsapp/pairing-guide.tsx`, `calendar-feed/icloud-guide.tsx`.
 - Estilos: `src/app/globals.css` (tokens, `--svc-*`, splash, glass).
-- Prévia de link (WhatsApp/Instagram): `lib/share-meta.ts` (`shareMeta`, `siteUrl` → `metadataBase` = `BETTER_AUTH_URL`) + `public/og.png` (1200x630). Usado no `app/layout.tsx`, `/login`, `/privacidade`, `/termos`; `og.png` é público no `proxy.ts`. Trocou a imagem: subir o `?v=` (WhatsApp guarda cache).
+- Prévia de link (WhatsApp/Instagram): `lib/share-meta.ts` (`shareMeta`, `siteUrl` → `metadataBase` = `BETTER_AUTH_URL`) + `public/og.png` (1200x630). Usado no `app/layout.tsx` e `/login`; `og.png` é público no `proxy.ts`. Trocou a imagem: subir o `?v=` (WhatsApp guarda cache).
 
 ## Cuidados
 - Tema sempre claro; Lavanda Digital + Quicksand; vidro da biblioteca `webcode-design`.

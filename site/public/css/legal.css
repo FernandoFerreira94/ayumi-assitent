@@ -1,0 +1,27 @@
+/* Páginas legais (privacidade e termos). Usa os tokens de site.css. */
+.lg-top{max-width:760px;margin:0 auto;padding-top:calc(24px + env(safe-area-inset-top,0px));display:flex;align-items:center;justify-content:space-between;gap:16px}
+.lg-top nav{display:flex;gap:18px;font-weight:700;font-size:15px}
+.lg-top nav a{color:var(--primary-text);text-decoration:none;min-height:44px;display:inline-flex;align-items:center}
+.lg{max-width:760px;margin:0 auto;padding-block:32px 48px}
+.lg h1{font-size:clamp(30px,6vw,40px);line-height:1.15;font-weight:700}
+.lg .upd{margin-top:8px;color:var(--muted);font-weight:600;font-size:15px}
+.lg .intro{margin-top:18px}
+.lg .toc{margin-top:22px;padding:18px 20px;border-radius:24px}
+.lg .toc ol{margin:8px 0 0;padding-left:22px;display:grid;gap:4px;font-weight:600;font-size:15px}
+.lg .toc a{color:var(--primary-text);text-decoration:none}
+.lg section{margin-top:16px;padding:22px 22px 20px;border-radius:28px;scroll-margin-top:16px}
+.lg h2{font-size:21px;line-height:1.3;font-weight:700;margin-bottom:10px}
+.lg h3{font-size:17px;font-weight:700;margin:14px 0 6px}
+.lg p+p,.lg p+ul,.lg ul+p,.lg table+p{margin-top:10px}
+.lg ul{margin:0;padding-left:22px;display:grid;gap:6px}
+.lg a{color:var(--primary-text);font-weight:700}
+.lg strong{font-weight:700}
+.lg code{font:500 14px/1.4 var(--mono);background:var(--soft);padding:1px 6px;border-radius:8px;word-break:break-all}
+.lg .tbl{overflow-x:auto;margin-top:6px}
+.lg table{width:100%;border-collapse:collapse;font-size:15px}
+.lg th,.lg td{text-align:left;vertical-align:top;padding:10px 8px;border-top:1px solid var(--line)}
+.lg th{font-weight:700;color:var(--muted);font-size:14px}
+.lg .note{margin-top:12px;padding:14px 16px;border-radius:18px;background:var(--soft);color:var(--ink);font-weight:600}
+.lg-foot{max-width:760px;margin:0 auto;padding-block:8px calc(40px + env(safe-area-inset-bottom,0px));font-size:14px;color:var(--muted);display:grid;gap:8px}
+.lg-foot nav{display:flex;flex-wrap:wrap;gap:18px;font-weight:700}
+.lg-foot nav a{color:var(--primary-text);text-decoration:none;min-height:44px;display:inline-flex;align-items:center}
