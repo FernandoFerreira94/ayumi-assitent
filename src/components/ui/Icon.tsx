@@ -223,6 +223,28 @@ const PATHS = {
       <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M4 4l16 16" />
     </>
   ),
+  megaphone: (
+    <>
+      <path d="M4 10v4a1.5 1.5 0 0 0 1.5 1.5H8l7 4V4.5l-7 4H5.5A1.5 1.5 0 0 0 4 10Z" />
+      <path d="M8 15.5l1.2 4M18.5 9.5a3.5 3.5 0 0 1 0 5" />
+    </>
+  ),
+  share: (
+    <>
+      <path d="M12 3.5v11M7.5 8L12 3.5 16.5 8" />
+      <path d="M8 11.5H6.5A2.5 2.5 0 0 0 4 14v4a2.5 2.5 0 0 0 2.5 2.5h11A2.5 2.5 0 0 0 20 18v-4a2.5 2.5 0 0 0-2.5-2.5H16" />
+    </>
+  ),
+  pause: <path d="M9 5.5v13M15 5.5v13" />,
+  play: <path d="M8 5.5v13l10-6.5-10-6.5Z" />,
+  percent: (
+    <>
+      <path d="M18.5 5.5l-13 13" />
+      <circle cx="7" cy="7" r="2.3" />
+      <circle cx="17" cy="17" r="2.3" />
+    </>
+  ),
+  stop: <rect x="6" y="6" width="12" height="12" rx="2.5" />,
 } satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof PATHS;

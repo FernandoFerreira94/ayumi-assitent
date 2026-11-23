@@ -95,16 +95,21 @@ export async function createPackageTemplateAction(input: {
   sessionsPaid: string;
   sessionsTotal: string;
   price: string;
+  /** como o preço foi digitado: preço final (padrão) ou desconto em % / R$ sobre o valor cheio */
+  priceMode?: "final" | "pct" | "brl";
   startsOn?: string;
   endsOn?: string;
   maxClients?: string;
 }): Promise<ActionResult> {
   const { tenantId } = await requireTenant();
-  const price = parseDiscount("brl", input.price);
+  const byDiscount = input.kind === "sessions" && (input.priceMode === "pct" || input.priceMode === "brl");
+  const price = parseDiscount(byDiscount ? input.priceMode : "brl", input.price);
+  if (byDiscount && (!price || price === "invalid")) return fail("VALIDATION", "priceCents");
   const parsed = parsePackageDraft({
     ...input,
     serviceIds: Array.isArray(input.serviceIds) ? input.serviceIds.map(String) : [],
-    priceCents: input.kind === "sessions" ? (price && price !== "invalid" ? price.value : null) : 0,
+    priceCents: input.kind === "sessions" && !byDiscount ? (price && price !== "invalid" ? price.value : null) : 0,
+    discount: byDiscount && price && price !== "invalid" ? price : null,
   });
   if (!parsed.ok) return fail("VALIDATION", parsed.field);
   try {

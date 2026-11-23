@@ -1,6 +1,11 @@
 import { expect, test } from "./fixtures";
 import { addDays, todayStr } from "../../src/lib/dates";
 
+/** Prints do UX para o PR (só com PRINTS=pasta). */
+const shot = async (page: import("@playwright/test").Page, name: string) => {
+  if (process.env.PRINTS) await page.screenshot({ path: `${process.env.PRINTS}/${name}.png` });
+};
+
 test("criar Pague 3 leve 4, vender na ficha e agendar usando a sessão", async ({ page }) => {
   await page.goto("/servicos");
   await page.getByRole("button", { name: "Criar serviço" }).click();
@@ -20,7 +25,7 @@ test("criar Pague 3 leve 4, vender na ficha e agendar usando a sessão", async (
   await page.goto("/ajustes/pagamentos");
   await page.getByRole("tab", { name: "Pacotes e promoções" }).click();
   await page.getByRole("button", { name: "Criar pacote" }).click();
-  const novo = page.getByRole("dialog", { name: "Novo pacote" });
+  const novo = page.getByRole("dialog", { name: /Novo pacote|Pacote criado/ });
   await expect(novo.getByText("Passo 1 de 3 · Tipo")).toBeVisible();
   await novo.getByRole("button", { name: "Continuar" }).click();
   await expect(novo.getByText("Passo 2 de 3", { exact: false })).toBeVisible();
@@ -28,7 +33,10 @@ test("criar Pague 3 leve 4, vender na ficha e agendar usando a sessão", async (
   await expect(novo).toContainText("R$ 135,00");
   await novo.getByRole("button", { name: "Continuar" }).click();
   await novo.getByRole("button", { name: "Criar pacote" }).click();
-  await expect(page.getByText("Pacote criado")).toBeVisible();
+  await expect(page.getByText("Pacote criado", { exact: true })).toBeVisible();
+  // Criou: já mostra o texto pronto para divulgar
+  await expect(novo.getByLabel("Texto para divulgar")).toHaveValue(/Pague 3 e leve 4 sessões de Esmaltação/);
+  await novo.getByRole("button", { name: "Pronto" }).click();
   const vitrine = page.getByRole("region", { name: "Pacotes à venda" });
   await expect(vitrine).toContainText("Pague 3 leve 4 Esmaltação");
 
@@ -36,16 +44,38 @@ test("criar Pague 3 leve 4, vender na ficha e agendar usando a sessão", async (
   await page.getByRole("button", { name: "Criar pacote" }).click();
   await novo.getByRole("radio", { name: /Pacote de sessões/ }).click();
   await novo.getByRole("button", { name: "Continuar" }).click();
-  await novo.getByLabel("Preço do pacote").fill("150,00");
+  // Desconto em % (padrão) com prévia "De… por…"; R$ e preço final também
+  await novo.getByLabel("Desconto em porcentagem").fill("20");
+  await expect(novo).toContainText("De R$ 180,00 por R$ 144,00");
+  await expect(novo.getByText("−20% · economiza R$ 36,00")).toBeVisible();
+  await shot(page, "1-desconto-porcentagem");
+  await novo.getByRole("radio", { name: "Em R$" }).click();
+  await novo.getByLabel("Desconto em reais").fill("30,00");
+  await expect(novo).toContainText("De R$ 180,00 por R$ 150,00");
   await novo.getByRole("button", { name: "Continuar" }).click();
   await novo.getByLabel("Início da promoção").fill(todayStr());
   await novo.getByLabel("Fim da promoção").fill(addDays(todayStr(), 30));
   await novo.getByLabel("Limite de clientes").fill("30");
   await expect(novo.getByText("para as 30 primeiras clientes", { exact: false })).toBeVisible();
-  await novo.getByLabel("Nome (opcional)").fill("Promo de dezembro");
+  await novo.getByRole("button", { name: "Natal", exact: true }).click();
+  await expect(novo.getByLabel("Nome da promoção (opcional)")).toHaveValue("Natal");
+  await shot(page, "2-nome-e-vagas");
   await novo.getByRole("button", { name: "Criar pacote" }).click();
-  await expect(page.getByText("Pacote criado")).toBeVisible();
-  await expect(vitrine).toContainText("0/30 clientes");
+  await expect(page.getByText("Pacote criado", { exact: true })).toBeVisible();
+  await expect(novo.getByLabel("Texto para divulgar")).toHaveValue(/^✨ Natal · Estúdio E2E ✨/);
+  await expect(novo.getByLabel("Texto para divulgar")).toHaveValue(/Só para as 30 primeiras clientes!/);
+  await shot(page, "3-texto-status");
+  await novo.getByRole("radio", { name: /Mensagem/ }).click();
+  await expect(novo.getByLabel("Texto para divulgar")).toHaveValue(/^Oi! Tudo bem\?/);
+  await novo.getByRole("button", { name: "Pronto" }).click();
+  await expect(vitrine).toContainText("restam 30");
+  await expect(vitrine).toContainText("−17%");
+  await shot(page, "4-cartoes");
+  await vitrine.getByRole("button", { name: "Divulgar Natal" }).click();
+  await expect(page.getByRole("dialog", { name: "Divulgar Natal" }).getByLabel("Texto para divulgar")).toHaveValue(
+    /De R\$ 180,00 por R\$ 150,00/,
+  );
+  await page.keyboard.press("Escape");
 
   // Ficha: vender
   await page.goto("/clientes");

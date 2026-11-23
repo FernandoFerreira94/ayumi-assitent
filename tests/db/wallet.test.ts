@@ -404,6 +404,26 @@ d("carteira da cliente (Postgres real)", () => {
       ))!;
     });
 
+    it("pacote de sessões com desconto em %: preço = sessões × serviço mais caro − desconto", async () => {
+      const id = await withTenant(T, (tx) =>
+        pk.createTemplate(tx, T, {
+          kind: "sessions",
+          name: "Natal",
+          serviceIds: [pe, svc],
+          sessionsPaid: null,
+          sessionsTotal: 4,
+          priceCents: 0,
+          discount: { kind: "pct", value: 20 },
+          startsOn: null,
+          endsOn: null,
+          maxClients: null,
+        }),
+      );
+      const [t] = await admin`select price_cents from package_templates where id = ${id}`;
+      expect(t.price_cents).toBe(16000);
+      await admin`update package_templates set active = false where id = ${id}`;
+    });
+
     it("guarda os serviços e usa o mais caro como referência do preço", async () => {
       const [t] = await admin`select service_id, service_ids from package_templates where id = ${promo}`;
       expect(t.service_id).toBe(svc);

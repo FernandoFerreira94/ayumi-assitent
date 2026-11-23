@@ -45,11 +45,18 @@
 - **"Como funciona"** (`WalletRulesSheet` + `rules.walletGuide(policy)`): 3 passos (agendou → crédito/pacote → concluiu), "E se…" (resultado de cada situação em selo) e 3 lembretes, com a política do salão. Em Ajustes > Pagamentos (topo) e no Financeiro ("Pagamentos das clientes").
 - **UX (19/11):** Ajustes > Pagamentos em abas "Regras" | "Pacotes e promoções" (`PaymentsTabs`, `?aba=pacotes` abre a segunda); textos curtos. Criar pacote = passo a passo de 3 telas (tipo → serviços e sessões → promoção opcional) com resumo (preço, economia, validade). Pacotes em cartões com selos (`PackageChips`: sessões, serviços, economia, até dd/mm, vagas, Agendada/Encerrada/Esgotada), também na venda.
 
+## Desconto em % ou R$, nome e texto para divulgar (23/11)
+
+- **Pacote de sessões:** o preço pode ser dado como **desconto em %**, **desconto em R$** ou **preço final** (`priceMode` na ação). Com desconto, o preço = sessões × serviço de referência − desconto (`rules.packagePrice` com `discount`, `applyDiscount`); o banco guarda só o `price_cents` final (sem migration). Prévia "De R$ 180 por R$ 144 · −20%" (`offPct`).
+- **Nome da promoção** opcional com sugestões (Natal, Black Friday…; `NameField`); sem nome, `rules.autoPackageName`.
+- **Texto pronto** (`promo-text.ts`, puro): `promoText(facts, salão, "status" | "message")` usa só dados que existem (nome, oferta, de/por, período, vagas que restam, validade, endereço e Instagram do salão). `packageFacts` monta os fatos; `views.templateView` já entrega `facts`. UI: `ShareText.tsx` (`ShareTextPanel` editável + Copiar/Compartilhar; `ShareTextSheet` = botão "Divulgar" no cartão). Ao criar, a folha vira "Pacote criado!" com o texto.
+- **Cartão:** preço grande com o cheio riscado e −%; `CapBar` "N de M compraram · restam X" com barra.
+
 ## Arquivos
 
 - `features/wallet/rules.ts` (puro): `appointmentPaid`, `walletBalance`, `cashIn`, `remainingCents`, `suggestedDeposit`, `cancelOutcome` (D1/D2), `walletEffect`, `walletStatement`, `payXPrice`, `sessionValue`, `packageExpiresOn`, `parsePolicy`, `DEFAULT_POLICY`.
 - `features/wallet/core.ts`: `settleStatusChange`, `useCredit`, `refundCredit`, `clientBalance`, `appointmentPaidCents`, `paidCentsSql`, `cashInRange`, `livePaidCents`, `AUTO_DONE_REASON`, `clientMoves`, `appointmentMoves`, `recordPayment`, `reverseAppointmentPayments`, `getWalletSettings`, `saveWalletSettings`.
-- `features/wallet/views.ts` (`templateView`). `features/wallet/packages.ts`: `listTemplates`, `createTemplate`, `archiveTemplate`, `sellPackage`, `clientPackageList`, `pickSession`, `reserveSession`. UI: `PackageSheets.tsx`, `ClientWallet.tsx`.
+- `features/wallet/views.ts` (`templateView`), `features/wallet/promo-text.ts` (texto para divulgar), `ShareText.tsx`. `features/wallet/packages.ts`: `listTemplates`, `createTemplate`, `archiveTemplate`, `sellPackage`, `clientPackageList`, `pickSession`, `reserveSession`. UI: `PackageSheets.tsx`, `ClientWallet.tsx`.
 - Tela: `app/(app)/ajustes/pagamentos`. Linha em Ajustes > "Clientes e agenda".
 
 ## Próximas fases
@@ -61,4 +68,4 @@
 - Nunca `UPDATE`/`DELETE` no extrato; nunca coluna de saldo.
 - Mexer em saldo dentro do `lockTenant` (duas telas usando o mesmo crédito).
 - Dinheiro em centavos. Ganhos (receita = atendido) e caixa (pagamentos − devoluções) são números diferentes de propósito (D3).
-- Testes: `tests/unit/wallet.test.ts`, `tests/db/wallet.test.ts`, `tests/e2e/pagamentos-ajustes.spec.ts`, `tests/e2e/pagamento.spec.ts` (sinal).
+- Testes: `tests/unit/wallet.test.ts`, `tests/unit/promo-text.test.ts`, `tests/db/wallet.test.ts`, `tests/e2e/pagamentos-ajustes.spec.ts`, `tests/e2e/pagamento.spec.ts` (sinal).
