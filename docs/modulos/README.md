@@ -50,7 +50,7 @@ Gerada por varredura de `@/features/*`. "Usa" = depende de; "Usado por" = quem q
 | shell | appointments, google, messaging, whatsapp | nav, ajustes | — |
 | tour / install / update | — | layout, ajustes, login | — |
 | support | admin (guard, audit, alerts), push | telas agenda, ajustes, admin | support_messages, platform_notices, platform_notice_dismissals |
-| wallet | appointments (tipo PaymentMethod) | appointments (core), settings (summary) | client_ledger, tenants (política) |
+| wallet | appointments (tipo PaymentMethod, pricing) | appointments (core: pacote e promoção; BookingServices), settings (summary) | client_ledger, tenants (política), package_templates, client_packages, promotions, appointments.promotion_id |
 | whatsapp | messaging | appointments, shell | tenants (instância) |
 | admin | messaging, push, support | telas admin, nav (`isAdmin`), `lib/auth` (2FA), retention, support, worker | admin_step_up, admin_audit_log, "twoFactor", leitura de todas as tabelas como dono do banco |
 | native | install | layout, login, `.well-known`, `api/native-auth`, clients, contacts | verification (código de uso único do Better Auth) |

@@ -210,6 +210,8 @@ export const appointments = pgTable(
     paymentMethod: text("payment_method").$type<"pix" | "dinheiro" | "cartao">(),
     /** Pacote da cliente usado neste atendimento (migration 0051) */
     clientPackageId: uuid("client_package_id"),
+    /** Promoção de desconto usada neste atendimento (migration 0054) */
+    promotionId: uuid("promotion_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("appointments_tenant_start").on(t.tenantId, t.startsAt)],
@@ -441,6 +443,26 @@ export const packageTemplates = pgTable("package_templates", {
   /** 0052: serviços em que a sessão vale (inclui serviceId, o de referência do preço) */
   serviceIds: uuid("service_ids").array().notNull(),
   active: boolean("active").notNull().default(true),
+  /** 0054: venda pausada (continua na lista) */
+  paused: boolean("paused").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Promoção de desconto no agendamento (0054): % ou R$ nos serviços, período e "as N primeiras" opcionais. */
+export const promotions = pgTable("promotions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  name: text("name"),
+  discountKind: text("discount_kind").notNull().$type<"pct" | "brl">(),
+  discountValue: integer("discount_value").notNull(),
+  serviceIds: uuid("service_ids").array().notNull(),
+  startsOn: date("starts_on", { mode: "string" }),
+  endsOn: date("ends_on", { mode: "string" }),
+  maxClients: smallint("max_clients"),
+  paused: boolean("paused").notNull().default(false),
+  endedAt: timestamp("ended_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

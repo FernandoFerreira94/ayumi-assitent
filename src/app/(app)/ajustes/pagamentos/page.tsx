@@ -13,6 +13,9 @@ import { todayStr } from "@/lib/dates";
 import { walletGuide } from "@/features/wallet/rules";
 import { WalletRulesSheet } from "@/features/wallet/WalletRulesSheet";
 import { PaymentsTabs } from "@/features/wallet/PaymentsTabs";
+import { listPromotions } from "@/features/wallet/promotions";
+import { promotionView } from "@/features/wallet/views";
+import { DiscountPromos } from "@/features/wallet/DiscountPromos";
 
 export const metadata: Metadata = { title: "Pagamentos" };
 
@@ -20,8 +23,9 @@ export const metadata: Metadata = { title: "Pagamentos" };
 export default async function PagamentosPage({ searchParams }: { searchParams: Promise<{ aba?: string }> }) {
   const { aba } = await searchParams;
   const { tenantId } = await requireTenant();
-  const { settings, templates, svcs, salon } = await withTenant(tenantId, async (tx) => ({
+  const { settings, templates, svcs, salon, promos } = await withTenant(tenantId, async (tx) => ({
     settings: await getWalletSettings(tx),
+    promos: await listPromotions(tx),
     salon: (
       await tx
         .select({ name: tenants.name, address: tenants.address, instagram: tenants.instagram })
@@ -51,9 +55,14 @@ export default async function PagamentosPage({ searchParams }: { searchParams: P
           </section>
         }
         packages={
-          <section id="pacotes" aria-label="Pacotes à venda">
-            <PackageTemplates templates={views} services={svcs} validDays={days} salon={salon} />
-          </section>
+          <div className="grid gap-3">
+            <section id="promocoes" aria-label="Promoções de desconto">
+              <DiscountPromos promotions={promos.map((p) => promotionView(p, today))} services={svcs} salon={salon} />
+            </section>
+            <section id="pacotes" aria-label="Pacotes à venda">
+              <PackageTemplates templates={views} services={svcs} validDays={days} salon={salon} />
+            </section>
+          </div>
         }
       />
     </PageShell>
