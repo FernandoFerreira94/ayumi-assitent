@@ -154,3 +154,15 @@ test("Ajustes no desktop: seções à esquerda, a aberta à direita", async ({ p
   await expect(page).toHaveURL(/\/ajustes\/whatsapp$/);
   await expect(nav.getByRole("link", { name: /WhatsApp/ })).toHaveAttribute("aria-current", "page");
 });
+
+test("Planos no menu lateral: números lado a lado e as três abas", async ({ page }, info) => {
+  await page.goto("/agenda");
+  await page.getByRole("navigation", { name: "Navegação principal" }).getByRole("link", { name: "Planos" }).click();
+  await expect(page).toHaveURL(/\/planos$/);
+  await expect(page.getByRole("region", { name: "Resumo dos planos" })).toContainText("clientes com pacote");
+  await expect(page.getByText("Nenhuma cliente com pacote em uso")).toBeVisible();
+  await page.getByRole("tab", { name: "Promoções" }).click();
+  await expect(page).toHaveURL(/aba=promocoes/);
+  await expect(page.getByRole("region", { name: "Promoções de desconto" })).toBeVisible();
+  if (process.env.PRINTS) await page.screenshot({ path: `${process.env.PRINTS}/planos-${info.project.name}.png` });
+});

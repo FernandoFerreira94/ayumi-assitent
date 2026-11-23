@@ -21,7 +21,10 @@ test("promoção de desconto: as 2 primeiras ganham 20%, aplica ao agendar, paus
   await page.getByRole("button", { name: "Salvar" }).click();
   await expect(page.getByText("Cliente cadastrada")).toBeVisible();
 
+  // Link antigo de Ajustes leva para a página Planos
   await page.goto("/ajustes/pagamentos?aba=pacotes");
+  await expect(page).toHaveURL(/\/planos\?aba=pacotes/);
+  await page.getByRole("tab", { name: "Promoções" }).click();
   const painel = page.getByRole("region", { name: "Promoções de desconto" });
   await expect(painel).toContainText("Nenhuma promoção valendo");
   await painel.getByRole("button", { name: "Criar promoção de desconto" }).click();
@@ -58,7 +61,7 @@ test("promoção de desconto: as 2 primeiras ganham 20%, aplica ao agendar, paus
   await expect(page.getByText("Promoção Natal aplicada: −R$ 9,00")).toBeVisible();
 
   // Controle: quantas usaram, pausar, retomar, encerrar
-  await page.goto("/ajustes/pagamentos?aba=pacotes");
+  await page.goto("/planos?aba=promocoes");
   await expect(painel).toContainText("restam 1");
   await shot(page, "9-promo-cartao");
   await painel.getByRole("button", { name: "Pausar Natal" }).click();

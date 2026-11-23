@@ -36,6 +36,12 @@ export const NAV_ICONS = {
       <path d="M12 3v9h9" />
     </>
   ),
+  planos: (
+    <>
+      <path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4z" />
+      <path d="M10 6v12" strokeDasharray="2 2.5" />
+    </>
+  ),
   vagas: (
     <>
       <path d="M12 7v5l3 2" />

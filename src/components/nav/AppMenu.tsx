@@ -31,6 +31,7 @@ const ITEMS = [
   { href: "/servicos", label: "Serviços", icon: icon(NAV_ICONS.servicos) },
   { href: "/clientes", label: "Clientes", icon: icon(NAV_ICONS.clientes) },
   { href: "/financeiro", label: "Financeiro", icon: icon(NAV_ICONS.financeiro) },
+  { href: "/planos", label: "Planos", icon: icon(NAV_ICONS.planos) },
   { href: "/vagas", label: "Vagas", icon: icon(NAV_ICONS.vagas) },
   { href: "/pendencias", label: "Pendências", icon: icon(NAV_ICONS.pendencias) },
   { href: "/ajustes", label: "Ajustes", icon: icon(NAV_ICONS.ajustes) },

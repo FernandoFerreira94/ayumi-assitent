@@ -706,18 +706,30 @@ function NewTemplateSheet({ services, validDays, salon }: { services: Svc[]; val
   );
 }
 
-/** Ficha da cliente: escolher o pacote, a forma e vender (pago na hora). */
+/**
+ * Vender pacote (pago na hora): escolher o pacote e a forma. Na ficha a cliente já vem; na página Planos vem a
+ * lista `clients` e a folha pergunta primeiro "Para quem?" (busca + lista, sem abrir outra folha).
+ */
 export function SellPackageSheet({
-  clientId,
-  clientName,
+  clientId: fixedId,
+  clientName: fixedName,
+  clients,
   nested,
   onSold,
+  triggerClassName = "btn-glass min-h-11 shrink-0 rounded-full px-4 text-sm font-bold",
 }: {
-  clientId: string;
-  clientName: string;
+  clientId?: string;
+  clientName?: string;
+  clients?: { id: string; label: string }[];
   nested: boolean;
   onSold: () => void;
+  triggerClassName?: string;
 }) {
+  const [chosen, setChosen] = useState<{ id: string; label: string } | null>(null);
+  const [query, setQuery] = useState("");
+  const clientId = fixedId ?? chosen?.id ?? "";
+  const clientName = fixedName ?? chosen?.label ?? "";
+  const asking = !fixedId && !chosen;
   const side = useSheetSide();
   const Root = nested ? Drawer.NestedRoot : Drawer.Root;
   const [open, setOpen] = useState(false);
@@ -727,6 +739,8 @@ export function SellPackageSheet({
   const [error, setError] = useState<ErrorCode | null>(null);
   const [pending, start] = useTransition();
   const first = clientName.split(/\s+/)[0];
+  const norm = (t: string) => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+  const found = asking ? (clients ?? []).filter((c) => norm(c.label).includes(norm(query.trim()))).slice(0, 50) : [];
 
   useEffect(() => {
     if (!open) return;
@@ -756,14 +770,28 @@ export function SellPackageSheet({
         return;
       }
       setOpen(false);
+      setChosen(null);
+      setQuery("");
       notify.success(`Pacote vendido para ${first}: ${r.data.sessions} sessões até ${r.data.expiresOn}`);
       onSold();
     });
   }
 
   return (
-    <Root direction={side} open={open} onOpenChange={setOpen} repositionInputs={false}>
-      <Drawer.Trigger className="btn-glass min-h-11 shrink-0 rounded-full px-4 text-sm font-bold">
+    <Root
+      direction={side}
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        // Fechou: na próxima vez pergunta a cliente de novo
+        if (!o) {
+          setChosen(null);
+          setQuery("");
+        }
+      }}
+      repositionInputs={false}
+    >
+      <Drawer.Trigger className={triggerClassName}>
         Vender pacote
       </Drawer.Trigger>
       <Drawer.Portal>
@@ -771,11 +799,41 @@ export function SellPackageSheet({
         <Drawer.Content className={sheet(side)}>
           <SidePanelClose />
           <div className={SHEET_SCROLL}>
-            <Drawer.Title className="pb-1 text-xl font-bold">Vender pacote para {first}</Drawer.Title>
+            <Drawer.Title className="pb-1 text-xl font-bold">
+              {asking ? "Vender pacote" : `Vender pacote para ${first}`}
+            </Drawer.Title>
             <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
-              Pago agora. As sessões são usadas sozinhas ao agendar.
+              {asking ? "Para quem?" : "Pago agora. As sessões são usadas sozinhas ao agendar."}
             </Drawer.Description>
-            {list === null && !error ? (
+            {asking ? (
+              <div className="grid gap-2">
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Buscar cliente"
+                  aria-label="Buscar cliente"
+                  autoComplete="off"
+                  className={field}
+                />
+                <ul className="grid gap-1" aria-label="Clientes">
+                  {found.map((c) => (
+                    <li key={c.id}>
+                      <button
+                        type="button"
+                        onClick={() => setChosen(c)}
+                        className="flex min-h-12 w-full items-center rounded-2xl bg-surface px-4 text-left font-bold hover:bg-soft"
+                      >
+                        {c.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                {found.length === 0 ? (
+                  <p className="rounded-2xl bg-soft px-4 py-3 text-sm font-semibold">Nenhuma cliente com esse nome.</p>
+                ) : null}
+              </div>
+            ) : list === null && !error ? (
               <div className="grid gap-2" aria-busy="true" aria-label="Carregando pacotes">
                 <div className="skel h-16 rounded-2xl" />
                 <div className="skel h-16 rounded-2xl" />
@@ -783,8 +841,8 @@ export function SellPackageSheet({
             ) : list && list.length === 0 ? (
               <p className="rounded-2xl bg-soft px-4 py-3 text-sm font-semibold">
                 Nenhum pacote à venda hoje.{" "}
-                <Link href="/ajustes/pagamentos?aba=pacotes" className="font-bold text-primary-text underline">
-                  Criar em Ajustes &gt; Pagamentos
+                <Link href="/planos?aba=pacotes" className="font-bold text-primary-text underline">
+                  Criar em Planos
                 </Link>
               </p>
             ) : list ? (

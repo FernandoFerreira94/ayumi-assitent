@@ -330,3 +330,56 @@ export const reserveSession = (
     reason: `Sessão do pacote ${input.pick.name}`,
     createdBy: input.createdBy ?? null,
   });
+
+export type SoldPackageRow = {
+  id: string;
+  clientId: string;
+  clientName: string;
+  name: string;
+  sessionsTotal: number;
+  soldOn: string;
+  expiresOn: string | null;
+  /** sessões que restam (mesma conta de `rules.packageSessionsLeft`) */
+  left: number;
+  /** próximo horário marcado com sessão deste pacote (ISO), se houver */
+  nextAt: Date | null;
+};
+
+/**
+ * Todos os pacotes vendidos, com a cliente, as sessões que restam e o próximo horário marcado (página Planos).
+ * Uma consulta só; a divisão em "Usando", "Acabou" e "Venceu" é de `plan-views.groupSold`.
+ */
+export async function listSoldPackages(tx: Tx): Promise<SoldPackageRow[]> {
+  const rows = await tx.execute<{
+    id: string;
+    client_id: string;
+    client_name: string;
+    name: string;
+    sessions_total: number;
+    sold_on: string;
+    expires_on: string | null;
+    left: number;
+    next_at: Date | string | null;
+  }>(sql`
+    select cp.id, cp.client_id, c.name as client_name, cp.name, cp.sessions_total, cp.sold_on::text as sold_on,
+      cp.expires_on::text as expires_on,
+      (select coalesce(sum(case when l.kind in ('session_grant', 'session_return') then l.sessions
+                 when l.kind in ('session_reserve', 'expire') then -l.sessions else 0 end), 0)
+        from client_ledger l where l.client_package_id = cp.id)::int as left,
+      (select min(a.starts_at) from appointments a
+        where a.client_package_id = cp.id and a.starts_at > now()
+          and a.status in ('pending_confirmation', 'confirmed', 'reschedule_requested')) as next_at
+    from client_packages cp join clients c on c.id = cp.client_id
+    order by cp.expires_on nulls last, cp.created_at`);
+  return rows.map((r) => ({
+    id: r.id,
+    clientId: r.client_id,
+    clientName: r.client_name,
+    name: r.name,
+    sessionsTotal: Number(r.sessions_total),
+    soldOn: r.sold_on,
+    expiresOn: r.expires_on,
+    left: Number(r.left),
+    nextAt: r.next_at ? new Date(r.next_at) : null,
+  }));
+}

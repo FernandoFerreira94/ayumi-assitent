@@ -45,6 +45,7 @@ export async function saveWalletSettingsAction(_prev: ActionResult | null, fd: F
   try {
     await withTenant(tenantId, (tx) => saveWalletSettings(tx, tenantId, { ...parsed.policy, pixKey: parsed.pixKey }));
     revalidatePath("/ajustes", "layout");
+    revalidatePath("/planos");
     return ok();
   } catch {
     return fail("UNKNOWN");
@@ -127,6 +128,7 @@ export async function createPackageTemplateAction(input: {
     const id = await withTenant(tenantId, (tx) => createTemplate(tx, tenantId, parsed.draft));
     if (!id) return fail("VALIDATION", "serviceIds");
     revalidatePath("/ajustes", "layout");
+    revalidatePath("/planos");
     return ok();
   } catch {
     return fail("UNKNOWN");
@@ -140,6 +142,7 @@ export async function archivePackageTemplateAction(id: string): Promise<ActionRe
   try {
     await withTenant(tenantId, (tx) => archiveTemplate(tx, id));
     revalidatePath("/ajustes", "layout");
+    revalidatePath("/planos");
     return ok();
   } catch {
     return fail("UNKNOWN");
@@ -169,6 +172,7 @@ export async function sellPackageAction(input: {
     if (!sold.ok) return fail(REFUSAL[sold.reason]);
     revalidatePath("/financeiro");
     revalidatePath("/clientes");
+    revalidatePath("/planos");
     return ok({ name: sold.name, sessions: sold.sessions, expiresOn: formatShortDate(sold.expiresOn) });
   } catch {
     return fail("UNKNOWN");
@@ -216,6 +220,7 @@ export async function createPromotionAction(input: {
     const id = await withTenant(tenantId, (tx) => createPromotion(tx, tenantId, parsed.draft));
     if (!id) return fail("VALIDATION", "serviceIds");
     revalidatePath("/ajustes", "layout");
+    revalidatePath("/planos");
     return ok();
   } catch {
     return fail("UNKNOWN");
@@ -248,6 +253,7 @@ export async function promotionControlAction(input: {
     );
     if (!done) return fail("NOT_FOUND");
     revalidatePath("/ajustes", "layout");
+    revalidatePath("/planos");
     return ok();
   } catch {
     return fail("UNKNOWN");
