@@ -28,12 +28,17 @@ type Due = {
   session: SessionUse | null;
 };
 
+/** 1º aviso só até 2 h antes do horário. */
+export const FIRST_MIN_LEAD_HOURS = 2;
+
 /**
  * Reserva (de forma atômica) os agendamentos que precisam de lembrete agora.
  * O UPDATE ... SKIP LOCKED garante que dois workers nunca peguem o mesmo agendamento.
  */
 export async function claimDue(tx: Tx, now: Date, hours = DEFAULT_REMINDER_HOURS): Promise<Due[]> {
   const until = new Date(now.getTime() + hours * 3600_000);
+  // Em cima da hora (WhatsApp reconectado, rodada atrasada) não pede 1/2/3: a confirmação do agendamento já foi
+  const from = new Date(now.getTime() + FIRST_MIN_LEAD_HOURS * 3600_000);
   const rows = await tx.execute<{
     id: string;
     tenant_id: string;
@@ -51,7 +56,7 @@ export async function claimDue(tx: Tx, now: Date, hours = DEFAULT_REMINDER_HOURS
         select id from appointments
         where reminder_sent_at is null
           and status in ('pending_confirmation','confirmed')
-          and starts_at > ${now.toISOString()} and starts_at <= ${until.toISOString()}
+          and starts_at > ${from.toISOString()} and starts_at <= ${until.toISOString()}
           and client_id not in (select id from clients where opted_out_at is not null)
         for update skip locked)
       returning id, tenant_id, starts_at, client_id, service_id, price_cents, client_package_id)

@@ -26,6 +26,17 @@ describe("Evolution (WhatsApp)", () => {
     const down = evolutionMessaging(cfg, vi.fn().mockRejectedValue(new Error("x")) as unknown as typeof fetch);
     await expect(down.sendText("+55119", "x")).rejects.toBeInstanceOf(MessagingTransientError);
   });
+  it("desiste em 10 s (timeout vira falha temporária, não trava a agenda)", async () => {
+    const f = vi.fn((_u: string, init: RequestInit) => {
+      expect(init.signal).toBeInstanceOf(AbortSignal);
+      const e = new Error("t");
+      e.name = "TimeoutError";
+      return Promise.reject(e);
+    });
+    const err = await evolutionMessaging(cfg, f as unknown as typeof fetch).sendText("+55119", "x").catch((e) => e);
+    expect(err).toBeInstanceOf(MessagingTransientError);
+    expect(sendFailReason(err)).toBe("transient:timeout");
+  });
   it("recusa o que não é telefone (cliente anonimizada) sem chamar a Evolution", async () => {
     const f = vi.fn();
     const port = evolutionMessaging({ baseUrl: "https://evo.test", apiKey: "k", instance: "i" }, f as unknown as typeof fetch);
