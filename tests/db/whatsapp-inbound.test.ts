@@ -19,11 +19,13 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
   let handleInbound: typeof import("@/features/messaging/inbound").handleInbound;
   const now = new Date("2026-11-10T15:00:00Z");
   const sent: string[] = [];
+  let ackSeq = 0;
   const deps = {
     portFor: () => ({
       sendText: async (to: string, t: string) => {
         sent.push(`${to}|${t}`);
-        return { id: `ack${sent.length}` };
+        // Id único em todo o arquivo (o sent é zerado entre testes; o id da Evolution nunca se repete)
+        return { id: `ack${++ackSeq}` };
       },
     }),
     push: null,
@@ -107,18 +109,28 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     admin`update appointments set reply_at = null, status = ${status}::appointment_status where id = ${A}`;
   const apptRow = async () => (await admin`select status from appointments where id = ${A}`)[0];
 
-  it("pedido de cancelar não cancela: vira 'quer remarcar' e a cliente só recebe que a profissional vai verificar", async () => {
+  it("texto livre pedindo cancelar não muda nada: pergunta citando o horário; só o '2' depois vale", async () => {
     await reopen();
+    await admin`update appointments set ai_handoff_at = null where id = ${A}`;
     sent.length = 0;
     expect(await handleInbound(msg("m3", "cancela por favor"), deps)).toMatchObject({
       handled: true,
-      intent: "cancel",
-      appointmentId: A,
+      intent: null,
+      appointmentId: null,
     });
-    expect((await apptRow()).status).toBe("reschedule_requested");
+    expect((await apptRow()).status).toBe("pending_confirmation");
     expect(sent).toHaveLength(1);
+    expect(sent[0]).toContain(
+      "você quer cancelar o horário de amanhã às 10:00? Responda 2 para cancelar ou 3 para remarcar",
+    );
+    // A pergunta entra como mensagem que espera resposta, ligada ao agendamento (citá-la vale)
+    const [ask] = await admin`select kind, appointment_id from messages where body like '%você quer cancelar%'`;
+    expect(ask).toMatchObject({ kind: "reminder", appointment_id: A });
+    sent.length = 0;
+    expect(await handleInbound(msg("m3b", "2"), deps)).toMatchObject({ intent: "cancel", appointmentId: A });
+    expect((await apptRow()).status).toBe("reschedule_requested");
     expect(sent[0]).toContain("Recebi seu pedido para cancelar o horário de amanhã às 10:00");
-    expect(sent[0]).toContain("A profissional vai falar com você");
+    await admin`update appointments set ai_handoff_at = null where id = ${A}`;
   });
 
   it("'3' pede para remarcar sem mexer no horário e recebe a mesma resposta", async () => {
@@ -195,7 +207,9 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     expect(sent).toEqual([`+5511987655555|${pending_reply}`]);
     expect((await admin`select pending_reply from appointments where id = ${A}`)[0].pending_reply).toBeNull();
     expect(
-      (await admin`select count(*)::int as n from messages where kind = 'auto_reply' and body = ${pending_reply}`)[0].n,
+      (
+        await admin`select count(*)::int as n from messages where kind = 'auto_reply' and body = ${pending_reply} and external_id = ${"ack" + ackSeq}`
+      )[0].n,
     ).toBe(1);
   });
 
@@ -206,6 +220,76 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
       intent: null,
     });
     expect(sent).toHaveLength(0);
+  });
+
+  describe("resposta citando uma mensagem e mais de um horário em aberto", () => {
+    let A2: string;
+    const reset = async () => {
+      sent.length = 0;
+      await admin`delete from messages where external_id like 'q%' or external_id like 'out-%'`;
+      await admin`update appointments set reply_at = null, ai_handoff_at = null, status = 'pending_confirmation',
+        reminder_sent_at = ${now.toISOString()} where id = ${A}`;
+    };
+    const out = (id: string, kind: string, appt: string | null) =>
+      admin`insert into messages (tenant_id, client_id, appointment_id, direction, kind, body, external_id, created_at)
+        values (${T}, ${C}, ${appt}, 'out', ${kind}, 'x', ${id}, ${now.toISOString()})`;
+
+    beforeAll(async () => {
+      const [{ id: S }] = await admin`select id from services where tenant_id = ${T} limit 1`;
+      [{ id: A2 }] =
+        await admin`insert into appointments (tenant_id,client_id,service_id,starts_at,ends_at,price_cents,status,reminder_sent_at)
+        values (${T},${C},${S},'2026-11-12T14:00:00Z','2026-11-12T15:00:00Z',10000,'pending_confirmation',${now.toISOString()}) returning id`;
+    });
+    afterAll(async () => {
+      await admin`delete from appointments where id = ${A2}`;
+      await admin`delete from messages where external_id like 'q%' or external_id like 'out-%'`;
+    });
+
+    it("citando a confirmação do agendamento ('esse link não dá'), é conversa com a dona: nada muda, nada sai", async () => {
+      await reset();
+      await out("out-booking", "auto_reply", A);
+      for (const [id, text] of [
+        ["q1", "Esse link nao da"],
+        ["q2", "2"],
+        ["q3", "1"],
+      ])
+        expect(await handleInbound(msg(id, text, { quotedId: "out-booking" }), deps), text).toEqual({
+          handled: true,
+          intent: null,
+          appointmentId: null,
+        });
+      expect(sent).toHaveLength(0);
+      const rows = await admin`select status from appointments where id in (${A}, ${A2})`;
+      expect(rows.map((r) => r.status)).toEqual(["pending_confirmation", "pending_confirmation"]);
+    });
+
+    it("dois lembretes em aberto sem citação: não escolhe nenhum, a dona decide", async () => {
+      await reset();
+      expect(await handleInbound(msg("q4", "1"), deps)).toEqual({ handled: true, intent: null, appointmentId: null });
+      expect(sent).toHaveLength(0);
+      expect((await apptRow()).status).toBe("pending_confirmation");
+    });
+
+    it("citando o lembrete de um dos horários, a resposta vale para aquele horário", async () => {
+      await reset();
+      await out("out-rem2", "reminder", A2);
+      expect(await handleInbound(msg("q5", "1", { quotedId: "out-rem2" }), deps)).toEqual({
+        handled: true,
+        intent: "confirm",
+        appointmentId: A2,
+      });
+      expect((await admin`select status from appointments where id = ${A2}`)[0].status).toBe("confirmed");
+      expect((await apptRow()).status).toBe("pending_confirmation");
+    });
+
+    it("citando um lembrete antigo de horário que foi remarcado depois, não aplica nada", async () => {
+      await reset();
+      await out("out-old", "reminder", A);
+      // Remarcado: o lembrete novo (ou nenhum) é mais recente que o citado
+      await admin`update appointments set reminder_sent_at = ${new Date(now.getTime() + 60_000).toISOString()} where id = ${A}`;
+      expect(await handleInbound(msg("q6", "1", { quotedId: "out-old" }), deps)).toMatchObject({ intent: null });
+      expect((await apptRow()).status).toBe("pending_confirmation");
+    });
   });
 
   describe("com a IA ligada (modelo simulado)", () => {
@@ -248,10 +332,21 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
       expect(sent[0]).toMatch(/Seu horário de amanhã às \d{2}:\d{2} está confirmado/);
     });
 
-    it("correção até 2h depois aplica a nova intenção (cancelar vira 'quer remarcar')", async () => {
+    it("correção por texto livre ('preciso remarcar') não muda nada: pergunta; pelo número vale", async () => {
       sent.length = 0;
-      expect(await handleInbound(m("ops, errei, preciso remarcar"), ai)).toMatchObject({ intent: "reschedule" });
+      expect(await handleInbound(m("ops, errei, preciso remarcar"), ai)).toMatchObject({ intent: null });
+      expect((await apptRow()).status).toBe("confirmed");
+      expect(sent[0]).toContain("você quer remarcar o horário");
+      expect(await handleInbound(m("3"), ai)).toMatchObject({ intent: "reschedule" });
       expect((await apptRow()).status).toBe("reschedule_requested");
+    });
+
+    it("IA com certeza de 'cancelar' também só pergunta, não muda o status", async () => {
+      await fresh();
+      verdict = { intent: "cancel", confidence: 0.99 };
+      expect(await handleInbound(m("acho melhor deixar pra outra semana viu"), ai)).toMatchObject({ intent: null });
+      expect((await apptRow()).status).toBe("pending_confirmation");
+      expect(sent[0]).toContain("você quer cancelar o horário");
     });
 
     it("baixa confiança ou outro assunto: avisa que a profissional continua, uma vez por agendamento", async () => {
