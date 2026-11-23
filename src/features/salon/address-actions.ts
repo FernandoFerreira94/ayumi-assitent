@@ -70,6 +70,7 @@ export async function saveAddress(_prev: ActionResult | null, form: FormData): P
         addressState: a.state,
       })
       .where(eq(tenants.id, tenantId));
+    revalidatePath("/perfil");
     revalidatePath("/ajustes", "layout");
     return ok();
   } catch {

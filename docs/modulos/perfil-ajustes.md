@@ -1,6 +1,6 @@
 # Perfil, Ajustes e casca do app
 
-**Finalidade:** Meu perfil (dados do salão e da pessoa, segmentos, mascote/tema) e Ajustes. Desde 13/11/2026 Ajustes é uma **lista de partida** no estilo dos Ajustes do iPhone (`/ajustes`): cada linha mostra o estado (Conectado, Desligada, "Seg a Sex") e, quando falta algo, um selo amarelo ("Conectar", "Configurar"); o toque abre a seção, que carrega só os dados dela. "Este aparelho" (atualizar, instalar, rever o tour) fica na própria lista.
+**Finalidade:** Meu perfil (dados do salão e da pessoa, segmentos, mascote/tema, endereço do estúdio) e Ajustes. Desde 13/11/2026 Ajustes é uma **lista de partida** no estilo dos Ajustes do iPhone (`/ajustes`): cada linha mostra o estado (Conectado, Desligada, "Seg a Sex") e, quando falta algo, um selo amarelo ("Conectar", "Configurar"); o toque abre a seção, que carrega só os dados dela. "Este aparelho" (atualizar, instalar, rever o tour) fica na própria lista.
 
 ## Arquivos
 - `features/salon/actions.ts` (`saveSalon`, `saveAiSettings`; grava `tenants` pelo dono do banco, o papel do app só lê), `schema.ts` (segmentos), `SalonForm.tsx`, `AiRepliesForm.tsx`, `MascotPicker.tsx` + `mascot-actions.ts` (mascote por pessoa, vale em qualquer aparelho).
@@ -19,7 +19,7 @@
 | `/ajustes/notificacoes` | Notificação (`#avisos-celular`), localização (`#localizacao`) | [avisos-push.md](avisos-push.md) |
 | `/ajustes/mensagens` | Mensagens (`#mensagens`), IA (`#ia`) | [lembretes.md](lembretes.md), `salon/AiRepliesForm` |
 | `/ajustes/expediente` | Expediente (`#expediente`) | [vagas.md](vagas.md) |
-| `/ajustes/endereco` | Endereço do estúdio (`#endereco`) | `salon/AddressCard` |
+| `/perfil#endereco` (atalho; `/ajustes/endereco` redireciona) | Endereço do estúdio (`#endereco`) | `salon/AddressCard` |
 
 Links internos apontam direto para a seção (`/ajustes/whatsapp`, `/ajustes/calendarios`). Link velho `/ajustes#google` é redirecionado no cliente (`LegacyHashRedirect`). Actions revalidam com `revalidatePath("/ajustes", "layout")` (lista + seções).
 
@@ -49,7 +49,8 @@ Links internos apontam direto para a seção (`/ajustes/whatsapp`, `/ajustes/cal
 - Testes: `tests/unit/connection-status.test.ts`, `app-menu.test.tsx`; e2e `ajustes.spec.ts` e `largura.spec.ts`.
 
 ## Endereço do estúdio (23/11)
-- `/ajustes/endereco` (grupo "Clientes e agenda"; selo "Cadastrar" sem endereço). `salon/AddressCard.tsx` mostra a linha pronta + "Ver no mapa" e edita num sheet (vaul): CEP → `address-actions.lookupCep` busca no ViaCEP e, se falhar, na BrasilAPI, **pelo servidor** (timeout 4s cada, só logado; falhou = preenche à mão), depois rua, número, complemento, bairro, cidade, UF. `saveAddress` valida com `salon/address.addressInput` e grava pelo dono do banco.
+- Mora no **Meu perfil** (`/perfil#endereco`, depois dos dados do salão), pedido do usuário em 23/11. Ajustes mantém só a linha de atalho (grupo "Clientes e agenda"; selo "Cadastrar" sem endereço) que leva ao Perfil; `/ajustes/endereco` redireciona (`next.config.ts`). Não confundir com a localização do GPS (Ajustes > Notificações), que é só para clima/feriados. `salon/AddressCard.tsx` mostra a linha pronta + "Ver no mapa" e edita num sheet (vaul): CEP → `address-actions.lookupCep` busca no ViaCEP e, se falhar, na BrasilAPI, **pelo servidor** (timeout 4s cada, só logado; falhou = preenche à mão), depois rua, número, complemento, bairro, cidade, UF. `saveAddress` valida com `salon/address.addressInput` e grava pelo dono do banco.
 - Colunas `tenants.address_cep/street/number/complement/district/city/state` (migration 0054) + `tenants.address` = linha pronta (`formatAddress`). A 0054 copiou `city/state` (localização dos avisos do dia) para `address_city/state`; `city/state/latitude/longitude` continuam só para previsão do tempo e feriados.
 - Quem usa `tenants.address`: convite da cliente (`calendar-feed/invite.ts`, LOCATION do .ics), evento do Google (`google/sync.ts`, `location`) e as chaves `{endereco}`/`{mapa}` das mensagens (`reminders/text.ts`; sem endereço, a linha só com a chave some).
-- Testes: unit `studio-address`, `booking-text`; e2e `endereco.spec.ts`.
+- `saveAddress` revalida `/perfil` e o layout de `/ajustes`.
+- Testes: unit `studio-address`, `booking-text`, `settings-sections`; e2e `endereco.spec.ts`, acessibilidade de `/perfil` em `ajustes.spec.ts`.

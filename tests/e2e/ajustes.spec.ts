@@ -75,7 +75,7 @@ for (const href of [
   "/ajustes/notificacoes",
   "/ajustes/mensagens",
   "/ajustes/expediente",
-  "/ajustes/endereco",
+  "/perfil",
 ]) {
   test(`acessibilidade: ${href} sem violações sérias`, async ({ page }) => {
     await page.goto(href);
@@ -95,5 +95,8 @@ test("Mensagens: aviso ao remarcar ligado, com prévia sem o nome da cliente, e 
   await page.getByRole("button", { name: "Salvar mensagens" }).click();
   await expect(page).toHaveURL(/\/ajustes$/);
   await page.goto("/ajustes/mensagens");
-  await expect(page.getByRole("switch", { name: "Avisar a cliente ao remarcar" })).toHaveAttribute("aria-checked", "false");
+  await expect(page.getByRole("switch", { name: "Avisar a cliente ao remarcar" })).toHaveAttribute(
+    "aria-checked",
+    "false",
+  );
 });

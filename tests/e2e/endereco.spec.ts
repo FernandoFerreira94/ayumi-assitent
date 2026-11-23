@@ -1,10 +1,13 @@
 import { expect, test } from "./fixtures";
 
-test("Endereço do estúdio: cadastra no sheet, aparece na seção e na lista de Ajustes", async ({ page }) => {
+test("Endereço do estúdio: atalho de Ajustes leva ao Meu perfil, cadastra no sheet e volta na lista", async ({
+  page,
+}) => {
   await page.goto("/ajustes");
   await expect(page.locator("#ajuste-endereco")).toContainText("Cadastrar");
   await page.locator("#ajuste-endereco").click();
-  await expect(page.getByRole("heading", { level: 1, name: "Endereço" })).toBeVisible();
+  await expect(page).toHaveURL(/\/perfil#endereco$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Meu perfil" })).toBeVisible();
 
   await page.getByRole("button", { name: "Cadastrar endereço" }).click();
   const sheet = page.getByRole("dialog", { name: "Endereço do estúdio" });
@@ -28,7 +31,9 @@ test("Endereço do estúdio: cadastra no sheet, aparece na seção e na lista de
 });
 
 test("Endereço: campo obrigatório vazio mostra o erro e não fecha o sheet", async ({ page }) => {
+  // link antigo de Ajustes redireciona para o Meu perfil
   await page.goto("/ajustes/endereco");
+  await expect(page).toHaveURL(/\/perfil/);
   await page.getByRole("button", { name: "Cadastrar endereço" }).click();
   const sheet = page.getByRole("dialog", { name: "Endereço do estúdio" });
   await sheet.getByRole("button", { name: "Salvar endereço" }).click();
