@@ -5,7 +5,11 @@ import { LegalPage, LegalSection, SUPPORT_EMAIL } from "@/features/legal/LegalPa
 export const metadata: Metadata = {
   title: "Política de privacidade",
   description: "Como o bubbly coleta, usa, guarda e protege os seus dados e os das suas clientes.",
-  ...shareMeta("Política de privacidade · bubbly", "Como o bubbly coleta, usa, guarda e protege os seus dados e os das suas clientes.", "/privacidade"),
+  ...shareMeta(
+    "Política de privacidade · bubbly",
+    "Como o bubbly coleta, usa, guarda e protege os seus dados e os das suas clientes.",
+    "/privacidade",
+  ),
 };
 
 export default function PrivacidadePage() {
@@ -61,6 +65,11 @@ export default function PrivacidadePage() {
           <li>Montar a sua agenda, os horários livres e o resumo financeiro.</li>
           <li>Enviar pelo WhatsApp a confirmação do agendamento e os lembretes para as clientes.</li>
           <li>Entender a resposta da cliente (confirmou, pediu para remarcar ou cancelar) e avisar você.</li>
+          <li>
+            Melhorar esse entendimento: quando uma resposta curta da cliente a um lembrete não é entendida, guardamos só
+            o texto dela por 90 dias para a equipe analisar e ensinar o sistema com exemplos. Esse texto não treina
+            modelos de inteligência artificial.
+          </li>
           <li>Mandar avisos no seu celular (confirmações, pedidos das clientes, resumo do dia).</li>
           <li>Manter o app seguro, funcionando e fazer cópias de segurança.</li>
         </ul>
@@ -78,8 +87,8 @@ export default function PrivacidadePage() {
           </li>
           <li>
             <strong>Google Agenda</strong> (<code className="text-sm">calendar</code>): criar, atualizar e apagar no seu
-            Google Agenda os eventos dos agendamentos feitos no bubbly (a cliente com e-mail recebe o convite), e ler
-            os seus outros eventos só para marcar esses horários como ocupados.
+            Google Agenda os eventos dos agendamentos feitos no bubbly (a cliente com e-mail recebe o convite), e ler os
+            seus outros eventos só para marcar esses horários como ocupados.
           </li>
           <li>
             <strong>Google Contatos</strong> (<code className="text-sm">contacts.readonly</code>): só leitura de nome,
@@ -88,13 +97,16 @@ export default function PrivacidadePage() {
         </ul>
         <p>
           O uso e a transferência, para qualquer outro aplicativo, de informações recebidas das APIs do Google seguem a{" "}
-          <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer">
+          <a
+            href="https://developers.google.com/terms/api-services-user-data-policy"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             Política de Dados do Usuário dos Serviços de API do Google
           </a>
           , incluindo os requisitos de Uso Limitado. Em resumo: os dados do Google são usados só para as funções acima,
-          não são vendidos, não são usados para anúncios, não são usados para treinar modelos de inteligência
-          artificial e nenhuma pessoa os lê, a não ser com a sua autorização, para suporte, por segurança ou por
-          exigência legal.
+          não são vendidos, não são usados para anúncios, não são usados para treinar modelos de inteligência artificial
+          e nenhuma pessoa os lê, a não ser com a sua autorização, para suporte, por segurança ou por exigência legal.
         </p>
         <p>
           Você pode desconectar o Google em <strong>Ajustes &gt; Calendários</strong> ou revogar o acesso em{" "}
@@ -142,7 +154,9 @@ export default function PrivacidadePage() {
         <p>
           A equipe do Bubbly vê, num painel interno protegido por senha e segundo fator, só o nome do salão, o nome e o
           e-mail da dona da conta e o histórico da assinatura (plano, valor, pagamentos e cancelamentos), para gerir as
-          assinaturas. Esse painel não mostra clientes, agenda nem mensagens, e cada acesso a ele fica registrado.
+          assinaturas. Esse painel não mostra clientes nem agenda. A única exceção são as respostas a lembretes que o
+          sistema não entendeu: aparece só o texto da resposta e o nome do salão, sem nome nem telefone da cliente, por
+          até 90 dias. Cada acesso ao painel fica registrado.
         </p>
         <p>
           Alguns desses serviços ficam fora do Brasil. Nesses casos a transferência segue as regras da LGPD (art. 33).
@@ -165,13 +179,16 @@ export default function PrivacidadePage() {
             histórico.
           </li>
           <li>
-            Cliente que você excluir: sai da lista na hora. Se ela tiver atendimentos no histórico, o nome, o telefone, o
-            e-mail, as observações e as mensagens são apagados e o atendimento fica sem identificação, só para o seu
+            Cliente que você excluir: sai da lista na hora. Se ela tiver atendimentos no histórico, o nome, o telefone,
+            o e-mail, as observações e as mensagens são apagados e o atendimento fica sem identificação, só para o seu
             financeiro.
           </li>
           <li>
             Quando você exclui a conta, os dados saem na hora. As cópias de segurança são substituídas automaticamente
             em até 14 dias.
+          </li>
+          <li>
+            Respostas a lembretes que o sistema não entendeu: 90 dias. Saem antes se você excluir a cliente ou a conta.
           </li>
           <li>Registros de acesso ficam guardados por 6 meses, como pede o Marco Civil da Internet.</li>
         </ul>

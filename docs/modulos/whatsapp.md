@@ -49,3 +49,9 @@ Regra do produto: **o sistema só informa a cliente; a única conversa dele é p
 - Limites: no máximo 3 respostas automáticas por cliente em 24 h; texto acima de 1.000 caracteres nem vai ao modelo.
 - Regras fixas (`replies.parseIntent`): o sim só vale se a mensagem for o sim e nada mais (cortesia pode vir junto); pergunta sobre cancelar não é pedido. O número só vale sozinho ("2", "opção 2").
 - Mapeamento: 1 = confirma (`confirmed`); 2 = cancelar e 3 = remarcar viram `reschedule_requested` (nunca cancela sozinho). O número só vale sozinho ("2", "opção 2").
+
+## Respostas não entendidas (23/11)
+- Tabela `unclear_replies` (migration `0057`, RLS por salão; `app_user` só lê, grava e apaga). Guarda só **possível resposta** que não virou ação: alvo dentro da janela de 12 h (ou 2+ lembretes abertos), sem mídia, `looksLikeAnswer`, e a dona sem escrever à cliente. Campos: cliente por id (nunca telefone), agendamento, texto (≤500), palpite e certeza da IA, `decision` (`alerted`/`silent`/`guess`/`ambiguous`), `label`.
+- Gravação: `messaging/unclear.recordUnclear` no fim do `handleInbound`; usa savepoint e nunca lança (log `unclear_record_failed`, sem texto).
+- Apaga: 90 dias (`retention/run.ts`, `unclear`), cliente excluída/anonimizada (`clients/core.deleteClientRow`), conta (cascade do salão).
+- Tela do dono: `/admin/respostas` (ver `admin.md`). Rótulos viram exemplos de regra e casos de teste; nada treina modelo. Política de privacidade (seções 3, 5 e 7) cita isso.

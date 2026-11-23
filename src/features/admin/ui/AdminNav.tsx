@@ -17,6 +17,7 @@ export const ADMIN_NAV: Item[] = [
   { href: "/admin/uso", label: "Uso", icon: "forecast" },
   { href: "/admin/suporte", label: "Suporte", icon: "chat" },
   { href: "/admin/avisos", label: "Avisos", icon: "bell" },
+  { href: "/admin/respostas", label: "Respostas", icon: "message" },
   { href: "/admin/seguranca", label: "Segurança", icon: "shield" },
 ];
 
@@ -54,7 +55,10 @@ export function AdminNav({ supportUnread = 0 }: { supportUnread?: number }) {
                 <span className="relative">
                   <Icon name={i.icon} size={22} />
                   {supportUnread > 0 && i.href === "/admin/suporte" ? (
-                    <span aria-hidden="true" className="absolute -right-1 -top-1 size-2.5 rounded-full bg-primary xl:hidden" />
+                    <span
+                      aria-hidden="true"
+                      className="absolute -right-1 -top-1 size-2.5 rounded-full bg-primary xl:hidden"
+                    />
                   ) : null}
                 </span>
                 <span className="sr-only xl:not-sr-only xl:flex-1">{i.label}</span>
