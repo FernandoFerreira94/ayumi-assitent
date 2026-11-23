@@ -16,8 +16,12 @@ import {
   loadPackageTemplates,
   sellPackageAction,
 } from "./actions";
+import { parseDiscount } from "@/features/appointments/pricing";
+import { packageFacts, type SalonInfo } from "./promo-text";
 import {
+  autoPackageName,
   dayMonth,
+  offPct,
   packagePrice,
   promoLine,
   referenceService,
@@ -25,6 +29,7 @@ import {
   type PackageKind,
   type PromoStatus,
 } from "./rules";
+import { ShareTextPanel, ShareTextSheet } from "./ShareText";
 import type { TemplateView } from "./views";
 
 const chip =
@@ -49,7 +54,7 @@ const STATUS: Record<PromoStatus, { label: string; cls: string } | null> = {
 const pill = "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold";
 
 /** Selos do pacote: sessões, serviços, economia, período e vagas. */
-function PackageChips({ t }: { t: TemplateView }) {
+function PackageChips({ t, cap = true }: { t: TemplateView; cap?: boolean }) {
   const when = t.endsOn ? `até ${dayMonth(t.endsOn)}` : t.startsOn ? `a partir de ${dayMonth(t.startsOn)}` : null;
   return (
     <span className="flex flex-wrap gap-1.5">
@@ -68,7 +73,7 @@ function PackageChips({ t }: { t: TemplateView }) {
           {when}
         </span>
       ) : null}
-      {t.maxClients !== null ? (
+      {cap && t.maxClients !== null ? (
         <span className={`${pill} bg-surface`}>
           <Icon name="users" size={13} className="text-primary-text" />
           {t.soldClients}/{t.maxClients} clientes
@@ -79,15 +84,56 @@ function PackageChips({ t }: { t: TemplateView }) {
   );
 }
 
+/** Preço grande; com desconto, o cheio riscado e o % ao lado ("de R$ 160 · −25%"). */
+export function PriceTag({ full, price }: { full: number; price: number }) {
+  const pct = offPct(full, price);
+  return (
+    <span className="grid shrink-0 justify-items-end">
+      <span className="text-xl font-bold tabular-nums text-primary-text">{formatBRL(price)}</span>
+      {pct > 0 ? (
+        <span className="flex items-center gap-1.5 text-xs font-bold">
+          <s className="text-muted tabular-nums">{formatBRL(full)}</s>
+          <span className="rounded-full bg-ok-bg px-1.5 py-0.5 text-ok">−{pct}%</span>
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+/** "12 de 30 clientes compraram · restam 18", com barra. Some sem limite. */
+export function CapBar({ used, max, label }: { used: number; max: number | null; label: string }) {
+  if (max === null) return null;
+  const left = Math.max(0, max - used);
+  const pct = Math.min(100, Math.round((used * 100) / max));
+  return (
+    <div className="grid gap-1.5 rounded-2xl bg-surface px-3 py-2.5">
+      <p className="flex items-baseline justify-between gap-2 text-sm font-semibold">
+        <span>
+          <b className="text-lg tabular-nums text-primary-text">{used}</b> de <b className="tabular-nums">{max}</b>{" "}
+          {label}
+        </span>
+        <span className={`shrink-0 whitespace-nowrap font-bold ${left === 0 ? "text-fail" : "text-ok"}`}>
+          {left === 0 ? "esgotou" : `restam ${left}`}
+        </span>
+      </p>
+      <span className="h-2 overflow-hidden rounded-full bg-line" aria-hidden="true">
+        <span className="block h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+      </span>
+    </div>
+  );
+}
+
 /** Ajustes > Pagamentos > Pacotes: cartões curtos com selos; criar é um passo a passo de 3 telas. */
 export function PackageTemplates({
   templates,
   services,
   validDays,
+  salon,
 }: {
   templates: TemplateView[];
   services: Svc[];
   validDays: number;
+  salon: SalonInfo;
 }) {
   const [pending, start] = useTransition();
   return (
@@ -109,29 +155,33 @@ export function PackageTemplates({
             >
               <div className="flex items-start gap-3">
                 <p className="min-w-0 flex-1 font-bold">{t.name}</p>
-                <p className="shrink-0 text-lg font-bold tabular-nums text-primary-text">{formatBRL(t.pricedCents)}</p>
+                <PriceTag full={t.fullCents} price={t.pricedCents} />
               </div>
-              <PackageChips t={t} />
-              <button
-                type="button"
-                disabled={pending}
-                aria-label={`Tirar ${t.name} da venda`}
-                onClick={() =>
-                  start(async () => {
-                    const r = await archivePackageTemplateAction(t.id).catch(() => null);
-                    if (r?.ok) notify.success("Pacote tirado da venda");
-                    else notify.error(r && !r.ok ? r.code : "NETWORK");
-                  })
-                }
-                className="-mb-1 justify-self-end px-1 py-1 text-sm font-bold text-fail"
-              >
-                Tirar da venda
-              </button>
+              <PackageChips t={t} cap={false} />
+              <CapBar used={t.soldClients} max={t.maxClients} label="compraram" />
+              <div className="flex items-center justify-between gap-2">
+                <ShareTextSheet title={t.name} facts={t.facts} salon={salon} />
+                <button
+                  type="button"
+                  disabled={pending}
+                  aria-label={`Tirar ${t.name} da venda`}
+                  onClick={() =>
+                    start(async () => {
+                      const r = await archivePackageTemplateAction(t.id).catch(() => null);
+                      if (r?.ok) notify.success("Pacote tirado da venda");
+                      else notify.error(r && !r.ok ? r.code : "NETWORK");
+                    })
+                  }
+                  className="min-h-11 px-2 text-sm font-bold text-fail"
+                >
+                  Tirar da venda
+                </button>
+              </div>
             </li>
           ))}
         </ul>
       )}
-      <NewTemplateSheet services={services} validDays={validDays} />
+      <NewTemplateSheet services={services} validDays={validDays} salon={salon} />
     </div>
   );
 }
@@ -157,7 +207,59 @@ const BAD_TEXT: Record<string, string> = {
   maxClients: "De 1 a 10.000 clientes.",
 };
 
-function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays: number }) {
+/** Nome opcional da promoção, com sugestões de datas ("Natal", "Black Friday"). */
+export function NameField({
+  value,
+  onChange,
+  placeholder,
+  invalid,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  invalid: boolean;
+}) {
+  return (
+    <div className="grid gap-1.5">
+      <label className="grid gap-1.5">
+        <span className="text-sm font-bold">Nome da promoção (opcional)</span>
+        <input
+          aria-label="Nome da promoção (opcional)"
+          value={value}
+          maxLength={60}
+          placeholder={placeholder || "Ex.: Natal"}
+          onChange={(e) => onChange(e.target.value)}
+          aria-invalid={invalid}
+          className={field}
+        />
+      </label>
+      <ul className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5" aria-label="Sugestões de nome">
+        {NAME_IDEAS.map((idea) => (
+          <li key={idea} className="shrink-0">
+            <button
+              type="button"
+              aria-pressed={value === idea}
+              onClick={() => onChange(value === idea ? "" : idea)}
+              className={`min-h-10 rounded-full px-3.5 text-sm font-bold ${value === idea ? "btn-tint" : "btn-glass"}`}
+            >
+              {idea}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+type PriceMode = "pct" | "brl" | "final";
+const PRICE_MODES: [PriceMode, string][] = [
+  ["pct", "Em %"],
+  ["brl", "Em R$"],
+  ["final", "Preço final"],
+];
+export const NAME_IDEAS = ["Natal", "Black Friday", "Dia das Mães", "Dia dos Namorados", "Aniversário do estúdio"];
+
+function NewTemplateSheet({ services, validDays, salon }: { services: Svc[]; validDays: number; salon: SalonInfo }) {
   const side = useSheetSide();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
@@ -166,6 +268,8 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
   const [paid, setPaid] = useState("3");
   const [total, setTotal] = useState("4");
   const [price, setPrice] = useState("");
+  const [priceMode, setPriceMode] = useState<PriceMode>("pct");
+  const [created, setCreated] = useState<{ name: string; facts: ReturnType<typeof packageFacts> } | null>(null);
   const [startsOn, setStartsOn] = useState("");
   const [endsOn, setEndsOn] = useState("");
   const [cap, setCap] = useState("");
@@ -177,28 +281,36 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
   const picked = services.filter((s) => serviceIds.includes(s.id));
   const ref = referenceService(picked);
   const names = serviceNames(picked.map((s) => s.name));
+  const discount = priceMode === "final" ? null : parseDiscount(priceMode, price);
   const draft = {
     kind,
     sessionsPaid: Number(paid) || 0,
     sessionsTotal: Number(total) || 0,
     priceCents: fieldToCents(price) ?? 0,
+    discount: kind === "sessions" && discount && discount !== "invalid" ? discount : null,
   };
+  const priceOk =
+    priceMode === "final"
+      ? fieldToCents(price) !== null
+      : !!discount && discount !== "invalid" && (discount.kind === "brl" || discount.value < 100);
   const stepOk =
     !!ref &&
     draft.sessionsTotal > 0 &&
     draft.sessionsTotal <= 100 &&
-    (kind === "sessions"
-      ? fieldToCents(price) !== null
-      : draft.sessionsPaid >= 1 && draft.sessionsPaid < draft.sessionsTotal);
+    (kind === "sessions" ? priceOk : draft.sessionsPaid >= 1 && draft.sessionsPaid < draft.sessionsTotal);
   const priced = ref ? packagePrice(draft, ref.priceCents) : 0;
-  const save = ref ? Math.max(0, draft.sessionsTotal * ref.priceCents - priced) : 0;
+  const fullCents = ref ? draft.sessionsTotal * ref.priceCents : 0;
+  const save = Math.max(0, fullCents - priced);
   const promo = promoLine(
     { startsOn: startsOn || null, endsOn: endsOn || null, maxClients: Number(cap) || null },
     null,
     dayMonth,
   );
   const autoName = ref
-    ? (kind === "pay_x" ? `Pague ${paid} leve ${total} ${names}` : `${total} sessões de ${names}`).slice(0, 80)
+    ? autoPackageName(
+        draft,
+        picked.map((s) => s.name),
+      )
     : "";
   const toggle = (id: string) =>
     setServiceIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
@@ -209,6 +321,7 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
       setStep(0);
       setBad(null);
       setError(null);
+      setCreated(null);
     }
   }
 
@@ -223,6 +336,7 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
         sessionsPaid: paid,
         sessionsTotal: total,
         price,
+        priceMode: kind === "sessions" ? priceMode : "final",
         startsOn,
         endsOn,
         maxClients: cap,
@@ -234,7 +348,25 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
         } else setError(r && !r.ok ? r.code : "NETWORK");
         return;
       }
-      setOpen(false);
+      const finalName = name.trim() || autoName;
+      setCreated({
+        name: finalName,
+        facts: packageFacts({
+          name: finalName,
+          autoName: !name.trim(),
+          kind,
+          sessionsPaid: draft.sessionsPaid,
+          sessionsTotal: draft.sessionsTotal,
+          serviceNames: picked.map((s) => s.name),
+          priceCents: priced,
+          unitCents: ref?.priceCents ?? 0,
+          validDays,
+          startsOn: startsOn || null,
+          endsOn: endsOn || null,
+          maxClients: Number(cap) || null,
+          left: null,
+        }),
+      });
       setName("");
       setStartsOn("");
       setEndsOn("");
@@ -245,14 +377,25 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
 
   const summary = ref ? (
     <div className="grid gap-1 rounded-2xl bg-soft px-4 py-3">
-      <p className="flex items-baseline justify-between gap-3">
-        <span className="font-bold">
-          {draft.sessionsTotal} {draft.sessionsTotal === 1 ? "sessão" : "sessões"} · {names}
-        </span>
-        <span className="text-xl font-bold tabular-nums text-primary-text">{formatBRL(priced)}</span>
+      <p className="font-bold">
+        {draft.sessionsTotal} {draft.sessionsTotal === 1 ? "sessão" : "sessões"} · {names}
+      </p>
+      <p className="text-base font-semibold" aria-live="polite">
+        {save > 0 ? (
+          <>
+            De <s className="tabular-nums text-muted">{formatBRL(fullCents)}</s> por{" "}
+            <b className="text-2xl tabular-nums text-primary-text">{formatBRL(priced)}</b>
+          </>
+        ) : (
+          <b className="text-2xl tabular-nums text-primary-text">{formatBRL(priced)}</b>
+        )}
       </p>
       <p className="flex flex-wrap gap-1.5">
-        {save > 0 ? <span className={`${pill} bg-ok-bg text-ok`}>economiza {formatBRL(save)}</span> : null}
+        {save > 0 ? (
+          <span className={`${pill} bg-ok-bg text-ok`}>
+            −{offPct(fullCents, priced)}% · economiza {formatBRL(save)}
+          </span>
+        ) : null}
         <span className={`${pill} bg-surface`}>vale {validDays} dias</span>
         {promo ? <span className={`${pill} bg-surface text-primary-text`}>{promo}</span> : null}
       </p>
@@ -272,215 +415,266 @@ function NewTemplateSheet({ services, validDays }: { services: Svc[]; validDays:
         <Drawer.Content className={sheet(side)}>
           <SidePanelClose />
           <div className={SHEET_SCROLL}>
-            <Drawer.Title className="text-xl font-bold">Novo pacote</Drawer.Title>
+            <Drawer.Title className="text-xl font-bold">{created ? "Pacote criado!" : "Novo pacote"}</Drawer.Title>
             <Drawer.Description className="pb-3 text-sm font-semibold text-muted">
-              Passo {step + 1} de 3 · {STEPS[step]}
+              {created
+                ? `${created.name} já está à venda. Agora é divulgar.`
+                : `Passo ${step + 1} de 3 · ${STEPS[step]}`}
             </Drawer.Description>
-            <div className="mb-4 grid grid-cols-3 gap-1.5" aria-hidden="true">
-              {STEPS.map((s, i) => (
-                <span key={s} className={`h-1.5 rounded-full ${i <= step ? "bg-primary" : "bg-line"}`} />
-              ))}
-            </div>
-
-            {step === 0 ? (
-              <div className="grid gap-2" role="radiogroup" aria-label="Tipo de pacote">
-                {(
-                  [
-                    ["pay_x", "Pague X, leve Y", "Ex.: paga 3, leva 4"],
-                    ["sessions", "Pacote de sessões", "Ex.: 5 sessões por R$ 200"],
-                  ] as const
-                ).map(([k, title, ex]) => (
-                  <button
-                    key={k}
-                    type="button"
-                    role="radio"
-                    aria-checked={kind === k}
-                    onClick={() => setKind(k)}
-                    className="flex items-center gap-3 rounded-2xl border-2 border-line bg-surface px-4 py-4 text-left aria-checked:border-primary aria-checked:bg-soft"
-                  >
-                    <span className="grid size-10 shrink-0 place-items-center rounded-full bg-soft text-primary-text">
-                      <Icon name={k === "pay_x" ? "sparkles" : "ticket"} size={20} />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-bold">{title}</span>
-                      <span className="block text-sm font-semibold text-muted">{ex}</span>
-                    </span>
-                    {kind === k ? <Icon name="checkCircle" size={22} className="text-primary-text" /> : null}
-                  </button>
-                ))}
+            {created ? (
+              <div className="grid gap-3">
+                <ShareTextPanel facts={created.facts} salon={salon} />
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="btn-glass min-h-13 rounded-full px-5 font-bold"
+                >
+                  Pronto
+                </button>
               </div>
-            ) : null}
+            ) : (
+              <>
+                <div className="mb-4 grid grid-cols-3 gap-1.5" aria-hidden="true">
+                  {STEPS.map((s, i) => (
+                    <span key={s} className={`h-1.5 rounded-full ${i <= step ? "bg-primary" : "bg-line"}`} />
+                  ))}
+                </div>
 
-            {step === 1 ? (
-              <div className="grid gap-4">
-                <div className="grid gap-1.5">
-                  <p className="text-sm font-bold">Serviços</p>
-                  <div
-                    className={`flex flex-wrap gap-2 rounded-2xl ${bad === "serviceIds" ? "ring-2 ring-fail" : ""}`}
-                    role="group"
-                    aria-label="Serviços do pacote"
-                  >
-                    {services.map((s) => (
+                {step === 0 ? (
+                  <div className="grid gap-2" role="radiogroup" aria-label="Tipo de pacote">
+                    {(
+                      [
+                        ["pay_x", "Pague X, leve Y", "Ex.: paga 3, leva 4"],
+                        ["sessions", "Pacote de sessões", "Ex.: 5 sessões por R$ 200"],
+                      ] as const
+                    ).map(([k, title, ex]) => (
                       <button
-                        key={s.id}
+                        key={k}
                         type="button"
-                        aria-pressed={serviceIds.includes(s.id)}
-                        onClick={() => toggle(s.id)}
-                        className={`${chip} flex-none`}
+                        role="radio"
+                        aria-checked={kind === k}
+                        onClick={() => setKind(k)}
+                        className="flex items-center gap-3 rounded-2xl border-2 border-line bg-surface px-4 py-4 text-left aria-checked:border-primary aria-checked:bg-soft"
                       >
-                        {s.name} · {formatBRL(s.priceCents)}
+                        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-soft text-primary-text">
+                          <Icon name={k === "pay_x" ? "sparkles" : "ticket"} size={20} />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-bold">{title}</span>
+                          <span className="block text-sm font-semibold text-muted">{ex}</span>
+                        </span>
+                        {kind === k ? <Icon name="checkCircle" size={22} className="text-primary-text" /> : null}
                       </button>
                     ))}
                   </div>
-                  {picked.length > 1 ? (
-                    <p className="text-xs font-semibold text-muted">A sessão vale em qualquer um.</p>
-                  ) : null}
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {kind === "pay_x" ? (
+                ) : null}
+
+                {step === 1 ? (
+                  <div className="grid gap-4">
+                    <div className="grid gap-1.5">
+                      <p className="text-sm font-bold">Serviços</p>
+                      <div
+                        className={`flex flex-wrap gap-2 rounded-2xl ${bad === "serviceIds" ? "ring-2 ring-fail" : ""}`}
+                        role="group"
+                        aria-label="Serviços do pacote"
+                      >
+                        {services.map((s) => (
+                          <button
+                            key={s.id}
+                            type="button"
+                            aria-pressed={serviceIds.includes(s.id)}
+                            onClick={() => toggle(s.id)}
+                            className={`${chip} flex-none`}
+                          >
+                            {s.name} · {formatBRL(s.priceCents)}
+                          </button>
+                        ))}
+                      </div>
+                      {picked.length > 1 ? (
+                        <p className="text-xs font-semibold text-muted">A sessão vale em qualquer um.</p>
+                      ) : null}
+                    </div>
+                    {kind === "sessions" ? (
+                      <div className="grid gap-1.5">
+                        <p className="text-sm font-bold">Como quer dar o desconto?</p>
+                        <div className="flex gap-2" role="radiogroup" aria-label="Forma do desconto">
+                          {PRICE_MODES.map(([m, label]) => (
+                            <button
+                              key={m}
+                              type="button"
+                              role="radio"
+                              aria-checked={priceMode === m}
+                              onClick={() => {
+                                setPriceMode(m);
+                                setPrice("");
+                              }}
+                              className={`${chip} aria-checked:border-primary aria-checked:bg-primary aria-checked:text-on-primary`}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                    <div className="grid grid-cols-2 gap-2">
+                      {kind === "pay_x" ? (
+                        <label className="grid gap-1.5">
+                          <span className="text-sm font-bold">Paga</span>
+                          <input
+                            inputMode="numeric"
+                            aria-label="Sessões pagas"
+                            value={paid}
+                            onChange={(e) => setPaid(e.target.value.replace(/\D/g, ""))}
+                            aria-invalid={bad === "sessionsPaid"}
+                            className={field}
+                          />
+                        </label>
+                      ) : (
+                        <label className="grid gap-1.5">
+                          <span className="text-sm font-bold">
+                            {priceMode === "pct"
+                              ? "Desconto (%)"
+                              : priceMode === "brl"
+                                ? "Desconto (R$)"
+                                : "Preço final"}
+                          </span>
+                          <input
+                            inputMode={priceMode === "pct" ? "numeric" : "decimal"}
+                            aria-label={
+                              priceMode === "pct"
+                                ? "Desconto em porcentagem"
+                                : priceMode === "brl"
+                                  ? "Desconto em reais"
+                                  : "Preço do pacote"
+                            }
+                            placeholder={
+                              priceMode === "pct"
+                                ? "Ex.: 20"
+                                : priceMode === "brl"
+                                  ? "Ex.: 50,00"
+                                  : ref
+                                    ? ((ref.priceCents * (Number(total) || 0) * 0.9) / 100).toFixed(2).replace(".", ",")
+                                    : ""
+                            }
+                            value={price}
+                            onChange={(e) => setPrice(e.target.value)}
+                            aria-invalid={bad === "priceCents"}
+                            className={field}
+                          />
+                        </label>
+                      )}
+                      <label className="grid gap-1.5">
+                        <span className="text-sm font-bold">{kind === "pay_x" ? "Leva" : "Sessões"}</span>
+                        <input
+                          inputMode="numeric"
+                          aria-label="Sessões no pacote"
+                          value={total}
+                          onChange={(e) => setTotal(e.target.value.replace(/\D/g, ""))}
+                          aria-invalid={bad === "sessionsTotal"}
+                          className={field}
+                        />
+                      </label>
+                    </div>
+                    {stepOk ? summary : null}
+                  </div>
+                ) : null}
+
+                {step === 2 ? (
+                  <div className="grid gap-4">
+                    <p className="text-sm font-semibold text-muted">
+                      Tudo opcional. Fora das datas ou sem vagas, sai da venda sozinho.
+                    </p>
+                    <NameField value={name} onChange={setName} placeholder={autoName} invalid={bad === "name"} />
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="grid min-w-0 gap-1.5">
+                        <span className="text-sm font-bold">Começa</span>
+                        <input
+                          type="date"
+                          aria-label="Início da promoção"
+                          value={startsOn}
+                          onChange={(e) => setStartsOn(e.target.value)}
+                          aria-invalid={bad === "startsOn"}
+                          className={`${field} min-w-0 px-3`}
+                        />
+                      </label>
+                      <label className="grid min-w-0 gap-1.5">
+                        <span className="text-sm font-bold">Termina</span>
+                        <input
+                          type="date"
+                          aria-label="Fim da promoção"
+                          value={endsOn}
+                          min={startsOn || undefined}
+                          onChange={(e) => setEndsOn(e.target.value)}
+                          aria-invalid={bad === "endsOn"}
+                          className={`${field} min-w-0 px-3`}
+                        />
+                      </label>
+                    </div>
                     <label className="grid gap-1.5">
-                      <span className="text-sm font-bold">Paga</span>
+                      <span className="text-sm font-bold">Só para as primeiras clientes?</span>
                       <input
                         inputMode="numeric"
-                        aria-label="Sessões pagas"
-                        value={paid}
-                        onChange={(e) => setPaid(e.target.value.replace(/\D/g, ""))}
-                        aria-invalid={bad === "sessionsPaid"}
+                        aria-label="Limite de clientes"
+                        placeholder="Sem limite (ex.: 30)"
+                        value={cap}
+                        onChange={(e) => setCap(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                        aria-invalid={bad === "maxClients"}
                         className={field}
                       />
+                      <span className="text-xs font-semibold text-muted">
+                        {Number(cap) > 0
+                          ? `As ${cap} primeiras que comprarem levam; depois sai da venda. 1 por cliente.`
+                          : "Vazio = sem limite de clientes."}
+                      </span>
                     </label>
+                    {summary}
+                  </div>
+                ) : null}
+
+                {bad && BAD_TEXT[bad] && STEP_OF[bad] === step ? (
+                  <p role="alert" className="mt-3 text-sm font-semibold text-fail">
+                    {BAD_TEXT[bad]}
+                  </p>
+                ) : null}
+                {error ? (
+                  <p role="alert" className="mt-3 rounded-2xl bg-fail-bg px-4 py-3 text-sm font-semibold text-fail">
+                    {messageFor(error)}
+                  </p>
+                ) : null}
+
+                <div className="mt-5 flex gap-2">
+                  {step > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => setStep(step - 1)}
+                      className="btn-glass min-h-13 rounded-full px-5 font-bold"
+                    >
+                      Voltar
+                    </button>
+                  ) : null}
+                  {step < 2 ? (
+                    <button
+                      type="button"
+                      onClick={() => setStep(step + 1)}
+                      disabled={step === 1 && !stepOk}
+                      className="btn-tint flex min-h-13 flex-1 items-center justify-center rounded-full px-5 font-bold disabled:opacity-60"
+                    >
+                      Continuar
+                    </button>
                   ) : (
-                    <label className="grid gap-1.5">
-                      <span className="text-sm font-bold">Preço</span>
-                      <input
-                        inputMode="decimal"
-                        aria-label="Preço do pacote"
-                        placeholder={
-                          ref ? ((ref.priceCents * (Number(total) || 0) * 0.9) / 100).toFixed(2).replace(".", ",") : ""
-                        }
-                        value={price}
-                        onChange={(e) => setPrice(e.target.value)}
-                        aria-invalid={bad === "priceCents"}
-                        className={field}
-                      />
-                    </label>
+                    <button
+                      type="button"
+                      onClick={save_}
+                      disabled={pending}
+                      className="btn-tint flex min-h-13 flex-1 items-center justify-center gap-2 rounded-full px-5 font-bold disabled:opacity-70"
+                    >
+                      {pending ? <span className="spin" aria-hidden="true" /> : null}
+                      {pending ? "Criando…" : "Criar pacote"}
+                    </button>
                   )}
-                  <label className="grid gap-1.5">
-                    <span className="text-sm font-bold">{kind === "pay_x" ? "Leva" : "Sessões"}</span>
-                    <input
-                      inputMode="numeric"
-                      aria-label="Sessões no pacote"
-                      value={total}
-                      onChange={(e) => setTotal(e.target.value.replace(/\D/g, ""))}
-                      aria-invalid={bad === "sessionsTotal"}
-                      className={field}
-                    />
-                  </label>
                 </div>
-                {stepOk ? summary : null}
-              </div>
-            ) : null}
-
-            {step === 2 ? (
-              <div className="grid gap-4">
-                <p className="text-sm font-semibold text-muted">
-                  Tudo opcional. Fora das datas ou sem vagas, sai da venda.
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="grid min-w-0 gap-1.5">
-                    <span className="text-sm font-bold">Começa</span>
-                    <input
-                      type="date"
-                      aria-label="Início da promoção"
-                      value={startsOn}
-                      onChange={(e) => setStartsOn(e.target.value)}
-                      aria-invalid={bad === "startsOn"}
-                      className={`${field} min-w-0 px-3`}
-                    />
-                  </label>
-                  <label className="grid min-w-0 gap-1.5">
-                    <span className="text-sm font-bold">Termina</span>
-                    <input
-                      type="date"
-                      aria-label="Fim da promoção"
-                      value={endsOn}
-                      min={startsOn || undefined}
-                      onChange={(e) => setEndsOn(e.target.value)}
-                      aria-invalid={bad === "endsOn"}
-                      className={`${field} min-w-0 px-3`}
-                    />
-                  </label>
-                </div>
-                <label className="grid gap-1.5">
-                  <span className="text-sm font-bold">Vagas (primeiras clientes)</span>
-                  <input
-                    inputMode="numeric"
-                    aria-label="Limite de clientes"
-                    placeholder="Sem limite"
-                    value={cap}
-                    onChange={(e) => setCap(e.target.value.replace(/\D/g, "").slice(0, 5))}
-                    aria-invalid={bad === "maxClients"}
-                    className={field}
-                  />
-                </label>
-                <label className="grid gap-1.5">
-                  <span className="text-sm font-bold">Nome</span>
-                  <input
-                    aria-label="Nome (opcional)"
-                    value={name}
-                    maxLength={80}
-                    placeholder={autoName}
-                    onChange={(e) => setName(e.target.value)}
-                    aria-invalid={bad === "name"}
-                    className={field}
-                  />
-                </label>
-                {summary}
-              </div>
-            ) : null}
-
-            {bad && BAD_TEXT[bad] && STEP_OF[bad] === step ? (
-              <p role="alert" className="mt-3 text-sm font-semibold text-fail">
-                {BAD_TEXT[bad]}
-              </p>
-            ) : null}
-            {error ? (
-              <p role="alert" className="mt-3 rounded-2xl bg-fail-bg px-4 py-3 text-sm font-semibold text-fail">
-                {messageFor(error)}
-              </p>
-            ) : null}
-
-            <div className="mt-5 flex gap-2">
-              {step > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => setStep(step - 1)}
-                  className="btn-glass min-h-13 rounded-full px-5 font-bold"
-                >
-                  Voltar
-                </button>
-              ) : null}
-              {step < 2 ? (
-                <button
-                  type="button"
-                  onClick={() => setStep(step + 1)}
-                  disabled={step === 1 && !stepOk}
-                  className="btn-tint flex min-h-13 flex-1 items-center justify-center rounded-full px-5 font-bold disabled:opacity-60"
-                >
-                  Continuar
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={save_}
-                  disabled={pending}
-                  className="btn-tint flex min-h-13 flex-1 items-center justify-center gap-2 rounded-full px-5 font-bold disabled:opacity-70"
-                >
-                  {pending ? <span className="spin" aria-hidden="true" /> : null}
-                  {pending ? "Criando…" : "Criar pacote"}
-                </button>
-              )}
-            </div>
+              </>
+            )}
           </div>
         </Drawer.Content>
       </Drawer.Portal>

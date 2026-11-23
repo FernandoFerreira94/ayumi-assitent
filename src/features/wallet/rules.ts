@@ -4,6 +4,8 @@
  * Pagamento manual da cliente do salão (sem gateway); não é a cobrança do Bubbly.
  */
 
+import { applyDiscount, type Discount } from "@/features/appointments/pricing";
+
 export const LEDGER_KINDS = [
   "payment",
   "refund",
@@ -201,11 +203,25 @@ export type PackageDraft = {
   startsOn: string | null;
   endsOn: string | null;
   maxClients: number | null;
+  /** pacote de sessões com preço por desconto (% ou R$ sobre sessões × valor do serviço); null = preço digitado */
+  discount?: Discount | null;
 };
 
 /** Preço do modelo: "Pague X, leve Y" = X × valor do serviço; pacote de sessões = o preço digitado. */
-export const packagePrice = (d: Pick<PackageDraft, "kind" | "sessionsPaid" | "priceCents">, unitCents: number) =>
-  d.kind === "pay_x" ? payXPrice(d.sessionsPaid ?? 0, unitCents) : d.priceCents;
+export const packagePrice = (
+  d: Pick<PackageDraft, "kind" | "sessionsPaid" | "priceCents"> &
+    Partial<Pick<PackageDraft, "sessionsTotal" | "discount">>,
+  unitCents: number,
+) =>
+  d.kind === "pay_x"
+    ? payXPrice(d.sessionsPaid ?? 0, unitCents)
+    : d.discount
+      ? applyDiscount((d.sessionsTotal ?? 0) * unitCents, d.discount).totalCents
+      : d.priceCents;
+
+/** Percentual de desconto (arredondado) de `priceCents` sobre o valor cheio; 0 sem desconto. */
+export const offPct = (fullCents: number, priceCents: number) =>
+  fullCents > 0 && priceCents < fullCents ? Math.round(((fullCents - priceCents) * 100) / fullCents) : 0;
 
 /** Serviço de referência do preço: o mais caro da lista (no "Pague X, leve Y" o salão nunca perde). */
 export const referenceService = <T extends { priceCents: number }>(list: readonly T[]): T | undefined =>
@@ -230,6 +246,16 @@ export function packagePreview(
   const lead = d.kind === "pay_x" ? `Paga ${d.sessionsPaid} e leva ${d.sessionsTotal}: ` : "";
   return `${lead}cliente paga ${brl(price)} e ganha ${what}${save > 0 ? ` (economiza ${brl(save)})` : ""}. Vale ${validDays} dias.`;
 }
+
+/** Nome automático do pacote, quando a dona não dá um ("Pague 3 leve 4 Esmaltação"). */
+export const autoPackageName = (
+  d: Pick<PackageDraft, "kind" | "sessionsPaid" | "sessionsTotal">,
+  names: readonly string[],
+) =>
+  (d.kind === "pay_x"
+    ? `Pague ${d.sessionsPaid} leve ${d.sessionsTotal} ${serviceNames(names)}`
+    : `${d.sessionsTotal} sessões de ${serviceNames(names)}`
+  ).slice(0, 80);
 
 /** "2030-12-01" → "01/12" (linha da promoção). */
 export const dayMonth = (day: string) => `${day.slice(8, 10)}/${day.slice(5, 7)}`;
@@ -288,6 +314,8 @@ export function parsePackageDraft(raw: {
   startsOn?: string;
   endsOn?: string;
   maxClients?: string;
+  /** desconto no lugar do preço (pacote de sessões) */
+  discount?: Discount | null;
 }): { ok: true; draft: PackageDraft } | { ok: false; field: string } {
   const kind = raw.kind === "pay_x" || raw.kind === "sessions" ? raw.kind : null;
   if (!kind) return { ok: false, field: "kind" };
@@ -311,6 +339,13 @@ export function parsePackageDraft(raw: {
     const paid = Number(raw.sessionsPaid);
     if (!Number.isInteger(paid) || paid < 1 || paid >= total) return { ok: false, field: "sessionsPaid" };
     return { ok: true, draft: { ...base, sessionsPaid: paid, priceCents: 0 } };
+  }
+  if (raw.discount) {
+    const v = raw.discount.value;
+    const okPct = raw.discount.kind === "pct" && Number.isInteger(v) && v >= 1 && v <= 99;
+    const okBrl = raw.discount.kind === "brl" && Number.isInteger(v) && v >= 1 && v < 10_000_000;
+    if (!okPct && !okBrl) return { ok: false, field: "priceCents" };
+    return { ok: true, draft: { ...base, sessionsPaid: null, priceCents: 0, discount: raw.discount } };
   }
   const price = raw.priceCents;
   if (price == null || !Number.isInteger(price) || price < 0 || price > 10_000_000)
