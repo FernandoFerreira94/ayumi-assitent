@@ -4,13 +4,20 @@ import { getDb, withTenant, type Tx } from "@/db/client";
 import { appointments, clients, messages, tenants } from "@/db/schema";
 import { sendToAll } from "@/features/push/core";
 import type { PushPort } from "@/features/push/port";
-import { CORRECTION_HOURS, OWNER_QUIET_HOURS, planAiReply, type AiPlan, type AiVerdict } from "./ai-policy";
+import {
+  ANSWER_WINDOW_HOURS,
+  CORRECTION_HOURS,
+  looksLikeAnswer,
+  OWNER_QUIET_HOURS,
+  planAiReply,
+  type AiPlan,
+  type AiVerdict,
+} from "./ai-policy";
 import type { MessagingPort } from "./port";
 import { isQuietHour } from "@/features/reminders/quiet";
-import { clientCall, slotLabel } from "@/features/reminders/text";
+import { slotLabel } from "@/features/reminders/text";
 import {
   ackText,
-  askText,
   isOptionReply,
   OPT_IN_TEXT,
   OPT_OUT_TEXT,
@@ -296,9 +303,17 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
     // A dona escreveu depois do lembrete (ou da resposta): o que a cliente manda agora responde a ela,
     // não ao lembrete. "2" para "quantas unhas?" não pode virar pedido de cancelar
     if (target && (await ownerWroteSince(tx, cli.id, target.since))) target = null;
+    // Pergunta velha (mais de 12 h): a mensagem é conversa, não resposta
+    if (target && !target.correction && now.getTime() - target.since.getTime() > ANSWER_WINDOW_HOURS * 3_600_000)
+      target = null;
 
-    // Regras simples primeiro: de graça e previsíveis
-    const ruleIntent = target && !msg.media ? parseIntent(msg.text) : null;
+    // Regras simples primeiro: de graça e previsíveis. Lista ou texto longo nunca é resposta
+    let ruleIntent = target && !msg.media && looksLikeAnswer(msg.text) ? parseIntent(msg.text) : null;
+    // Depois de respondido, só o número troca a resposta ("ops, é 3"); o resto é conversa
+    if (target?.correction && !(ruleIntent && isOptionReply(msg.text))) {
+      ruleIntent = null;
+      target = null;
+    }
 
     // Contexto para a IA (só quando as regras não entenderam e a IA está ligada)
     let ai: { ownerWroteRecently: boolean; autoRepliesLast24h: number } | null = null;
@@ -350,27 +365,19 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
         ...ai,
         media: !!msg.media,
         text: msg.text,
-        clientName: clientCall(client.name, t.fullName),
-        when: slotLabel(target.startsAt, now),
         alreadyHandedOff: target.handedOff,
       },
       () => classify(msg.text, t.aiRules),
     );
-  } else plan = { action: "silent", guess: null, quiet: false };
+  } else if (target && !ruleIntent && looksLikeAnswer(msg.text))
+    // IA desligada (ou sem modelo): parece resposta mas não deu para entender; a dona fica sabendo uma vez
+    plan = { action: "silent", guess: null, quiet: target.handedOff };
+  else plan = { action: "silent", guess: null, quiet: true };
 
-  // Cancelar ou remarcar só pelo número (2 ou 3). Texto livre ("não vou poder", ou a IA com certeza) não muda nada:
-  // pergunta uma vez, citando o horário, e avisa a dona
-  let ask: Intent | null = null;
-  if (target && plan.action === "apply" && plan.intent !== "confirm" && !(ruleIntent && isOptionReply(msg.text))) {
-    ask = plan.intent;
-    plan = target.handedOff
-      ? { action: "silent", guess: plan.intent, quiet: false }
-      : {
-          action: "handoff",
-          text: askText(plan.intent, client.name, t.fullName, slotLabel(target.startsAt, now)),
-          guess: plan.intent,
-        };
-  }
+  // Cancelar ou remarcar só pelo número (2 ou 3). Texto livre ("não vou poder") não muda nada e não gera resposta:
+  // só avisa a dona ("parece querer cancelar"), que conversa com a cliente
+  if (target && plan.action === "apply" && plan.intent !== "confirm" && !(ruleIntent && isOptionReply(msg.text)))
+    plan = { action: "silent", guess: plan.intent, quiet: false };
 
   let intent: Intent | null = null;
   let appointmentId: string | null = null;
@@ -386,9 +393,9 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
       correction = target.correction;
       if (plan.sendAck) ack = ackText(plan.intent, client.name, t.fullName, slotLabel(target.startsAt, now));
     }
-  } else if (target && plan.action === "handoff") {
+  } else if (target && plan.action === "silent" && !plan.quiet) {
+    // Avisa a dona uma vez por pergunta (marca para não repetir o aviso a cada mensagem)
     handedOff = true;
-    ack = plan.text;
   }
 
   if (appointmentId && intent) {
@@ -429,15 +436,12 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
     ack = null;
   }
 
-  if (ack)
-    await sendAutoReply(deps, msg.instance, tenantId, client, target?.id ?? null, ack, ask ? "reminder" : "auto_reply");
+  if (ack) await sendAutoReply(deps, msg.instance, tenantId, client, target?.id ?? null, ack);
 
   if (deps.push) {
     const push = deps.push;
     const guess = plan.action === "apply" ? null : plan.guess;
-    // Resposta ao lembrete que ninguém tratou (IA desligada, limite de respostas, já passada): a dona ainda precisa saber
-    const unattended = !!target && plan.action === "silent" && !plan.quiet;
-    const title = pushTitle(client.name, intent, guess, correction, handedOff || unattended, ambiguous);
+    const title = pushTitle(client.name, intent, guess, correction, handedOff, ambiguous);
     // Tocar abre a conversa com a cliente dentro do app
     if (title)
       await withTenant(tenantId, (tx) =>
@@ -455,7 +459,6 @@ async function sendAutoReply(
   client: { id: string; phone: string },
   appointmentId: string | null,
   body: string,
-  kind: "auto_reply" | "reminder" = "auto_reply",
 ) {
   const port = deps.portFor(instance);
   try {
@@ -466,7 +469,7 @@ async function sendAutoReply(
           clientId: client.id,
           appointmentId,
           direction: "out",
-          kind,
+          kind: "auto_reply",
           body,
           externalId: sent.id,
         }),

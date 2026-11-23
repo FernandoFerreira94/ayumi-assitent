@@ -109,7 +109,7 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     admin`update appointments set reply_at = null, status = ${status}::appointment_status where id = ${A}`;
   const apptRow = async () => (await admin`select status from appointments where id = ${A}`)[0];
 
-  it("texto livre pedindo cancelar não muda nada: pergunta citando o horário; só o '2' depois vale", async () => {
+  it("texto livre pedindo cancelar não muda nada nem responde: só o '2' vale", async () => {
     await reopen();
     await admin`update appointments set ai_handoff_at = null where id = ${A}`;
     sent.length = 0;
@@ -119,18 +119,34 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
       appointmentId: null,
     });
     expect((await apptRow()).status).toBe("pending_confirmation");
-    expect(sent).toHaveLength(1);
-    expect(sent[0]).toContain(
-      "você quer cancelar o horário de amanhã às 10:00? Responda 2 para cancelar ou 3 para remarcar",
-    );
-    // A pergunta entra como mensagem que espera resposta, ligada ao agendamento (citá-la vale)
-    const [ask] = await admin`select kind, appointment_id from messages where body like '%você quer cancelar%'`;
-    expect(ask).toMatchObject({ kind: "reminder", appointment_id: A });
-    sent.length = 0;
+    expect(sent).toHaveLength(0);
     expect(await handleInbound(msg("m3b", "2"), deps)).toMatchObject({ intent: "cancel", appointmentId: A });
     expect((await apptRow()).status).toBe("reschedule_requested");
     expect(sent[0]).toContain("Recebi seu pedido para cancelar o horário de amanhã às 10:00");
     await admin`update appointments set ai_handoff_at = null where id = ${A}`;
+  });
+
+  it("silêncio por padrão: lista, texto longo ou número muito depois do lembrete não têm resposta nem mudam nada", async () => {
+    await reopen();
+    sent.length = 0;
+    const lista = "Contas dezembro\n\nCartão dia 1\n124,95 12/12\n455,81 3/3\n100 gasolina\n\n902,31";
+    for (const [id, text] of [
+      ["s1", lista],
+      ["s2", "ok ".repeat(80)],
+    ])
+      expect(await handleInbound(msg(id, text), deps), text.slice(0, 20)).toEqual({
+        handled: true,
+        intent: null,
+        appointmentId: null,
+      });
+    // 13 h depois do lembrete: a pergunta já não está aberta
+    expect(await handleInbound(msg("s3", "1"), { ...deps, now: new Date(now.getTime() + 13 * 3_600_000) })).toEqual({
+      handled: true,
+      intent: null,
+      appointmentId: null,
+    });
+    expect(sent).toHaveLength(0);
+    expect((await apptRow()).status).toBe("pending_confirmation");
   });
 
   it("'3' pede para remarcar sem mexer no horário e recebe a mesma resposta", async () => {
@@ -293,8 +309,6 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
   });
 
   describe("com a IA ligada (modelo simulado)", () => {
-    const handoff =
-      "+5511987655555|Oi, Bia! Não consegui entender sua mensagem por aqui, então já passei para a profissional";
     let verdict: { intent: string; confidence: number } | null;
     const ai = {
       ...deps,
@@ -305,7 +319,7 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
       await admin`delete from messages where kind in ('auto_reply','phone')`;
       // Horário sempre no futuro, já que aqui o "agora" é o relógio real
       await admin`update appointments set reply_at = null, ai_handoff_at = null, status = 'pending_confirmation',
-        starts_at = now() + interval '1 day', ends_at = now() + interval '1 day 1 hour' where id = ${A}`;
+        reminder_sent_at = now(), starts_at = now() + interval '1 day', ends_at = now() + interval '1 day 1 hour' where id = ${A}`;
       sent.length = 0;
     };
     const handoffAt = async () =>
@@ -332,49 +346,41 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
       expect(sent[0]).toMatch(/Seu horário de amanhã às \d{2}:\d{2} está confirmado/);
     });
 
-    it("correção por texto livre ('preciso remarcar') não muda nada: pergunta; pelo número vale", async () => {
+    it("depois de respondido, texto livre é conversa (caso real: lista de contas 1 h depois); só o número corrige", async () => {
       sent.length = 0;
+      verdict = { intent: "other", confidence: 1 };
       expect(await handleInbound(m("ops, errei, preciso remarcar"), ai)).toMatchObject({ intent: null });
+      expect(await handleInbound(m("Contas dezembro\n\n100 gasolina\n61 akai\n160,55"), ai)).toMatchObject({
+        intent: null,
+      });
+      expect(sent).toHaveLength(0);
       expect((await apptRow()).status).toBe("confirmed");
-      expect(sent[0]).toContain("você quer remarcar o horário");
       expect(await handleInbound(m("3"), ai)).toMatchObject({ intent: "reschedule" });
       expect((await apptRow()).status).toBe("reschedule_requested");
     });
 
-    it("IA com certeza de 'cancelar' também só pergunta, não muda o status", async () => {
+    it("IA com certeza de 'cancelar' não muda nada e não responde; a dona é avisada", async () => {
       await fresh();
       verdict = { intent: "cancel", confidence: 0.99 };
       expect(await handleInbound(m("acho melhor deixar pra outra semana viu"), ai)).toMatchObject({ intent: null });
       expect((await apptRow()).status).toBe("pending_confirmation");
-      expect(sent[0]).toContain("você quer cancelar o horário");
-    });
-
-    it("baixa confiança ou outro assunto: avisa que a profissional continua, uma vez por agendamento", async () => {
-      await fresh();
-      verdict = { intent: "other", confidence: 0.99 };
-      await handleInbound(m("vocês trabalham no sábado? e quanto custa o gel?"), ai);
-      expect(sent).toHaveLength(1);
-      expect(sent[0]).toContain(handoff);
+      expect(sent).toHaveLength(0);
       expect(await handoffAt()).not.toBeNull();
-      expect((await apptRow()).status).toBe("pending_confirmation");
-      await handleInbound(m("e aí?"), ai);
-      expect(sent).toHaveLength(1);
     });
 
-    it("sem resposta do modelo (erro ou sem chave) também passa para a profissional", async () => {
-      await fresh();
-      verdict = null;
-      await handleInbound(m("vou me atrasar uns minutinhos"), ai);
-      expect(sent).toHaveLength(1);
-      expect(sent[0]).toContain(handoff);
-    });
-
-    it("áudio ou foto passa direto, sem perguntar ao modelo", async () => {
-      await fresh();
-      verdict = { intent: "confirm", confidence: 1 };
-      await handleInbound(m("[áudio]", { media: true }), ai);
-      expect(sent[0]).toContain("ainda não consigo ouvir áudios");
-      expect((await apptRow()).status).toBe("pending_confirmation");
+    it("outro assunto, erro do modelo ou áudio logo após o lembrete: nenhuma resposta; a dona é avisada uma vez", async () => {
+      for (const [text, v, over] of [
+        ["vocês trabalham no sábado?", { intent: "other", confidence: 0.99 }, {}],
+        ["vou me atrasar uns minutinhos", null, {}],
+        ["[áudio]", { intent: "confirm", confidence: 1 }, { media: true }],
+      ] as const) {
+        await fresh();
+        verdict = v as never;
+        await handleInbound(m(text, over), ai);
+        expect(sent, text).toHaveLength(0);
+        expect(await handoffAt(), text).not.toBeNull();
+        expect((await apptRow()).status).toBe("pending_confirmation");
+      }
     });
 
     it("fica quieta se a dona escreveu pelo celular nas últimas 12h", async () => {

@@ -242,12 +242,6 @@ describe("'não dá' solto fala de outra coisa (caso real: 'Esse link nao da')",
     expect(isOptionReply("opção 3")).toBe(true);
     expect(isOptionReply("cancela")).toBe(false);
   });
-  it("a pergunta de confirmação cita o horário e diz que só o número vale", async () => {
-    const { askText } = await import("@/features/messaging/replies");
-    expect(askText("cancel", "Bia Souza", false, "amanhã às 11:00")).toBe(
-      "Oi, Bia! Só para eu não entender errado: você quer cancelar o horário de amanhã às 11:00? Responda 2 para cancelar ou 3 para remarcar. Se não for isso, a profissional te responde por aqui 💜",
-    );
-  });
 });
 
 describe("resposta com citação (webhook)", () => {

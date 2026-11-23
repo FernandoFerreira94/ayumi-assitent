@@ -31,15 +31,21 @@
 - SAIR/VOLTAR no webhook: ver `lembretes.md` (opt-out). Cartão da cliente mostra "Não recebe lembretes automáticos".
 - Limites (`messaging/quota.ts`): 150 mensagens manuais por dia por estúdio (`sendClientMessage` → `RATE_LIMITED`); texto da cliente para a IA cortado em 500 caracteres e regras da dona em 1.000. Constantes viram limite por plano na cobrança.
 
-## Limites da IA nas respostas (`messaging/ai-policy.ts`, 17/11)
-- Só aplica a intenção sozinha com confiança ≥ 0,9 (`AI_MIN_CONFIDENCE`); abaixo disso, atraso ou "outro assunto" passa para a profissional (`handoff`).
-- Dona escreveu para a cliente nas últimas 12 h (`OWNER_QUIET_HOURS`): a IA fica quieta.
-- Dona escreveu (app ou celular) DEPOIS do lembrete (ou do 2º lembrete, ou da resposta, na correção): a mensagem da cliente responde a ela e vira mensagem normal; nem 1/2/3 nem IA mexem no horário (`inbound.ownerWroteSince`, folga de 2 min para o eco do lembrete, 19/11).
-- No máximo 3 respostas automáticas por cliente em 24 h (`AI_MAX_REPLIES_24H`); correção de intenção vale por 2 h (`CORRECTION_HOURS`).
-- Mídia ou texto acima de 1.000 caracteres (`AI_MAX_CHARS`) vai direto para a dona, sem chamar o modelo.
-- Regras fixas (`replies.parseIntent`, 19/11): o sim só vale se a mensagem for o sim e nada mais (cortesia como "obrigada", "bom dia", "até amanhã" pode vir junto); "não vou/posso/consigo/dá" só cancela quando fala de ir ("não consigo achar o endereço" não cancela); pergunta sobre cancelar ("posso cancelar?") não é pedido. O que sobra vai para a IA.
-- **Para quem é a mensagem (23/11, caso real "Esse link nao da" virou cancelamento):** resposta com citação vale pela mensagem citada (`parseUpsert.quotedId` → `inbound.quotedAppointment`): só lembrete ou pergunta do sistema (`kind = reminder` com agendamento) liga a um horário; citar a confirmação, a conversa da dona ou lembrete de horário já remarcado = conversa normal, nada automático. Sem citação e com 2+ lembretes em aberto: não escolhe, push "tem mais de um horário em aberto". Status só muda se o horário e o status continuam os mesmos de quando a mensagem foi lida.
-- **Cancelar/remarcar só pelo número:** texto livre (regra ou IA, mesmo com certeza) não muda nada; manda uma pergunta citando o horário (`replies.askText`, gravada como `reminder`) e avisa a dona ("parece querer cancelar"); só "2"/"3" aplicam. "Não dá / não posso / não vai dar" soltos só contam se a mensagem for só a recusa (com cortesia ou desculpa).
+## Silêncio por padrão (23/11, casos reais)
+
+Regra do produto: **o sistema só informa a cliente; a única conversa dele é pedir a confirmação do horário.** A dona fala direto com as clientes, então qualquer outra mensagem é conversa dela.
+
+- **Pergunta em aberto:** lembrete (1º ou 2º) ou aviso de remarcação (gravados como `kind = reminder`). A mensagem da cliente só é tratada como resposta se chegou até **12 h** depois da pergunta (`ANSWER_WINDOW_HOURS`), antes do horário, e tem cara de resposta (até 200 caracteres e 3 linhas, `looksLikeAnswer`). Lista, recado longo ou mensagem fora da janela = conversa: nada automático, só aparece na conversa.
+- **Citação:** resposta citando uma mensagem vale pela mensagem citada (`quotedAppointment`). Citar a confirmação, a conversa da dona ou lembrete de horário já remarcado = conversa.
+- **Dois lembretes em aberto sem citação:** não escolhe; push "tem mais de um horário em aberto".
+- **Única resposta automática:** o agradecimento de confirmar (1, "ok", "sim" claros, ou IA com certeza ≥ 0,9) e o "recebi seu pedido" de 2/3. Não existe mais "não entendi, passei para a profissional" nem "não consigo ouvir áudios".
+- **Cancelar/remarcar só pelo número 2 ou 3.** Texto livre (regra ou IA) não muda nada e não responde; push "parece querer cancelar/remarcar".
+- **Não entendeu, mas parece resposta** (curta, logo após a pergunta, ou áudio/foto): nada para a cliente; push "precisa de você" uma vez por pergunta (`ai_handoff_at`).
+- **Depois de respondido:** por 2 h só o número troca a resposta ("ops, é 3"); o resto é conversa.
+- Dona escreveu depois da pergunta (`ownerWroteSince`, #193): tudo vira conversa. Dona escreveu nas últimas 12 h: IA nem é chamada.
+- O status só muda se o horário e o status continuam iguais aos de quando a mensagem foi lida.
+- "Não dá / não posso / não vai dar" soltos só contam se a mensagem for só a recusa.
+- Chamada ao modelo (`classify.ts`): Haiku 5.5 com raciocínio desligado; loga `classify_reply` (intenção + confiança) ou `classify_reply_unparsed`, nunca o texto. Problema com link/endereço/pagamento = `other`. Mudou aqui: Redeploy do **web** (o webhook roda no web).
+- Limites: no máximo 3 respostas automáticas por cliente em 24 h; texto acima de 1.000 caracteres nem vai ao modelo.
+- Regras fixas (`replies.parseIntent`): o sim só vale se a mensagem for o sim e nada mais (cortesia pode vir junto); pergunta sobre cancelar não é pedido. O número só vale sozinho ("2", "opção 2").
 - Mapeamento: 1 = confirma (`confirmed`); 2 = cancelar e 3 = remarcar viram `reschedule_requested` (nunca cancela sozinho). O número só vale sozinho ("2", "opção 2").
-- Chamada ao modelo (`classify.ts`, 23/11): Haiku 5.5 com raciocínio **desligado** (ligado por padrão, gastava o limite de tokens e vinha como primeiro bloco, e a mensagem caía calada na dona). Lê o bloco de texto, não o primeiro. Loga `classify_reply` (intenção + confiança) ou `classify_reply_unparsed` (`stopReason`), nunca o texto. Mudou aqui: Redeploy do **web** (o webhook roda no web).
-- Dívida: texto de 501 a 1.000 caracteres chega ao modelo cortado em 500 (`quota.AI_TEXT_MAX`), então a IA pode decidir com metade da mensagem. Alinhar os dois limites.

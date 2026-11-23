@@ -14,67 +14,62 @@ export const OWNER_QUIET_HOURS = 12;
 /** A cliente pode corrigir a resposta até 2h depois de ter respondido ao lembrete. */
 export const CORRECTION_HOURS = 2;
 
-const keeps = (when?: string | null) => (when ? ` Seu horário de ${when} continua reservado.` : "");
-
 /**
- * Passagem para a profissional: educada, direta e sem deixar dúvida (quem responde e o que acontece com o horário).
- * O nome vem pronto (primeiro nome ou inteiro, como em Ajustes); `when` = "amanhã às 14:00".
+ * Silêncio por padrão (23/11): o sistema só informa e só conversa quando pede a confirmação do horário. Uma mensagem
+ * só é tratada como resposta se chegou até `ANSWER_WINDOW_HOURS` depois da pergunta e tem cara de resposta (curta,
+ * sem lista). Fora disso é conversa da cliente com a dona: nada automático, nem texto de "não entendi".
  */
-export const handoffText = (clientName: string, when?: string | null) =>
-  `Oi, ${clientName}! Não consegui entender sua mensagem por aqui, então já passei para a profissional, que vai te responder pessoalmente.${keeps(when)} 💜`;
-/** Áudio, foto, vídeo ou figurinha: ainda não lemos; diz isso e mostra como responder por escrito. */
-export const mediaText = (clientName: string, when?: string | null) =>
-  `Oi, ${clientName}! Por aqui ainda não consigo ouvir áudios nem abrir fotos ou vídeos, então já passei para a profissional, que vai te responder pessoalmente.${keeps(when)} Se preferir, responda por escrito: 1 para confirmar, 2 para cancelar ou 3 para remarcar 💜`;
+export const ANSWER_WINDOW_HOURS = 12;
+export const ANSWER_MAX_CHARS = 200;
+export const ANSWER_MAX_LINES = 3;
+
+/** Tem cara de resposta a "1, 2 ou 3?": curta e em poucas linhas (lista de contas, recado longo = conversa). */
+export function looksLikeAnswer(text: string): boolean {
+  const t = text.trim();
+  return (
+    t.length > 0 && t.length <= ANSWER_MAX_CHARS && t.split("\n").filter((l) => l.trim()).length <= ANSWER_MAX_LINES
+  );
+}
 
 export type AiContext = {
   /** Áudio, foto ou figurinha: a IA não lê */
   media: boolean;
   text: string;
-  /** Nome da cliente como vai na mensagem (primeiro nome ou inteiro, como a dona escolheu em Ajustes) */
-  clientName: string;
-  /** Horário do agendamento em jogo ("amanhã às 14:00"), para a resposta não deixar dúvida */
-  when?: string | null;
   /** A dona escreveu para esta cliente nas últimas 12h */
   ownerWroteRecently: boolean;
   /** Respostas automáticas já enviadas a esta cliente nas últimas 24h */
   autoRepliesLast24h: number;
-  /** Este agendamento já foi passado para a profissional */
+  /** A dona já foi avisada de que esta pergunta precisa dela */
   alreadyHandedOff: boolean;
 };
 
 /**
- * - apply: a IA entendeu com certeza; aplica a intenção (`sendAck` = ainda cabe resposta automática)
- * - handoff: avisa a cliente que a profissional continua a conversa
- * - silent: não responde nada à cliente; `guess` é o palpite, se houver. `quiet` = a dona já está na conversa,
- *   então nem avisa; sem `quiet`, a dona recebe o aviso "precisa de você" (nenhuma resposta fica sem alerta)
+ * - apply: a IA entendeu com certeza que é uma confirmação; aplica (`sendAck` = ainda cabe resposta automática)
+ * - silent: não responde nada à cliente; `guess` é o palpite, se houver. `quiet` = nem avisa a dona; sem `quiet`, a
+ *   dona recebe o aviso "precisa de você" (uma vez por pergunta)
  */
 export type AiPlan =
-  | { action: "apply"; intent: Intent; sendAck: boolean }
-  | { action: "handoff"; text: string; guess: Intent | null }
-  | { action: "silent"; guess: Intent | null; quiet: boolean };
+  { action: "apply"; intent: Intent; sendAck: boolean } | { action: "silent"; guess: Intent | null; quiet: boolean };
 
 const asIntent = (v: AiVerdict | null): Intent | null =>
   v && (v.intent === "confirm" || v.intent === "cancel" || v.intent === "reschedule") ? v.intent : null;
 
 /**
- * Decide o que fazer com a mensagem que as regras simples não entenderam. Ordem: dona presente → quieto;
- * mídia ou texto longo → passa direto (sem custo de modelo); senão pergunta ao modelo e só aplica com certeza.
- * Atraso, "outro assunto", baixa confiança, erro ou falta de chave → passa para a profissional.
+ * Decide o que fazer com a mensagem que as regras simples não entenderam, já dentro da janela de resposta.
+ * A IA só pode confirmar sozinha (certeza ≥ 0,9). Cancelar, remarcar, atraso, dúvida ou outro assunto nunca geram
+ * texto para a cliente: no máximo um aviso para a dona. Mídia, texto longo ou lista nem vão para o modelo.
  */
 export async function planAiReply(ctx: AiContext, classify: () => Promise<AiVerdict | null>): Promise<AiPlan> {
   if (ctx.ownerWroteRecently) return { action: "silent", guess: null, quiet: true };
-  const underLimit = ctx.autoRepliesLast24h < AI_MAX_REPLIES_24H;
-  const handoff = (text: string, guess: Intent | null): AiPlan =>
-    underLimit && !ctx.alreadyHandedOff
-      ? { action: "handoff", text, guess }
-      : { action: "silent", guess, quiet: false };
-
-  if (ctx.media) return handoff(mediaText(ctx.clientName, ctx.when), null);
-  if (ctx.text.length > AI_MAX_CHARS) return handoff(handoffText(ctx.clientName, ctx.when), null);
+  const tellOwner = (guess: Intent | null): AiPlan => ({ action: "silent", guess, quiet: ctx.alreadyHandedOff });
+  // Áudio ou foto logo depois do lembrete: pode ser a resposta, a dona ouve
+  if (ctx.media) return tellOwner(null);
+  if (ctx.text.length > AI_MAX_CHARS || !looksLikeAnswer(ctx.text))
+    return { action: "silent", guess: null, quiet: true };
 
   const verdict = await classify();
   const intent = asIntent(verdict);
-  if (intent && verdict && verdict.confidence >= AI_MIN_CONFIDENCE)
-    return { action: "apply", intent, sendAck: underLimit };
-  return handoff(handoffText(ctx.clientName, ctx.when), intent);
+  if (intent === "confirm" && verdict && verdict.confidence >= AI_MIN_CONFIDENCE)
+    return { action: "apply", intent, sendAck: ctx.autoRepliesLast24h < AI_MAX_REPLIES_24H };
+  return tellOwner(intent);
 }
