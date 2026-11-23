@@ -6,9 +6,9 @@ import { addDays, formatBRL, formatTime, todayStr } from "@/lib/dates";
  * Ajustes; as {chaves} viram os dados do horário. Arquivo sem banco para a prévia em Ajustes rodar no navegador.
  */
 
-/** Mensagem de agendamento confirmado (sai ao criar o agendamento). */
+/** Mensagem de agendamento confirmado (sai ao criar o agendamento). Sem endereço cadastrado, as linhas 📍/🗺️ somem. */
 export const DEFAULT_BOOKING =
-  "Oi! Seu agendamento de {servico} está confirmado 💜\n📅 {dia}\n🕒 {hora}\n\nTe esperamos com carinho!";
+  "Oi! Seu agendamento de {servico} está confirmado 💜\n📅 {dia}\n🕒 {hora}\n📍 {endereco}\n🗺️ {mapa}\n\nTe esperamos com carinho!";
 /** 1º aviso: pede a confirmação do horário. */
 export const DEFAULT_REMINDER =
   "Oi! Passando para lembrar do seu horário de {servico} {dia} às {hora}. Te espero com carinho! 💜";
