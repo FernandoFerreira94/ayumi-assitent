@@ -151,6 +151,7 @@ export function NextClient({ next, isToday }: { next: Dashboard["next"]; isToday
           serviceName={next.serviceName}
           date={date}
           start={formatTime(next.startsAt)}
+          minutes={Math.round((next.endsAt.getTime() - next.startsAt.getTime()) / 60_000)}
           nested={false}
           triggerClassName={`${btn} btn-glass`}
         />

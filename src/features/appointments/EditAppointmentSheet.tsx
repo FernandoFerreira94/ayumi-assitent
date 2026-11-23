@@ -8,7 +8,12 @@ import { Icon } from "@/components/ui/Icon";
 import type { PickerOption } from "@/components/ui/LetterPicker";
 import { messageFor, type ErrorCode } from "@/lib/errors";
 import { timeOptions } from "@/lib/time-grid";
+import type { Day } from "@/features/hours/slots";
 import { editAppointmentAction, loadBookingOptions } from "./actions";
+import { pauseOverlap, pauseWarning } from "./agenda-grid";
+import { hhmm } from "./timeline";
+import type { ServiceOption } from "./options";
+import { PauseConfirm } from "./PauseConfirm";
 import { warnSync } from "./sync-warning";
 
 const input = "min-h-13 w-full rounded-2xl border px-4 text-base font-semibold";
@@ -23,6 +28,7 @@ export function EditAppointmentSheet({
   serviceName,
   date,
   start,
+  minutes,
   nested,
   triggerClassName,
 }: {
@@ -33,26 +39,43 @@ export function EditAppointmentSheet({
   /** Dia atual do atendimento (AAAA-MM-DD) e horário (HH:MM), para começar preenchido. */
   date: string;
   start: string;
+  /** Duração atual (todos os serviços), para avisar se o novo horário pega a pausa. */
+  minutes?: number;
   nested: boolean;
   triggerClassName: string;
 }) {
   const side = useSheetSide();
   const [open, setOpen] = useState(false);
-  const [services, setServices] = useState<PickerOption[] | null>(null);
+  const [services, setServices] = useState<(PickerOption & Partial<ServiceOption>)[] | null>(null);
+  const [week, setWeek] = useState<Day[] | null>(null);
+  const [pick, setPick] = useState({ date, time: start, serviceId: "" });
+  const [pauseOk, setPauseOk] = useState<string | null>(null);
+  const [askPause, setAskPause] = useState(false);
   const [error, setError] = useState<ErrorCode | null>(null);
   const [pending, startTransition] = useTransition();
   const Root = nested ? Drawer.NestedRoot : Drawer.Root;
   /** Mais de um serviço: a primeira opção mantém todos; escolher outra deixa só aquele. */
   const multi = serviceName.includes(" + ");
 
+  // Mesma regra do servidor: manter o serviço mantém a duração; trocar usa a do serviço escolhido
+  const keep = !pick.serviceId || pick.serviceId === "keep" || (!multi && pick.serviceId === serviceId);
+  const length = keep ? (minutes ?? 0) : (services?.find((s) => s.id === pick.serviceId)?.durationMin ?? 0);
+  const pause = pauseOverlap({ date: pick.date, time: pick.time, minutes: length, week });
+  const pickKey = `${pick.date}|${pick.time}|${length}`;
+  const asking = askPause && pause !== null && pauseOk !== pickKey;
+  const formId = `editar-${id}`;
+
   function onOpenChange(next: boolean) {
     setOpen(next);
     setError(null);
+    setAskPause(false);
+    if (next) setPick({ date, time: start, serviceId: "" });
     // Serviços só ao abrir: a linha do dia não carrega a lista para cada card
     if (next && !services)
-      void loadBookingOptions().then((r) =>
-        setServices(r.ok ? r.data.services : [{ id: serviceId, label: serviceName }]),
-      );
+      void loadBookingOptions().then((r) => {
+        setServices(r.ok ? r.data.services : [{ id: serviceId, label: serviceName }]);
+        if (r.ok) setWeek(r.data.week ?? null);
+      });
   }
 
   function submit(form: FormData) {
@@ -91,8 +114,10 @@ export function EditAppointmentSheet({
               Mudou o horário? Ela recebe um lembrete novo para confirmar.
             </Drawer.Description>
             <form
+              id={formId}
               onSubmit={(e) => {
                 e.preventDefault();
+                if (pause && pauseOk !== pickKey) return setAskPause(true);
                 submit(new FormData(e.currentTarget));
               }}
               className="grid gap-3"
@@ -100,7 +125,13 @@ export function EditAppointmentSheet({
               <label className="grid gap-1 text-sm font-bold">
                 Serviço
                 {services ? (
-                  <select name="serviceId" required defaultValue={multi ? "keep" : serviceId} className={input}>
+                  <select
+                    name="serviceId"
+                    required
+                    defaultValue={multi ? "keep" : serviceId}
+                    className={input}
+                    onChange={(e) => setPick((p) => ({ ...p, serviceId: e.target.value }))}
+                  >
                     {multi ? <option value="keep">{serviceName}</option> : null}
                     {services.map((s) => (
                       <option key={s.id} value={s.id}>
@@ -116,16 +147,26 @@ export function EditAppointmentSheet({
               <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] gap-3">
                 <label className="grid min-w-0 gap-1 text-sm font-bold">
                   Dia
-                  <input name="date" type="date" required defaultValue={date} className={pair} />
+                  <input
+                    name="date"
+                    type="date"
+                    required
+                    defaultValue={date}
+                    className={pair}
+                    onChange={(e) => setPick((p) => ({ ...p, date: e.target.value }))}
+                  />
                 </label>
                 <label className="grid min-w-0 gap-1 text-sm font-bold">
                   Horário
                   <select
                     name="time"
                     required
+                    id={`${formId}-hora`}
                     defaultValue={start}
                     className={pair}
                     aria-invalid={error === "SLOT_TAKEN"}
+                    aria-describedby={pause ? `${formId}-pausa` : undefined}
+                    onChange={(e) => setPick((p) => ({ ...p, time: e.target.value }))}
                   >
                     {timeOptions({ include: start }).map((t) => (
                       <option key={t}>{t}</option>
@@ -133,11 +174,37 @@ export function EditAppointmentSheet({
                   </select>
                 </label>
               </div>
+              {pause && !asking ? (
+                <p
+                  id={`${formId}-pausa`}
+                  role="status"
+                  className="flex items-center gap-2 rounded-2xl bg-wait-bg px-4 py-3 text-sm font-semibold text-wait"
+                >
+                  <Icon name="alert" size={18} />
+                  {pauseWarning(pause)}. Dá para salvar mesmo assim.
+                </p>
+              ) : null}
               {error ? (
                 <p role="alert" className="rounded-2xl bg-fail-bg px-4 py-3 text-sm font-semibold text-fail">
                   {messageFor(error)}
                 </p>
               ) : null}
+              {asking && pause ? (
+                <PauseConfirm
+                  pause={`${hhmm(pause.start)} às ${hhmm(pause.end)}`}
+                  confirmLabel="Salvar mesmo assim"
+                  onPickAnother={() => {
+                    setAskPause(false);
+                    document.getElementById(`${formId}-hora`)?.focus();
+                  }}
+                  onConfirm={() => {
+                    setPauseOk(pickKey);
+                    setAskPause(false);
+                    const form = document.getElementById(formId);
+                    if (form instanceof HTMLFormElement) submit(new FormData(form));
+                  }}
+                />
+              ) : (
               <button
                 type="submit"
                 disabled={pending || !services}
@@ -146,6 +213,7 @@ export function EditAppointmentSheet({
                 {pending ? <span className="spin" aria-hidden="true" /> : null}
                 {pending ? "Salvando…" : "Salvar"}
               </button>
+              )}
             </form>
           </div>
         </Drawer.Content>
