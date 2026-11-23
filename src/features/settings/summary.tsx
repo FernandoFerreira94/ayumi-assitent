@@ -1,13 +1,13 @@
 import { cache } from "react";
-import { count, eq, isNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { getDb, withTenant } from "@/db/client";
-import { apiTokens, tenants } from "@/db/schema";
+import { tenants } from "@/db/schema";
 import { getHours } from "@/features/hours/core";
 import { getReminderSettings } from "@/features/reminders/core";
 import { shellStatus } from "@/features/shell/status";
 import { unreadSupportReplies } from "@/features/support/core";
 import { getWalletSettings } from "@/features/wallet/core";
-import { type Badge, calendarsLine, siriLine, whatsappLine } from "./connection-status";
+import { type Badge, calendarsLine, whatsappLine } from "./connection-status";
 import { hoursSummary, type SectionKey } from "./sections";
 
 /**
@@ -29,13 +29,12 @@ export type SettingsGroupData = { title: string; lines: SettingsLine[] };
  * Usado pela lista de `/ajustes` e pela coluna lateral das seções no desktop; `cache` evita consultar duas vezes.
  */
 export const loadSettingsSummary = cache(async (tenantId: string): Promise<SettingsGroupData[]> => {
-  const [{ whatsapp, google }, { week, reminders, replies, siri, wallet }, [salon]] = await Promise.all([
+  const [{ whatsapp, google }, { week, reminders, replies, wallet }, [salon]] = await Promise.all([
     shellStatus(tenantId),
     withTenant(tenantId, async (tx) => ({
       week: await getHours(tx),
       reminders: await getReminderSettings(tx),
       replies: await unreadSupportReplies(tx),
-      siri: (await tx.select({ n: count() }).from(apiTokens).where(isNull(apiTokens.revokedAt)))[0]!.n > 0,
       wallet: await getWalletSettings(tx),
     })),
     getDb()
@@ -60,7 +59,6 @@ export const loadSettingsSummary = cache(async (tenantId: string): Promise<Setti
         { section: "whatsapp", ...whatsappLine(whatsapp) },
         { section: "calendarios", ...calendarsLine(google, iphone) },
         { section: "notificacoes", status: "", push: { locationOn: salon?.locationSource === "device" } },
-        { section: "siri", ...siriLine(siri) },
       ],
     },
     {

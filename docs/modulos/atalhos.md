@@ -1,5 +1,7 @@
 # Siri e Atalhos do iPhone (fase 1, só leitura)
 
+> **23/11/2026: a Siri saiu do PWA.** Não há mais card nem linha em Ajustes > Conexões (o contador virou "X de 3"), nem tela `/ajustes/siri` (redireciona para `/ajustes`). A Siri vai **só no app nativo (Capacitor), já ligada, sem opção de ativar/desativar** (App Intents, fase 2). Foram apagados `AtalhosCard`, `SiriQuickConnect`, `atalho-guide` e `actions.ts` (criar/desligar chave, código de pareamento). **Ficam** as rotas `api/v1/atalhos/*` (incluindo `/parear`), `token.ts`, `core.ts`, `rate.ts`, `server.ts`, `tokens-shared.ts` e a tabela `api_tokens`: chaves já criadas continuam funcionando. As seções abaixo que falam da tela descrevem o histórico.
+
 **Finalidade:** a profissional pergunta para a Siri "Agenda de hoje", "Próxima cliente" ou "Resumo do dia" e ouve a resposta sem abrir o app. Funciona com um Atalho do iPhone que chama a API com uma **chave pessoal só de leitura**. Nenhuma rota escreve: agendar por voz é a fase 3 (escopo `write` separado, com confirmação). Plano: doc "Plano Siri + Atalhos (fase 1, só leitura)".
 
 ## Arquivos
@@ -47,8 +49,8 @@ Um Atalho só, com menu (Agenda de hoje, Próxima cliente, Resumo do dia, Agenda
 ## Ligações
 
 - **Usa:** appointments (`listDay`), dashboard (`untilLabel`), lib/dates.
-- **Usado por:** Ajustes (linha e seção).
+- **Usado por:** só as rotas da API (Ajustes não mostra mais a Siri desde 23/11).
 
 ## Testes
 
-- `tests/unit/atalhos.test.ts` (chave, frases, limite), `tests/db/atalhos.test.ts` (isolamento por estúdio, 401 igual, revogada, último uso, RLS), `tests/e2e/siri-atalhos.spec.ts` (criar, consultar as 3 rotas, desligar).
+- `tests/unit/atalhos.test.ts` (chave, frases, limite), `tests/db/atalhos.test.ts` (isolamento por estúdio, 401 igual, revogada, último uso, RLS). O e2e da tela (`siri-atalhos.spec.ts`) saiu junto com a tela.

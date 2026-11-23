@@ -1,11 +1,7 @@
 import "server-only";
 import { eq } from "drizzle-orm";
-import { headers } from "next/headers";
 import { getDb } from "@/db/client";
 import { tenants } from "@/db/schema";
-import { AtalhosCard } from "@/features/atalhos/AtalhosCard";
-import { isShortcutLink } from "@/features/atalhos/tokens-shared";
-import { listApiTokens } from "@/features/atalhos/server";
 import { IphoneCalendarCard } from "@/features/calendar-feed/IphoneCalendarCard";
 import { GoogleCard } from "@/features/google/GoogleCard";
 import { isGoogleConnected } from "@/features/google/server";
@@ -104,24 +100,5 @@ export async function NotificationsBody({ tenantId }: { tenantId: string }) {
         />
       </section>
     </>
-  );
-}
-
-async function baseUrl() {
-  if (process.env.BETTER_AUTH_URL) return process.env.BETTER_AUTH_URL.replace(/\/$/, "");
-  const h = await headers();
-  return `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host")}`;
-}
-
-export async function SiriBody({ tenantId }: { tenantId: string }) {
-  const [tokens, base] = await Promise.all([listApiTokens(tenantId), baseUrl()]);
-  return (
-    <section id="siri" aria-label="Siri e Atalhos" className="scroll-mt-6">
-      <AtalhosCard
-        initial={tokens}
-        baseUrl={base}
-        shortcutUrl={isShortcutLink(process.env.SIRI_SHORTCUT_URL) ? process.env.SIRI_SHORTCUT_URL : null}
-      />
-    </section>
   );
 }

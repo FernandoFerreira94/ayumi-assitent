@@ -3,7 +3,6 @@ import {
   calendarsLine,
   connectionsSummary,
   notificationsLine,
-  siriLine,
   whatsappLine,
 } from "@/features/settings/connection-status";
 
@@ -23,11 +22,6 @@ describe("selo das conexões", () => {
     expect(calendarsLine(false, false).badge).toEqual({ tone: "off", label: "Não conectado" });
   });
 
-  it("Siri desligada é opcional (cinza)", () => {
-    expect(siriLine(true).badge?.tone).toBe("ok");
-    expect(siriLine(false).badge?.tone).toBe("off");
-  });
-
   it("Notificação: avisos e localização ligados = verde; faltando um = âmbar", () => {
     expect(notificationsLine("on", true).badge).toEqual({ tone: "ok", label: "Ligada" });
     expect(notificationsLine("on", false).badge).toEqual({ tone: "warn", label: "Sem localização" });
@@ -40,9 +34,8 @@ describe("selo das conexões", () => {
     const s = connectionsSummary([
       whatsappLine("open").badge,
       calendarsLine(false, false).badge,
-      notificationsLine("off", false).badge,
       undefined,
     ]);
-    expect(s).toEqual({ active: 1, total: 4, attention: 1 });
+    expect(s).toEqual({ active: 1, total: 3, attention: 0 });
   });
 });

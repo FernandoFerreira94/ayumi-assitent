@@ -18,7 +18,7 @@ test("Ajustes é uma lista: cada linha abre a sua seção e a seta volta para a 
 test("Conexões abrem em acordeão ali mesmo, um por vez, com selo de estado", async ({ page }) => {
   await page.goto("/ajustes");
   const conexoes = page.getByRole("region", { name: "Conexões" });
-  await expect(conexoes.getByText(/de 4 ativas/)).toBeVisible();
+  await expect(conexoes.getByText(/de 3 ativas/)).toBeVisible();
   const whatsapp = page.locator("#ajuste-whatsapp");
   const calendarios = page.locator("#ajuste-calendarios");
   // Sem WhatsApp no teste: selo diz o estado sem abrir
