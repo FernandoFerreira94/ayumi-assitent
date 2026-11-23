@@ -34,6 +34,7 @@ export const ERROR_MESSAGES = {
   ADMIN_STEP_UP_BUSY: "Outra tentativa ainda está em andamento. Tente de novo em instantes.",
   PROMO_NOT_STARTED: "Essa promoção ainda não começou.",
   PROMO_ENDED: "Essa promoção já terminou.",
+  PROMO_PAUSED: "Essa promoção está pausada. Retome em Ajustes > Pagamentos.",
   PROMO_SOLD_OUT: "Essa promoção esgotou: já chegou no limite de clientes.",
   PROMO_ALREADY_BOUGHT: "Essa cliente já comprou essa promoção (é 1 por cliente).",
   NETWORK: "Sem conexão. Verifique a internet e tente de novo.",

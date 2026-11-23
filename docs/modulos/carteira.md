@@ -52,6 +52,16 @@
 - **Texto pronto** (`promo-text.ts`, puro): `promoText(facts, salão, "status" | "message")` usa só dados que existem (nome, oferta, de/por, período, vagas que restam, validade, endereço e Instagram do salão). `packageFacts` monta os fatos; `views.templateView` já entrega `facts`. UI: `ShareText.tsx` (`ShareTextPanel` editável + Copiar/Compartilhar; `ShareTextSheet` = botão "Divulgar" no cartão). Ao criar, a folha vira "Pacote criado!" com o texto.
 - **Cartão:** preço grande com o cheio riscado e −%; `CapBar` "N de M compraram · restam X" com barra.
 
+## Promoção de desconto no agendamento e pausar (23/11)
+
+- **Migration 0054:** `promotions` (nome opcional, `discount_kind` pct|brl + `discount_value`, `service_ids`, `starts_on/ends_on`, `max_clients`, `paused`, `ended_at`; RLS; app só pode UPDATE em `paused`/`ended_at`), `appointments.promotion_id` (FK composta) e `package_templates.paused`.
+- **Ex.:** "as 30 primeiras clientes que agendarem ganham 20% em Esmaltação". Usos = clientes distintas com atendimento **não cancelado** com a promoção (cancelar libera a vaga). 1 por cliente.
+- **Aplicar** (`insertAppointment`, dentro do `lockTenant`): só com `usePromotion` (a folha manda quando o selo está ligado), sem desconto digitado e sem sessão de pacote (não somam). `promotions.pickPromotion` escolhe a de maior desconto que vale hoje, cobre algum serviço, a cliente não usou e tem vaga. O desconto é gravado em **R$** (`discount_kind = 'brl'`) só sobre os serviços da promoção. Trocar o serviço na edição tira o desconto e a promoção (a vaga volta). Corrida coberta pelo lock (teste em `tests/db/promotions.test.ts`).
+- **Folha de agendar** (`BookingServices`): carrega `loadRunningPromotions`, mostra "Natal: −20% · −R$ 9,00 neste agendamento · restam 18 de 30" com interruptor "Usar a promoção"; toast "Promoção X aplicada" com "N de M já usaram".
+- **Controle** (Ajustes > Pagamentos > Pacotes e promoções, `DiscountPromos.tsx`): cartões com −%, situação (Valendo, Agendada, Pausada, Esgotada, Encerrada), barra "N de M usaram · restam X", "o que acontece" em uma frase, Divulgar, Pausar/Retomar, Encerrar (confirma; fica em "Encerradas"). Pacotes ganharam Pausar/Retomar a venda (`promotionControlAction`, erro `PROMO_PAUSED` na venda).
+- Regras puras em `promotion-rules.ts` (`promotionStatus`, `promotionOffCents`, `bestPromotion`, `promotionFacts`, `parsePromotionDraft`).
+- Limite conhecido: reativar um atendimento cancelado não reconfere a vaga (pode passar 1 do limite).
+
 ## Arquivos
 
 - `features/wallet/rules.ts` (puro): `appointmentPaid`, `walletBalance`, `cashIn`, `remainingCents`, `suggestedDeposit`, `cancelOutcome` (D1/D2), `walletEffect`, `walletStatement`, `payXPrice`, `sessionValue`, `packageExpiresOn`, `parsePolicy`, `DEFAULT_POLICY`.
@@ -68,4 +78,4 @@
 - Nunca `UPDATE`/`DELETE` no extrato; nunca coluna de saldo.
 - Mexer em saldo dentro do `lockTenant` (duas telas usando o mesmo crédito).
 - Dinheiro em centavos. Ganhos (receita = atendido) e caixa (pagamentos − devoluções) são números diferentes de propósito (D3).
-- Testes: `tests/unit/wallet.test.ts`, `tests/unit/promo-text.test.ts`, `tests/db/wallet.test.ts`, `tests/e2e/pagamentos-ajustes.spec.ts`, `tests/e2e/pagamento.spec.ts` (sinal).
+- Testes: `tests/unit/wallet.test.ts`, `tests/unit/promo-text.test.ts`, `tests/unit/promotion-rules.test.ts`, `tests/db/promotions.test.ts`, `tests/e2e/promocoes.spec.ts`, `tests/db/wallet.test.ts`, `tests/e2e/pagamentos-ajustes.spec.ts`, `tests/e2e/pagamento.spec.ts` (sinal).

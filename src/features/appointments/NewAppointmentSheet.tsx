@@ -170,6 +170,16 @@ export function NewAppointmentSheet({
         `Usou 1 sessão do pacote ${created.session.name}. Restam ${created.session.left} de ${created.session.total}`,
       );
     if (created.credit > 0) notify.success(`Usou ${formatBRL(created.credit)} do crédito da cliente`);
+    if (created.promotion)
+      notify.success(
+        `Promoção ${created.promotion.name ?? ""} aplicada: −${formatBRL(created.promotion.offCents)}`.replace(
+          "  ",
+          " ",
+        ),
+        created.promotion.maxClients !== null
+          ? `${created.promotion.used} de ${created.promotion.maxClients} clientes já usaram.`
+          : undefined,
+      );
     steps(["done", "wait", "wait"]);
     await sleep(200);
     steps(["done", "done", "run"]);
@@ -207,7 +217,8 @@ export function NewAppointmentSheet({
   }, [done]);
 
   return (
-    <Drawer.Root direction={side}
+    <Drawer.Root
+      direction={side}
       repositionInputs={false}
       open={open}
       dismissible={!working}

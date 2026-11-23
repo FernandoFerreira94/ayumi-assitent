@@ -260,16 +260,17 @@ export const autoPackageName = (
 /** "2030-12-01" → "01/12" (linha da promoção). */
 export const dayMonth = (day: string) => `${day.slice(8, 10)}/${day.slice(5, 7)}`;
 
-export type PromoStatus = "scheduled" | "running" | "ended" | "sold_out";
+export type PromoStatus = "scheduled" | "running" | "ended" | "sold_out" | "paused";
 
 /** Situação da promoção hoje: ainda não começou, valendo, acabou o período ou esgotou o limite. */
 export function promoStatus(
-  t: Pick<PackageDraft, "startsOn" | "endsOn" | "maxClients">,
+  t: Pick<PackageDraft, "startsOn" | "endsOn" | "maxClients"> & { paused?: boolean },
   today: string,
   soldClients: number,
 ): PromoStatus {
   if (t.endsOn && today > t.endsOn) return "ended";
   if (t.maxClients !== null && soldClients >= t.maxClients) return "sold_out";
+  if (t.paused) return "paused";
   if (t.startsOn && today < t.startsOn) return "scheduled";
   return "running";
 }

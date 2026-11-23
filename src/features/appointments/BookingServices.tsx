@@ -2,10 +2,14 @@
 
 import { useEffect, useId, useState } from "react";
 import { LetterPicker } from "@/components/ui/LetterPicker";
+import { Icon } from "@/components/ui/Icon";
+import { Switch } from "@/components/ui/Switch";
 import { formatBRL } from "@/lib/dates";
 import { formatDuration } from "@/features/services/catalog";
 import type { ServiceOption } from "./options";
 import { applyDiscount, parseDiscount, type DiscountKind } from "./pricing";
+import { loadRunningPromotions, type RunningPromotion } from "@/features/wallet/actions";
+import { bestPromotion } from "@/features/wallet/promotion-rules";
 
 const MAX_SERVICES = 5;
 const pill =
@@ -38,13 +42,29 @@ export function BookingServices({
   const [nextKey, setNextKey] = useState(rows.length);
   const [kind, setKind] = useState<DiscountKind | "">("");
   const [raw, setRaw] = useState("");
+  const [promos, setPromos] = useState<RunningPromotion[]>([]);
+  const [usePromo, setUsePromo] = useState(true);
+  useEffect(() => {
+    let alive = true;
+    loadRunningPromotions()
+      .then((r) => alive && r.ok && setPromos(r.data))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const picked = rows.map((r) => services.find((s) => s.id === r.id)).filter((s) => s !== undefined);
   const subtotal = picked.reduce((c, s) => c + s.priceCents, 0);
   const minutes = picked.reduce((m, s) => m + s.durationMin, 0);
   useEffect(() => onMinutes?.(minutes), [minutes, onMinutes]);
   const discount = parseDiscount(kind, raw);
-  const { discountCents, totalCents } = applyDiscount(subtotal, discount === "invalid" ? null : discount);
+  // Promoção valendo: só sem desconto digitado (não somam); o servidor confere a vaga e se a cliente já usou
+  const promo = kind ? null : bestPromotion(promos, picked);
+  const { discountCents, totalCents } = applyDiscount(
+    subtotal,
+    promo && usePromo ? { kind: "brl", value: promo.offCents } : discount === "invalid" ? null : discount,
+  );
   useEffect(() => onTotal?.(totalCents), [totalCents, onTotal]);
 
   return (
@@ -145,6 +165,33 @@ export function BookingServices({
           </span>
         ) : null}
       </fieldset>
+
+      {promo ? (
+        <div
+          className="grid gap-2 rounded-2xl border-2 border-primary/30 bg-soft px-4 py-3"
+          role="group"
+          aria-label="Promoção"
+        >
+          <div className="flex items-start gap-3">
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-surface text-primary-text">
+              <Icon name="percent" size={18} />
+            </span>
+            <p className="min-w-0 flex-1 text-sm font-semibold">
+              <b className="block text-base">
+                {promo.promo.name ? `${promo.promo.name}: ` : "Promoção: "}−{promo.promo.label}
+              </b>
+              −{formatBRL(promo.offCents)} neste agendamento
+              {promo.promo.left !== null ? ` · restam ${promo.promo.left} de ${promo.promo.maxClients}` : ""}
+            </p>
+          </div>
+          <div className="flex min-h-11 items-center justify-between gap-3 text-sm font-bold">
+            Usar a promoção
+            <Switch checked={usePromo} onChange={setUsePromo} label="Usar a promoção" />
+            {usePromo ? <input type="hidden" name="usePromotion" value="1" /> : null}
+          </div>
+          <p className="text-xs font-semibold text-muted">Vale 1 vez por cliente e não soma com sessão de pacote.</p>
+        </div>
+      ) : null}
 
       <label className="grid gap-1 text-sm font-bold">
         Observação <span className="font-semibold text-muted">(opcional)</span>

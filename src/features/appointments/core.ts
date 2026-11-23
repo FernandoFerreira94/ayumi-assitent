@@ -15,6 +15,7 @@ import {
 } from "@/features/wallet/core";
 import type { Outcome } from "@/features/wallet/rules";
 import { pickSession, reserveSession } from "@/features/wallet/packages";
+import { pickPromotion } from "@/features/wallet/promotions";
 import { toInstant, todayStr } from "@/lib/dates";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { canMarkNoShow } from "./no-show";
@@ -51,6 +52,8 @@ export type BookingInput = {
   payment?: PaymentInput | null;
   /** Quem agendou (vai no extrato da carteira). */
   createdBy?: string | null;
+  /** Usar a promoção de desconto que estiver valendo (a folha mostra e deixa desligar). */
+  usePromotion?: boolean;
 };
 
 /** Busca os serviços na ordem pedida; null se algum não existe, está pausado ou foi excluído. */
@@ -91,7 +94,12 @@ export async function insertAppointment(
   tenantId: string,
   input: BookingInput,
 ): Promise<
-  ActionResult<{ id: string; credit: number; session: { name: string; left: number; total: number } | null }>
+  ActionResult<{
+    id: string;
+    credit: number;
+    session: { name: string; left: number; total: number } | null;
+    promotion: { name: string | null; offCents: number; used: number; maxClients: number | null } | null;
+  }>
 > {
   const ids = [...new Set(input.serviceIds?.length ? input.serviceIds : input.serviceId ? [input.serviceId] : [])];
   if (ids.length === 0 || ids.length > 5) return fail("VALIDATION", "serviceIds");
@@ -103,15 +111,22 @@ export async function insertAppointment(
   const durationMin = list.reduce((m, x) => m + x.durationMin, 0);
   // Um intervalo só, no fim: o maior entre os serviços escolhidos
   const bufferMin = Math.max(...list.map((x) => x.bufferMin));
-  const priced = applyDiscount(
-    list.reduce((c, x) => c + x.priceCents, 0),
-    input.discount ?? null,
-  );
   const startsAt = toInstant(input.date, input.time);
   const endsAt = new Date(startsAt.getTime() + durationMin * 60_000);
   await lockTenant(tx, tenantId);
   // Pacote da cliente para um dos serviços (valendo no dia): o serviço entra pelo valor da sessão, já pago
   const pick = await pickSession(tx, cli.id, ids, input.date);
+  // Promoção de desconto: não soma com desconto digitado nem com sessão de pacote; a vaga é contada aqui (lock)
+  const promo =
+    input.usePromotion && !input.discount && !pick
+      ? await pickPromotion(tx, { clientId: cli.id, booked: list, today: todayStr() })
+      : null;
+  // Guardada em R$ (o valor certo, mesmo se a promoção cobre só parte dos serviços)
+  const discount = promo ? { kind: "brl" as const, value: promo.offCents } : (input.discount ?? null);
+  const priced = applyDiscount(
+    list.reduce((c, x) => c + x.priceCents, 0),
+    discount,
+  );
   const { discountCents } = priced;
   const totalCents = pick
     ? Math.max(
@@ -139,9 +154,10 @@ export async function insertAppointment(
           endsAt,
           bufferMin,
           priceCents: totalCents,
-          discountKind: input.discount?.kind ?? null,
-          discountValue: input.discount?.value ?? null,
+          discountKind: discount?.kind ?? null,
+          discountValue: discount?.value ?? null,
           discountCents,
+          promotionId: promo?.id ?? null,
           notes: input.notes || null,
           // Sinal (menos que o total) não marca como pago: fica "Sinal R$ X · falta R$ Y"
           paidAt: (input.payment || pick) && paidNow >= owed ? new Date() : null,
@@ -178,6 +194,9 @@ export async function insertAppointment(
         id: r.id,
         credit,
         session: pick ? { name: pick.name, left: pick.left, total: pick.total } : null,
+        promotion: promo
+          ? { name: promo.name, offCents: promo.offCents, used: promo.used, maxClients: promo.maxClients }
+          : null,
       };
     });
     return ok(row);
@@ -413,7 +432,14 @@ export async function editAppointment(
           priceCents,
           // Trocar o serviço volta para um serviço só, com o valor cheio dele
           ...(newService
-            ? { bufferMin: newService.bufferMin, discountKind: null, discountValue: null, discountCents: 0 }
+            ? {
+                bufferMin: newService.bufferMin,
+                discountKind: null,
+                discountValue: null,
+                discountCents: 0,
+                // sem o desconto, a vaga da promoção volta
+                promotionId: null,
+              }
             : {}),
           ...(moved ? { status: "pending_confirmation" as const, reminderSentAt: null, replyAt: null } : {}),
         })

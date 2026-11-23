@@ -1,6 +1,14 @@
 import { formatBRL } from "@/lib/dates";
 import type { TemplateRow } from "./packages";
 import { packageFacts, type PromoFacts } from "./promo-text";
+import type { PromotionRow } from "./promotions";
+import {
+  discountLabel,
+  promotionFacts,
+  promotionOffer,
+  promotionStatus,
+  type PromotionStatus,
+} from "./promotion-rules";
 import {
   autoPackageName,
   offPct,
@@ -57,5 +65,37 @@ export function templateView(t: TemplateRow, defaultDays: number, today: string)
     preview: packagePreview(t, t.services, days, formatBRL),
     promo: promoLine(t, t.soldClients, dayMonth),
     status: promoStatus(t, today, t.soldClients),
+  };
+}
+
+export type PromotionView = Omit<PromotionRow, "createdAt"> & {
+  status: PromotionStatus;
+  /** "20% de desconto em Esmaltação" */
+  offer: string;
+  /** "20%" ou "R$ 15,00" */
+  label: string;
+  /** vagas que restam (null = sem limite) */
+  left: number | null;
+  /** "De 01/12 a 31/12" (vazio sem período) */
+  period: string;
+  facts: PromoFacts;
+};
+
+/** Promoção com situação de hoje, vagas e o texto para divulgar. */
+export function promotionView(p: PromotionRow, today: string): PromotionView {
+  const { createdAt: _created, ...rest } = p;
+  void _created;
+  const left = p.maxClients === null ? null : Math.max(0, p.maxClients - p.used);
+  return {
+    ...rest,
+    status: promotionStatus(p, today, p.used),
+    offer: promotionOffer(
+      p.discount,
+      p.services.map((s) => s.name),
+    ),
+    label: discountLabel(p.discount),
+    left,
+    period: promoLine({ startsOn: p.startsOn, endsOn: p.endsOn, maxClients: null }, null, dayMonth),
+    facts: promotionFacts({ ...p, left }),
   };
 }

@@ -14,6 +14,7 @@ import {
   archivePackageTemplateAction,
   createPackageTemplateAction,
   loadPackageTemplates,
+  promotionControlAction,
   sellPackageAction,
 } from "./actions";
 import { parseDiscount } from "@/features/appointments/pricing";
@@ -49,6 +50,7 @@ const STATUS: Record<PromoStatus, { label: string; cls: string } | null> = {
   scheduled: { label: "Agendada", cls: "bg-soft text-primary-text" },
   ended: { label: "Encerrada", cls: "bg-fail-bg text-fail" },
   sold_out: { label: "Esgotada", cls: "bg-fail-bg text-fail" },
+  paused: { label: "Pausada", cls: "bg-wait-bg text-wait" },
 };
 
 const pill = "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold";
@@ -159,8 +161,30 @@ export function PackageTemplates({
               </div>
               <PackageChips t={t} cap={false} />
               <CapBar used={t.soldClients} max={t.maxClients} label="compraram" />
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <ShareTextSheet title={t.name} facts={t.facts} salon={salon} />
+                {t.status === "running" || t.status === "paused" ? (
+                  <button
+                    type="button"
+                    disabled={pending}
+                    aria-label={`${t.paused ? "Retomar" : "Pausar"} a venda de ${t.name}`}
+                    onClick={() =>
+                      start(async () => {
+                        const r = await promotionControlAction({
+                          target: "package",
+                          id: t.id,
+                          action: t.paused ? "resume" : "pause",
+                        }).catch(() => null);
+                        if (r?.ok) notify.success(t.paused ? "Venda retomada" : "Venda pausada");
+                        else notify.error(r && !r.ok ? r.code : "NETWORK");
+                      })
+                    }
+                    className="btn-glass flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm font-bold"
+                  >
+                    <Icon name={t.paused ? "play" : "pause"} size={16} className="text-primary-text" />
+                    {t.paused ? "Retomar" : "Pausar"}
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   disabled={pending}
@@ -172,7 +196,7 @@ export function PackageTemplates({
                       else notify.error(r && !r.ok ? r.code : "NETWORK");
                     })
                   }
-                  className="min-h-11 px-2 text-sm font-bold text-fail"
+                  className="ml-auto min-h-11 px-2 text-sm font-bold text-fail"
                 >
                   Tirar da venda
                 </button>
