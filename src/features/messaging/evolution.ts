@@ -2,6 +2,9 @@ import { MessagingOfflineError, MessagingRejectedError, MessagingTransientError,
 
 type Config = { baseUrl: string; apiKey: string; instance: string };
 
+/** Envio que demora mais que isso desiste: o lembrete sai dentro da transação que trava os agendamentos. */
+export const SEND_TIMEOUT_MS = 10_000;
+
 /** Evolution API (WhatsApp). `fetch` injetável para teste. */
 export function evolutionMessaging(cfg: Config, fetchImpl: typeof fetch = fetch): MessagingPort {
   return {
@@ -16,10 +19,12 @@ export function evolutionMessaging(cfg: Config, fetchImpl: typeof fetch = fetch)
             method: "POST",
             headers: { "Content-Type": "application/json", apikey: cfg.apiKey },
             body: JSON.stringify({ number: toE164.replace(/\D/g, ""), text }),
+            signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
           },
         );
-      } catch {
-        throw new MessagingTransientError("network");
+      } catch (e) {
+        // Timeout: pode ter saído mesmo assim; volta para a fila como falha temporária (o eco do webhook registra)
+        throw new MessagingTransientError((e as Error)?.name === "TimeoutError" ? "timeout" : "network");
       }
       if (res.status === 401 || res.status === 403 || res.status === 404)
         throw new MessagingOfflineError(String(res.status));

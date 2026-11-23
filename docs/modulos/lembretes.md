@@ -21,6 +21,7 @@
 - Não reenviar aviso de horário que já passou; remarcar/cancelar precisa invalidar aviso pendente.
 - **Horário mudou** (`appointments/core.SCHEDULE_RESET`, 23/11): volta a aguardar confirmação e zera 1º e 2º aviso, não respondeu, resposta, pedido de cancelar, `ai_handoff_at` e `pending_reply`. Editar e "remarcar agora" zeram na hora; o arraste ("later") só zera quando o aviso de remarcação é processado (`reschedule-send`), então arrastar e desfazer não mexe em nada. Mudar só a duração não zera.
 - **Sem lembrete logo após a confirmação:** agendou dentro da janela do 1º aviso → a confirmação vai com 1/2/3, grava `reminder_sent_at` e entra como `kind = reminder` (`booking-send` + `asFirstReminder`). Fora da janela, a confirmação é só informativa (`auto_reply`).
+- 1º aviso só até 2 h antes do horário (`reminders/core.FIRST_MIN_LEAD_HOURS`, 23/11): em cima da hora (WhatsApp reconectado, rodada atrasada) não sai pedido de 1/2/3. Envio para a Evolution desiste em 10 s (`messaging/evolution.SEND_TIMEOUT_MS`) e vira falha temporária (`transient:timeout`), para não segurar a transação que trava os agendamentos; se tiver saído mesmo assim, pode repetir uma vez.
 - Cancelar, falta ou concluir apagam `pending_reply` (resposta da noite não sai com data velha).
 - Mudou aqui: Redeploy do **worker** também.
 - Testes: `tests/db/nudge.test.ts`, `tests/unit/reminder-text.test.ts`, `nudge.test.ts`, `booking-text.test.ts`.
@@ -31,7 +32,7 @@
 - 2º aviso: `tenants.second_reminder_hours` (padrão 3 h; null = desligado). Só sai para quem recebeu o 1º há pelo menos 2 h e antes da janela do 2º (ou, sem 1º aviso, para agendamento criado antes da janela). Confirmadas recebem só lembrete; pendentes recebem pedido de confirmação (`nudge.claimNudges`).
 - Silêncio: 21h–6h no fuso do estúdio (`reminders/quiet.ts`), vale para 2º aviso e respostas automáticas.
 - Não respondeu (push à dona): 60 min depois do 2º aviso, ou 120 min depois do 1º quando não há 2º (`no-reply.ts`).
-- Respostas da noite: a resposta automática para quem escreveu no silêncio fica em `appointments.pending_reply` (migration `0029_pending_reply`) e sai na primeira rodada depois das 6h (`messaging/pending.sendPendingReplies`, chamada pelo `runReminders`).
+- Respostas da noite: a resposta automática para quem escreveu no silêncio fica em `appointments.pending_reply` (migration `0029_pending_reply`) e sai na primeira rodada depois das 6h (`messaging/pending.sendPendingReplies`, chamada pelo `runReminders`). Desde 23/11 guarda só o pedido (`@confirm`/`@cancel`/`@reschedule`, `messaging/pending-rules`); o texto é montado na hora de sair ("hoje" certo) e não sai se o status já não é o que a cliente pediu ou o horário passou. Texto antigo sai como está.
 
 ## Aviso ao remarcar (23/11)
 - `tenants.reschedule_notice` (padrão ligado) e `reschedule_template` (null = `text.DEFAULT_RESCHEDULE`, sem {nome}, com 📍 {endereco} que some sem endereço). Texto: `text.rescheduleText` + link do convite ("Atualize na sua agenda").

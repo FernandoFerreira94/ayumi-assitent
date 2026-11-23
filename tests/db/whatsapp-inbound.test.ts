@@ -217,16 +217,36 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     } finally {
       quiet.on = false;
     }
-    const [{ pending_reply }] = await admin`select pending_reply from appointments where id = ${A}`;
-    expect(pending_reply).toContain("está confirmado");
-    expect(await withTenant(T, (tx) => sendPendingReplies(tx, deps.portFor(), now))).toMatchObject({ sent: 1 });
-    expect(sent).toEqual([`+5511987655555|${pending_reply}`]);
+    // Guarda só o pedido; o texto sai montado às 6h do dia do horário ("hoje", não "amanhã")
+    expect((await admin`select pending_reply from appointments where id = ${A}`)[0].pending_reply).toBe("@confirm");
+    const six = new Date("2026-11-11T09:00:00Z");
+    expect(await withTenant(T, (tx) => sendPendingReplies(tx, deps.portFor(), six))).toMatchObject({ sent: 1 });
+    const body = "Oba, Bia! Seu horário de hoje às 10:00 está confirmado 💜 Te espero com carinho!";
+    expect(sent).toEqual([`+5511987655555|${body}`]);
     expect((await admin`select pending_reply from appointments where id = ${A}`)[0].pending_reply).toBeNull();
     expect(
       (
-        await admin`select count(*)::int as n from messages where kind = 'auto_reply' and body = ${pending_reply} and external_id = ${"ack" + ackSeq}`
+        await admin`select count(*)::int as n from messages where kind = 'auto_reply' and body = ${body} and external_id = ${"ack" + ackSeq}`
       )[0].n,
     ).toBe(1);
+  });
+
+  it("resposta guardada não sai se o horário mudou de estado até as 6h", async () => {
+    const { sendPendingReplies } = await import("@/features/messaging/pending");
+    const { withTenant } = await import("@/db/client");
+    await reopen();
+    sent.length = 0;
+    quiet.on = true;
+    try {
+      expect(await handleInbound(msg("n2", "1"), deps)).toMatchObject({ intent: "confirm" });
+    } finally {
+      quiet.on = false;
+    }
+    // A dona mudou o estado de madrugada (ex.: a cliente pediu para remarcar por outro caminho)
+    await admin`update appointments set status = 'reschedule_requested' where id = ${A}`;
+    expect(await withTenant(T, (tx) => sendPendingReplies(tx, deps.portFor(), now))).toMatchObject({ sent: 0 });
+    expect(sent).toHaveLength(0);
+    expect((await admin`select pending_reply from appointments where id = ${A}`)[0].pending_reply).toBeNull();
   });
 
   it("texto livre não recebe resposta automática nenhuma", async () => {

@@ -78,4 +78,15 @@ d("confirmação do agendamento x 1º aviso (Postgres real)", () => {
     expect(await withTenant(T, (tx) => setStatus(tx, id, "cancelled", now))).toMatchObject({ ok: true });
     expect((await admin`select pending_reply from appointments where id = ${id}`)[0].pending_reply).toBeNull();
   });
+  it("1º aviso só até 2 h antes: em cima da hora (ex.: WhatsApp reconectado) não pede 1/2/3", async () => {
+    const { claimDue } = await import("@/features/reminders/core");
+    const { withTenant } = await import("@/db/client");
+    await admin`delete from appointments where tenant_id = ${T}`;
+    const near = await appt(1.5);
+    const ok = await appt(3);
+    const ids = (await withTenant(T, (tx) => claimDue(tx, now))).map((r) => r.id);
+    expect(ids).toContain(ok);
+    expect(ids).not.toContain(near);
+    expect((await admin`select reminder_sent_at from appointments where id = ${near}`)[0].reminder_sent_at).toBeNull();
+  });
 });
