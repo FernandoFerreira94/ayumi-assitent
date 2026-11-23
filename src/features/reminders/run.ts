@@ -3,6 +3,7 @@ import { getDb, withTenant } from "@/db/client";
 import { tenants } from "@/db/schema";
 import type { MessagingPort } from "@/features/messaging/port";
 import { sendPendingReplies } from "@/features/messaging/pending";
+import { sendDueCancelNotices } from "@/features/messaging/cancel-send";
 import { sendDueRescheduleNotices } from "@/features/messaging/reschedule-send";
 import type { PushPort } from "@/features/push/port";
 import { getReminderSettings, sendReminders, type ReminderRun } from "./core";
@@ -32,9 +33,14 @@ export async function runReminders(
         console.error(JSON.stringify({ level: "warn", msg: "reschedule_tenant_failed", tenant: t.id, ...errCode(e) }));
         return { sent: 0, failed: 0 };
       });
+      // Avisos de cancelamento (a dona deixou "Avisar a cliente" ligado), depois do Desfazer
+      const cs = await withTenant(t.id, (tx) => sendDueCancelNotices(tx, t.id, port, now)).catch((e) => {
+        console.error(JSON.stringify({ level: "warn", msg: "cancel_tenant_failed", tenant: t.id, ...errCode(e) }));
+        return { sent: 0, failed: 0 };
+      });
       const r = await withTenant(t.id, (tx) => sendReminders(tx, port, now));
-      r.sent += rs.sent;
-      r.failed += rs.failed;
+      r.sent += rs.sent + cs.sent;
+      r.failed += rs.failed + cs.failed;
       // Reforço único de confirmação (mesma rodada de 5 min); falha aqui não derruba o lembrete
       const n = await withTenant(t.id, (tx) => sendNudges(tx, port, now)).catch((e) => {
         console.error(JSON.stringify({ level: "warn", msg: "nudge_tenant_failed", tenant: t.id, ...errCode(e) }));

@@ -370,12 +370,18 @@ export async function updatePayment(input: {
 export async function updateStatus(
   id: string,
   status: string,
+  /** Cancelar: avisar a cliente no WhatsApp (sai depois do Desfazer) */
+  notifyClient = false,
 ): Promise<ActionResult<{ sync: SyncResult; wallet: Outcome | null }>> {
   const { tenantId, userId } = await requireTenant();
-  const p = z.object({ id: z.string().uuid(), status: z.enum(STATUSES) }).safeParse({ id, status });
+  const p = z
+    .object({ id: z.string().uuid(), status: z.enum(STATUSES), notifyClient: z.boolean() })
+    .safeParse({ id, status, notifyClient });
   if (!p.success) return fail("VALIDATION");
   try {
-    const res = await withTenant(tenantId, (tx) => setStatus(tx, p.data.id, p.data.status, new Date(), userId));
+    const res = await withTenant(tenantId, (tx) =>
+      setStatus(tx, p.data.id, p.data.status, new Date(), userId, p.data.notifyClient),
+    );
     if (!res.ok) return res;
     revalidatePath("/agenda");
     revalidatePath("/agendamentos");
