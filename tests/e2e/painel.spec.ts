@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
+import { preencheAgendar } from "./agendar";
 import { addDays, todayStr } from "../../src/lib/dates";
 
 async function prepara(page: Page) {
@@ -23,13 +24,14 @@ test("fora do expediente não bloqueia: a folha só avisa e o agendamento sai", 
   const dia = addDays(todayStr(), 1);
   await page.goto(`/calendario?d=${dia}`);
   await page.getByRole("button", { name: "Agendar", exact: true }).first().click();
-  await page.getByRole("button", { name: "Cliente" }).click();
-  await page.getByRole("button", { name: /Ana Lima/ }).click();
-  await page.getByRole("button", { name: "Serviço" }).click();
-  await page.getByRole("button", { name: /Escova/ }).click();
-  const aviso = page.getByText("Esse horário está fora do expediente");
+  await preencheAgendar(page, { cliente: /Ana Lima/, servicos: [/Escova/], ateQuando: true });
+  const aviso = page.getByText("Esse horário está fora do expediente").first();
   // Expediente padrão 9h-18h (domingo fechado): 21h cai fora em qualquer dia
+  await page.getByRole("button", { name: /Outro horário/ }).click();
   await page.getByLabel("Horário").selectOption("21:00");
+  await expect(aviso).toBeVisible();
+  await page.getByRole("button", { name: "Continuar" }).click();
+  // o aviso segue no resumo
   await expect(aviso).toBeVisible();
   await page.getByRole("button", { name: "Agendar", exact: true }).last().click();
   await expect(page.getByRole("heading", { name: /Agendado/ })).toBeVisible();

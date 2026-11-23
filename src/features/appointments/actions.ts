@@ -1,10 +1,10 @@
 "use server";
 
-import { and, count, inArray, isNotNull } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNotNull, max } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { withTenant } from "@/db/client";
-import { appointments } from "@/db/schema";
+import { appointments, tenants } from "@/db/schema";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
 import { getWalletSettings } from "@/features/wallet/core";
@@ -16,7 +16,8 @@ import { listBookable } from "@/features/services/core";
 import { getHours } from "@/features/hours/core";
 import { convertExternalBlock, listBlocks } from "@/features/blocks/core";
 import { forceSyncExternalCalendars } from "@/features/blocks/external-sync";
-import { dayRange, isDateStr, toInstant } from "@/lib/dates";
+import { dayRange, isDateStr, toInstant, todayStr } from "@/lib/dates";
+import { freeSlots, weekdayOf } from "@/features/hours/slots";
 import type { Outcome } from "@/features/wallet/rules";
 import { editAppointment, insertAppointment, listDay, moveAppointment, setPayment, setStatus } from "./core";
 import { PAYMENT_METHODS, parsePayment } from "./payment";
@@ -41,6 +42,87 @@ export async function loadBookingOptions(): Promise<ActionResult<BookingOptions>
         [await searchClients(tx, ""), await listBookable(tx), await getHours(tx), await getWalletSettings(tx)] as const,
     );
     return ok({ ...bookingOptions(clients, services), week: hours, depositPct: wallet.depositPct });
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+/**
+ * Horários livres do dia para os serviços escolhidos (passo "Quando?" do agendar): soma das durações + o maior
+ * intervalo, mesma conta do agendar. `closed` = dia sem expediente.
+ */
+export async function bookingSlots(
+  date: string,
+  serviceIds: string[],
+): Promise<ActionResult<{ slots: string[]; closed: boolean }>> {
+  const { tenantId } = await requireTenant();
+  const ids = z.array(z.string().uuid()).min(1).max(5).safeParse(serviceIds);
+  if (!isDateStr(date) || !ids.success) return fail("VALIDATION");
+  try {
+    return ok(
+      await withTenant(tenantId, async (tx) => {
+        const list = (await listBookable(tx)).filter((s) => ids.data.includes(s.id));
+        const week = await getHours(tx);
+        const day = week[weekdayOf(date)];
+        if (!list.length || !day) return { slots: [], closed: !day };
+        const durationMin = list.reduce((n, s) => n + s.durationMin, 0) + Math.max(...list.map((s) => s.bufferMin));
+        const range = dayRange(date);
+        const [appts, blks] = await Promise.all([listDay(tx, range), listBlocks(tx, range)]);
+        const busy = [...appts.map((x) => ({ startsAt: x.startsAt, endsAt: x.blockedUntil })), ...blks];
+        const now = new Date();
+        const slots = freeSlots({
+          date,
+          day,
+          durationMin,
+          busy,
+          stepMin: 15,
+          notBefore: date === todayStr(now) ? now : undefined,
+        });
+        return { slots, closed: false };
+      }),
+    );
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+/** O que a folha de agendar mostra além das opções: clientes recentes e o texto para a prévia do WhatsApp. */
+export type BookingExtras = {
+  recentClientIds: string[];
+  message: { template: string | null; name: string | null; fullName: boolean; pixKey: string | null };
+};
+
+export async function bookingExtras(): Promise<ActionResult<BookingExtras>> {
+  const { tenantId } = await requireTenant();
+  try {
+    return ok(
+      await withTenant(tenantId, async (tx) => {
+        const recent = await tx
+          .select({ clientId: appointments.clientId, last: max(appointments.createdAt) })
+          .from(appointments)
+          .groupBy(appointments.clientId)
+          .orderBy(desc(max(appointments.createdAt)))
+          .limit(8);
+        const [t] = await tx
+          .select({
+            template: tenants.bookingTemplate,
+            name: tenants.name,
+            fullName: tenants.clientNameFull,
+            pixKey: tenants.pixKey,
+          })
+          .from(tenants)
+          .where(eq(tenants.id, tenantId));
+        return {
+          recentClientIds: recent.map((r) => r.clientId),
+          message: {
+            template: t?.template ?? null,
+            name: t?.name ?? null,
+            fullName: t?.fullName ?? false,
+            pixKey: t?.pixKey ?? null,
+          },
+        };
+      }),
+    );
   } catch {
     return fail("UNKNOWN");
   }
