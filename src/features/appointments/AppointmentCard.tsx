@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { notify } from "@/components/feedback/toast";
 import { Icon } from "@/components/ui/Icon";
+import { Switch } from "@/components/ui/Switch";
 import type { SyncResult } from "@/features/google/sync";
 import { CHAT_BUTTON, ChatGlyph, ChatSheet } from "@/features/messaging/ChatSheet";
 import { cancelReturnPrompt, openReturnPrompt } from "@/features/returns/ReturnPrompt";
@@ -84,11 +85,16 @@ export function AppointmentCard({ id, time, date, start: startHHMM, minutes, cli
   const open = status === "pending_confirmation" || status === "confirmed" || status === "reschedule_requested";
   // Quem pediu para remarcar já abre com Remarcar à vista
   const [more, setMore] = useState(status === "reschedule_requested");
+  // Cancelar pergunta antes: "Avisar a cliente?" (ligado por padrão; só para horário que ainda não passou)
+  const [asking, setAsking] = useState(false);
+  const [tellClient, setTellClient] = useState(true);
   // Faltou só depois do horário de início; o botão liga sozinho quando a hora chega
   const startsAt = toInstant(date, startHHMM);
   const startMs = startsAt.getTime();
   const [now, setNow] = useState(() => Date.now());
   const noShowOk = canMarkNoShow(startsAt, new Date(now));
+  // Aviso de cancelamento só faz sentido antes do horário
+  const canTell = !past && startMs > now;
   useEffect(() => {
     const wait = startMs - Date.now();
     // setTimeout não aguenta esperas longas; para outro dia a tela já terá sido aberta de novo
@@ -97,13 +103,13 @@ export function AppointmentCard({ id, time, date, start: startHHMM, minutes, cli
     return () => clearTimeout(t);
   }, [startMs]);
 
-  function change(next: Status, undoTo?: Status) {
+  function change(next: Status, undoTo?: Status, notifyClient = false) {
     setBusy(next);
     start(async () => {
-      const res: ActionResult<{ sync: SyncResult; wallet: Outcome | null }> = await updateStatus(id, next);
+      const res: ActionResult<{ sync: SyncResult; wallet: Outcome | null }> = await updateStatus(id, next, notifyClient);
       setBusy(null);
       if (!res.ok) {
-        notify.error(res.code, () => change(next, undoTo));
+        notify.error(res.code, () => change(next, undoTo, notifyClient));
         return;
       }
       warnSync(res.data.sync);
@@ -114,7 +120,8 @@ export function AppointmentCard({ id, time, date, start: startHHMM, minutes, cli
           cancelReturnPrompt(id);
           change(undoTo);
         };
-        const toastId = notify.undoable(UNDO_TEXT[next] + walletNote(res.data.wallet), undo, undefined, next === "done" ? "success" : "warning");
+        const told = notifyClient ? ". A cliente recebe o aviso no WhatsApp" : "";
+        const toastId = notify.undoable(UNDO_TEXT[next] + walletNote(res.data.wallet) + told, undo, undefined, next === "done" ? "success" : "warning");
         // Concluiu: pergunta se já marca o retorno (só abre se o serviço tem retorno)
         if (next === "done") openReturnPrompt({ appointmentId: id, undo, toastId });
       } else {
@@ -265,7 +272,9 @@ export function AppointmentCard({ id, time, date, start: startHHMM, minutes, cli
               <button
                 type="button"
                 disabled={pending}
-                onClick={() => change("cancelled", status)}
+                aria-expanded={asking}
+                aria-controls={`cancelar-${id}`}
+                onClick={() => setAsking(true)}
                 className={`${btn} btn-glass`}
               >
                 <Icon name="close" size={18} />
@@ -276,6 +285,46 @@ export function AppointmentCard({ id, time, date, start: startHHMM, minutes, cli
                   Faltou: {noShowHint(startHHMM).toLowerCase()}
                 </p>
               )}
+            </div>
+          ) : null}
+          {asking ? (
+            <div
+              id={`cancelar-${id}`}
+              role="alertdialog"
+              aria-labelledby={`cancelar-t-${id}`}
+              className="grid gap-3 rounded-2xl bg-fail-bg p-3"
+            >
+              <p id={`cancelar-t-${id}`} className="font-bold text-fail">
+                Cancelar o horário de {clientName} às {time}?
+              </p>
+              {canTell ? (
+                <label className="flex items-center justify-between gap-3 text-sm font-semibold">
+                  <span>Avisar a cliente no WhatsApp</span>
+                  <Switch checked={tellClient} onChange={setTellClient} label="Avisar a cliente no WhatsApp" />
+                </label>
+              ) : null}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => {
+                    setAsking(false);
+                    change("cancelled", status, canTell && tellClient);
+                  }}
+                  className={`${btn} bg-fail text-white`}
+                >
+                  Cancelar horário
+                </button>
+                <button
+                  type="button"
+                  // Foco no "Voltar": um toque sem querer não cancela
+                  autoFocus
+                  onClick={() => setAsking(false)}
+                  className={`${btn} btn-glass`}
+                >
+                  Voltar
+                </button>
+              </div>
             </div>
           ) : null}
         </>

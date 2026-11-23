@@ -203,6 +203,8 @@ export const appointments = pgTable(
     pendingReply: text("pending_reply"),
     /** Aviso de remarcação pendente: pode sair a partir deste instante (o arraste espera o Desfazer); null = nada a avisar */
     rescheduleNoticeAt: timestamp("reschedule_notice_at", { withTimezone: true }),
+    /** Aviso de cancelamento pendente: sai a partir daqui (depois do Desfazer); null = nada a mandar */
+    cancelNoticeAt: timestamp("cancel_notice_at", { withTimezone: true }),
     /** Horário que a cliente conhece (da última mensagem); igual ao atual = não há o que avisar */
     notifiedStartsAt: timestamp("notified_starts_at", { withTimezone: true }),
     /** Desconto do agendamento: "pct" (value = %) ou "brl" (value = centavos). price_cents já vem descontado. */

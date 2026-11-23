@@ -233,12 +233,17 @@ async function returnDueFor(tx: Tx, id: string): Promise<string | null> {
  * qualquer outro status (inclusive o Desfazer) limpa a data e o "Não precisa".
  * Faltou só vale depois do horário de início (`NO_SHOW_TOO_EARLY` antes disso).
  */
+/** O aviso de cancelamento espera o Desfazer (6 s) passar antes de poder sair (o worker manda). */
+export const CANCEL_WAIT_MS = 15_000;
+
 export async function setStatus(
   tx: Tx,
   id: string,
   status: Status,
   now: Date = new Date(),
   createdBy?: string | null,
+  /** Cancelar avisando a cliente no WhatsApp ("Avisar a cliente?", ligado por padrão na tela) */
+  notifyClient = false,
 ): Promise<ActionResult<{ wallet: Outcome | null }>> {
   const [before] = await tx
     .select({ startsAt: appointments.startsAt, status: appointments.status })
@@ -254,7 +259,16 @@ export async function setStatus(
       sp
         .update(appointments)
         // Fechou o atendimento (cancelado, falta, concluído): resposta guardada da noite não sai mais
-        .set({ status, ...returnFields, ...(CLOSED.has(status) ? { pendingReply: null } : {}) })
+        .set({
+          status,
+          ...returnFields,
+          ...(CLOSED.has(status) ? { pendingReply: null } : {}),
+          // Aviso de cancelamento: só para horário futuro; qualquer outro status (Desfazer) cancela o aviso
+          cancelNoticeAt:
+            status === "cancelled" && notifyClient && before.startsAt > now
+              ? new Date(now.getTime() + CANCEL_WAIT_MS)
+              : null,
+        })
         .where(eq(appointments.id, id))
         .returning({
           tenantId: appointments.tenantId,

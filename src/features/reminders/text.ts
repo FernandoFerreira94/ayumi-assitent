@@ -183,3 +183,11 @@ export function rescheduleText(a: MessageData, now: Date, salon: SalonMessageOpt
       : template;
   return fill(withLink, a, salon, dayLabel(a.startsAt, now)).replace(/\n{3,}/g, "\n\n");
 }
+
+/** Aviso de cancelamento (quando a dona deixa "Avisar a cliente" ligado). Não pede resposta. */
+export const DEFAULT_CANCEL =
+  "Oi! Seu horário de {servico} ({dia}, às {hora}) foi cancelado. Se quiser marcar outro dia, é só me chamar 💜";
+
+export function cancelText(a: MessageData, now: Date, salon: SalonMessageOpts = {}): string {
+  return fill(DEFAULT_CANCEL, a, salon, dayLabel(a.startsAt, now));
+}

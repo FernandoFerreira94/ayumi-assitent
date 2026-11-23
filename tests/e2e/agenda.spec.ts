@@ -43,9 +43,10 @@ test("cria serviço, cliente e agendamento; avisa conflito; cancela com desfazer
 
   // Na linha do dia, tocar no bloco abre as ações
   await bloco.click();
-  // Cancelar vale no primeiro toque; a proteção é o Desfazer
+  // Cancelar pede um segundo toque (com "Avisar a cliente?" quando o horário ainda não passou) e tem o Desfazer
   await page.getByRole("button", { name: "Mais ações" }).click();
   await page.getByRole("button", { name: "Cancelar" }).click();
+  await page.getByRole("button", { name: "Cancelar horário" }).click();
   await expect(page.getByText("Agendamento cancelado")).toBeVisible();
   await expect(bloco).toHaveCount(0);
   await page.getByRole("button", { name: "Desfazer" }).click();

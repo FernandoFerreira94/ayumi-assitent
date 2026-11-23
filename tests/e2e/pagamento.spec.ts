@@ -126,6 +126,9 @@ test("cancelar o que já foi pago vira crédito, que dá para devolver na ficha"
   await page.getByRole("button", { name: /Bia Souza, Escova, 10:00/ }).click();
   await page.getByRole("button", { name: "Mais ações" }).click();
   await page.getByRole("button", { name: "Cancelar" }).click();
+  // Horário futuro: pergunta se avisa a cliente, ligado por padrão
+  await expect(page.getByRole("switch", { name: "Avisar a cliente no WhatsApp" })).toBeChecked();
+  await page.getByRole("button", { name: "Cancelar horário" }).click();
   // com 24 h ou mais de antecedência, tudo vira crédito (Ajustes > Pagamentos)
   await expect(page.getByText(/Agendamento cancelado\. R\$\s80,00 virou crédito da cliente/)).toBeVisible();
 
