@@ -31,7 +31,7 @@
 - 2º aviso: `tenants.second_reminder_hours` (padrão 3 h; null = desligado). Só sai para quem recebeu o 1º há pelo menos 2 h e antes da janela do 2º (ou, sem 1º aviso, para agendamento criado antes da janela). Confirmadas recebem só lembrete; pendentes recebem pedido de confirmação (`nudge.claimNudges`).
 - Silêncio: 21h–6h no fuso do estúdio (`reminders/quiet.ts`), vale para 2º aviso e respostas automáticas.
 - Não respondeu (push à dona): 60 min depois do 2º aviso, ou 120 min depois do 1º quando não há 2º (`no-reply.ts`).
-- Respostas da noite: a resposta automática para quem escreveu no silêncio fica em `appointments.pending_reply` (migration `0029_pending_reply`) e sai na primeira rodada depois das 6h (`messaging/pending.sendPendingReplies`, chamada pelo `runReminders`).
+- Respostas da noite: a resposta automática para quem escreveu no silêncio fica em `appointments.pending_reply` (migration `0029_pending_reply`) e sai na primeira rodada depois das 6h (`messaging/pending.sendPendingReplies`, chamada pelo `runReminders`). Desde 23/11 guarda só o pedido (`@confirm`/`@cancel`/`@reschedule`, `messaging/pending-rules`); o texto é montado na hora de sair ("hoje" certo) e não sai se o status já não é o que a cliente pediu ou o horário passou. Texto antigo sai como está.
 
 ## Aviso ao remarcar (23/11)
 - `tenants.reschedule_notice` (padrão ligado) e `reschedule_template` (null = `text.DEFAULT_RESCHEDULE`, sem {nome}, com 📍 {endereco} que some sem endereço). Texto: `text.rescheduleText` + link do convite ("Atualize na sua agenda").

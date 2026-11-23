@@ -27,19 +27,10 @@ import {
   type InboundText,
   type Intent,
 } from "./replies";
+import { pendingMarker, STATUS_FOR } from "./pending-rules";
 import { recordMessage } from "./store";
 import { recordUnclear } from "./unclear";
 import { errCode } from "@/lib/log";
-
-/**
- * Cancelar e remarcar não mexem no horário sozinhos: os dois viram "quer remarcar" e a profissional
- * decide o melhor horário com a cliente pela conversa.
- */
-const STATUS_FOR: Record<Intent, "confirmed" | "reschedule_requested"> = {
-  confirm: "confirmed",
-  cancel: "reschedule_requested",
-  reschedule: "reschedule_requested",
-};
 
 const GUESS_LABEL: Record<Intent, string> = {
   confirm: "confirmar",
@@ -268,8 +259,7 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
           !msg.media &&
           looksLikeAnswer(msg.text) &&
           !(await ownerWroteSince(tx, cli.id, latest));
-      }
-      else if (open)
+      } else if (open)
         target = {
           id: open.id,
           handedOff: !!open.handoff,
@@ -464,10 +454,11 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
     ).catch(() => {});
   }
 
-  // De 21h às 6h nada automático sai: a resposta fica guardada no agendamento e sai às 6h (messaging/pending.ts)
-  if (ack && target && isQuietHour(now)) {
+  // De 21h às 6h nada automático sai: guarda só o pedido (`@confirm`); o texto é montado na hora de sair (às 6h,
+  // "amanhã" já virou "hoje") e só sai se o horário continuar como a cliente deixou (messaging/pending.ts)
+  if (ack && target && intent && isQuietHour(now)) {
     const apptId = target.id;
-    const body = ack;
+    const body = pendingMarker(intent);
     await withTenant(tenantId, (tx) =>
       tx.update(appointments).set({ pendingReply: body }).where(eq(appointments.id, apptId)),
     ).catch((e) => console.error(JSON.stringify({ level: "warn", msg: "pending_reply_failed", ...errCode(e) })));
