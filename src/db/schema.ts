@@ -425,6 +425,12 @@ export const packageTemplates = pgTable("package_templates", {
   sessionsTotal: smallint("sessions_total").notNull(),
   priceCents: integer("price_cents").notNull(),
   validDays: smallint("valid_days"),
+  /** 0052: período de venda e "as N primeiras clientes" (null = sem) */
+  startsOn: date("starts_on", { mode: "string" }),
+  endsOn: date("ends_on", { mode: "string" }),
+  maxClients: smallint("max_clients"),
+  /** 0052: serviços em que a sessão vale (inclui serviceId, o de referência do preço) */
+  serviceIds: uuid("service_ids").array().notNull(),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -439,6 +445,7 @@ export const clientPackages = pgTable("client_packages", {
   templateId: uuid("template_id"),
   name: text("name").notNull(),
   serviceId: uuid("service_id").notNull(),
+  serviceIds: uuid("service_ids").array().notNull(),
   sessionsTotal: smallint("sessions_total").notNull(),
   priceCents: integer("price_cents").notNull(),
   soldOn: date("sold_on", { mode: "string" }).notNull(),

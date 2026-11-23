@@ -192,62 +192,130 @@ export type PackageKind = "pay_x" | "sessions";
 export type PackageDraft = {
   kind: PackageKind;
   name: string;
-  serviceId: string;
+  /** serviços em que a sessão vale (1 ou mais) */
+  serviceIds: string[];
   sessionsPaid: number | null;
   sessionsTotal: number;
   priceCents: number;
+  /** período de venda (YYYY-MM-DD) e "as N primeiras clientes"; null = sem */
+  startsOn: string | null;
+  endsOn: string | null;
+  maxClients: number | null;
 };
 
 /** Preço do modelo: "Pague X, leve Y" = X × valor do serviço; pacote de sessões = o preço digitado. */
 export const packagePrice = (d: Pick<PackageDraft, "kind" | "sessionsPaid" | "priceCents">, unitCents: number) =>
   d.kind === "pay_x" ? payXPrice(d.sessionsPaid ?? 0, unitCents) : d.priceCents;
 
+/** Serviço de referência do preço: o mais caro da lista (no "Pague X, leve Y" o salão nunca perde). */
+export const referenceService = <T extends { priceCents: number }>(list: readonly T[]): T | undefined =>
+  list.reduce<T | undefined>((a, b) => (!a || b.priceCents > a.priceCents ? b : a), undefined);
+
+/** "Esmaltação", "Esmaltação ou Pé" ou "Esmaltação, Pé ou Mão". */
+export const serviceNames = (names: readonly string[]) =>
+  names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} ou ${names[names.length - 1]}`;
+
 /** Frase pronta do modelo (prévia na hora de criar e na venda). */
 export function packagePreview(
   d: Pick<PackageDraft, "kind" | "sessionsPaid" | "sessionsTotal" | "priceCents">,
-  service: { name: string; priceCents: number },
+  services: readonly { name: string; priceCents: number }[],
   validDays: number,
   brl: (cents: number) => string,
 ): string {
-  const price = packagePrice(d, service.priceCents);
-  const full = d.sessionsTotal * service.priceCents;
+  const ref = referenceService(services) ?? { name: "", priceCents: 0 };
+  const price = packagePrice(d, ref.priceCents);
+  const full = d.sessionsTotal * ref.priceCents;
   const save = full - price;
-  const what = `${d.sessionsTotal} ${d.sessionsTotal === 1 ? "sessão" : "sessões"} de ${service.name}`;
+  const what = `${d.sessionsTotal} ${d.sessionsTotal === 1 ? "sessão" : "sessões"} de ${serviceNames(services.map((s) => s.name))}`;
   const lead = d.kind === "pay_x" ? `Paga ${d.sessionsPaid} e leva ${d.sessionsTotal}: ` : "";
   return `${lead}cliente paga ${brl(price)} e ganha ${what}${save > 0 ? ` (economiza ${brl(save)})` : ""}. Vale ${validDays} dias.`;
 }
+
+/** "2030-12-01" → "01/12" (linha da promoção). */
+export const dayMonth = (day: string) => `${day.slice(8, 10)}/${day.slice(5, 7)}`;
+
+export type PromoStatus = "scheduled" | "running" | "ended" | "sold_out";
+
+/** Situação da promoção hoje: ainda não começou, valendo, acabou o período ou esgotou o limite. */
+export function promoStatus(
+  t: Pick<PackageDraft, "startsOn" | "endsOn" | "maxClients">,
+  today: string,
+  soldClients: number,
+): PromoStatus {
+  if (t.endsOn && today > t.endsOn) return "ended";
+  if (t.maxClients !== null && soldClients >= t.maxClients) return "sold_out";
+  if (t.startsOn && today < t.startsOn) return "scheduled";
+  return "running";
+}
+
+/**
+ * Linha da promoção: "De 01/12 a 31/12 · 12 de 30 clientes" (soldClients null, na criação: "para as 30
+ * primeiras clientes"). Vazia quando não há período nem limite.
+ */
+export function promoLine(
+  t: Pick<PackageDraft, "startsOn" | "endsOn" | "maxClients">,
+  soldClients: number | null,
+  fmt: (day: string) => string,
+): string {
+  const when =
+    t.startsOn && t.endsOn
+      ? `De ${fmt(t.startsOn)} a ${fmt(t.endsOn)}`
+      : t.startsOn
+        ? `A partir de ${fmt(t.startsOn)}`
+        : t.endsOn
+          ? `Até ${fmt(t.endsOn)}`
+          : "";
+  const cap =
+    t.maxClients === null
+      ? ""
+      : soldClients === null
+        ? `${when ? "para" : "Para"} as ${t.maxClients} primeiras clientes`
+        : `${soldClients} de ${t.maxClients} clientes`;
+  return [when, cap].filter(Boolean).join(" · ");
+}
+
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+const UUID = /^[0-9a-f-]{36}$/i;
 
 /** Lê o formulário do modelo de pacote. Devolve o campo errado quando algo não fecha. */
 export function parsePackageDraft(raw: {
   kind?: string;
   name?: string;
-  serviceId?: string;
+  serviceIds?: string[];
   sessionsPaid?: string;
   sessionsTotal?: string;
   priceCents?: number | null;
+  startsOn?: string;
+  endsOn?: string;
+  maxClients?: string;
 }): { ok: true; draft: PackageDraft } | { ok: false; field: string } {
   const kind = raw.kind === "pay_x" || raw.kind === "sessions" ? raw.kind : null;
   if (!kind) return { ok: false, field: "kind" };
   const name = (raw.name ?? "").trim();
   if (name.length < 1 || name.length > 80) return { ok: false, field: "name" };
-  if (!raw.serviceId || !/^[0-9a-f-]{36}$/i.test(raw.serviceId)) return { ok: false, field: "serviceId" };
+  const serviceIds = [...new Set(raw.serviceIds ?? [])];
+  if (serviceIds.length < 1 || serviceIds.length > 30 || !serviceIds.every((id) => UUID.test(id)))
+    return { ok: false, field: "serviceIds" };
   const total = Number(raw.sessionsTotal);
   if (!Number.isInteger(total) || total < 1 || total > 100) return { ok: false, field: "sessionsTotal" };
+  const startsOn = raw.startsOn?.trim() || null;
+  const endsOn = raw.endsOn?.trim() || null;
+  if (startsOn && !DAY.test(startsOn)) return { ok: false, field: "startsOn" };
+  if (endsOn && (!DAY.test(endsOn) || (startsOn && endsOn < startsOn))) return { ok: false, field: "endsOn" };
+  const capRaw = raw.maxClients?.trim();
+  const maxClients = capRaw ? Number(capRaw) : null;
+  if (maxClients !== null && (!Number.isInteger(maxClients) || maxClients < 1 || maxClients > 10_000))
+    return { ok: false, field: "maxClients" };
+  const base = { kind: kind as PackageKind, name, serviceIds, sessionsTotal: total, startsOn, endsOn, maxClients };
   if (kind === "pay_x") {
     const paid = Number(raw.sessionsPaid);
     if (!Number.isInteger(paid) || paid < 1 || paid >= total) return { ok: false, field: "sessionsPaid" };
-    return {
-      ok: true,
-      draft: { kind, name, serviceId: raw.serviceId, sessionsPaid: paid, sessionsTotal: total, priceCents: 0 },
-    };
+    return { ok: true, draft: { ...base, sessionsPaid: paid, priceCents: 0 } };
   }
   const price = raw.priceCents;
   if (price == null || !Number.isInteger(price) || price < 0 || price > 10_000_000)
     return { ok: false, field: "priceCents" };
-  return {
-    ok: true,
-    draft: { kind, name, serviceId: raw.serviceId, sessionsPaid: null, sessionsTotal: total, priceCents: price },
-  };
+  return { ok: true, draft: { ...base, sessionsPaid: null, priceCents: price } };
 }
 
 /** Lê o formulário de Ajustes > Pagamentos. Devolve o campo errado quando algo não fecha. */
@@ -274,5 +342,49 @@ export function parsePolicy(
       noShowKeepsDeposit: input.noShowKeepsDeposit === "on",
       noShowUsesSession: input.noShowUsesSession === "on",
     },
+  };
+}
+
+export type GuideStep = { icon: "coins" | "wallet" | "checkCircle"; title: string; text: string };
+export type GuideOutcome = { when: string; result: string; tone: "ok" | "keep" | "same" };
+export type WalletGuide = { steps: GuideStep[]; outcomes: GuideOutcome[]; notes: string[] };
+
+/**
+ * "Como funciona" em poucas palavras, com a política do salão: o caminho do agendamento (3 passos), o que
+ * acontece em cada situação e 3 lembretes. Mostrado em Ajustes > Pagamentos e no Financeiro.
+ */
+export function walletGuide(p: WalletPolicy): WalletGuide {
+  const keep = "Sinal fica · resto vira crédito";
+  return {
+    steps: [
+      { icon: "coins", title: "Agendou", text: `Sinal opcional (${p.depositPct}%). O resto fica a pagar.` },
+      { icon: "wallet", title: "Tem crédito ou pacote?", text: "O app usa sozinho." },
+      { icon: "checkCircle", title: "Concluiu", text: "Entra nos Ganhos." },
+    ],
+    outcomes: [
+      { when: `Cancelou com ${p.cancelNoticeHours}h ou mais`, result: "Vira crédito", tone: "ok" },
+      {
+        when: "Cancelou em cima da hora",
+        result: p.lateCancelKeepsDeposit ? keep : "Vira crédito",
+        tone: p.lateCancelKeepsDeposit ? "keep" : "ok",
+      },
+      {
+        when: "Faltou",
+        result: p.noShowKeepsDeposit ? keep : "Vira crédito",
+        tone: p.noShowKeepsDeposit ? "keep" : "ok",
+      },
+      {
+        when: "Faltou com pacote",
+        result: p.noShowUsesSession ? "Sessão conta como usada" : "Sessão volta",
+        tone: p.noShowUsesSession ? "keep" : "ok",
+      },
+      { when: "Cancelou com pacote", result: "Sessão volta", tone: "ok" },
+      { when: "Remarcou", result: "Nada muda", tone: "same" },
+    ],
+    notes: [
+      "Crédito nunca vence. Para devolver: ficha da cliente > Devolver.",
+      `Pacote vale ${p.packageValidDays} dias e entra no caixa na venda.`,
+      "Caixa = dinheiro que entrou no mês, menos devoluções.",
+    ],
   };
 }
