@@ -5,7 +5,8 @@ import { paidCentsSql } from "@/features/wallet/core";
 import { sessionUseSql } from "@/features/wallet/packages";
 import { serviceLabel } from "./core";
 
-const base = (tx: Tx) =>
+/** Linha de atendimento com cliente, serviço e pagamento (usada também pela lista de /agendamentos). */
+export const appointmentRows = (tx: Tx) =>
   tx
     .select({
       id: appointments.id,
@@ -30,30 +31,30 @@ const base = (tx: Tx) =>
 
 export type Pendencias = {
   /** Já passaram e ainda estão como pendente/confirmado: falta concluir ou marcar falta. */
-  toClose: Awaited<ReturnType<ReturnType<typeof base>["orderBy"]>>;
+  toClose: Awaited<ReturnType<ReturnType<typeof appointmentRows>["orderBy"]>>;
   /** Aguardando a cliente confirmar (hoje em diante). */
-  toConfirm: Awaited<ReturnType<ReturnType<typeof base>["orderBy"]>>;
+  toConfirm: Awaited<ReturnType<ReturnType<typeof appointmentRows>["orderBy"]>>;
   /** Futuros que não chegaram ao Google Agenda (só se o Google estiver conectado). */
-  unsynced: Awaited<ReturnType<ReturnType<typeof base>["orderBy"]>>;
+  unsynced: Awaited<ReturnType<ReturnType<typeof appointmentRows>["orderBy"]>>;
   /** A cliente respondeu "3" ao lembrete: a dona precisa combinar outro horário. */
-  toReschedule: Awaited<ReturnType<ReturnType<typeof base>["orderBy"]>>;
+  toReschedule: Awaited<ReturnType<ReturnType<typeof appointmentRows>["orderBy"]>>;
 };
 
 export async function listPendencias(tx: Tx, now: Date, googleConnected: boolean): Promise<Pendencias> {
   const open = inArray(appointments.status, ["pending_confirmation", "confirmed", "reschedule_requested"]);
   const [toClose, toConfirm, unsynced, toReschedule] = await Promise.all([
-    base(tx)
+    appointmentRows(tx)
       .where(and(open, lt(appointments.endsAt, now)))
       .orderBy(asc(appointments.startsAt)),
-    base(tx)
+    appointmentRows(tx)
       .where(and(eq(appointments.status, "pending_confirmation"), gte(appointments.endsAt, now)))
       .orderBy(asc(appointments.startsAt)),
     googleConnected
-      ? base(tx)
+      ? appointmentRows(tx)
           .where(and(open, gte(appointments.endsAt, now), isNull(appointments.googleEventId)))
           .orderBy(asc(appointments.startsAt))
       : Promise.resolve([]),
-    base(tx)
+    appointmentRows(tx)
       .where(and(eq(appointments.status, "reschedule_requested"), gte(appointments.endsAt, now)))
       .orderBy(asc(appointments.startsAt)),
   ]);

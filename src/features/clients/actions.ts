@@ -4,13 +4,27 @@ import { revalidatePath } from "next/cache";
 import { withTenant } from "@/db/client";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { visitHistory } from "@/features/returns/rules";
-import { formatDayTitle, formatShortDate, formatTime, todayStr } from "@/lib/dates";
+import { formatBRL, formatDayTitle, formatMonthYear, formatShortDate, formatTime, todayStr } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
 import { clientSummary, deleteClientRow, HISTORY, insertClient, updateClientRow } from "./core";
 import { clientMoves } from "@/features/wallet/core";
 import { clientPackageList } from "@/features/wallet/packages";
 import { walletBalance, walletStatement } from "@/features/wallet/rules";
 import { clientInput } from "./schema";
+import { clientHistoryPage, clientHistorySummary, type HistoryEvent } from "./history";
+import {
+  attendanceRate,
+  decodeCursor,
+  HISTORY_FILTERS,
+  METHOD_LABEL,
+  moneyLabel,
+  moneySign,
+  STATUS_LABEL,
+  statusTone,
+  visitPaymentLine,
+  type HistoryFilter,
+  type Tone,
+} from "./history-rules";
 
 export async function createClient(_prev: ActionResult<{ id: string }> | null, formData: FormData) {
   const { tenantId } = await requireTenant();
@@ -123,6 +137,142 @@ export async function loadClientCard(id: string): Promise<ActionResult<ClientCar
           until: p.expiresOn ? formatShortDate(p.expiresOn) : null,
           expired: p.expired,
         })),
+    });
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+export type HistoryItem = {
+  key: string;
+  /** "Novembro de 2026": cabeçalho do mês na lista */
+  month: string;
+  /** "sáb., 8 de nov. · 14:00" */
+  when: string;
+  kind: "visit" | "package" | "money";
+  title: string;
+  /** linha de baixo (serviço, pacote, forma de pagamento, observação) */
+  detail: string | null;
+  badge: { text: string; tone: Tone } | null;
+  /** selo extra (pagamento do atendimento, plano usado) */
+  tags: { text: string; tone: Tone }[];
+  /** valor à direita ("R$ 50,00", "+R$ 20,00") */
+  amount: string | null;
+  amountTone: Tone | null;
+};
+
+export type HistoryHeader = {
+  since: string | null;
+  done: number;
+  noShows: number;
+  cancelled: number;
+  spent: string;
+  attendance: number | null;
+  lastVisit: string | null;
+  next: string | null;
+  credit: string | null;
+  plans: { name: string; left: number; total: number; until: string | null }[];
+};
+
+export type HistoryPage = { summary: HistoryHeader | null; items: HistoryItem[]; next: string | null };
+
+const shortWhen = (d: Date) => `${formatShortDate(todayStr(d))} · ${formatTime(d)}`;
+
+function toItem(e: HistoryEvent, now: Date): HistoryItem {
+  const base = { key: `${e.type}:${e.id}`, month: formatMonthYear(todayStr(e.at)), when: shortWhen(e.at) };
+  if (e.type === "visit") {
+    const pay = visitPaymentLine(e.status, e.priceCents, e.paidCents, formatBRL);
+    const tags: HistoryItem["tags"] = [];
+    if (pay) tags.push(pay);
+    if (e.depositRequestedCents && e.paidCents < e.depositRequestedCents && pay?.text !== "Pago")
+      tags.push({ text: `Sinal pedido ${formatBRL(e.depositRequestedCents)}`, tone: "wait" });
+    if (e.packageName) tags.push({ text: `Plano: ${e.packageName}`, tone: "info" });
+    if (e.promotionName) tags.push({ text: `Promoção: ${e.promotionName}`, tone: "info" });
+    else if (e.discountCents > 0) tags.push({ text: `Desconto ${formatBRL(e.discountCents)}`, tone: "info" });
+    const future = e.at > now;
+    return {
+      ...base,
+      kind: "visit",
+      title: e.service,
+      detail: e.notes,
+      badge: { text: future && e.status !== "cancelled" ? `Marcado · ${STATUS_LABEL[e.status]}` : STATUS_LABEL[e.status], tone: statusTone(e.status, future) },
+      tags,
+      amount: formatBRL(e.priceCents),
+      amountTone: e.status === "cancelled" || e.status === "no_show" ? "muted" : null,
+    };
+  }
+  if (e.type === "package") {
+    return {
+      ...base,
+      kind: "package",
+      title: `Comprou o pacote ${e.name}`,
+      detail: `${e.sessionsTotal} ${e.sessionsTotal === 1 ? "sessão" : "sessões"}${e.expiresOn ? ` · vale até ${formatShortDate(e.expiresOn)}` : ""}`,
+      badge: { text: "Plano", tone: "info" },
+      tags: [],
+      amount: formatBRL(e.priceCents),
+      amountTone: null,
+    };
+  }
+  const sign = moneySign(e.kind);
+  const detail = [
+    e.method ? METHOD_LABEL[e.method] : null,
+    e.appointmentAt ? `atendimento de ${formatShortDate(todayStr(e.appointmentAt))}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  return {
+    ...base,
+    kind: "money",
+    title: moneyLabel(e),
+    detail: detail || null,
+    badge: null,
+    tags: [],
+    amount: `${sign > 0 ? "+" : "−"}${formatBRL(Math.abs(e.amountCents))}`,
+    amountTone: sign > 0 ? "ok" : "fail",
+  };
+}
+
+/**
+ * Histórico completo da cliente, aos poucos (`cursor` = onde a página anterior parou).
+ * O resumo do topo só vem na primeira página. RLS garante que só sai dado do próprio salão.
+ */
+export async function loadClientHistory(
+  id: string,
+  filter: string,
+  cursor: string | null,
+): Promise<ActionResult<HistoryPage>> {
+  const { tenantId } = await requireTenant();
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return fail("VALIDATION");
+  const f = (HISTORY_FILTERS as readonly string[]).includes(filter) ? (filter as HistoryFilter) : "all";
+  const c = decodeCursor(cursor);
+  if (cursor && !c) return fail("VALIDATION");
+  const now = new Date();
+  try {
+    const res = await withTenant(tenantId, async (tx) => {
+      const summary = c ? undefined : await clientHistorySummary(tx, id, todayStr(now), now);
+      if (summary === null) return null;
+      return { summary, page: await clientHistoryPage(tx, id, f, c) };
+    });
+    if (!res) return fail("NOT_FOUND");
+    const s = res.summary;
+    const day = (d: Date | null) => (d ? formatShortDate(todayStr(d)) : null);
+    return ok({
+      summary: s
+        ? {
+            since: s.since ? formatMonthYear(todayStr(s.since)) : null,
+            done: s.done,
+            noShows: s.noShows,
+            cancelled: s.cancelled,
+            spent: formatBRL(s.spentCents),
+            attendance: attendanceRate(s.done, s.noShows),
+            lastVisit: day(s.lastVisit),
+            next: s.next ? shortWhen(s.next) : null,
+            credit: s.creditCents > 0 ? formatBRL(s.creditCents) : null,
+            plans: s.plans.map((p) => ({ ...p, until: p.expiresOn ? formatShortDate(p.expiresOn) : null })),
+          }
+        : null,
+      items: res.page.items.map((e) => toItem(e, now)),
+      next: res.page.next,
     });
   } catch {
     return fail("UNKNOWN");

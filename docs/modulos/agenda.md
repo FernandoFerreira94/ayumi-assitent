@@ -12,7 +12,7 @@
 - `features/calendar/data.ts` (13/11): `loadYearDays` traz atendimentos **e eventos de fora** (`blocks.source` google/icloud, não convertidos) do ano; `buildYearDays` (puro) junta por dia no fuso do estúdio, em ordem de horário: `n` atendimentos, `x` eventos de fora, até 3 pílulas (evento de fora = pílula cinza `data-ext` com ícone Google/iPhone, título cortado em 24 letras). O "+N" conta os dois; o ano (pontinho) só conta atendimento. O layout do Calendário chama `syncExternalCalendars` antes de carregar (limite de 2 min por estúdio; importação em andamento é compartilhada com a tela do dia).
 - `features/calendar/MonthStream.tsx`: no mês, rolagem vertical como no iPhone (caixa `.cal-scroll` própria, dias da semana fixos, `overflow-anchor: none`), **limitada a 3 meses** (13/11): o anterior, o aberto e o próximo (abrindo pelo Calendário, o aberto é o de hoje); folga no fim para o último mês chegar ao topo. O mês no topo vira `view.month` + URL (replace com atraso de 250ms); setas, deslizar, Hoje, ano ou URL reabrem a lista em volta do novo mês (`streamKey`).
 - `features/blocks/*`: bloqueios/pausas (`insertBlock`, `removeBlock`, `listBlocks`, `overlapsBlock`, `lockTenant`).
-- Telas: `app/(app)/agenda`, `app/(app)/calendario`, `app/(app)/pendencias`.
+- Telas: `app/(app)/agenda`, `app/(app)/calendario`, `app/(app)/pendencias`, `app/(app)/agendamentos`.
 
 ## Dados
 
@@ -47,6 +47,13 @@
 - Dados: `features/dashboard/data.ts` → `loadDashboard` com `cache()` do React (as caixas chamam separado, o banco é lido uma vez por pedido). Regras puras em `dashboard/rules.ts` (testes em `tests/unit/dashboard-rules.test.ts`). Cada caixa tem esqueleto (Suspense) e erro com "Tentar de novo" (`DeskError`).
 - Valores respeitam o olhinho (`useValuesHidden`); a Semana mostra só contagem (é componente do servidor).
 - `WeekStrip` ganhou `ResizeObserver`: se a largura muda depois de pintar, volta para a semana escolhida.
+
+## Lista de agendamentos com sinal (23/11)
+
+- Tela `/agendamentos` (menu "Agendamentos", grupo "more"): só visão. Hoje até 60 dias, sem cancelados/faltas (`appointments/agendamentos.listAhead`, reaproveita `pendencias.appointmentRows`).
+- Regras puras em `appointments/deposit-list.ts`: `depositGroup` (a partir do `paymentView`: sinal pago, sinal pedido, sem sinal, pago), `summarize`, `inPeriod` (Hoje, 7 dias, Próximos + busca sem acento), `byDay`, `dayHeading`.
+- UI `DepositAgenda.tsx`: 4 caixas de resumo que também filtram, período, busca, lista por dia; tocar abre o `AppointmentCard` numa folha (Sinal recebido, Confirmar etc.). `?periodo=` e `?sinal=` (deposit|requested|none|paid) abrem filtrado; a URL acompanha sem recarregar.
+- Ações da agenda revalidam `/agendamentos` junto com `/agenda`. Testes: `tests/unit/deposit-list.test.ts`, `tests/e2e/agendamentos.spec.ts`.
 
 ## Cuidados
 

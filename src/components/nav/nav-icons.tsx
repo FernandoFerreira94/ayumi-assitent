@@ -48,6 +48,14 @@ export const NAV_ICONS = {
       <circle cx="12" cy="12" r="9" />
     </>
   ),
+  agendamentos: (
+    <>
+      <path d="M9 6h11M9 12h11M9 18h11" />
+      <circle cx="4.5" cy="6" r="1.2" />
+      <circle cx="4.5" cy="12" r="1.2" />
+      <circle cx="4.5" cy="18" r="1.2" />
+    </>
+  ),
   pendencias: (
     <>
       <path d="M9 12l2 2 4-4" />

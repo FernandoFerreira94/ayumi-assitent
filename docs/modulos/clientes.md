@@ -42,3 +42,13 @@
 - Aniversariantes ficou de fora: `clients` não tem data de nascimento (precisaria de migration).
 - 19/11 (carteira PR 3): a ficha mostra "Crédito no salão" com extrato e Devolver (`wallet/ClientWallet.tsx`; `loadClientCard` traz `wallet`). Ver [carteira.md](carteira.md).
 - 19/11 (carteira PR 4): a ficha mostra "Pacotes" (sessões que restam, validade) e Vender pacote. Ver [carteira.md](carteira.md).
+
+## Histórico completo (23/11)
+
+- Botão **Histórico** na ficha (ao lado de Conversar; celular, tablet e desktop) abre `clients/HistorySheet.tsx` por cima (folha aninhada no celular, painel à direita no desktop), com fundo opaco para leitura longa.
+- **Resumo no topo** (`history.clientHistorySummary`): atendimentos concluídos, faltas e gasto em números grandes; "Comparece em N%" (`attendanceRate` = concluídos ÷ concluídos + faltas), última visita, cancelamentos, cliente desde, próximo horário, plano ativo (sessões que restam, via `clientPackageList`) e crédito (`walletBalance`).
+- **Linha do tempo** (`history.clientHistoryPage`), mais novo primeiro, agrupada por mês, 20 por vez (cursor `instante|id`, botão "Ver mais antigos" + carregamento ao rolar). Junta três fontes sem duplicar regra: atendimentos (todos os status, com pago via `paidCentsSql`, plano/promoção/desconto/observação), vendas de pacote (`client_packages`) e dinheiro do extrato (`client_ledger`, sem as anulações e o movimento anulado).
+- **Filtros:** Tudo (atendimentos + pacotes + dinheiro avulso, isto é, sem atendimento e sem pacote) · Atendimentos · Planos (vendas + atendimentos que usaram pacote) · Pagamentos (todo dinheiro, inclusive sinal e venda de pacote) · Faltas (`no_show`).
+- Regras puras e textos em `clients/history-rules.ts` (status, cor, "Sinal R$ X · falta R$ Y", nome do movimento: Sinal/Pagamento/Pagou o pacote X/Virou crédito…). Ação `actions.loadClientHistory(id, filtro, cursor)`: resumo só na 1ª página; cliente de outro salão = `NOT_FOUND` (RLS).
+- Sem migration. "Remarcou" não tem registro próprio no banco (só o status "Pediu para remarcar"); se quiser no histórico, precisa de log de eventos.
+- Testes: `tests/unit/client-history.test.ts`, `tests/db/client-history.test.ts` (filtros, paginação sem pular, anulação, isolamento), `tests/e2e/historico.spec.ts`.

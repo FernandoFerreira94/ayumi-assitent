@@ -3,7 +3,7 @@ import type { NAV_ICONS } from "./nav-icons";
 export type NavIconKey = keyof typeof NAV_ICONS;
 export type NavItem = { href: string; label: string; icon: NavIconKey; group: "main" | "more" };
 
-/** Telas do menu lateral e do trilho, na ordem das pranchas: as 4 do dia a dia, separador, as outras 5. */
+/** Telas do menu lateral e do trilho, na ordem das pranchas: as 4 do dia a dia, separador, as outras. */
 export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/agenda", label: "Painel", icon: "painel", group: "main" },
   { href: "/calendario", label: "Calendário", icon: "calendario", group: "main" },
@@ -12,6 +12,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/planos", label: "Planos", icon: "planos", group: "more" },
   { href: "/servicos", label: "Serviços", icon: "servicos", group: "more" },
   { href: "/vagas", label: "Vagas", icon: "vagas", group: "more" },
+  { href: "/agendamentos", label: "Agendamentos", icon: "agendamentos", group: "more" },
   { href: "/pendencias", label: "Pendências", icon: "pendencias", group: "more" },
   { href: "/ajustes", label: "Ajustes", icon: "ajustes", group: "more" },
 ];
