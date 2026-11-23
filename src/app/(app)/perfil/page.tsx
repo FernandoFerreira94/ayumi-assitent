@@ -4,6 +4,8 @@ import { PageShell } from "@/components/ui/PageShell";
 import { getDb } from "@/db/client";
 import { tenants } from "@/db/schema";
 import { adminFromEnv } from "@/features/messaging/evolution-admin";
+import { AddressCard } from "@/features/salon/AddressCard";
+import { maskCep } from "@/features/salon/address";
 import { DeleteAccountSheet } from "@/features/salon/DeleteAccountSheet";
 import { ExportDataButton } from "@/features/salon/ExportDataButton";
 import { MascotPicker } from "@/features/salon/MascotPicker";
@@ -19,10 +21,7 @@ async function whatsappPhone(instance: string | null): Promise<string | null> {
   const admin = adminFromEnv();
   if (!admin || !instance) return null;
   try {
-    const n = await Promise.race([
-      admin.number(instance),
-      new Promise<null>((r) => setTimeout(() => r(null), 2500)),
-    ]);
+    const n = await Promise.race([admin.number(instance), new Promise<null>((r) => setTimeout(() => r(null), 2500))]);
     return phoneFromWhatsapp(n);
   } catch {
     return null;
@@ -38,6 +37,13 @@ export default async function PerfilPage() {
       businessPhone: tenants.businessPhone,
       instance: tenants.whatsappInstance,
       segments: tenants.segments,
+      cep: tenants.addressCep,
+      street: tenants.addressStreet,
+      number: tenants.addressNumber,
+      complement: tenants.addressComplement,
+      district: tenants.addressDistrict,
+      city: tenants.addressCity,
+      state: tenants.addressState,
     })
     .from(tenants)
     .where(eq(tenants.id, tenantId));
@@ -56,6 +62,20 @@ export default async function PerfilPage() {
             segments: (t?.segments ?? []) as Segment[],
           }}
         />
+        {/* Endereço do estúdio: convite da cliente, Google e mensagens ({endereco}/{mapa}). Ajustes só tem atalho. */}
+        <section id="endereco" aria-label="Endereço do estúdio" className="scroll-mt-6">
+          <AddressCard
+            initial={{
+              cep: maskCep(t?.cep ?? ""),
+              street: t?.street ?? "",
+              number: t?.number ?? "",
+              complement: t?.complement ?? "",
+              district: t?.district ?? "",
+              city: t?.city ?? "",
+              state: t?.state ?? "",
+            }}
+          />
+        </section>
         <ExportDataButton />
         <DeleteAccountSheet />
       </div>

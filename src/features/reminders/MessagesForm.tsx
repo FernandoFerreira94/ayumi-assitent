@@ -135,7 +135,7 @@ export function MessagesForm({
         {!address ? (
           <p className="text-sm font-semibold text-muted">
             Para usar {"{endereco}"} e {"{mapa}"}, cadastre o{" "}
-            <Link href="/ajustes/endereco" className="font-bold text-primary-text underline">
+            <Link href="/perfil#endereco" className="font-bold text-primary-text underline">
               endereço do estúdio
             </Link>
             .

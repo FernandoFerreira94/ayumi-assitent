@@ -17,8 +17,9 @@ describe("seções de Ajustes", () => {
     expect(legacyTarget("#toString")).toBeNull();
     expect(legacyTarget("#qualquer")).toBeNull();
   });
-  it("toda seção mora embaixo de /ajustes", () => {
-    for (const s of Object.values(SECTIONS)) expect(s.href).toMatch(/^\/ajustes\/[a-z]+$/);
+  it("toda seção mora embaixo de /ajustes (endereço é atalho para o Meu perfil)", () => {
+    for (const [k, s] of Object.entries(SECTIONS))
+      expect(s.href).toMatch(k === "endereco" ? /^\/perfil#endereco$/ : /^\/ajustes\/[a-z]+$/);
   });
   it("resumo do expediente", () => {
     expect(hoursSummary([null, open, open, open, open, open, null])).toBe("Seg a Sex");
