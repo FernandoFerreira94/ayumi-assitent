@@ -16,6 +16,8 @@ import {
   packagePreview,
   packageSessionsLeft,
   parsePackageDraft,
+  promoLine,
+  promoStatus,
 } from "@/features/wallet/rules";
 
 const A = "appt-a";
@@ -188,7 +190,7 @@ describe("pacotes", () => {
     expect(
       packagePreview(
         { kind: "pay_x", sessionsPaid: 3, sessionsTotal: 4, priceCents: 0 },
-        { name: "Esmaltação", priceCents: 4500 },
+        [{ name: "Esmaltação", priceCents: 4500 }],
         90,
         brl,
       ),
@@ -213,7 +215,7 @@ describe("pacotes", () => {
     ).toBe(3);
   });
   it("formulário: paga menos do que leva; pacote de sessões pede preço", () => {
-    const base = { name: "X", serviceId: "00000000-0000-4000-8000-000000000000", sessionsTotal: "4" };
+    const base = { name: "X", serviceIds: ["00000000-0000-4000-8000-000000000000"], sessionsTotal: "4" };
     expect(parsePackageDraft({ ...base, kind: "pay_x", sessionsPaid: "4" })).toEqual({
       ok: false,
       field: "sessionsPaid",
@@ -223,5 +225,52 @@ describe("pacotes", () => {
       field: "priceCents",
     });
     expect(parsePackageDraft({ ...base, kind: "sessions", priceCents: 40000 })).toMatchObject({ ok: true });
+  });
+  it("promoção: período, limite e pelo menos um serviço", () => {
+    const base = { kind: "sessions", name: "X", sessionsTotal: "4", priceCents: 100 };
+    const id = "00000000-0000-4000-8000-000000000000";
+    expect(parsePackageDraft({ ...base, serviceIds: [] })).toEqual({ ok: false, field: "serviceIds" });
+    expect(parsePackageDraft({ ...base, serviceIds: [id], startsOn: "2030-12-10", endsOn: "2030-12-01" })).toEqual({
+      ok: false,
+      field: "endsOn",
+    });
+    expect(parsePackageDraft({ ...base, serviceIds: [id], maxClients: "0" })).toEqual({
+      ok: false,
+      field: "maxClients",
+    });
+    expect(
+      parsePackageDraft({ ...base, serviceIds: [id, id], startsOn: "2030-12-01", endsOn: "", maxClients: "30" }),
+    ).toMatchObject({ ok: true, draft: { serviceIds: [id], startsOn: "2030-12-01", endsOn: null, maxClients: 30 } });
+  });
+  it("vários serviços: o preço do Pague X usa o mais caro e a frase lista todos", () => {
+    expect(
+      packagePreview(
+        { kind: "pay_x", sessionsPaid: 3, sessionsTotal: 4, priceCents: 0 },
+        [
+          { name: "Esmaltação", priceCents: 4500 },
+          { name: "Pé", priceCents: 4000 },
+          { name: "Mão", priceCents: 3500 },
+        ],
+        90,
+        brl,
+      ),
+    ).toBe(
+      "Paga 3 e leva 4: cliente paga R$ 135,00 e ganha 4 sessões de Esmaltação, Pé ou Mão (economiza R$ 45,00). Vale 90 dias.",
+    );
+  });
+  it("situação da promoção: agendada, valendo, encerrada e esgotada", () => {
+    const t = { startsOn: "2030-12-01", endsOn: "2030-12-31", maxClients: 30 };
+    expect(promoStatus(t, "2030-11-30", 0)).toBe("scheduled");
+    expect(promoStatus(t, "2030-12-31", 29)).toBe("running");
+    expect(promoStatus(t, "2031-01-01", 0)).toBe("ended");
+    expect(promoStatus(t, "2030-12-10", 30)).toBe("sold_out");
+    expect(promoStatus({ startsOn: null, endsOn: null, maxClients: null }, "2030-01-01", 999)).toBe("running");
+    const fmt = (d: string) => d.slice(8, 10) + "/" + d.slice(5, 7);
+    expect(promoLine(t, 12, fmt)).toBe("De 01/12 a 31/12 · 12 de 30 clientes");
+    expect(promoLine(t, null, fmt)).toBe("De 01/12 a 31/12 · para as 30 primeiras clientes");
+    expect(promoLine({ startsOn: null, endsOn: null, maxClients: 30 }, null, fmt)).toBe(
+      "Para as 30 primeiras clientes",
+    );
+    expect(promoLine({ startsOn: null, endsOn: null, maxClients: null }, 0, fmt)).toBe("");
   });
 });
