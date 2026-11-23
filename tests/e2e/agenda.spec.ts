@@ -1,4 +1,5 @@
 import { expect, test } from "./fixtures";
+import { preencheAgendar } from "./agendar";
 import { todayStr } from "../../src/lib/dates";
 
 test("cria serviço, cliente e agendamento; avisa conflito; cancela com desfazer", async ({ page }) => {
@@ -21,12 +22,8 @@ test("cria serviço, cliente e agendamento; avisa conflito; cancela com desfazer
   const agendar = async (hora: string) => {
     await page.getByRole("button", { name: "Agendar", exact: true }).first().click();
     // Seletores em lista por letra, como os contatos do iPhone
-    await page.getByRole("button", { name: "Cliente" }).click();
     await expect(page.getByRole("region", { name: "M" })).toBeVisible();
-    await page.getByRole("button", { name: /Maria Silva/ }).click();
-    await page.getByRole("button", { name: "Serviço" }).click();
-    await page.getByRole("button", { name: /Alongamento/ }).click();
-    await page.getByLabel("Horário").selectOption(hora);
+    await preencheAgendar(page, { cliente: /Maria Silva/, servicos: [/Alongamento/], hora });
     await page.getByRole("button", { name: "Agendar", exact: true }).last().click();
   };
 

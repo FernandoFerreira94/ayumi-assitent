@@ -1,4 +1,5 @@
 import { expect, test } from "./fixtures";
+import { preencheAgendar } from "./agendar";
 import { todayStr } from "../../src/lib/dates";
 
 // No teste não há WhatsApp conectado: nenhuma mensagem sai de verdade, e a tela mostra o aviso de reconectar
@@ -46,11 +47,7 @@ test("nas ações do agendamento também dá para mandar mensagem", async ({ pag
 
   await page.goto(`/calendario?d=${todayStr()}`);
   await page.getByRole("button", { name: "Agendar", exact: true }).first().click();
-  await page.getByRole("button", { name: "Cliente" }).click();
-  await page.getByRole("button", { name: /Joana Lima/ }).click();
-  await page.getByRole("button", { name: "Serviço" }).click();
-  await page.getByRole("button", { name: /Alongamento/ }).click();
-  await page.getByLabel("Horário").selectOption("10:00");
+  await preencheAgendar(page, { cliente: /Joana Lima/, servicos: [/Alongamento/], hora: "10:00" });
   await page.getByRole("button", { name: "Agendar", exact: true }).last().click();
   await page.getByRole("button", { name: "Fechar" }).click();
 

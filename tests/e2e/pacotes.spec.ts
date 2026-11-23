@@ -1,4 +1,5 @@
 import { expect, test } from "./fixtures";
+import { preencheAgendar } from "./agendar";
 import { addDays, todayStr } from "../../src/lib/dates";
 
 /** Prints do UX para o PR (só com PRINTS=pasta). */
@@ -96,11 +97,7 @@ test("criar Pague 3 leve 4, vender na ficha e agendar usando a sessão", async (
   const dia = addDays(todayStr(), 2);
   await page.goto(`/calendario?d=${dia}`);
   await page.getByRole("button", { name: "Agendar", exact: true }).first().click();
-  await page.getByRole("button", { name: "Cliente" }).click();
-  await page.getByRole("button", { name: /Bia Souza/ }).click();
-  await page.getByRole("button", { name: "Serviço" }).click();
-  await page.getByRole("button", { name: /Esmaltação/ }).click();
-  await page.getByLabel("Horário").selectOption("10:00");
+  await preencheAgendar(page, { cliente: /Bia Souza/, servicos: [/Esmaltação/], hora: "10:00" });
   await page.getByRole("button", { name: "Agendar", exact: true }).last().click();
   await expect(page.getByText("Usou 1 sessão do pacote Pague 3 leve 4 Esmaltação. Restam 3 de 4")).toBeVisible();
 

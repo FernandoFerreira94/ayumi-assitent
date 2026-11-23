@@ -1,4 +1,5 @@
 import { expect, test } from "./fixtures";
+import { preencheAgendar } from "./agendar";
 import { addDays, todayStr } from "../../src/lib/dates";
 
 test("agendar na pausa do almoço avisa e pede confirmação, sem impedir", async ({ page }) => {
@@ -30,25 +31,28 @@ test("agendar na pausa do almoço avisa e pede confirmação, sem impedir", asyn
 
   await page.goto(`/calendario?d=${addDays(todayStr(), 1)}`);
   await page.getByRole("button", { name: "Agendar", exact: true }).first().click();
-  await page.getByRole("button", { name: "Cliente" }).click();
-  await page.getByRole("button", { name: /Ana Lima/ }).click();
-  await page.getByRole("button", { name: "Serviço" }).click();
-  await page.getByRole("button", { name: /Escova/ }).click();
+  await preencheAgendar(page, { cliente: /Ana Lima/, servicos: [/Escova/], ateQuando: true });
 
+  // A pausa não aparece entre os horários livres; pelo "Outro horário" dá, com aviso
+  await expect(page.getByRole("button", { name: "12:00", exact: true })).toHaveCount(0);
   const aviso = page.getByText("Esse horário pega sua pausa (12:00 às 13:00)", { exact: false }).first();
+  await page.getByRole("button", { name: /Outro horário/ }).click();
   await page.getByLabel("Horário").selectOption("14:00");
   await expect(aviso).toBeHidden();
   await page.getByLabel("Horário").selectOption("12:00");
   await expect(aviso).toBeVisible();
+  await page.getByRole("button", { name: "Continuar" }).click();
+  await expect(aviso).toBeVisible();
 
-  // Agendar pede confirmação; "Escolher outro horário" volta para o campo de horário
+  // Agendar pede confirmação; "Escolher outro horário" volta para o passo Quando?
   await page.getByRole("button", { name: "Agendar", exact: true }).last().click();
   const confirma = page.getByRole("alertdialog");
   await expect(confirma).toContainText("Vai pegar sua pausa");
   if (process.env.PAUSA_PRINT) await page.screenshot({ path: process.env.PAUSA_PRINT });
   await confirma.getByRole("button", { name: "Escolher outro horário" }).click();
   await expect(confirma).toBeHidden();
-  await expect(page.getByLabel("Horário")).toBeFocused();
+  await expect(page.getByRole("heading", { name: "Quando?" })).toBeVisible();
+  await page.getByRole("button", { name: "Continuar" }).click();
 
   // Confirmando, agenda normalmente
   await page.getByRole("button", { name: "Agendar", exact: true }).last().click();

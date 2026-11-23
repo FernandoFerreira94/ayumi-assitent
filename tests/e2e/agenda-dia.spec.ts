@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
+import { preencheAgendar } from "./agendar";
 import { addDays, todayStr } from "../../src/lib/dates";
 
 /** Serviço e cliente pela interface, como a dona faria. */
@@ -22,11 +23,7 @@ async function prepara(page: Page) {
 async function agenda(page: Page, dia: string, hora: string) {
   await page.goto(`/calendario?d=${dia}`);
   await page.getByRole("button", { name: "Agendar", exact: true }).first().click();
-  await page.getByRole("button", { name: "Cliente" }).click();
-  await page.getByRole("button", { name: /Ana Lima/ }).click();
-  await page.getByRole("button", { name: "Serviço" }).click();
-  await page.getByRole("button", { name: /Escova/ }).click();
-  await page.getByLabel("Horário").selectOption(hora);
+  await preencheAgendar(page, { cliente: /Ana Lima/, servicos: [/Escova/], hora });
   await page.getByRole("button", { name: "Agendar", exact: true }).last().click();
   await expect(page.getByRole("heading", { name: /Agendado/ })).toBeVisible();
   await page.getByRole("button", { name: "Fechar" }).click();
