@@ -10,6 +10,8 @@ import { isQuietHour } from "@/features/reminders/quiet";
 import { clientCall, slotLabel } from "@/features/reminders/text";
 import {
   ackText,
+  askText,
+  isOptionReply,
   OPT_IN_TEXT,
   OPT_OUT_TEXT,
   parseIntent,
@@ -49,6 +51,7 @@ const pushTitle = (
   guess: Intent | null,
   correction: boolean,
   handedOff: boolean,
+  ambiguous = false,
 ) => {
   const first = firstName(name);
   if (correction && intent) return `${first} corrigiu a resposta: ${GUESS_LABEL[intent]}`;
@@ -57,6 +60,7 @@ const pushTitle = (
   if (intent === "reschedule") return `${first} quer remarcar`;
   if (guess === "cancel" || guess === "reschedule") return `${first} parece querer ${GUESS_LABEL[guess]}`;
   if (handedOff) return `${first} precisa de você na conversa`;
+  if (ambiguous) return `${first} respondeu, mas tem mais de um horário em aberto: confira a conversa`;
   return null;
 };
 
@@ -100,6 +104,50 @@ async function ownerWroteSince(tx: Tx, clientId: string, since: Date): Promise<b
     )
     .limit(1);
   return !!row;
+}
+
+/**
+ * A cliente respondeu citando uma mensagem. `null` = citou algo que não é pergunta de horário (confirmação do
+ * agendamento, conversa com a dona, mensagem antiga) ou o horário já mudou/passou: é conversa, nada automático.
+ * `undefined` = a mensagem citada não está na conversa (caímos na regra sem citação).
+ */
+async function quotedAppointment(
+  tx: Tx,
+  clientId: string,
+  quotedId: string,
+  now: Date,
+): Promise<Target | null | undefined> {
+  const [q] = await tx
+    .select({ kind: messages.kind, appointmentId: messages.appointmentId, at: messages.createdAt })
+    .from(messages)
+    .where(and(eq(messages.clientId, clientId), eq(messages.externalId, quotedId), eq(messages.direction, "out")))
+    .limit(1);
+  if (!q) return undefined;
+  if (q.kind !== "reminder" || !q.appointmentId) return null;
+  const [a] = await tx
+    .select({
+      id: appointments.id,
+      handoff: appointments.aiHandoffAt,
+      status: appointments.status,
+      startsAt: appointments.startsAt,
+      reminderAt: appointments.reminderSentAt,
+      replyAt: appointments.replyAt,
+    })
+    .from(appointments)
+    .where(eq(appointments.id, q.appointmentId));
+  // Remarcado depois do lembrete (lembrete zerado ou mais novo que a citação), passado ou fechado: não vale mais
+  if (!a || a.startsAt <= now || !a.reminderAt || a.reminderAt > q.at) return null;
+  if (!["pending_confirmation", "confirmed", "reschedule_requested"].includes(a.status)) return null;
+  const correction = !!a.replyAt;
+  if (correction && a.replyAt! < new Date(now.getTime() - CORRECTION_HOURS * 3_600_000)) return null;
+  return {
+    id: a.id,
+    handedOff: !!a.handoff,
+    correction,
+    status: a.status,
+    startsAt: a.startsAt,
+    since: correction ? a.replyAt! : q.at,
+  };
 }
 
 /**
@@ -170,69 +218,79 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
       return { kind: "optout", client: cli, ack: changed.length ? (stop ? OPT_OUT_TEXT : OPT_IN_TEXT) : null } as const;
     }
 
-    // Alvo da mensagem: o lembrete do próximo horário que ainda espera resposta; se não há, a resposta
-    // dada há pouco (a cliente pode ter errado o número e corrigir)
+    // Alvo da mensagem. Com citação, vale a mensagem citada: só um lembrete (ou pergunta do sistema) liga a resposta
+    // a um agendamento; citar a confirmação ou uma conversa é falar com a dona. Sem citação: o lembrete que ainda
+    // espera resposta, se for um só; se não há, a resposta dada há pouco (a cliente pode ter errado o número e corrigir)
     let target: Target | null = null;
-    const [open] = await tx
-      .select({
-        id: appointments.id,
-        handoff: appointments.aiHandoffAt,
-        status: appointments.status,
-        startsAt: appointments.startsAt,
-        reminderAt: appointments.reminderSentAt,
-        nudgeAt: appointments.nudgeSentAt,
-      })
-      .from(appointments)
-      .where(
-        and(
-          eq(appointments.clientId, cli.id),
-          isNotNull(appointments.reminderSentAt),
-          isNull(appointments.replyAt),
-          inArray(appointments.status, ["pending_confirmation", "confirmed"]),
-          gt(appointments.startsAt, now),
-        ),
-      )
-      .orderBy(asc(appointments.startsAt))
-      .limit(1);
-    if (open)
-      target = {
-        id: open.id,
-        handedOff: !!open.handoff,
-        correction: false,
-        status: open.status,
-        startsAt: open.startsAt,
-        // O 2º lembrete reabre a pergunta: vale o mais recente dos dois
-        since: open.nudgeAt && open.nudgeAt > open.reminderAt! ? open.nudgeAt : open.reminderAt!,
-      };
-    else {
-      const [recent] = await tx
+    let ambiguous = false;
+    const quoted = msg.quotedId ? await quotedAppointment(tx, cli.id, msg.quotedId, now) : undefined;
+    if (quoted !== undefined) {
+      if (quoted) target = quoted;
+    } else {
+      const opens = await tx
         .select({
           id: appointments.id,
           handoff: appointments.aiHandoffAt,
           status: appointments.status,
           startsAt: appointments.startsAt,
-          replyAt: appointments.replyAt,
+          reminderAt: appointments.reminderSentAt,
+          nudgeAt: appointments.nudgeSentAt,
         })
         .from(appointments)
         .where(
           and(
             eq(appointments.clientId, cli.id),
-            gte(appointments.replyAt, hoursAgo(CORRECTION_HOURS)),
-            inArray(appointments.status, ["confirmed", "reschedule_requested"]),
+            isNotNull(appointments.reminderSentAt),
+            isNull(appointments.replyAt),
+            inArray(appointments.status, ["pending_confirmation", "confirmed"]),
             gt(appointments.startsAt, now),
           ),
         )
-        .orderBy(desc(appointments.replyAt))
-        .limit(1);
-      if (recent)
+        .orderBy(asc(appointments.startsAt))
+        .limit(2);
+      const open = opens[0];
+      // Dois lembretes esperando resposta (dias diferentes): sem citação não dá para saber qual; a dona decide
+      if (opens.length > 1) ambiguous = true;
+      else if (open)
         target = {
-          id: recent.id,
-          handedOff: !!recent.handoff,
-          correction: true,
-          status: recent.status,
-          startsAt: recent.startsAt,
-          since: recent.replyAt!,
+          id: open.id,
+          handedOff: !!open.handoff,
+          correction: false,
+          status: open.status,
+          startsAt: open.startsAt,
+          // O 2º lembrete reabre a pergunta: vale o mais recente dos dois
+          since: open.nudgeAt && open.nudgeAt > open.reminderAt! ? open.nudgeAt : open.reminderAt!,
         };
+      else {
+        const [recent] = await tx
+          .select({
+            id: appointments.id,
+            handoff: appointments.aiHandoffAt,
+            status: appointments.status,
+            startsAt: appointments.startsAt,
+            replyAt: appointments.replyAt,
+          })
+          .from(appointments)
+          .where(
+            and(
+              eq(appointments.clientId, cli.id),
+              gte(appointments.replyAt, hoursAgo(CORRECTION_HOURS)),
+              inArray(appointments.status, ["confirmed", "reschedule_requested"]),
+              gt(appointments.startsAt, now),
+            ),
+          )
+          .orderBy(desc(appointments.replyAt))
+          .limit(1);
+        if (recent)
+          target = {
+            id: recent.id,
+            handedOff: !!recent.handoff,
+            correction: true,
+            status: recent.status,
+            startsAt: recent.startsAt,
+            since: recent.replyAt!,
+          };
+      }
     }
 
     // A dona escreveu depois do lembrete (ou da resposta): o que a cliente manda agora responde a ela,
@@ -269,7 +327,7 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
         );
       ai = { ownerWroteRecently: owner > 0, autoRepliesLast24h: auto };
     }
-    return { kind: "reply", client: cli, messageId, target, ruleIntent, ai } as const;
+    return { kind: "reply", client: cli, messageId, target, ruleIntent, ai, ambiguous } as const;
   });
 
   if (step.kind === "skip") return { handled: false, reason: step.reason };
@@ -280,7 +338,7 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
     return { handled: true, intent: null, appointmentId: null };
   }
 
-  const { client, messageId, target, ruleIntent, ai } = step;
+  const { client, messageId, target, ruleIntent, ai, ambiguous } = step;
 
   // Decisão. Fora da transação: o modelo vai para a rede e não deve segurar o banco
   let plan: AiPlan;
@@ -299,6 +357,20 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
       () => classify(msg.text, t.aiRules),
     );
   } else plan = { action: "silent", guess: null, quiet: false };
+
+  // Cancelar ou remarcar só pelo número (2 ou 3). Texto livre ("não vou poder", ou a IA com certeza) não muda nada:
+  // pergunta uma vez, citando o horário, e avisa a dona
+  let ask: Intent | null = null;
+  if (target && plan.action === "apply" && plan.intent !== "confirm" && !(ruleIntent && isOptionReply(msg.text))) {
+    ask = plan.intent;
+    plan = target.handedOff
+      ? { action: "silent", guess: plan.intent, quiet: false }
+      : {
+          action: "handoff",
+          text: askText(plan.intent, client.name, t.fullName, slotLabel(target.startsAt, now)),
+          guess: plan.intent,
+        };
+  }
 
   let intent: Intent | null = null;
   let appointmentId: string | null = null;
@@ -324,10 +396,18 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
     const applied = intent;
     await withTenant(tenantId, async (tx) => {
       await tx.update(messages).set({ intent: applied, appointmentId: apptId }).where(eq(messages.id, messageId));
+      // Só se o agendamento continua como estava quando a mensagem foi lida (a dona pode ter mudado no meio)
       await tx
         .update(appointments)
         .set({ status: STATUS_FOR[applied], replyAt: now })
-        .where(eq(appointments.id, apptId));
+        .where(
+          and(
+            eq(appointments.id, apptId),
+            // Comparação em milissegundos (o Date do JS não guarda os microssegundos do Postgres)
+            sql`date_trunc('milliseconds', ${appointments.startsAt}) = ${target!.startsAt.toISOString()}::timestamptz`,
+            inArray(appointments.status, ["pending_confirmation", "confirmed", "reschedule_requested"]),
+          ),
+        );
     });
   } else if (target && handedOff) {
     const apptId = target.id;
@@ -349,14 +429,15 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
     ack = null;
   }
 
-  if (ack) await sendAutoReply(deps, msg.instance, tenantId, client, target?.id ?? null, ack);
+  if (ack)
+    await sendAutoReply(deps, msg.instance, tenantId, client, target?.id ?? null, ack, ask ? "reminder" : "auto_reply");
 
   if (deps.push) {
     const push = deps.push;
     const guess = plan.action === "apply" ? null : plan.guess;
     // Resposta ao lembrete que ninguém tratou (IA desligada, limite de respostas, já passada): a dona ainda precisa saber
     const unattended = !!target && plan.action === "silent" && !plan.quiet;
-    const title = pushTitle(client.name, intent, guess, correction, handedOff || unattended);
+    const title = pushTitle(client.name, intent, guess, correction, handedOff || unattended, ambiguous);
     // Tocar abre a conversa com a cliente dentro do app
     if (title)
       await withTenant(tenantId, (tx) =>
@@ -374,6 +455,7 @@ async function sendAutoReply(
   client: { id: string; phone: string },
   appointmentId: string | null,
   body: string,
+  kind: "auto_reply" | "reminder" = "auto_reply",
 ) {
   const port = deps.portFor(instance);
   try {
@@ -384,7 +466,7 @@ async function sendAutoReply(
           clientId: client.id,
           appointmentId,
           direction: "out",
-          kind: "auto_reply",
+          kind,
           body,
           externalId: sent.id,
         }),

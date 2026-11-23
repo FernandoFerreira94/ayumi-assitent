@@ -109,7 +109,13 @@ describe("resposta ao lembrete", () => {
       expect(parseIntent(t), t).toBeNull();
   });
   it("resposta curta com cumprimento ou agradecimento continua valendo", () => {
-    for (const t of ["Ok, obrigada!", "sim, até amanhã", "Bom dia! Confirmo", "confirmado, obrigada 💜", "Oi, confirmo sim"])
+    for (const t of [
+      "Ok, obrigada!",
+      "sim, até amanhã",
+      "Bom dia! Confirmo",
+      "confirmado, obrigada 💜",
+      "Oi, confirmo sim",
+    ])
       expect(parseIntent(t), t).toBe("confirm");
     for (const t of ["infelizmente não vou poder", "não vou conseguir ir amanhã", "não vai dar"])
       expect(parseIntent(t), t).toBe("cancel");
@@ -206,6 +212,68 @@ describe("SAIR e VOLTAR", () => {
     for (const t of ["SAIR", "sair.", "Parar", "pare", "stop", "não quero mais receber", "cancelar lembretes"])
       expect(parseOptOut(t), t).toBe("stop");
     for (const t of ["VOLTAR", "quero voltar a receber"]) expect(parseOptOut(t), t).toBe("resume");
-    for (const t of ["vou sair do trabalho às 5", "1", "ok", "não quero cancelar"]) expect(parseOptOut(t), t).toBeNull();
+    for (const t of ["vou sair do trabalho às 5", "1", "ok", "não quero cancelar"])
+      expect(parseOptOut(t), t).toBeNull();
+  });
+});
+
+describe("'não dá' solto fala de outra coisa (caso real: 'Esse link nao da')", () => {
+  it("só cancela quando a mensagem é só a recusa, com cortesia ou desculpa", () => {
+    for (const t of [
+      "Esse link nao da",
+      "o link não abre",
+      "esse pix não dá",
+      "o endereço eu não consigo",
+      "a foto não vai dar",
+    ])
+      expect(parseIntent(t), t).toBeNull();
+    for (const t of [
+      "não dá",
+      "Infelizmente não vai dar",
+      "desculpa, não posso",
+      "poxa, não consigo mais",
+      "não vou poder ir",
+    ])
+      expect(parseIntent(t), t).toBe("cancel");
+  });
+  it("número sozinho é opção; texto não", async () => {
+    const { isOptionReply } = await import("@/features/messaging/replies");
+    expect(isOptionReply(" 2 ")).toBe(true);
+    expect(isOptionReply("opção 3")).toBe(true);
+    expect(isOptionReply("cancela")).toBe(false);
+  });
+  it("a pergunta de confirmação cita o horário e diz que só o número vale", async () => {
+    const { askText } = await import("@/features/messaging/replies");
+    expect(askText("cancel", "Bia Souza", false, "amanhã às 11:00")).toBe(
+      "Oi, Bia! Só para eu não entender errado: você quer cancelar o horário de amanhã às 11:00? Responda 2 para cancelar ou 3 para remarcar. Se não for isso, a profissional te responde por aqui 💜",
+    );
+  });
+});
+
+describe("resposta com citação (webhook)", () => {
+  const key = { remoteJid: "5511987654321@s.whatsapp.net", fromMe: false, id: "IN1" };
+  it("lê o id citado no contextInfo do dado ou da mensagem", () => {
+    expect(
+      parseUpsert({
+        event: "messages.upsert",
+        instance: "s",
+        data: {
+          key,
+          contextInfo: { stanzaId: "OUT9" },
+          message: { extendedTextMessage: { text: "Esse link nao da" } },
+        },
+      }),
+    ).toMatchObject({ text: "Esse link nao da", quotedId: "OUT9" });
+    expect(
+      parseUpsert({
+        event: "messages.upsert",
+        instance: "s",
+        data: { key, message: { extendedTextMessage: { text: "1", contextInfo: { stanzaId: "OUT7" } } } },
+      }),
+    ).toMatchObject({ quotedId: "OUT7" });
+  });
+  it("sem citação não inventa id", () => {
+    const r = parseUpsert({ event: "messages.upsert", instance: "s", data: { key, message: { conversation: "1" } } });
+    expect(r).not.toHaveProperty("quotedId");
   });
 });

@@ -16,6 +16,11 @@ const RESCHEDULE = /\b(reagend\w*|remarc\w*|outro (horario|dia)|mudar (o )?horar
 // "não vou/posso/consigo/dá" só cancela quando fala de ir: "não consigo achar o endereço" é outro assunto
 const CANCEL =
   /\b(cancel\w*|desmarc\w*|nao (vou|posso|consigo|da)( (mais|mesmo|pra|para))*( (poder|conseguir|ir|vir|comparecer|amanha|hoje)\b|$)|nao vai dar|nao irei)\b/;
+// "não dá", "não posso", "não vai dar" soltos no fim só cancelam se a mensagem for só isso (com cortesia ou desculpa):
+// "esse link não dá" fala do link, não do horário
+const BARE_CANCEL = /\bnao ((vou|posso|consigo|da)( (mais|mesmo))*|vai dar)$/;
+const APOLOGY =
+  /\b(oi|ola|bom dia|boa tarde|boa noite|infelizmente|desculp\w*|perdao|poxa|puts|ah|ai|amiga|querida|flor|moca|eu|hoje|amanha|mais|mesmo|entao|acho que)\b/g;
 // Não disse "cancela", mas contou por que não vai conseguir ir ("estou na faculdade", "surgiu um imprevisto"):
 // vale como pedido de remarcar. Ressalva ("chego depois", "?") continua indo para a dona ler.
 const UNABLE =
@@ -45,6 +50,9 @@ const BY_OPTION: Record<string, Intent> = {
   "3": "reschedule",
   tres: "reschedule",
 };
+/** A cliente respondeu só com o número da opção ("2", "opção 2"): é a única forma de cancelar/remarcar sem pergunta. */
+export const isOptionReply = (raw: string) => OPTION.test(plain(raw.trim()));
+
 // Só emojis de "sim"; tom de pele e seletores de variação não contam
 const THUMBS = /^(\u{1F44D}|\u{1F44C}|✅|✔|💜|❤|\u{1F499}|\u{1F618})+$/u;
 const EMOJI_NOISE = /[\u{1F3FB}-\u{1F3FF}️‍\s]/gu;
@@ -69,6 +77,10 @@ export function parseIntent(raw: string): Intent | null {
   if (WILL_ATTEND.test(t)) return doubtful ? null : "confirm";
   if (RESCHEDULE.test(t)) return "reschedule";
   if (UNABLE.test(t) && !doubtful) return "reschedule";
+  if (BARE_CANCEL.test(t) && !/\b(cancel|desmarc)\w*/.test(t)) {
+    const rest = t.replace(BARE_CANCEL, " ").replace(APOLOGY, " ").trim();
+    if (rest) return null;
+  }
   if (CANCEL.test(t)) {
     // "vou sim, mas cancela o outro": sem como saber a qual horário se refere
     // ("vou ter que cancelar" é só o jeito de dizer; o "vou" ali não confirma nada)
@@ -83,7 +95,8 @@ export function parseIntent(raw: string): Intent | null {
 }
 
 // A mensagem inteira tem que ser o pedido: "não quero sair agora" não é opt-out
-const STOP = /^(sair|parar|pare|stop|nao quero (mais )?receber( (mensagens?|lembretes?|avisos?))?|cancelar (lembretes?|avisos?|mensagens?))$/;
+const STOP =
+  /^(sair|parar|pare|stop|nao quero (mais )?receber( (mensagens?|lembretes?|avisos?))?|cancelar (lembretes?|avisos?|mensagens?))$/;
 const RESUME = /^(voltar|volta|quero voltar a receber( (mensagens?|lembretes?|avisos?))?)$/;
 
 /** Cliente pediu para parar ("SAIR") ou voltar ("VOLTAR") a receber mensagens automáticas. */
@@ -109,6 +122,22 @@ export function ackText(intent: Intent, clientName: string, fullName = false, wh
   if (intent === "cancel")
     return `Tudo bem, ${first}! Recebi seu pedido para cancelar o horário${slot}. A profissional vai falar com você por aqui para finalizar 💜`;
   return `Tudo bem, ${first}! Recebi seu pedido para remarcar o horário${slot}. A profissional vai te chamar por aqui com as opções de horário 💜`;
+}
+
+/**
+ * Texto livre que parece pedir cancelar/remarcar não muda nada sozinho: o sistema pergunta, citando o horário, e só
+ * a resposta pelo número (2 ou 3) vale. Se não era isso, a profissional responde.
+ */
+export function askText(
+  intent: "cancel" | "reschedule",
+  clientName: string,
+  fullName = false,
+  when?: string | null,
+): string {
+  const first = clientCall(clientName, fullName);
+  const slot = when ? ` de ${when}` : "";
+  const what = intent === "cancel" ? "cancelar" : "remarcar";
+  return `Oi, ${first}! Só para eu não entender errado: você quer ${what} o horário${slot}? Responda 2 para cancelar ou 3 para remarcar. Se não for isso, a profissional te responde por aqui 💜`;
 }
 
 /**
@@ -138,19 +167,23 @@ export type InboundText = {
   phoneDigits: string;
   text: string;
   media?: boolean;
+  /** Id da mensagem que a cliente citou ao responder (resposta com citação no WhatsApp) */
+  quotedId?: string | null;
 };
 
 type Key = { remoteJid?: string; remoteJidAlt?: string; senderPn?: string; fromMe?: boolean; id?: string };
+type Ctx = { contextInfo?: { stanzaId?: string } };
 type Upsert = {
   event?: string;
   instance?: string;
   data?: {
     key?: Key;
+    contextInfo?: { stanzaId?: string };
     message?: {
       conversation?: string;
-      extendedTextMessage?: { text?: string };
-      imageMessage?: { caption?: string };
-      videoMessage?: { caption?: string };
+      extendedTextMessage?: { text?: string } & Ctx;
+      imageMessage?: { caption?: string } & Ctx;
+      videoMessage?: { caption?: string } & Ctx;
       audioMessage?: object;
       stickerMessage?: object;
     };
@@ -184,6 +217,13 @@ export function parseUpsert(body: unknown): InboundText | null {
   if (!key?.id || (!text?.trim() && !media)) return null;
   const phoneDigits = jidDigits(key.remoteJid) ?? jidDigits(key.remoteJidAlt) ?? jidDigits(key.senderPn);
   if (!phoneDigits) return null;
-  const base = { instance: b.instance, externalId: key.id, fromMe, phoneDigits };
+  // Resposta com citação: a Evolution manda o id citado no contextInfo (do dado ou da própria mensagem)
+  const quotedId =
+    b.data?.contextInfo?.stanzaId ??
+    m?.extendedTextMessage?.contextInfo?.stanzaId ??
+    m?.imageMessage?.contextInfo?.stanzaId ??
+    m?.videoMessage?.contextInfo?.stanzaId ??
+    null;
+  const base = { instance: b.instance, externalId: key.id, fromMe, phoneDigits, ...(quotedId ? { quotedId } : {}) };
   return media ? { ...base, text: mediaLabel!, media: true } : { ...base, text: text!.trim() };
 }
