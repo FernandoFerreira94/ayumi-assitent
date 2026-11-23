@@ -16,9 +16,9 @@ describe("SideNav", () => {
     expect(within(nav).getByRole("link", { name: "Painel" })).not.toHaveAttribute("aria-current");
     expect(within(nav).getByRole("link", { name: "Pendências 3" })).toHaveAttribute("href", "/pendencias");
     expect(within(nav).getByRole("link", { name: /Estúdio Lua.*Perfil e conta/ })).toHaveAttribute("href", "/perfil");
-    // topo (mascote, leva ao Painel) + 8 telas + perfil
+    // topo (mascote, leva ao Painel) + 9 telas + perfil
     expect(within(nav).getByRole("link", { name: /Bubbly, início/ })).toHaveAttribute("href", "/agenda");
-    expect(within(nav).getAllByRole("link")).toHaveLength(10);
+    expect(within(nav).getAllByRole("link")).toHaveLength(11);
   });
 
   it("mostra o nome de quem está logado embaixo de bubbly; sem nome, nada", () => {
