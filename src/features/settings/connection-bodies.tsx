@@ -40,19 +40,7 @@ export async function CalendarsBody({
   googleResult?: unknown;
   googleError?: unknown;
 }) {
-  const [google, [salon], session] = await Promise.all([
-    isGoogleConnected(tenantId),
-    getDb()
-      .select({
-        calendarOn: tenants.calendarTokenHash,
-        calendarHideNames: tenants.calendarHideNames,
-        calendarFetchedAt: tenants.calendarFetchedAt,
-        icloudOn: tenants.icloudCalendarUrl,
-      })
-      .from(tenants)
-      .where(eq(tenants.id, tenantId)),
-    getSession(),
-  ]);
+  const [google, session] = await Promise.all([isGoogleConnected(tenantId), getSession()]);
   return (
     <>
       <section id="google" aria-label="Google Agenda" className="scroll-mt-6">
@@ -63,16 +51,32 @@ export async function CalendarsBody({
           email={session?.user.email}
         />
       </section>
-      <section id="iphone" aria-label="Calendário do iPhone" className="scroll-mt-6">
-        <IphoneCalendarCard
-          enabled={!!salon?.calendarOn}
-          hideNames={salon?.calendarHideNames ?? false}
-          subscribed={!!salon?.calendarOn && !!salon.calendarFetchedAt}
-          googleConnected={google}
-          icloudOn={!!salon?.icloudOn}
-        />
-      </section>
+      <IphoneCalendarBody tenantId={tenantId} google={google} />
     </>
+  );
+}
+
+/** Cartão do Calendário do iPhone (também usado na entrada de primeiro acesso). */
+export async function IphoneCalendarBody({ tenantId, google }: { tenantId: string; google: boolean }) {
+  const [salon] = await getDb()
+    .select({
+      calendarOn: tenants.calendarTokenHash,
+      calendarHideNames: tenants.calendarHideNames,
+      calendarFetchedAt: tenants.calendarFetchedAt,
+      icloudOn: tenants.icloudCalendarUrl,
+    })
+    .from(tenants)
+    .where(eq(tenants.id, tenantId));
+  return (
+    <section id="iphone" aria-label="Calendário do iPhone" className="scroll-mt-6">
+      <IphoneCalendarCard
+        enabled={!!salon?.calendarOn}
+        hideNames={salon?.calendarHideNames ?? false}
+        subscribed={!!salon?.calendarOn && !!salon.calendarFetchedAt}
+        googleConnected={google}
+        icloudOn={!!salon?.icloudOn}
+      />
+    </section>
   );
 }
 
