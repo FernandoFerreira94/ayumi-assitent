@@ -10,9 +10,18 @@ import { PAYMENT_METHODS } from "@/features/appointments/payment";
 import { parseDiscount } from "@/features/appointments/pricing";
 import { formatShortDate, todayStr } from "@/lib/dates";
 import { getWalletSettings, refundCredit, saveWalletSettings } from "./core";
-import { archiveTemplate, createTemplate, listTemplates, sellPackage, type SellRefusal } from "./packages";
+import {
+  archiveTemplate,
+  createTemplate,
+  listTemplates,
+  sellPackage,
+  setTemplatePaused,
+  type SellRefusal,
+} from "./packages";
+import { createPromotion, endPromotion, listPromotions, setPromotionPaused } from "./promotions";
+import { parsePromotionDraft } from "./promotion-rules";
 import { parsePackageDraft, parsePolicy } from "./rules";
-import { templateView, type TemplateView } from "./views";
+import { promotionView, templateView, type PromotionView, type TemplateView } from "./views";
 
 /** Ajustes > Pagamentos: sinal sugerido, política de cancelamento/falta, validade de pacote e chave Pix. */
 export async function saveWalletSettingsAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
@@ -95,16 +104,21 @@ export async function createPackageTemplateAction(input: {
   sessionsPaid: string;
   sessionsTotal: string;
   price: string;
+  /** como o preço foi digitado: preço final (padrão) ou desconto em % / R$ sobre o valor cheio */
+  priceMode?: "final" | "pct" | "brl";
   startsOn?: string;
   endsOn?: string;
   maxClients?: string;
 }): Promise<ActionResult> {
   const { tenantId } = await requireTenant();
-  const price = parseDiscount("brl", input.price);
+  const byDiscount = input.kind === "sessions" && (input.priceMode === "pct" || input.priceMode === "brl");
+  const price = parseDiscount(byDiscount ? input.priceMode : "brl", input.price);
+  if (byDiscount && (!price || price === "invalid")) return fail("VALIDATION", "priceCents");
   const parsed = parsePackageDraft({
     ...input,
     serviceIds: Array.isArray(input.serviceIds) ? input.serviceIds.map(String) : [],
-    priceCents: input.kind === "sessions" ? (price && price !== "invalid" ? price.value : null) : 0,
+    priceCents: input.kind === "sessions" && !byDiscount ? (price && price !== "invalid" ? price.value : null) : 0,
+    discount: byDiscount && price && price !== "invalid" ? price : null,
   });
   if (!parsed.ok) return fail("VALIDATION", parsed.field);
   try {
@@ -165,4 +179,105 @@ const REFUSAL: Record<SellRefusal, ErrorCode> = {
   ended: "PROMO_ENDED",
   sold_out: "PROMO_SOLD_OUT",
   already_bought: "PROMO_ALREADY_BOUGHT",
+  paused: "PROMO_PAUSED",
 };
+
+/** Promoções de desconto (com situação, usos e o texto para divulgar). */
+export async function loadPromotions(): Promise<ActionResult<PromotionView[]>> {
+  const { tenantId } = await requireTenant();
+  try {
+    const today = todayStr();
+    return ok(await withTenant(tenantId, async (tx) => (await listPromotions(tx)).map((p) => promotionView(p, today))));
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+/** Cria a promoção de desconto no agendamento ("as 30 primeiras que agendarem ganham 20%"). */
+export async function createPromotionAction(input: {
+  name?: string;
+  discountKind: string;
+  discountValue: string;
+  serviceIds: string[];
+  startsOn?: string;
+  endsOn?: string;
+  maxClients?: string;
+}): Promise<ActionResult> {
+  const { tenantId } = await requireTenant();
+  const parsed = parsePromotionDraft({
+    ...input,
+    discount: parseDiscount(input.discountKind, input.discountValue),
+    serviceIds: Array.isArray(input.serviceIds) ? input.serviceIds.map(String) : [],
+  });
+  if (!parsed.ok) return fail("VALIDATION", parsed.field);
+  try {
+    const id = await withTenant(tenantId, (tx) => createPromotion(tx, tenantId, parsed.draft));
+    if (!id) return fail("VALIDATION", "serviceIds");
+    revalidatePath("/ajustes", "layout");
+    return ok();
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+/** Pausar, retomar ou encerrar uma promoção de desconto ou pausar/retomar a venda de um pacote. */
+export async function promotionControlAction(input: {
+  target: "promotion" | "package";
+  id: string;
+  action: "pause" | "resume" | "end";
+}): Promise<ActionResult> {
+  const { tenantId } = await requireTenant();
+  const p = z
+    .object({
+      target: z.enum(["promotion", "package"]),
+      id: z.string().uuid(),
+      action: z.enum(["pause", "resume", "end"]),
+    })
+    .safeParse(input);
+  if (!p.success || (p.data.target === "package" && p.data.action === "end")) return fail("VALIDATION");
+  const { target, id, action } = p.data;
+  try {
+    const done = await withTenant(tenantId, async (tx) =>
+      target === "package"
+        ? setTemplatePaused(tx, id, action === "pause")
+        : action === "end"
+          ? endPromotion(tx, id)
+          : setPromotionPaused(tx, id, action === "pause"),
+    );
+    if (!done) return fail("NOT_FOUND");
+    revalidatePath("/ajustes", "layout");
+    return ok();
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+export type RunningPromotion = Pick<
+  PromotionView,
+  "id" | "name" | "discount" | "serviceIds" | "label" | "left" | "maxClients"
+>;
+
+/** Promoções valendo hoje, para a folha de agendar mostrar e aplicar (a vaga de verdade é contada ao salvar). */
+export async function loadRunningPromotions(): Promise<ActionResult<RunningPromotion[]>> {
+  const { tenantId } = await requireTenant();
+  try {
+    const today = todayStr();
+    const rows = await withTenant(tenantId, (tx) => listPromotions(tx));
+    return ok(
+      rows
+        .map((p) => promotionView(p, today))
+        .filter((p) => p.status === "running")
+        .map(({ id, name, discount, serviceIds, label, left, maxClients }) => ({
+          id,
+          name,
+          discount,
+          serviceIds,
+          label,
+          left,
+          maxClients,
+        })),
+    );
+  } catch {
+    return fail("UNKNOWN");
+  }
+}

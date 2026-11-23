@@ -102,7 +102,12 @@ export async function sendNudges(tx: Tx, port: MessagingPort, now: Date): Promis
   if (due.length === 0) return { sent: 0, failed: 0, offline: false };
   // RLS: na transação do estúdio só a linha dele aparece
   const [salon] = await tx
-    .select({ name: tenants.name, template: tenants.secondReminderTemplate, fullName: tenants.clientNameFull })
+    .select({
+      name: tenants.name,
+      template: tenants.secondReminderTemplate,
+      fullName: tenants.clientNameFull,
+      address: tenants.address,
+    })
     .from(tenants);
   const failedIds: string[] = [];
   let sent = 0;

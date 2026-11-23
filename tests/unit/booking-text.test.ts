@@ -7,7 +7,7 @@ const eve = new Date("2026-11-10T15:00:00Z");
 describe("mensagem de agendamento confirmado", () => {
   it("diz que deu certo, o dia e o horário, sem valor no texto padrão", () => {
     expect(bookingText(a, eve)).toBe(
-      "Oi, Maria! Seu agendamento de Gel está confirmado 💜\n📅 amanhã, dia 11/11\n🕒 14:30\n\nTe esperamos com carinho!",
+      "Oi! Seu agendamento de Gel está confirmado 💜\n📅 amanhã, dia 11/11\n🕒 14:30\n\nTe esperamos com carinho!",
     );
     expect(bookingText(a, eve)).not.toMatch(/R\$/);
   });
@@ -18,9 +18,29 @@ describe("mensagem de agendamento confirmado", () => {
   it("usa o dia da semana quando é mais longe", () => {
     expect(bookingText(a, new Date("2026-11-05T15:00:00Z"))).toContain("quarta-feira, dia 11/11");
   });
-  it("chama pelo nome do contato quando a dona escolhe", () => {
-    expect(bookingText({ ...a, client: "Maria  Zona Norte" }, eve, { fullName: true })).toMatch(
-      /^Oi, Maria Zona Norte!/,
+  it("texto padrão sem o nome; com {nome} chama pelo nome do contato quando a dona escolhe", () => {
+    expect(bookingText(a, eve)).not.toContain("Maria");
+    expect(
+      bookingText({ ...a, client: "Maria  Zona Norte" }, eve, { fullName: true, template: "Oi, {nome}!" }),
+    ).toMatch(/^Oi, Maria Zona Norte!/);
+  });
+  it("{endereco} e {mapa} trazem o endereço do estúdio e o link do mapa", () => {
+    const address = "Rua A, 430 - Centro, São José dos Campos - SP, 12245-000";
+    const t = bookingText(a, eve, { address, template: "Te espero!\n📍 {endereco}\n🗺️ {mapa}" });
+    expect(t).toContain(`📍 ${address}`);
+    expect(t).toContain("🗺️ https://www.google.com/maps/search/?api=1&query=Rua%20A%2C%20430");
+  });
+  it("texto padrão já traz o endereço e o mapa quando o estúdio tem endereço", () => {
+    const address = "Rua A, 430 - Centro, São José dos Campos - SP, 12245-000";
+    expect(bookingText(a, eve, { address })).toBe(
+      `Oi! Seu agendamento de Gel está confirmado 💜\n📅 amanhã, dia 11/11\n🕒 14:30\n📍 ${address}\n🗺️ https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}\n\nTe esperamos com carinho!`,
+    );
+  });
+  it("sem endereço cadastrado, a linha do {endereco}/{mapa} some inteira", () => {
+    const t = bookingText(a, eve, { template: "Te espero!\n📍 {endereco}\n🗺️ {mapa}\nBeijos" });
+    expect(t).toBe("Te espero!\nBeijos");
+    expect(bookingText(a, eve, { template: "Fica em {endereco}, perto do mercado" })).toBe(
+      "Fica em , perto do mercado",
     );
   });
   it("sinal pedido vai com valor e Pix, mesmo com texto editado, antes do link do convite", () => {

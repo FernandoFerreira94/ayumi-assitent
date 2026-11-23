@@ -31,6 +31,7 @@ export async function sendBookingMessage(
         template: tenants.bookingTemplate,
         fullName: tenants.clientNameFull,
         pixKey: tenants.pixKey,
+        address: tenants.address,
       })
       .from(tenants)
       .where(eq(tenants.id, tenantId));
@@ -67,6 +68,7 @@ export async function sendBookingMessage(
       template: t?.template,
       name: t?.name,
       fullName: t?.fullName,
+      address: t?.address,
     });
     const res = await sendDirect(port, a.phone, text);
     if (!res.ok) {

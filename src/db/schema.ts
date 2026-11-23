@@ -21,7 +21,16 @@ export const tenants = pgTable("tenants", {
   name: text("name").notNull(),
   timezone: text("timezone").notNull().default("America/Sao_Paulo"),
   whatsappInstance: text("whatsapp_instance").unique(),
+  /** Linha pronta do endereço do estúdio (formatAddress): convite .ics, Google e {endereco}/{mapa}. null = sem endereço */
   address: text("address"),
+  /** Endereço do estúdio em campos (0054), editado em Ajustes > Endereço. CEP só com os 8 dígitos. */
+  addressCep: text("address_cep"),
+  addressStreet: text("address_street"),
+  addressNumber: text("address_number"),
+  addressComplement: text("address_complement"),
+  addressDistrict: text("address_district"),
+  addressCity: text("address_city"),
+  addressState: text("address_state"),
   instagram: text("instagram"),
   /** Um dos BUSINESS_TYPES de features/salon/schema */
   businessType: text("business_type"),
@@ -201,7 +210,9 @@ export const appointments = pgTable(
     paymentMethod: text("payment_method").$type<"pix" | "dinheiro" | "cartao">(),
     /** Pacote da cliente usado neste atendimento (migration 0051) */
     clientPackageId: uuid("client_package_id"),
-    /** Sinal pedido à cliente ao agendar, em centavos (migration 0054); só vira caixa ao marcar recebido */
+    /** Promoção de desconto usada neste atendimento (migration 0054) */
+    promotionId: uuid("promotion_id"),
+    /** Sinal pedido à cliente ao agendar, em centavos (migration 0055); só vira caixa ao marcar recebido */
     depositRequestedCents: integer("deposit_requested_cents"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -434,6 +445,26 @@ export const packageTemplates = pgTable("package_templates", {
   /** 0052: serviços em que a sessão vale (inclui serviceId, o de referência do preço) */
   serviceIds: uuid("service_ids").array().notNull(),
   active: boolean("active").notNull().default(true),
+  /** 0054: venda pausada (continua na lista) */
+  paused: boolean("paused").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Promoção de desconto no agendamento (0054): % ou R$ nos serviços, período e "as N primeiras" opcionais. */
+export const promotions = pgTable("promotions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  name: text("name"),
+  discountKind: text("discount_kind").notNull().$type<"pct" | "brl">(),
+  discountValue: integer("discount_value").notNull(),
+  serviceIds: uuid("service_ids").array().notNull(),
+  startsOn: date("starts_on", { mode: "string" }),
+  endsOn: date("ends_on", { mode: "string" }),
+  maxClients: smallint("max_clients"),
+  paused: boolean("paused").notNull().default(false),
+  endedAt: timestamp("ended_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

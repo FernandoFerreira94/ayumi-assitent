@@ -14,8 +14,10 @@ import { messageFor, type ErrorCode } from "@/lib/errors";
 import { whatsappStatus } from "@/features/whatsapp/actions";
 import { BookingOverlay, type Booking, type Step } from "./BookingOverlay";
 import { BookingServices } from "./BookingServices";
+import { PauseConfirm } from "./PauseConfirm";
 import { PaymentFields } from "./PaymentFields";
-import { daySpan, OUTSIDE_HOURS, outsideHours } from "./agenda-grid";
+import { daySpan, OUTSIDE_HOURS, outsideHours, pauseOverlap, pauseWarning } from "./agenda-grid";
+import { hhmm } from "./timeline";
 import type { ServiceOption } from "./options";
 import { warnSync } from "./sync-warning";
 import { createAppointment } from "./actions";
@@ -115,6 +117,14 @@ export function NewAppointmentSheet({
     !!week &&
     isDateStr(pick.date) &&
     outsideHours({ start: startMin, end: startMin + Math.max(minutes, 1) }, daySpan(week[weekdayOf(pick.date)]));
+  // Pega a pausa (ex.: almoço): aviso na folha e confirmação antes de salvar (não impede)
+  const pause = pauseOverlap({ date: pick.date, time: pick.time, minutes, week });
+  const pickKey = `${pick.date}|${pick.time}|${minutes}`;
+  /** Combinação de dia/horário/duração que a pessoa já confirmou mesmo pegando a pausa. */
+  const [pauseOk, setPauseOk] = useState<string | null>(null);
+  const [askPause, setAskPause] = useState(false);
+  const asking = askPause && pause !== null && pauseOk !== pickKey;
+  const timeDomId = `${formDomId}-time`;
   const closedRef = useRef(onClosed);
   useEffect(() => {
     closedRef.current = onClosed;
@@ -170,6 +180,16 @@ export function NewAppointmentSheet({
         `Usou 1 sessão do pacote ${created.session.name}. Restam ${created.session.left} de ${created.session.total}`,
       );
     if (created.credit > 0) notify.success(`Usou ${formatBRL(created.credit)} do crédito da cliente`);
+    if (created.promotion)
+      notify.success(
+        `Promoção ${created.promotion.name ?? ""} aplicada: −${formatBRL(created.promotion.offCents)}`.replace(
+          "  ",
+          " ",
+        ),
+        created.promotion.maxClients !== null
+          ? `${created.promotion.used} de ${created.promotion.maxClients} clientes já usaram.`
+          : undefined,
+      );
     steps(["done", "wait", "wait"]);
     await sleep(200);
     steps(["done", "done", "run"]);
@@ -207,7 +227,8 @@ export function NewAppointmentSheet({
   }, [done]);
 
   return (
-    <Drawer.Root direction={side}
+    <Drawer.Root
+      direction={side}
       repositionInputs={false}
       open={open}
       dismissible={!working}
@@ -278,7 +299,9 @@ export function NewAppointmentSheet({
                   id={formDomId}
                   onSubmit={(e) => {
                     e.preventDefault();
-                    if (!working) void book(new FormData(e.currentTarget));
+                    if (working) return;
+                    if (pause && pauseOk !== pickKey) return setAskPause(true);
+                    void book(new FormData(e.currentTarget));
                   }}
                   className="grid gap-3"
                 >
@@ -319,12 +342,15 @@ export function NewAppointmentSheet({
                     <label className="grid min-w-0 gap-1 text-sm font-bold">
                       Horário
                       <select
+                        id={timeDomId}
                         name="time"
                         required
                         className={pair}
                         defaultValue={time ?? "09:00"}
                         aria-invalid={fieldErr?.field === "time"}
-                        aria-describedby={outside ? "fora-expediente" : undefined}
+                        aria-describedby={
+                          [outside && "fora-expediente", pause && "pega-pausa"].filter(Boolean).join(" ") || undefined
+                        }
                         onChange={(e) => setPick((p) => ({ ...p, time: e.target.value }))}
                       >
                         {times.map((t) => (
@@ -343,6 +369,16 @@ export function NewAppointmentSheet({
                       {OUTSIDE_HOURS}. Dá para agendar mesmo assim.
                     </p>
                   ) : null}
+                  {pause ? (
+                    <p
+                      id="pega-pausa"
+                      role="status"
+                      className="flex items-center gap-2 rounded-2xl bg-wait-bg px-4 py-3 text-sm font-semibold text-wait"
+                    >
+                      <Icon name="alert" size={18} />
+                      {pauseWarning(pause)}. Dá para agendar mesmo assim.
+                    </p>
+                  ) : null}
                   {fieldErr && fieldErr.field !== "discountValue" ? (
                     <p role="alert" className="rounded-2xl bg-soft px-4 py-3 text-sm font-semibold">
                       {messageFor(fieldErr.code)}
@@ -353,14 +389,30 @@ export function NewAppointmentSheet({
             </div>
             {ready ? (
               <div className="border-t border-line px-5 pt-3 pb-[max(env(safe-area-inset-bottom),20px)]">
-                <button
-                  type="submit"
-                  form={formDomId}
-                  disabled={working}
-                  className="btn-tint flex min-h-13 w-full items-center justify-center rounded-full px-5 font-bold"
-                >
-                  Agendar
-                </button>
+                {asking && pause ? (
+                  <PauseConfirm
+                    pause={`${hhmm(pause.start)} às ${hhmm(pause.end)}`}
+                    onPickAnother={() => {
+                      setAskPause(false);
+                      document.getElementById(timeDomId)?.focus();
+                    }}
+                    onConfirm={() => {
+                      setPauseOk(pickKey);
+                      setAskPause(false);
+                      const form = document.getElementById(formDomId);
+                      if (form instanceof HTMLFormElement && !working) void book(new FormData(form));
+                    }}
+                  />
+                ) : (
+                  <button
+                    type="submit"
+                    form={formDomId}
+                    disabled={working}
+                    className="btn-tint flex min-h-13 w-full items-center justify-center rounded-full px-5 font-bold"
+                  >
+                    Agendar
+                  </button>
+                )}
               </div>
             ) : null}
           </div>

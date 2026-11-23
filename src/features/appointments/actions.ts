@@ -97,7 +97,15 @@ export async function createAppointment(_prev: ActionResult<{ id: string }> | nu
   try {
     const res = await withTenant(tenantId, async (tx) => {
       if (fromBlock.success && !(await convertExternalBlock(tx, fromBlock.data))) return fail("NOT_FOUND");
-      const r = await insertAppointment(tx, tenantId, { ...parsed.data, discount, notes, payment, depositRequestCents, createdBy: userId });
+      const r = await insertAppointment(tx, tenantId, {
+        ...parsed.data,
+        discount,
+        notes,
+        payment,
+        depositRequestCents,
+        createdBy: userId,
+        usePromotion: formData.get("usePromotion") === "1",
+      });
       // sem agendamento, o evento volta como estava (desfaz a transação)
       if (!r.ok && fromBlock.success) throw new RollbackWith(r);
       return r;
@@ -111,7 +119,14 @@ export async function createAppointment(_prev: ActionResult<{ id: string }> | nu
     const sync = await syncAppointmentSafe(tenantId, res.data.id);
     // Avisa a cliente que deu certo (dia, horário e, se a profissional quiser, o valor)
     const message = await sendBookingMessage(tenantId, res.data.id);
-    return ok({ id: res.data.id, credit: res.data.credit, session: res.data.session, sync, message });
+    return ok({
+      id: res.data.id,
+      credit: res.data.credit,
+      session: res.data.session,
+      promotion: res.data.promotion,
+      sync,
+      message,
+    });
   } catch {
     return fail("UNKNOWN");
   }

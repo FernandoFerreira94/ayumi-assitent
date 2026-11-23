@@ -23,6 +23,8 @@ type Props = {
   /** Dia (AAAA-MM-DD) e horário (HH:MM) do atendimento, para a folha de reagendar começar preenchida. */
   date: string;
   start: string;
+  /** Duração atual em minutos (todos os serviços), para a folha de remarcar avisar da pausa. */
+  minutes?: number;
   clientId: string;
   clientName: string;
   clientPhone: string;
@@ -73,7 +75,7 @@ const LABEL: Record<Status, string> = {
   reschedule_requested: "Quer remarcar",
 };
 
-export function AppointmentCard({ id, time, date, start: startHHMM, clientId, clientName, clientPhone, serviceId, serviceName, price, status, discount, notes, payment, inSheet = false, past = false, onSettled }: Props) {
+export function AppointmentCard({ id, time, date, start: startHHMM, minutes, clientId, clientName, clientPhone, serviceId, serviceName, price, status, discount, notes, payment, inSheet = false, past = false, onSettled }: Props) {
   const [pending, start] = useTransition();
   const [busy, setBusy] = useState<Status | null>(null);
   const open = status === "pending_confirmation" || status === "confirmed" || status === "reschedule_requested";
@@ -231,6 +233,7 @@ export function AppointmentCard({ id, time, date, start: startHHMM, clientId, cl
                 serviceName={serviceName}
                 date={date}
                 start={startHHMM}
+                minutes={minutes}
                 nested={inSheet}
                 triggerClassName={`${btn} ${status === "reschedule_requested" ? "btn-tint" : "btn-glass"}`}
               />

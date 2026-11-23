@@ -40,6 +40,8 @@ export type TemplateRow = {
   maxClients: number | null;
   /** clientes que já compraram */
   soldClients: number;
+  /** venda pausada */
+  paused: boolean;
 };
 
 /** Modelos ativos, com os serviços (nome e preço de hoje) e quantas clientes já compraram. */
@@ -60,6 +62,7 @@ export async function listTemplates(tx: Tx): Promise<TemplateRow[]> {
       startsOn: packageTemplates.startsOn,
       endsOn: packageTemplates.endsOn,
       maxClients: packageTemplates.maxClients,
+      paused: packageTemplates.paused,
     })
     .from(packageTemplates)
     .innerJoin(services, eq(services.id, packageTemplates.serviceId))
@@ -126,7 +129,17 @@ export async function createTemplate(tx: Tx, tenantId: string, d: PackageDraft):
 export const archiveTemplate = (tx: Tx, id: string) =>
   tx.update(packageTemplates).set({ active: false }).where(eq(packageTemplates.id, id));
 
-export type SellRefusal = "not_found" | "scheduled" | "ended" | "sold_out" | "already_bought";
+/** Pausa ou retoma a venda do pacote (continua na lista). */
+export async function setTemplatePaused(tx: Tx, id: string, paused: boolean): Promise<boolean> {
+  const r = await tx
+    .update(packageTemplates)
+    .set({ paused })
+    .where(and(eq(packageTemplates.id, id), eq(packageTemplates.active, true)))
+    .returning({ id: packageTemplates.id });
+  return r.length > 0;
+}
+
+export type SellRefusal = "not_found" | "scheduled" | "ended" | "sold_out" | "already_bought" | "paused";
 
 /**
  * Vende um pacote para a cliente: copia o modelo, dá as sessões e grava o pagamento (entra no caixa do dia,
@@ -161,6 +174,7 @@ export async function sellPackage(
       startsOn: packageTemplates.startsOn,
       endsOn: packageTemplates.endsOn,
       maxClients: packageTemplates.maxClients,
+      paused: packageTemplates.paused,
       servicePriceCents: services.priceCents,
     })
     .from(packageTemplates)

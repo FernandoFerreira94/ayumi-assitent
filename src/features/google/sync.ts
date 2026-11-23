@@ -27,6 +27,7 @@ export async function syncAppointment(tx: Tx, port: CalendarPort | null, appoint
       email: clients.email,
       service: serviceLabel,
       tz: tenants.timezone,
+      address: tenants.address,
     })
     .from(appointments)
     .innerJoin(clients, eq(clients.id, appointments.clientId))
@@ -42,6 +43,7 @@ export async function syncAppointment(tx: Tx, port: CalendarPort | null, appoint
     endsAt: a.endsAt,
     timeZone: a.tz,
     attendeeEmail: a.email ?? undefined,
+    location: a.address?.trim() || undefined,
   };
   try {
     if (a.status === "cancelled") {
