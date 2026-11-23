@@ -1,6 +1,6 @@
 // @vitest-environment node
 import postgres from "postgres";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { MessagingOfflineError, MessagingTransientError, type MessagingPort } from "@/features/messaging/port";
 
 const url = process.env.DATABASE_URL;
@@ -85,6 +85,22 @@ d("aviso de remarcação no WhatsApp (Postgres real)", () => {
     expect(sent).toHaveLength(1);
     const [m] = await admin`select kind, direction from messages where appointment_id = ${id}`;
     expect(m).toMatchObject({ kind: "reminder", direction: "out" });
+  });
+
+  it("leva o mesmo link do convite do agendamento (atualiza o evento que a cliente salvou)", async () => {
+    vi.stubEnv("BETTER_AUTH_URL", "https://app.test");
+    vi.stubEnv("BETTER_AUTH_SECRET", "segredo-de-teste-segredo-de-teste");
+    try {
+      const { inviteUrl } = await import("@/features/calendar-feed/invite-token");
+      const id = await insert("2030-03-09T13:00:00Z");
+      await edit(id, "2030-03-09", "16:00");
+      expect(await flush(id)).toBe("sent");
+      const url = inviteUrl(T, id)!;
+      expect(url).toMatch(/^https:\/\/app\.test\/api\/agenda\/convite\/.+\.ics$/);
+      expect(sent[0].text).toContain(`📲 Atualize na sua agenda: ${url}`);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("só trocar o serviço (mesmo horário) não gera aviso", async () => {

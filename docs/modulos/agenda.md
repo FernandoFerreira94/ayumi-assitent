@@ -32,7 +32,7 @@
 
 - A mensagem de agendamento leva "📲 Salve na sua agenda: <link>" no fim, ou onde a dona puser `{agenda}` no texto (Ajustes > Mensagens). Sem `BETTER_AUTH_URL`/segredo, sai sem o link.
 - Link: `/api/agenda/convite/<token>.ics` (`calendar-feed/invite-token.ts`): token = ids do estúdio e do agendamento + HMAC do `BETTER_AUTH_SECRET` (12 bytes). Sem nome/telefone; não dá para montar o link de outro agendamento. Inválido, apagado ou 7 dias após o fim: 404 igual.
-- ICS (`ics.inviteIcs`, montado em `calendar-feed/invite.ts`): título "Serviço · Estúdio", endereço do estúdio em LOCATION, alarme 2h antes, UID fixo `invite-<id>@bubbly`, SEQUENCE = segundos desde a criação (sempre a versão mais nova). Cancelado = `STATUS:CANCELLED`, sem alarme. Remarcou/cancelou: o mesmo link já serve o novo estado; ao remarcar, o aviso no WhatsApp leva o link de novo ("Atualize na sua agenda"), e abrir atualiza o evento salvo (mesmo UID). Cancelar não manda mensagem.
+- ICS (`ics.inviteIcs`, montado em `calendar-feed/invite.ts`): título "Serviço · Estúdio", endereço do estúdio em LOCATION, alarme 2h antes, UID fixo `invite-<id>@bubbly`, SEQUENCE = segundos desde a criação e DTSTAMP/LAST-MODIFIED = agora (sempre a versão mais nova; mesmo UID substitui o evento salvo). Cancelado = `STATUS:CANCELLED`, sem alarme. Remarcou/cancelou: o mesmo link já serve o novo estado; ao remarcar, o aviso no WhatsApp leva o link de novo ("Atualize na sua agenda"), e abrir atualiza o evento salvo (mesmo UID). Cancelar não manda mensagem.
 
 ## Retorno ao concluir (16/11)
 

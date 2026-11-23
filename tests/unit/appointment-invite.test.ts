@@ -61,6 +61,23 @@ describe("ics do convite", () => {
     expect(ics).not.toContain("VALARM");
     expect(Number(/SEQUENCE:(\d+)/.exec(ics)![1])).toBeGreaterThan(30);
   });
+  it("remarcado: mesmo UID, horário novo e SEQUENCE/LAST-MODIFIED maiores (atualiza o evento salvo)", () => {
+    const before = inviteIcs({ ...base, cancelled: false });
+    const after = inviteIcs({
+      ...base,
+      cancelled: false,
+      start: new Date("2026-11-21T13:00:00Z"),
+      end: new Date("2026-11-21T14:00:00Z"),
+      now: new Date("2026-11-18T09:00:00Z"),
+    });
+    const uid = (ics: string) => /UID:(.+)/.exec(ics)![1];
+    const seq = (ics: string) => Number(/SEQUENCE:(\d+)/.exec(ics)![1]);
+    expect(uid(after)).toBe(uid(before));
+    expect(seq(after)).toBeGreaterThan(seq(before));
+    expect(after).toContain("DTSTART:20261121T130000Z");
+    expect(after).toContain("LAST-MODIFIED:20261118T090000Z");
+    expect(after).toContain("DTSTAMP:20261118T090000Z");
+  });
   it("sem endereço, sem LOCATION", () =>
     expect(inviteIcs({ ...base, address: " ", cancelled: false })).not.toContain("LOCATION"));
 });
