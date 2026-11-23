@@ -1,7 +1,7 @@
 import { and, eq, isNotNull, lte, sql } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { appointments, clients, services, tenants } from "@/db/schema";
-import { serviceLabel } from "@/features/appointments/core";
+import { SCHEDULE_RESET, serviceLabel } from "@/features/appointments/core";
 import { inviteUrl } from "@/features/calendar-feed/invite-token";
 import { OPTIONS, rescheduleText } from "@/features/reminders/text";
 import { DEFAULT_REMINDER_HOURS } from "@/features/reminders/core";
@@ -62,6 +62,10 @@ export async function sendRescheduleNotice(
       if (a.notifiedStartsAt && a.notifiedStartsAt.getTime() === a.startsAt.getTime()) return "unchanged";
       if (!["pending_confirmation", "confirmed", "reschedule_requested"].includes(a.status)) return "none";
       if (a.startsAt <= now) return "none";
+      // O horário mudou de verdade: o que a cliente respondeu/recebeu era do horário antigo (vale mesmo sem aviso:
+      // desligado, SAIR ou sem WhatsApp). Antes disso o arraste não mexeu em nada, para o Desfazer não custar nada.
+      await tx.update(appointments).set(SCHEDULE_RESET).where(eq(appointments.id, appointmentId));
+      a.status = SCHEDULE_RESET.status;
       const [t] = await tx
         .select({
           on: tenants.rescheduleNotice,
