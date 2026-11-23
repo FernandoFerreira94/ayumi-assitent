@@ -42,6 +42,7 @@ export const loadSettingsSummary = cache(async (tenantId: string): Promise<Setti
         calendarOn: tenants.calendarTokenHash,
         icloudOn: tenants.icloudCalendarUrl,
         locationSource: tenants.locationSource,
+        address: tenants.address,
       })
       .from(tenants)
       .where(eq(tenants.id, tenantId)),
@@ -64,6 +65,9 @@ export const loadSettingsSummary = cache(async (tenantId: string): Promise<Setti
     {
       title: "Clientes e agenda",
       lines: [
+        salon?.address
+          ? { section: "endereco", status: salon.address }
+          : { section: "endereco", status: "Aparece no convite e nas mensagens", todo: "Cadastrar" },
         { section: "mensagens", status: avisos.length ? avisos.join(" · ") : "Avisos desligados" },
         { section: "expediente", status: hoursSummary(week) },
         {

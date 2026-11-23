@@ -15,6 +15,8 @@ export const ERROR_MESSAGES = {
   NO_SHOW_TOO_EARLY: "Só dá para marcar falta depois do horário do atendimento.",
   NOT_FOUND: "Não encontramos esse item. Ele pode ter sido apagado.",
   CITY_NOT_FOUND: "Não encontramos essa cidade. Confira o nome e a UF.",
+  CEP_NOT_FOUND: "Não achamos esse CEP. Confira os números ou preencha o endereço à mão.",
+  CEP_FAILED: "A busca de CEP não respondeu agora. Preencha o endereço à mão ou tente de novo.",
   PUSH_NOT_CONFIGURED: "Os avisos no celular ainda não estão configurados no servidor.",
   PUSH_NO_DEVICE: "Nenhum aparelho com aviso ligado. Ligue a Notificação em Ajustes > Notificações primeiro.",
   PUSH_FAILED: "O aviso não chegou ao aparelho. Desative e ative os avisos de novo e tente outra vez.",

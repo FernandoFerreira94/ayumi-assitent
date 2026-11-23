@@ -8,6 +8,7 @@ export const SECTIONS = {
   whatsapp: { href: "/ajustes/whatsapp", title: "WhatsApp", icon: "chat", tint: "green" },
   calendarios: { href: "/ajustes/calendarios", title: "Calendários", icon: "calendar", tint: "blue" },
   notificacoes: { href: "/ajustes/notificacoes", title: "Notificações", icon: "bell", tint: "red" },
+  endereco: { href: "/ajustes/endereco", title: "Endereço do estúdio", icon: "map", tint: "pink" },
   mensagens: { href: "/ajustes/mensagens", title: "Mensagens para a cliente", icon: "message", tint: "lavender" },
   expediente: { href: "/ajustes/expediente", title: "Expediente", icon: "clock", tint: "orange" },
   pagamentos: { href: "/ajustes/pagamentos", title: "Pagamentos", icon: "wallet", tint: "green" },
