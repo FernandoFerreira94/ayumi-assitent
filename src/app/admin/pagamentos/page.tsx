@@ -2,13 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { logAdminAccess } from "@/features/admin/audit";
-import { monthKey, shiftMonth } from "@/features/admin/demo-data";
 import { requireAdmin } from "@/features/admin/guard";
 import { receivedInMonth } from "@/features/admin/metrics";
-import { parseMonth } from "@/features/admin/month";
-import { getPayments, IS_DEMO } from "@/features/admin/queries";
+import { monthKey, parseMonth, shiftMonth } from "@/features/admin/month";
+import { getPayments, BILLING_LIVE } from "@/features/admin/queries";
 import { AdminShell } from "@/features/admin/ui/AdminShell";
-import { DemoBanner } from "@/features/admin/ui/DemoBanner";
+import { BillingPending } from "@/features/admin/ui/BillingPending";
 import { fmtMonthLong, formatBRL } from "@/features/admin/ui/format";
 import { KpiCard } from "@/features/admin/ui/KpiCard";
 import { PaymentsView } from "@/features/admin/ui/PaymentsView";
@@ -22,9 +21,15 @@ const arrow =
 export default async function AdminPaymentsPage({ searchParams }: PageProps<"/admin/pagamentos">) {
   const { userId } = await requireAdmin();
   await logAdminAccess({ userId, action: "view_payments" });
+  if (!BILLING_LIVE)
+    return (
+      <AdminShell title="Pagamentos" subtitle="Tudo o que entrou e saiu no mês" icon="wallet" tint="green">
+        <BillingPending what="Pagamentos do mês, taxas, estornos e o CSV para o contador" />
+      </AdminShell>
+    );
   const now = new Date();
   const month = parseMonth((await searchParams).mes, now);
-  const payments = await getPayments(month, now);
+  const payments = await getPayments(month);
   const got = receivedInMonth(payments);
   const isCurrent = month === monthKey(now);
   const prev = shiftMonth(month, -1);
@@ -32,7 +37,6 @@ export default async function AdminPaymentsPage({ searchParams }: PageProps<"/ad
 
   return (
     <AdminShell title="Pagamentos" subtitle="Tudo o que entrou e saiu no mês" icon="wallet" tint="green">
-      {IS_DEMO ? <DemoBanner /> : null}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <nav aria-label="Mês" className="flex items-center gap-2">
           <Link href={`/admin/pagamentos?mes=${prev}`} aria-label={`Mês anterior, ${fmtMonthLong(prev)}`} className={arrow}>

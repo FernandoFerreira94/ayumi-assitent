@@ -1,7 +1,6 @@
-// Dados de EXEMPLO do painel do dono, enquanto a cobrança (planos, assinaturas, pagamentos) não está na main.
+// Dados de EXEMPLO do painel do dono (só para teste: as telas usam dados reais desde 23/11).
 // Nomes e e-mails são inventados (@exemplo.test). Tudo é calculado a partir de `now`, sem aleatório:
 // a mesma data dá sempre os mesmos números (bom para teste e para não "piscar" entre recargas).
-// O Bloco 2 troca estas funções por consultas nas views (withAdmin), sem mudar as telas.
 import type {
   BillingHealth,
   MrrMonthRow,
@@ -11,7 +10,8 @@ import type {
   PlanKind,
   SubscriptionEventRow,
   SubscriptionStatus,
-} from "./types";
+} from "@/features/admin/types";
+import { monthKey, shiftMonth } from "@/features/admin/month";
 
 const DAY = 86_400_000;
 
@@ -118,16 +118,6 @@ export function demoOverview(now: Date): OverviewRow[] {
 }
 
 /** 'YYYY-MM' do mês de `d` em UTC-3. */
-export function monthKey(d: Date): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).format(d);
-}
-
-export function shiftMonth(month: string, n: number): string {
-  const [y, m] = month.split("-").map(Number);
-  const d = new Date(Date.UTC(y, m - 1 + n, 1));
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
-}
-
 /** 12 meses de MRR terminando no mês atual, subindo devagar (curva de começo de SaaS). */
 export function demoMrr(now: Date): MrrMonthRow[] {
   const current = demoOverview(now).reduce((s, r) => s + r.mrrCents, 0);

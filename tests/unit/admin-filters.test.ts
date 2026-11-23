@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { demoOverview } from "@/features/admin/demo-data";
+import { demoOverview } from "../fixtures/admin-demo";
 import { filterSubscribers, inTab, sortSubscribers, TABS } from "@/features/admin/filters";
 
 const NOW = new Date("2026-11-16T15:00:00Z");

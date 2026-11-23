@@ -14,7 +14,7 @@ export async function GET(req: Request) {
   const now = new Date();
   const month = parseMonth(new URL(req.url).searchParams.get("mes"), now);
   await logAdminAccess({ userId, action: "export_payments", target: month });
-  const payments = await getPayments(month, now);
+  const payments = await getPayments(month);
   const csv = toCsv(
     ["Data", "Salão", "Plano", "Método", "Status", "Valor", "Taxa", "Líquido", "Id MP"],
     payments.map((p) => [
