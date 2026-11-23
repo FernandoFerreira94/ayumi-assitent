@@ -9,6 +9,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/calendario", label: "Calendário", icon: "calendario", group: "main" },
   { href: "/financeiro", label: "Finanças", icon: "financeiro", group: "main" },
   { href: "/clientes", label: "Clientes", icon: "clientes", group: "main" },
+  { href: "/planos", label: "Planos", icon: "planos", group: "more" },
   { href: "/servicos", label: "Serviços", icon: "servicos", group: "more" },
   { href: "/vagas", label: "Vagas", icon: "vagas", group: "more" },
   { href: "/agendamentos", label: "Agendamentos", icon: "agendamentos", group: "more" },

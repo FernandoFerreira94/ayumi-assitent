@@ -13,12 +13,13 @@ describe("isNavActive", () => {
 });
 
 describe("NAV_ITEMS", () => {
-  it("tem as 9 telas na ordem das pranchas", () => {
+  it("tem as 10 telas na ordem das pranchas", () => {
     expect(NAV_ITEMS.map((i) => i.label)).toEqual([
       "Painel",
       "Calendário",
       "Finanças",
       "Clientes",
+      "Planos",
       "Serviços",
       "Vagas",
       "Agendamentos",

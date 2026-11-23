@@ -1,70 +1,45 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { Icon } from "@/components/ui/Icon";
 import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
 import { getWalletSettings } from "@/features/wallet/core";
-import { WalletSettingsForm } from "@/features/wallet/WalletSettingsForm";
-import { requireTenant } from "@/lib/tenant";
-import { and, asc, eq } from "drizzle-orm";
-import { services, tenants } from "@/db/schema";
-import { listTemplates } from "@/features/wallet/packages";
-import { PackageTemplates } from "@/features/wallet/PackageSheets";
-import { templateView } from "@/features/wallet/views";
-import { todayStr } from "@/lib/dates";
 import { walletGuide } from "@/features/wallet/rules";
 import { WalletRulesSheet } from "@/features/wallet/WalletRulesSheet";
-import { PaymentsTabs } from "@/features/wallet/PaymentsTabs";
-import { listPromotions } from "@/features/wallet/promotions";
-import { promotionView } from "@/features/wallet/views";
-import { DiscountPromos } from "@/features/wallet/DiscountPromos";
+import { WalletSettingsForm } from "@/features/wallet/WalletSettingsForm";
+import { requireTenant } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Pagamentos" };
 
-/** Ajustes > Pagamentos: regras do dinheiro da cliente (sinal, cancelamento, falta, pacotes e Pix). */
+/**
+ * Ajustes > Pagamentos: regras do dinheiro da cliente (sinal, cancelamento, falta, validade do pacote e Pix).
+ * Pacotes e promoções moram na página Planos; o link antigo (?aba=pacotes) leva para lá.
+ */
 export default async function PagamentosPage({ searchParams }: { searchParams: Promise<{ aba?: string }> }) {
   const { aba } = await searchParams;
+  if (aba === "pacotes") redirect("/planos?aba=pacotes");
   const { tenantId } = await requireTenant();
-  const { settings, templates, svcs, salon, promos } = await withTenant(tenantId, async (tx) => ({
-    settings: await getWalletSettings(tx),
-    promos: await listPromotions(tx),
-    salon: (
-      await tx
-        .select({ name: tenants.name, address: tenants.address, instagram: tenants.instagram })
-        .from(tenants)
-        .where(eq(tenants.id, tenantId))
-    )[0] ?? { name: "", address: null, instagram: null },
-    templates: await listTemplates(tx),
-    svcs: await tx
-      .select({ id: services.id, name: services.name, priceCents: services.priceCents })
-      .from(services)
-      .where(and(eq(services.active, true), eq(services.bookable, true)))
-      .orderBy(asc(services.position), asc(services.name)),
-  }));
-  const days = settings.packageValidDays;
-  const today = todayStr();
-  const views = templates.map((t) => templateView(t, days, today));
+  const settings = await withTenant(tenantId, (tx) => getWalletSettings(tx));
   return (
     <PageShell back backHref="/ajustes" title="Pagamentos">
       <div className="-mt-1 mb-1 flex justify-end">
         <WalletRulesSheet guide={walletGuide(settings)} />
       </div>
-      <PaymentsTabs
-        initial={aba === "pacotes" ? "packages" : "rules"}
-        rules={
-          <section id="pagamentos" aria-label="Pagamentos das clientes">
-            <WalletSettingsForm settings={settings} />
-          </section>
-        }
-        packages={
-          <div className="grid gap-3">
-            <section id="promocoes" aria-label="Promoções de desconto">
-              <DiscountPromos promotions={promos.map((p) => promotionView(p, today))} services={svcs} salon={salon} />
-            </section>
-            <section id="pacotes" aria-label="Pacotes à venda">
-              <PackageTemplates templates={views} services={svcs} validDays={days} salon={salon} />
-            </section>
-          </div>
-        }
-      />
+      <Link
+        href="/planos"
+        className="glass mb-3 flex min-h-14 items-center gap-3 rounded-2xl px-4 py-3 font-bold"
+      >
+        <Icon name="ticket" size={20} />
+        <span className="min-w-0 flex-1">
+          Pacotes e promoções
+          <span className="block text-sm font-semibold text-muted">Agora ficam em Planos, no menu</span>
+        </span>
+        <Icon name="arrowRight" size={18} />
+      </Link>
+      <section id="pagamentos" aria-label="Pagamentos das clientes">
+        <WalletSettingsForm settings={settings} />
+      </section>
     </PageShell>
   );
 }

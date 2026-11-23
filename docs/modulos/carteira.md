@@ -77,12 +77,18 @@
 - **Cartão** (`AppointmentCard`): selo "Pelo pacote X · Sessão 3 de 6 · restam 3". Vem de `packages.sessionUseSql` (no `listDay` e na Pendências): N = ordem por horário entre os atendimentos que **seguram** sessão do pacote (reserve − return > 0); cancelado não segura.
 - **WhatsApp:** confirmação, 1º e 2º aviso ganham a linha sutil no fim do texto (antes das opções 1/2/3), sem valor nem nome do pacote. Liga/desliga em Ajustes > Mensagens > "Sessão do pacote" (`tenants.package_line`, migration 0057, padrão ligado).
 
+## Página Planos (23/11)
+
+- **Tudo de pacote e promoção num lugar só:** `/planos` (menu lateral, menu do avatar e `NAV_ITEMS`, ícone `planos`). Topo com 4 números (clientes com pacote em uso, sessões a usar, pacotes à venda, promoções valendo; `plan-views.planTotals`), botão **Vender pacote** (`SoldPackages.SellFromPlans` → `SellPackageSheet` com `clients`: pergunta "Para quem?" com busca na mesma folha) e "Como funciona".
+- **Abas** (`PlansTabs`, `?aba=pacotes|promocoes`, troca sem recarregar e grava na URL): **Clientes** (`SoldPackages`: cada pacote vendido com N restam de M, barra de usadas, validade, próximo horário e "Ver ficha"; Acabando no topo; Acabou/Venceu em "Encerrados"; dados de `packages.listSoldPackages`, grupos de `plan-views.groupSold`/`soldState`), **Pacotes** (`PackageTemplates`) e **Promoções** (`DiscountPromos`).
+- **Ajustes > Pagamentos** ficou só com as regras e um atalho "Pacotes e promoções → Planos"; `?aba=pacotes` redireciona para `/planos?aba=pacotes`. `PaymentsTabs` saiu. Ações de pacote/promoção revalidam `/planos`.
+
 ## Arquivos
 
 - `features/wallet/rules.ts` (puro): `appointmentPaid`, `walletBalance`, `cashIn`, `remainingCents`, `suggestedDeposit`, `cancelOutcome` (D1/D2), `walletEffect`, `walletStatement`, `payXPrice`, `sessionValue`, `packageExpiresOn`, `parsePolicy`, `DEFAULT_POLICY`.
 - `features/wallet/core.ts`: `settleStatusChange`, `useCredit`, `refundCredit`, `clientBalance`, `appointmentPaidCents`, `paidCentsSql`, `cashInRange`, `livePaidCents`, `AUTO_DONE_REASON`, `clientMoves`, `appointmentMoves`, `recordPayment`, `reverseAppointmentPayments`, `getWalletSettings`, `saveWalletSettings`.
 - `features/wallet/views.ts` (`templateView`), `features/wallet/promo-text.ts` (texto para divulgar), `ShareText.tsx`. `features/wallet/packages.ts`: `listTemplates`, `createTemplate`, `archiveTemplate`, `sellPackage`, `clientPackageList`, `pickSession`, `reserveSession`. UI: `PackageSheets.tsx`, `ClientWallet.tsx`.
-- Tela: `app/(app)/ajustes/pagamentos`. Linha em Ajustes > "Clientes e agenda".
+- Telas: `app/(app)/planos` (pacotes e promoções) e `app/(app)/ajustes/pagamentos` (regras). Linha em Ajustes > "Clientes e agenda".
 
 ## Próximas fases
 

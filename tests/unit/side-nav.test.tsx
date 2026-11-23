@@ -9,16 +9,16 @@ vi.mock("@/features/appointments/QuickBook", () => ({ openNewAppointment }));
 import { SideNav } from "@/components/nav/SideNav";
 
 describe("SideNav", () => {
-  it("lista as 8 telas, marca a atual e mostra a contagem de pendências", () => {
+  it("lista as 10 telas, marca a atual e mostra a contagem de pendências", () => {
     render(<SideNav studioName="Estúdio Lua" pendencias={3} />);
     const nav = screen.getByRole("navigation", { name: "Navegação principal" });
     expect(within(nav).getByRole("link", { name: "Clientes" })).toHaveAttribute("aria-current", "page");
     expect(within(nav).getByRole("link", { name: "Painel" })).not.toHaveAttribute("aria-current");
     expect(within(nav).getByRole("link", { name: "Pendências 3" })).toHaveAttribute("href", "/pendencias");
     expect(within(nav).getByRole("link", { name: /Estúdio Lua.*Perfil e conta/ })).toHaveAttribute("href", "/perfil");
-    // topo (mascote, leva ao Painel) + 9 telas + perfil
+    // topo (mascote, leva ao Painel) + 10 telas + perfil
     expect(within(nav).getByRole("link", { name: /Bubbly, início/ })).toHaveAttribute("href", "/agenda");
-    expect(within(nav).getAllByRole("link")).toHaveLength(11);
+    expect(within(nav).getAllByRole("link")).toHaveLength(12);
   });
 
   it("mostra o nome de quem está logado embaixo de bubbly; sem nome, nada", () => {

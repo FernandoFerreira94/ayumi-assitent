@@ -23,9 +23,9 @@ test("criar Pague 3 leve 4, vender na ficha e agendar usando a sessão", async (
   await page.getByRole("button", { name: "Salvar" }).click();
   await expect(page.getByText("Cliente cadastrada")).toBeVisible();
 
-  // Ajustes > Pagamentos > aba Pacotes: passo a passo de 3 telas
-  await page.goto("/ajustes/pagamentos");
-  await page.getByRole("tab", { name: "Pacotes e promoções" }).click();
+  // Planos (menu) > aba Pacotes: passo a passo de 3 telas
+  await page.goto("/planos");
+  await page.getByRole("tab", { name: "Pacotes" }).click();
   await page.getByRole("button", { name: "Criar pacote" }).click();
   const novo = page.getByRole("dialog", { name: /Novo pacote|Pacote criado/ });
   await expect(novo.getByText("Passo 1 de 3 · Tipo")).toBeVisible();
@@ -121,6 +121,28 @@ test("criar Pague 3 leve 4, vender na ficha e agendar usando a sessão", async (
   await expect(page.getByText("Sessão 1 de 4 · restam 3")).toBeVisible();
   await shot(page, "pacote-3-cartao");
   await page.keyboard.press("Escape");
+
+  // Planos > Clientes: Bia com 3 de 4 sessões e a próxima marcada
+  await page.goto("/planos");
+  const resumo = page.getByRole("region", { name: "Resumo dos planos" });
+  await expect(resumo).toContainText("1cliente com pacote");
+  await expect(resumo).toContainText("3sessões a usar");
+  const bia = page.getByRole("listitem", { name: /Bia Souza: Pague 3 leve 4/ });
+  await expect(bia).toContainText("3sessões restam de 4");
+  await expect(bia).toContainText("1 usada");
+  await expect(bia).toContainText("Próxima:");
+  await shot(page, "planos-1-clientes");
+
+  // Vender pelo Planos: pergunta a cliente primeiro
+  await page.getByRole("button", { name: "Vender pacote" }).click();
+  const venda2 = page.getByRole("dialog", { name: "Vender pacote" });
+  await venda2.getByLabel("Buscar cliente").fill("bia");
+  await venda2.getByRole("button", { name: "Bia Souza" }).click();
+  await expect(page.getByRole("dialog", { name: "Vender pacote para Bia" })).toBeVisible();
+  await shot(page, "planos-2-vender");
+  await page.keyboard.press("Escape");
+  await page.getByRole("tab", { name: "Pacotes" }).click();
+  await shot(page, "planos-3-pacotes");
 
   // Venda entra no caixa de hoje
   await page.goto(`/financeiro?m=${todayStr().slice(0, 7)}`);
