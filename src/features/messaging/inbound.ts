@@ -379,20 +379,6 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
   if (target && plan.action === "apply" && plan.intent !== "confirm" && !(ruleIntent && isOptionReply(msg.text)))
     plan = { action: "silent", guess: plan.intent, quiet: false };
 
-  // Cancelar ou remarcar só pelo número (2 ou 3). Texto livre ("não vou poder", ou a IA com certeza) não muda nada:
-  // pergunta uma vez, citando o horário, e avisa a dona
-  let ask: Intent | null = null;
-  if (target && plan.action === "apply" && plan.intent !== "confirm" && !(ruleIntent && isOptionReply(msg.text))) {
-    ask = plan.intent;
-    plan = target.handedOff
-      ? { action: "silent", guess: plan.intent, quiet: false }
-      : {
-          action: "handoff",
-          text: askText(plan.intent, client.name, t.fullName, slotLabel(target.startsAt, now)),
-          guess: plan.intent,
-        };
-  }
-
   let intent: Intent | null = null;
   let appointmentId: string | null = null;
   let correction = false;
@@ -450,8 +436,7 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
     ack = null;
   }
 
-  if (ack)
-    await sendAutoReply(deps, msg.instance, tenantId, client, target?.id ?? null, ack, ask ? "reminder" : "auto_reply");
+  if (ack) await sendAutoReply(deps, msg.instance, tenantId, client, target?.id ?? null, ack);
 
   if (deps.push) {
     const push = deps.push;
@@ -474,7 +459,6 @@ async function sendAutoReply(
   client: { id: string; phone: string },
   appointmentId: string | null,
   body: string,
-  kind: "auto_reply" | "reminder" = "auto_reply",
 ) {
   const port = deps.portFor(instance);
   try {
@@ -485,7 +469,7 @@ async function sendAutoReply(
           clientId: client.id,
           appointmentId,
           direction: "out",
-          kind,
+          kind: "auto_reply",
           body,
           externalId: sent.id,
         }),
