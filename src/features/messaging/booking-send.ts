@@ -9,6 +9,7 @@ import { recordMessage } from "./store";
 import { serviceLabel } from "@/features/appointments/core";
 import { inviteUrl } from "@/features/calendar-feed/invite-token";
 import { errCode } from "@/lib/log";
+import { paidCentsSql } from "@/features/wallet/core";
 
 /** sent = a cliente recebeu; failed = o WhatsApp não enviou; skipped = nada a enviar (sem WhatsApp configurado) */
 export type BookingMessageResult = "sent" | "failed" | "skipped";
@@ -29,6 +30,7 @@ export async function sendBookingMessage(
         name: tenants.name,
         template: tenants.bookingTemplate,
         fullName: tenants.clientNameFull,
+        pixKey: tenants.pixKey,
         address: tenants.address,
       })
       .from(tenants)
@@ -46,6 +48,8 @@ export async function sendBookingMessage(
           service: serviceLabel,
           startsAt: appointments.startsAt,
           priceCents: appointments.priceCents,
+          depositRequestedCents: appointments.depositRequestedCents,
+          paidCents: paidCentsSql,
         })
         .from(appointments)
         .innerJoin(clients, eq(clients.id, appointments.clientId))
@@ -55,7 +59,12 @@ export async function sendBookingMessage(
     // Cliente respondeu SAIR: nada automático
     if (!a || a.optedOut) return "skipped";
     const calendarUrl = inviteUrl(tenantId, appointmentId);
-    const text = bookingText({ ...a, calendarUrl }, now, {
+    // Sinal pedido que o crédito da cliente ainda não cobriu: vai com o valor e o Pix
+    const deposit =
+      a.depositRequestedCents && a.paidCents < a.depositRequestedCents
+        ? { cents: a.depositRequestedCents - a.paidCents, pixKey: t?.pixKey }
+        : null;
+    const text = bookingText({ ...a, calendarUrl, deposit }, now, {
       template: t?.template,
       name: t?.name,
       fullName: t?.fullName,

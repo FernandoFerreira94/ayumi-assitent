@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parsePayment, paymentLabel, paymentState, paymentView } from "@/features/appointments/payment";
 import { splitPayments } from "@/features/finance/payments";
+import { formatBRL } from "@/lib/dates";
 
 const start = new Date("2030-03-10T15:00:00Z");
 const before = new Date("2030-03-09T12:00:00Z");
@@ -97,5 +98,39 @@ describe("pagamentos do mês no Financeiro", () => {
     expect(r.toPay.map((x) => x.id)).toEqual(["s"]);
     expect(r.advance.map((x) => x.id)).toEqual(["s"]);
     expect(r).toMatchObject({ toPayCents: 7000, advanceCents: 3000 });
+  });
+});
+
+describe("sinal pedido à cliente", () => {
+  it("lê 'request' da folha de agendar como pedido, não pagamento", () => {
+    expect(parsePayment("request", "pix", "30,00")).toEqual({ requestCents: 3000 });
+    expect(parsePayment("request", null, "abc")).toBe("invalid");
+  });
+  it("fica 'Sinal pedido' até entrar o valor pedido; depois vira sinal", () => {
+    const base = { paidAt: null, startsAt: start, status: "pending_confirmation", priceCents: 10000 };
+    expect(paymentState({ ...base, depositRequestedCents: 3000 })).toBe("deposit_requested");
+    expect(paymentState({ ...base, depositRequestedCents: 3000, paidCents: 3000 })).toBe("deposit");
+    expect(paymentState({ ...base, depositRequestedCents: 3000, paidCents: 10000 })).toBe("paid");
+    expect(paymentState({ ...base, status: "done", depositRequestedCents: 3000 })).toBe("on_service");
+    const v = paymentView({ ...base, paymentMethod: null, depositRequestedCents: 3000 });
+    expect(v.label).toBe(`Sinal pedido ${formatBRL(3000)}`);
+    expect(v.requestedCents).toBe(3000);
+  });
+  it("no Financeiro, sinal pedido fica em 'A pagar' e não em 'Adiantado'", () => {
+    const r = splitPayments([
+      {
+        id: "a",
+        startsAt: start,
+        status: "pending_confirmation",
+        priceCents: 10000,
+        clientName: "Ana",
+        serviceName: "Gel",
+        paidAt: null,
+        paymentMethod: null,
+        depositRequestedCents: 3000,
+      },
+    ]);
+    expect(r.toPayCents).toBe(10000);
+    expect(r.advance).toHaveLength(0);
   });
 });

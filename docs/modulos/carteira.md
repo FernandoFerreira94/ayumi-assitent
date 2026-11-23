@@ -62,6 +62,14 @@
 - Regras puras em `promotion-rules.ts` (`promotionStatus`, `promotionOffCents`, `bestPromotion`, `promotionFacts`, `parsePromotionDraft`).
 - Limite conhecido: reativar um atendimento cancelado não reconfere a vaga (pode passar 1 do limite).
 
+## Sinal pedido à cliente (23/11)
+
+- Antes, o "Sinal" do agendar só **lançava o sinal como pago**; nada era enviado à cliente (a chave Pix nunca ia em mensagem).
+- **Migration 0055:** `appointments.deposit_requested_cents` (nulo = não pediu; CHECK > 0).
+- **Agendar:** em "Sinal", `PaymentFields` (só com `form`) mostra "Pedir à cliente" (padrão) | "Já recebi". Pedir manda `paid=request`; `parsePayment` devolve `{ requestCents }`, que vai em `insertAppointment.depositRequestCents` (não grava extrato; pedido ≥ o que falta = VALIDATION `depositAmount`; sem nada a pagar, ignora).
+- **Mensagem:** `sendBookingMessage` lê o pedido, o pago (`paidCentsSql`, crédito pode cobrir) e `tenants.pix_key`; `bookingText` acrescenta `depositLines` (valor, Pix, "Me manda o comprovante") antes do link do convite, mesmo com texto editado.
+- **Estado:** `paymentState` = `deposit_requested` enquanto pago < pedido (sem `paid_at`, não concluído). Selo âmbar "Sinal pedido R$ X", ação "Sinal recebido": a `PaymentSheet` abre no sinal com o valor pedido. Financeiro: fica em "A pagar", não em "Adiantado"; caixa só muda quando marcar recebido.
+
 ## Arquivos
 
 - `features/wallet/rules.ts` (puro): `appointmentPaid`, `walletBalance`, `cashIn`, `remainingCents`, `suggestedDeposit`, `cancelOutcome` (D1/D2), `walletEffect`, `walletStatement`, `payXPrice`, `sessionValue`, `packageExpiresOn`, `parsePolicy`, `DEFAULT_POLICY`.

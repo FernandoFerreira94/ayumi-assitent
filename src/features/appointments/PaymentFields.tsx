@@ -12,7 +12,8 @@ const chip =
   "inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-line bg-surface px-3 text-sm font-bold transition-colors aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-on-primary";
 
 export type PaymentChoice = "none" | "deposit" | "full";
-export type PaymentPick = { choice: PaymentChoice; method: PaymentMethod | null; amount: string };
+/** `request`: no "Sinal" da folha de agendar, pedir à cliente (padrão) em vez de "já recebi". */
+export type PaymentPick = { choice: PaymentChoice; method: PaymentMethod | null; amount: string; request?: boolean };
 
 /** "30,00" a partir de centavos, para o campo do sinal. */
 export const centsToField = (cents: number) => (cents / 100).toFixed(2).replace(".", ",");
@@ -47,7 +48,7 @@ export function PaymentFields({
   /** Já pago antes (na folha do pagamento): o sinal não sugere menos que isso. */
   paidBefore?: number;
 }) {
-  const [own, setOwn] = useState<PaymentPick>({ choice: "none", method: null, amount: "" });
+  const [own, setOwn] = useState<PaymentPick>({ choice: "none", method: null, amount: "", request: true });
   const v = value ?? own;
   const set = (next: PaymentPick) => {
     setOwn(next);
@@ -59,6 +60,8 @@ export function PaymentFields({
   const depositCents = fieldToCents(amount);
   const bad = amountError || (v.choice === "deposit" && amount !== "" && depositCents === null);
   const rest = depositCents !== null && totalCents > 0 ? Math.max(0, totalCents - depositCents) : null;
+  // Só na folha de agendar: "Pedir à cliente" manda valor e Pix no WhatsApp e não entra no caixa
+  const asking = form && v.choice === "deposit" && v.request !== false;
 
   return (
     <fieldset className="grid gap-2">
@@ -68,10 +71,14 @@ export function PaymentFields({
           <input
             type="hidden"
             name="paid"
-            value={v.choice === "full" ? "1" : v.choice === "deposit" ? "deposit" : ""}
+            value={v.choice === "full" ? "1" : asking ? "request" : v.choice === "deposit" ? "deposit" : ""}
           />
           <input type="hidden" name="depositAmount" value={v.choice === "deposit" ? amount : ""} />
-          <input type="hidden" name="paymentMethod" value={v.choice !== "none" && v.method ? v.method : ""} />
+          <input
+            type="hidden"
+            name="paymentMethod"
+            value={v.choice !== "none" && !asking && v.method ? v.method : ""}
+          />
         </>
       ) : null}
       <div className="flex gap-2" role="group" aria-label="Já pagou?">
@@ -101,6 +108,21 @@ export function PaymentFields({
           Já pagou
         </button>
       </div>
+      {form && v.choice === "deposit" ? (
+        <div className="flex gap-2" role="group" aria-label="Sinal">
+          <button type="button" aria-pressed={asking} onClick={() => set({ ...v, request: true })} className={chip}>
+            Pedir à cliente
+          </button>
+          <button
+            type="button"
+            aria-pressed={!asking}
+            onClick={() => set({ ...v, request: false })}
+            className={chip}
+          >
+            Já recebi
+          </button>
+        </div>
+      ) : null}
       {v.choice === "deposit" ? (
         <div className="grid gap-1">
           <label className="flex items-center gap-3">
@@ -126,6 +148,11 @@ export function PaymentFields({
             <p role="alert" className="text-sm font-semibold text-fail">
               Digite o valor do sinal, menor que o total (ex.: 30,00).
             </p>
+          ) : asking ? (
+            <p className="text-sm font-semibold text-muted">
+              Vai no WhatsApp com a sua chave Pix. Fica <b className="text-wait">a receber</b> até você marcar
+              &quot;Sinal recebido&quot;.
+            </p>
           ) : rest !== null ? (
             <p className="text-sm font-semibold text-muted">
               Falta <b className="text-fg">{formatBRL(rest)}</b> para pagar no dia.
@@ -133,7 +160,7 @@ export function PaymentFields({
           ) : null}
         </div>
       ) : null}
-      {v.choice !== "none" ? (
+      {v.choice !== "none" && !asking ? (
         <div className="grid gap-1">
           <p className="text-xs font-bold text-muted">Forma (opcional)</p>
           <div className="flex gap-2" role="group" aria-label="Forma de pagamento">

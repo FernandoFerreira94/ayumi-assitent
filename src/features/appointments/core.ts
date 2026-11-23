@@ -50,6 +50,8 @@ export type BookingInput = {
   notes?: string | null;
   /** Já pagou ao agendar (tudo ou só o sinal, `amountCents`); a forma é opcional. */
   payment?: PaymentInput | null;
+  /** "Pedir sinal": valor pedido à cliente em centavos (vai na mensagem; não é pagamento). */
+  depositRequestCents?: number | null;
   /** Quem agendou (vai no extrato da carteira). */
   createdBy?: string | null;
   /** Usar a promoção de desconto que estiver valendo (a folha mostra e deixa desligar). */
@@ -140,6 +142,10 @@ export async function insertAppointment(
   const owed = totalCents - (pick?.valueCents ?? 0);
   // Sinal nunca passa do que falta; sem valor = pagou tudo
   const paidNow = input.payment ? Math.min(owed, input.payment.amountCents ?? owed) : 0;
+  // Sinal pedido: nunca o total (aí é "a pagar"); sem nada a pagar (pacote cobre tudo), não pede
+  const requested = input.payment ? null : (input.depositRequestCents ?? null);
+  if (requested !== null && owed > 0 && requested >= owed) return fail("VALIDATION", "depositAmount");
+  const depositRequestedCents = requested && owed > 0 ? requested : null;
   const blockedUntil = new Date(endsAt.getTime() + bufferMin * 60_000);
   if (await overlapsBlock(tx, startsAt, blockedUntil)) return fail("SLOT_TAKEN", "time");
   try {
@@ -164,6 +170,7 @@ export async function insertAppointment(
           // A forma no atendimento é a do pagamento completo (o banco exige paid_at); a do sinal fica no extrato
           paymentMethod: input.payment && paidNow >= owed ? input.payment.method : null,
           clientPackageId: pick?.clientPackageId ?? null,
+          depositRequestedCents,
           // Fica confirmado quando a cliente responder "1" ao lembrete da véspera
           status: "pending_confirmation",
         })
@@ -475,6 +482,7 @@ export function listDay(tx: Tx, [from, to]: [Date, Date]) {
       paidAt: appointments.paidAt,
       paymentMethod: appointments.paymentMethod,
       paidCents: paidCentsSql,
+      depositRequestedCents: appointments.depositRequestedCents,
       serviceParts,
     })
     .from(appointments)
