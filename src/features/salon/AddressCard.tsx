@@ -22,7 +22,7 @@ const FIELD_ERRORS: Record<string, string> = {
 };
 
 /**
- * Ajustes > Endereço: mostra o endereço do estúdio e abre um sheet para cadastrar/editar com busca de CEP.
+ * Meu perfil > Endereço: mostra o endereço do estúdio e abre um sheet para cadastrar/editar com busca de CEP.
  * Vai no convite que a cliente salva na agenda, no evento do Google e nas mensagens ({endereco} e {mapa}).
  */
 export function AddressCard({ initial }: { initial: StudioAddress }) {
