@@ -139,22 +139,19 @@ describe("motivo que impede de ir", () => {
 });
 
 describe("resposta automática ao lembrete", () => {
-  it("confirmar agradece com o primeiro nome", () => {
-    expect(ackText("confirm", "Maria Silva")).toContain("Oba, Maria! Seu horário está confirmado");
+  it("confirmar agradece sem o nome da cliente", () => {
+    expect(ackText("confirm")).toBe("Prontinho! Seu horário está confirmado 💜 Te espero com carinho!");
   });
-  it("cancelar e remarcar dizem que recebeu o pedido e que a profissional continua, sem cancelar nada", () => {
+  it("cancelar e remarcar dizem que recebeu o pedido, na 1ª pessoa, sem cancelar nada", () => {
     for (const intent of ["cancel", "reschedule"] as const) {
-      const t = ackText(intent, "Bia Souza", false, "amanhã às 14:00");
-      expect(t).toContain("Bia!");
+      const t = ackText(intent, "amanhã às 14:00");
       expect(t).toContain("o horário de amanhã às 14:00");
-      expect(t).toContain("A profissional vai");
-      expect(t).not.toMatch(/cancelei|cancelado/i);
+      expect(t).toContain("Já te chamo por aqui");
+      expect(t).not.toMatch(/profissional|cancelei|cancelado/i);
     }
   });
   it("confirmar com o horário não deixa dúvida", () => {
-    expect(ackText("confirm", "Maria Silva", false, "amanhã às 14:00")).toContain(
-      "Seu horário de amanhã às 14:00 está confirmado",
-    );
+    expect(ackText("confirm", "amanhã às 14:00")).toContain("Seu horário de amanhã às 14:00 está confirmado");
   });
 });
 

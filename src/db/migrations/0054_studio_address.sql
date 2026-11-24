@@ -24,7 +24,7 @@ WHERE address_city IS NULL
 -- Mensagens: o nome da cliente sai do texto padrão. Quem salvou o padrão antigo sem mexer volta ao padrão (null),
 -- e passa a receber o novo (o navegador manda a quebra de linha como \r\n); texto editado pela dona fica como ela escreveu.
 UPDATE tenants SET booking_template = NULL
-WHERE replace(booking_template, E'\r\n', E'\n') = E'Oi, {nome}! Seu agendamento de {servico} está confirmado 💜\n📅 {dia}\n🕒 {hora}\n\nTe esperamos com carinho!';
+WHERE replace(booking_template, E'\r\n', E'\n') = E'Oi, {nome}! Seu agendamento de {servico} está confirmado 💜\n📅 {dia}\n🕒 {hora}\n\nTe espero com carinho!';
 UPDATE tenants SET reminder_template = NULL
 WHERE replace(reminder_template, E'\r\n', E'\n') = 'Oi, {nome}! Passando para lembrar do seu horário de {servico} {dia} às {hora}. Te espero com carinho! 💜';
 UPDATE tenants SET second_reminder_template = NULL

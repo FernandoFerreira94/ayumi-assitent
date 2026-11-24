@@ -19,7 +19,7 @@
 ## Regras de negócio
 - Cancelar/remarcar pela cliente = "quer remarcar" (`reschedule_requested`); horário segue reservado, a dona decide.
 - Conectar: o campo do número vem com o telefone comercial do Meu perfil (`tenants.business_phone`), editável; Ajustes > WhatsApp lê e passa `profilePhone` ao `WhatsAppCard`.
-- Textos educados, com primeiro nome. IA sempre ligada; por ora só lê e repassa.
+- Textos educados, sem o nome da cliente por padrão e na 1ª pessoa (24/11). IA sempre ligada; por ora só lê e repassa.
 - Sino/push só para: confirmou, pediu cancelar, pediu remarcar, não respondeu (e WhatsApp desconectado).
 
 ## Cuidados

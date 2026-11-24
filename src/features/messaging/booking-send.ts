@@ -65,8 +65,8 @@ export async function sendBookingMessage(
         .innerJoin(services, eq(services.id, appointments.serviceId))
         .where(eq(appointments.id, appointmentId)),
     );
-    // Cliente respondeu SAIR: nada automático
-    if (!a || a.optedOut) return "skipped";
+    // Cliente respondeu SAIR: nada automático. Horário que já passou (atendimento lançado depois) não avisa ninguém
+    if (!a || a.optedOut || a.startsAt <= now) return "skipped";
     const calendarUrl = inviteUrl(tenantId, appointmentId);
     // Sinal pedido que o crédito da cliente ainda não cobriu: vai com o valor e o Pix
     const deposit =

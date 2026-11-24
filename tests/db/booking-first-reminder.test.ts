@@ -13,7 +13,7 @@ vi.mock("@/features/messaging/evolution", () => ({
   }),
 }));
 // Fora do silêncio da noite, para o lembrete poder sair no teste
-vi.mock("@/features/reminders/quiet", () => ({ isQuietHour: () => false, QUIET_FROM_HOUR: 21, QUIET_UNTIL_HOUR: 6 }));
+vi.mock("@/features/reminders/quiet", () => ({ isQuietHour: () => false, QUIET_FROM_HOUR: 21, QUIET_UNTIL_HOUR: 6, nextSendable: (t: Date) => t }));
 
 const url = process.env.DATABASE_URL;
 const d = url ? describe : describe.skip;
@@ -68,6 +68,27 @@ d("confirmação do agendamento x 1º aviso (Postgres real)", () => {
     expect(sent[0]).not.toContain("Responda com o número:");
     expect((await admin`select reminder_sent_at from appointments where id = ${id}`)[0].reminder_sent_at).toBeNull();
     expect((await admin`select kind from messages where appointment_id = ${id}`)[0].kind).toBe("auto_reply");
+  });
+
+  it("horário que já passou (atendimento lançado depois) não manda mensagem", async () => {
+    const { sendBookingMessage } = await import("@/features/messaging/booking-send");
+    const id = await appt(-3);
+    sent.length = 0;
+    expect(await sendBookingMessage(T, id, now)).toBe("skipped");
+    expect(sent).toHaveLength(0);
+  });
+
+  it("1º aviso de quem já confirmou só lembra, sem 1/2/3", async () => {
+    const { sendReminders } = await import("@/features/reminders/core");
+    const { withTenant } = await import("@/db/client");
+    const id = await appt(20);
+    await admin`update appointments set status = 'confirmed' where id = ${id}`;
+    const texts: string[] = [];
+    const port = { sendText: async (_: string, t: string) => (texts.push(t), { id: "c1" }) };
+    expect(await withTenant(T, (tx) => sendReminders(tx, port, now))).toMatchObject({ sent: 1 });
+    expect(texts[0]).toContain("Te espero com carinho");
+    expect(texts[0]).not.toContain("Responda com o número:");
+    await admin`update appointments set status = 'cancelled' where id = ${id}`;
   });
 
   it("cancelar, faltar ou concluir apaga a resposta guardada da noite (não sai às 6h com data velha)", async () => {

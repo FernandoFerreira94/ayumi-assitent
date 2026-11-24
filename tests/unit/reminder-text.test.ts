@@ -6,8 +6,18 @@ const eve = new Date("2026-11-10T15:00:00Z");
 describe("texto do lembrete", () => {
   it("diz amanhã, sem o nome no texto padrão, e dá as opções 1, 2 e 3", () => {
     const t = reminderText({ client: "Maria Silva", service: "Gel", startsAt: start }, eve);
-    expect(t.split("\n")[0]).toBe("Oi! Passando para lembrar do seu horário de Gel amanhã às 14:30. Te espero com carinho! 💜");
+    expect(t.split("\n")[0]).toBe("Oi! Passando para lembrar do seu horário de Gel amanhã às 14:30 😊 Pode me confirmar?");
     expect(t).toContain("1 - Confirmo\n2 - Cancelar\n3 - Reagendar");
+  });
+  it("quem já confirmou recebe só o lembrete, sem pedir confirmação de novo", async () => {
+    const { DEFAULT_REMINDER } = await import("@/features/reminders/text");
+    const a = { client: "Bia", service: "Gel", startsAt: start };
+    expect(reminderText(a, eve, {}, true)).toBe(
+      "Oi! Passando para lembrar do seu horário de Gel amanhã às 14:30. Te espero com carinho! 💜",
+    );
+    expect(reminderText(a, eve, { template: DEFAULT_REMINDER }, true)).not.toContain("Pode me confirmar");
+    // Texto da dona é respeitado, só sem as opções
+    expect(reminderText(a, eve, { template: "Até {hora}!" }, true)).toBe("Até 14:30!");
   });
   it("diz hoje quando é no mesmo dia", () => {
     expect(reminderText({ client: "Bia", service: "Gel", startsAt: start }, new Date("2026-11-11T12:00:00Z"))).toContain("hoje às 14:30");

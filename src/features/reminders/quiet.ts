@@ -9,3 +9,11 @@ export function isQuietHour(now: Date): boolean {
   const h = (now.getUTCHours() + 24 - 3) % 24;
   return h >= QUIET_FROM_HOUR || h < QUIET_UNTIL_HOUR;
 }
+
+/** Primeiro instante em que algo automático pode sair: o próprio `t` ou, no silêncio, as 6h seguintes. */
+export function nextSendable(t: Date): Date {
+  if (!isQuietHour(t)) return t;
+  const local = new Date(t.getTime() - 3 * 3600_000);
+  const six = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate(), QUIET_UNTIL_HOUR + 3);
+  return new Date(local.getUTCHours() >= QUIET_FROM_HOUR ? six + 86_400_000 : six);
+}

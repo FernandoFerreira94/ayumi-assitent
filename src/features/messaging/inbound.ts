@@ -163,7 +163,6 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
       id: tenants.id,
       aiEnabled: tenants.aiEnabled,
       aiRules: tenants.aiRules,
-      fullName: tenants.clientNameFull,
     })
     .from(tenants)
     .where(eq(tenants.whatsappInstance, msg.instance));
@@ -349,8 +348,9 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
   if (step.kind === "skip") return { handled: false, reason: step.reason };
   if (step.kind === "done") return { handled: true, intent: null, appointmentId: null };
   if (step.kind === "optout") {
-    // Responde uma vez (só quando mudou) e respeita o silêncio da noite; a escolha já está gravada
-    if (step.ack && !isQuietHour(now)) await sendAutoReply(deps, msg.instance, tenantId, step.client, null, step.ack);
+    // Responde uma vez (só quando mudou), mesmo à noite: é a resposta a um pedido dela e, sem ela, a cliente
+    // não sabe se o SAIR valeu. A escolha já está gravada
+    if (step.ack) await sendAutoReply(deps, msg.instance, tenantId, step.client, null, step.ack);
     return { handled: true, intent: null, appointmentId: null };
   }
 
@@ -394,7 +394,7 @@ export async function handleInbound(msg: InboundText, deps: InboundDeps): Promis
       intent = plan.intent;
       appointmentId = target.id;
       correction = target.correction;
-      if (plan.sendAck) ack = ackText(plan.intent, client.name, t.fullName, slotLabel(target.startsAt, now));
+      if (plan.sendAck) ack = ackText(plan.intent, slotLabel(target.startsAt, now));
     }
   } else if (target && plan.action === "silent" && !plan.quiet) {
     // Avisa a dona uma vez por pergunta (marca para não repetir o aviso a cada mensagem)

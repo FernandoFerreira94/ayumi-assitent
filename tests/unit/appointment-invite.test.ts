@@ -92,7 +92,7 @@ describe("mensagem de agendamento com convite", () => {
   const eve = new Date("2026-11-10T15:00:00Z");
   it("padrão: link no fim", () =>
     expect(bookingText(a, eve)).toMatch(
-      /Te esperamos com carinho!\n\n📲 Salve na sua agenda: https:\/\/x\.test\/c\.ics$/,
+      /Te espero com carinho!\n\n📲 Salve na sua agenda: https:\/\/x\.test\/c\.ics$/,
     ));
   it("{agenda} decide onde entra", () =>
     expect(bookingText(a, eve, { template: "Oi {nome}\n{agenda}\nBeijo" })).toBe(

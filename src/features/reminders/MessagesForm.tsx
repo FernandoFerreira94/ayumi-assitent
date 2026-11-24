@@ -149,7 +149,7 @@ export function MessagesForm({
       >
         <TemplateField
           name="bookingTemplate"
-          label="Texto do agendamento confirmado"
+          label="Texto ao agendar"
           initial={settings.bookingTemplate}
           fallback={DEFAULT_BOOKING}
           invalid={err === "bookingTemplate"}

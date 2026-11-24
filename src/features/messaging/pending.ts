@@ -38,7 +38,7 @@ export async function sendPendingReplies(tx: Tx, port: MessagingPort, now: Date)
     // Montada agora: "hoje/amanhã" certo e nada sai se o horário mudou desde a resposta da cliente
     const body = pendingText(
       r.stored,
-      { status: r.status, startsAt: new Date(r.starts_at), clientName: r.name, fullName: r.full_name },
+      { status: r.status, startsAt: new Date(r.starts_at) },
       now,
     );
     if (body === null) continue;

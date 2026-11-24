@@ -69,6 +69,8 @@ describe("uso do pacote (agendar, cartão e mensagens)", () => {
     const now = new Date("2030-08-01T12:00:00Z");
     const line = sessionMessageLine({ n: 3, total: 6 });
     expect(line).toBe("✨ Sessão 3 de 6 do seu pacote");
+    expect(sessionMessageLine({ n: 6, total: 6 })).toBe("✨ Última sessão do seu pacote");
+    expect(sessionMessageLine({ n: 1, total: 1 })).toBe("✨ Sessão 1 de 1 do seu pacote");
     expect(bookingText({ ...a, session: { n: 3, total: 6 } }, now)).toContain(line);
     expect(bookingText(a, now)).not.toContain("pacote");
     const rem = reminderText({ ...a, session: { n: 3, total: 6 } }, now);

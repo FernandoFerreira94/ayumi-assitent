@@ -8,7 +8,7 @@ GRANT UPDATE (reminder_template, booking_template, second_reminder_template, cli
 
 -- O interruptor "valor na confirmação" vira a chave {valor} no texto: quem tinha ligado continua recebendo o valor.
 UPDATE tenants
-SET booking_template = E'Oi, {nome}! Seu agendamento de {servico} está confirmado 💜\n📅 {dia}\n🕒 {hora}\n💰 {valor}\n\nTe esperamos com carinho!'
+SET booking_template = E'Oi, {nome}! Seu agendamento de {servico} está confirmado 💜\n📅 {dia}\n🕒 {hora}\n💰 {valor}\n\nTe espero com carinho!'
 WHERE message_include_price AND booking_template IS NULL;
 
 -- Respostas com IA ficam sempre ligadas (pedido da dona); o interruptor saiu de Ajustes.

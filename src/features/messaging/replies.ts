@@ -1,4 +1,3 @@
-import { clientCall } from "@/features/reminders/text";
 /** O que a cliente quis dizer ao responder o lembrete. */
 export type Intent = "confirm" | "cancel" | "reschedule";
 
@@ -112,16 +111,16 @@ export const OPT_OUT_TEXT =
 export const OPT_IN_TEXT = "Pronto, os lembretes automáticos voltaram. Para parar, responda SAIR.";
 
 /**
- * Única resposta automática à resposta do lembrete. Confirmar agradece; cancelar ou remarcar não muda
- * nada sozinho: diz que recebeu o pedido e que a profissional continua a conversa.
+ * Única resposta automática à resposta do lembrete, sem o nome da cliente e na 1ª pessoa (como os avisos).
+ * Confirmar agradece; cancelar ou remarcar não muda nada sozinho: diz que recebeu o pedido e que a dona
+ * continua a conversa.
  */
-export function ackText(intent: Intent, clientName: string, fullName = false, when?: string | null): string {
-  const first = clientCall(clientName, fullName);
+export function ackText(intent: Intent, when?: string | null): string {
   const slot = when ? ` de ${when}` : "";
-  if (intent === "confirm") return `Oba, ${first}! Seu horário${slot} está confirmado 💜 Te espero com carinho!`;
+  if (intent === "confirm") return `Prontinho! Seu horário${slot} está confirmado 💜 Te espero com carinho!`;
   if (intent === "cancel")
-    return `Tudo bem, ${first}! Recebi seu pedido para cancelar o horário${slot}. A profissional vai falar com você por aqui para finalizar 💜`;
-  return `Tudo bem, ${first}! Recebi seu pedido para remarcar o horário${slot}. A profissional vai te chamar por aqui com as opções de horário 💜`;
+    return `Recebi seu pedido para cancelar o horário${slot}. Já te chamo por aqui para finalizarmos 💜`;
+  return `Recebi seu pedido para remarcar o horário${slot}. Já te chamo por aqui com as opções de horário 💜`;
 }
 
 /**
