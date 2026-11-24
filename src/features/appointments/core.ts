@@ -373,6 +373,50 @@ export async function setPayment(
   return ok();
 }
 
+/** O aviso de sinal recebido espera o Desfazer da folha de pagamento antes de poder sair (o worker manda). */
+export const DEPOSIT_WAIT_MS = 15_000;
+
+/** Sinal pedido e ainda não coberto pelo que já foi pago (crédito, sinal, pagamento). */
+export async function depositPending(tx: Tx, id: string): Promise<boolean> {
+  const [a] = await tx
+    .select({ requested: appointments.depositRequestedCents, paid: paidCentsSql })
+    .from(appointments)
+    .where(eq(appointments.id, id));
+  return !!a?.requested && a.paid < a.requested;
+}
+
+/**
+ * Depois de mexer no pagamento. Se o sinal pedido acabou de ser coberto num horário futuro, o horário fica
+ * confirmado (quem confirma é o sinal): com "Avisar a cliente" o worker confirma e manda o aviso depois do Desfazer;
+ * sem aviso, confirma na hora. Qualquer outra mudança (inclusive o Desfazer) cancela o aviso pendente.
+ */
+export async function afterPaymentChange(
+  tx: Tx,
+  id: string,
+  wasPending: boolean,
+  notifyClient: boolean,
+  now = new Date(),
+): Promise<void> {
+  const [a] = await tx
+    .select({ status: appointments.status, startsAt: appointments.startsAt })
+    .from(appointments)
+    .where(eq(appointments.id, id));
+  const covered =
+    !!a &&
+    wasPending &&
+    !(await depositPending(tx, id)) &&
+    a.startsAt > now &&
+    (a.status === "pending_confirmation" || a.status === "confirmed");
+  if (covered && !notifyClient && a.status === "pending_confirmation") {
+    await tx.update(appointments).set({ status: "confirmed", depositNoticeAt: null }).where(eq(appointments.id, id));
+    return;
+  }
+  await tx
+    .update(appointments)
+    .set({ depositNoticeAt: covered && notifyClient ? new Date(now.getTime() + DEPOSIT_WAIT_MS) : null })
+    .where(eq(appointments.id, id));
+}
+
 /**
  * O horário mudou: tudo o que a cliente respondeu ou recebeu valia para o horário antigo. Volta a aguardar
  * confirmação e zera 1º e 2º aviso, "não respondeu", resposta, pedido de cancelar, conversa passada à dona e

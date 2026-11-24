@@ -1,6 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { sessionUseSql } from "@/features/wallet/packages";
+import { paidCentsOf } from "@/features/wallet/core";
 import { parseSessionUse, type SessionUse } from "@/features/wallet/session-use";
 import { tenants } from "@/db/schema";
 import type { MessagingPort } from "@/features/messaging/port";
@@ -28,6 +29,8 @@ type Due = {
   session: SessionUse | null;
   /** Já confirmado (a dona marcou ou a cliente respondeu antes): o 1º aviso vai só como lembrete, sem 1/2/3 */
   confirmed: boolean;
+  /** Sinal pedido que ainda falta (centavos); 0 = nada pendente */
+  depositLeft: number;
 };
 
 /** 1º aviso só até 2 h antes do horário. */
@@ -52,6 +55,7 @@ export async function claimDue(tx: Tx, now: Date, hours = DEFAULT_REMINDER_HOURS
     price_cents: number;
     session: unknown;
     confirmed: boolean;
+    deposit_left: number;
   }>(sql`
     with claimed as (
       update appointments set reminder_sent_at = ${now.toISOString()}
@@ -62,10 +66,11 @@ export async function claimDue(tx: Tx, now: Date, hours = DEFAULT_REMINDER_HOURS
           and starts_at > ${from.toISOString()} and starts_at <= ${until.toISOString()}
           and client_id not in (select id from clients where opted_out_at is not null)
         for update skip locked)
-      returning id, tenant_id, starts_at, client_id, service_id, price_cents, client_package_id, status)
+      returning id, tenant_id, starts_at, client_id, service_id, price_cents, client_package_id, status, deposit_requested_cents)
     select c.id, c.tenant_id, c.client_id, c.starts_at, c.price_cents,
       ${sessionUseSql(sql`c.id`, sql`c.client_package_id`, sql`c.starts_at`)} as session, cl.name as client, cl.phone_e164 as phone, s.name as service,
-      c.status = 'confirmed' as confirmed
+      c.status = 'confirmed' as confirmed,
+      greatest(coalesce(c.deposit_requested_cents, 0) - ${paidCentsOf(sql`c.id`)}, 0) as deposit_left
     from claimed c join clients cl on cl.id = c.client_id join services s on s.id = c.service_id
     order by c.starts_at`);
   return rows.map((r) => ({
@@ -79,6 +84,7 @@ export async function claimDue(tx: Tx, now: Date, hours = DEFAULT_REMINDER_HOURS
     priceCents: Number(r.price_cents),
     session: parseSessionUse(r.session),
     confirmed: r.confirmed === true,
+    depositLeft: Number(r.deposit_left ?? 0),
   }));
 }
 
@@ -112,6 +118,7 @@ export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Pro
       fullName: tenants.clientNameFull,
       address: tenants.address,
       packageLine: tenants.packageLine,
+      pixKey: tenants.pixKey,
     })
     .from(tenants);
   const failedIds: string[] = [];
@@ -124,7 +131,16 @@ export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Pro
       continue;
     }
     try {
-      const text = reminderText({ ...a, session: salon?.packageLine ? a.session : null }, now, salon, a.confirmed);
+      const text = reminderText(
+        {
+          ...a,
+          session: salon?.packageLine ? a.session : null,
+          deposit: a.depositLeft > 0 ? { cents: a.depositLeft, pixKey: salon?.pixKey } : null,
+        },
+        now,
+        salon,
+        a.confirmed,
+      );
       const { id } = await port.sendText(a.phone, text);
       sent++;
       // Entra na conversa da cliente. Num savepoint e fora do catch de envio: se gravar falhar,

@@ -13,6 +13,9 @@ import { addDays, formatBRL, formatTime, todayStr } from "@/lib/dates";
  */
 export const DEFAULT_BOOKING =
   "Oi! Seu horário de {servico} está agendado 💜\n📅 {dia}\n🕒 {hora}\n📍 {endereco}\n🗺️ {mapa}\n\nTe espero com carinho!";
+/** Ao agendar com sinal pedido: o horário fica reservado e o sinal confirma (o bloco do sinal vem logo abaixo). */
+export const DEFAULT_BOOKING_DEPOSIT =
+  "Oi! Reservei seu horário de {servico} 💜\n📅 {dia}\n🕒 {hora}\n📍 {endereco}\n🗺️ {mapa}";
 /** 1º aviso para quem ainda não confirmou: pede a confirmação (vai com as opções 1/2/3). */
 export const DEFAULT_REMINDER =
   "Oi! Passando para lembrar do seu horário de {servico} {dia} às {hora} 😊 Pode me confirmar?";
@@ -69,8 +72,10 @@ export type MessageData = {
   priceCents?: number | null;
   /** Link do convite (.ics) para a cliente salvar na agenda; só na mensagem de agendamento */
   calendarUrl?: string | null;
-  /** Sinal pedido ao agendar (centavos) e a chave Pix do salão; só na mensagem de agendamento */
+  /** Sinal pedido que ainda falta (centavos) e a chave Pix do salão: na mensagem de agendamento e nos avisos */
   deposit?: { cents: number; pixKey?: string | null } | null;
+  /** Já pago ao agendar ("Já recebi"): vira uma linha "✅ Sinal recebido" / "✅ Pagamento recebido" */
+  paid?: { cents: number; full: boolean } | null;
   /** Sessão de pacote deste horário ("3 de 6"): vira uma linha sutil (Ajustes > Mensagens liga/desliga) */
   session?: { n: number; total: number } | null;
 };
@@ -114,13 +119,25 @@ function fill(rawTemplate: string, a: MessageData, salon: SalonMessageOpts, day:
 export function depositLines(cents: number, pixKey?: string | null): string {
   const pix = pixKey?.trim();
   return [
-    `Para garantir o seu horário, o sinal é de ${formatBRL(cents)}.`,
+    `Para confirmar, falta só o sinal de ${formatBRL(cents)}.`,
     pix ? `Pix: ${pix}` : null,
-    "Me manda o comprovante por aqui 😊",
+    "Pode me mandar o comprovante por aqui 😊",
   ]
     .filter(Boolean)
     .join("\n");
 }
+
+/** Sinal ainda pendente no 1º/2º aviso: lembra o valor e o Pix (o sinal é a confirmação, então sem 1/2/3). */
+export function depositReminderLines(cents: number, pixKey?: string | null): string {
+  const pix = pixKey?.trim();
+  return [`Lembrando que falta o sinal de ${formatBRL(cents)} para confirmar.`, pix ? `Pix: ${pix}` : null]
+    .filter(Boolean)
+    .join("\n");
+}
+
+/** Pago ao agendar: uma linha só, depois do texto. */
+const paidLine = (p: { cents: number; full: boolean }) =>
+  p.full ? "✅ Pagamento recebido." : `✅ Sinal de ${formatBRL(p.cents)} recebido.`;
 
 /** Sessão do pacote: uma linha curta depois do texto (sem valor nem nome do pacote), mesmo com texto editado. */
 const withSession = (template: string, a: MessageData) =>
@@ -134,8 +151,14 @@ export const calendarLine = (url: string) => `📲 Salve na sua agenda: ${url}`;
  * a linha "Salve na sua agenda" vai no lugar de {agenda} ou, sem a chave, no fim (vale para textos já editados).
  */
 export function bookingText(a: MessageData, now: Date, salon: SalonMessageOpts = {}): string {
-  const base = withSession(salon.template?.trim() || DEFAULT_BOOKING, a);
-  const template = a.deposit?.cents ? `${base}\n\n${depositLines(a.deposit.cents, a.deposit.pixKey)}` : base;
+  const pending = !!a.deposit?.cents;
+  // Texto padrão com sinal pendente diz "Reservei" (quem confirma é o sinal); texto da dona é respeitado
+  const base = withSession(salon.template?.trim() || (pending ? DEFAULT_BOOKING_DEPOSIT : DEFAULT_BOOKING), a);
+  const template = pending
+    ? `${base}\n\n${depositLines(a.deposit!.cents, a.deposit!.pixKey)}`
+    : a.paid?.cents
+      ? `${base}\n\n${paidLine(a.paid)}`
+      : base;
   const line = a.calendarUrl ? calendarLine(a.calendarUrl) : "";
   const withLink = template.includes("{agenda}")
     ? template.replace(/\{agenda\}/g, line)
@@ -152,8 +175,17 @@ export function bookingText(a: MessageData, now: Date, salon: SalonMessageOpts =
 export function reminderText(a: MessageData, now: Date, salon: SalonMessageOpts = {}, confirmed = false): string {
   const custom = salon.template?.trim();
   const usesDefault = !custom || custom === DEFAULT_REMINDER;
-  const template = confirmed && usesDefault ? DEFAULT_REMINDER_CONFIRMED : custom || DEFAULT_REMINDER;
-  const body = fill(withSession(template, a), a, salon, dayWord(a.startsAt, now));
+  const quiet = confirmed || !!a.deposit?.cents;
+  const template = quiet && usesDefault ? DEFAULT_REMINDER_CONFIRMED : custom || DEFAULT_REMINDER;
+  return withAsk(fill(withSession(template, a), a, salon, dayWord(a.startsAt, now)), a, confirmed);
+}
+
+/**
+ * Fim dos avisos: sinal pendente lembra o valor e o Pix e não pede 1/2/3 (quem confirma é o sinal); confirmado
+ * só lembra; o resto pede a confirmação com as opções.
+ */
+function withAsk(body: string, a: MessageData, confirmed: boolean): string {
+  if (a.deposit?.cents) return `${body}\n\n${depositReminderLines(a.deposit.cents, a.deposit.pixKey)}`;
   return confirmed ? body : [body, ...OPTIONS].join("\n");
 }
 
@@ -169,9 +201,9 @@ export function secondReminderText(
 ): string {
   const custom = salon.template?.trim();
   const usesDefault = !custom || custom === DEFAULT_SECOND;
-  const template = confirmed && usesDefault ? DEFAULT_SECOND_CONFIRMED : custom || DEFAULT_SECOND;
-  const body = fill(withSession(template, a), a, salon, dayWord(a.startsAt, now));
-  return confirmed ? body : [body, ...OPTIONS].join("\n");
+  const quiet = confirmed || !!a.deposit?.cents;
+  const template = quiet && usesDefault ? DEFAULT_SECOND_CONFIRMED : custom || DEFAULT_SECOND;
+  return withAsk(fill(withSession(template, a), a, salon, dayWord(a.startsAt, now)), a, confirmed);
 }
 
 /** Aviso de remarcação (sai quando a dona muda o dia/horário). Sem endereço cadastrado, a linha 📍 some. */
@@ -202,4 +234,9 @@ export const DEFAULT_CANCEL =
 
 export function cancelText(a: MessageData, now: Date, salon: SalonMessageOpts = {}): string {
   return fill(DEFAULT_CANCEL, a, salon, dayLabel(a.startsAt, now));
+}
+
+/** Sinal recebido (a dona marcou "Sinal recebido" com "Avisar a cliente" ligado). Confirma o horário; não pede resposta. */
+export function depositReceivedText(a: MessageData & { receivedCents: number }, now: Date): string {
+  return `Recebi seu sinal de ${formatBRL(a.receivedCents)} 💜\nSeu horário de ${a.service} ${slotLabel(a.startsAt, now)} está confirmado. Te espero com carinho!`;
 }

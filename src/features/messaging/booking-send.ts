@@ -75,7 +75,9 @@ export async function sendBookingMessage(
         : null;
     // Sessão do pacote ("Sessão 3 de 6 do seu pacote"), se a dona deixou ligado em Ajustes > Mensagens
     const session = t?.packageLine ? parseSessionUse(a.session) : null;
-    const body = bookingText({ ...a, calendarUrl, deposit, session }, now, {
+    // Pago ao agendar ("Já recebi"/pagou tudo): uma linha de recibo, sem pedir nada
+    const paid = !deposit && a.paidCents > 0 ? { cents: a.paidCents, full: a.paidCents >= a.priceCents } : null;
+    const body = bookingText({ ...a, calendarUrl, deposit, session, paid }, now, {
       template: t?.template,
       name: t?.name,
       fullName: t?.fullName,
@@ -83,7 +85,8 @@ export async function sendBookingMessage(
     });
     // Agendou já dentro da janela do 1º aviso: esta mensagem vale como o 1º aviso (pede a confirmação com 1/2/3),
     // senão o worker mandaria o lembrete minutos depois da confirmação
-    const asReminder = !!t && asFirstReminder(a, t, now);
+    // Com sinal pendente não pede 1/2/3: quem confirma é o sinal (o 1º aviso lembra o sinal, sem opções)
+    const asReminder = !!t && !deposit && asFirstReminder(a, t, now);
     const text = asReminder ? [body, ...OPTIONS].join("\n") : body;
     const res = await sendDirect(port, a.phone, text);
     if (!res.ok) {

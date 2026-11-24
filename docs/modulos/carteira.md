@@ -100,3 +100,5 @@
 - Mexer em saldo dentro do `lockTenant` (duas telas usando o mesmo crédito).
 - Dinheiro em centavos. Ganhos (receita = atendido) e caixa (pagamentos − devoluções) são números diferentes de propósito (D3).
 - Testes: `tests/unit/wallet.test.ts`, `tests/unit/promo-text.test.ts`, `tests/unit/promotion-rules.test.ts`, `tests/db/promotions.test.ts`, `tests/e2e/promocoes.spec.ts`, `tests/db/wallet.test.ts`, `tests/e2e/pagamentos-ajustes.spec.ts`, `tests/e2e/pagamento.spec.ts` (sinal).
+
+- 24/11: "Sinal recebido" com sinal pedido confirma o horário e, com "Avisar a cliente" ligado, manda "Recebi seu sinal" pelo worker (ver `lembretes.md`, migration 0060).

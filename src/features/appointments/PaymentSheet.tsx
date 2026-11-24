@@ -9,6 +9,7 @@ import { updatePayment } from "./actions";
 import { centsToField, fieldToCents, PaymentFields, type PaymentPick } from "./PaymentFields";
 import type { PaymentView } from "./payment";
 import { formatBRL } from "@/lib/dates";
+import { Switch } from "@/components/ui/Switch";
 
 /** O que estava marcado, para o Desfazer e para abrir a folha. */
 function pickOf(p: PaymentView): PaymentPick {
@@ -36,6 +37,7 @@ export function PaymentSheet({
   price,
   payment,
   nested = false,
+  canNotify = true,
   triggerClassName,
   children,
 }: {
@@ -44,6 +46,8 @@ export function PaymentSheet({
   price: string;
   payment: PaymentView;
   nested?: boolean;
+  /** Horário ainda no futuro: dá para avisar a cliente do sinal recebido */
+  canNotify?: boolean;
   triggerClassName: string;
   children: React.ReactNode;
 }) {
@@ -57,6 +61,9 @@ export function PaymentSheet({
   const [error, setError] = useState<ErrorCode | null>(null);
   const [badAmount, setBadAmount] = useState(false);
   const [pending, start] = useTransition();
+  // Sinal pedido que agora chega: avisa a cliente "Recebi seu sinal" e confirma o horário (ligado por padrão)
+  const [tellClient, setTellClient] = useState(true);
+  const canTell = payment.state === "deposit_requested" && canNotify && pick.choice !== "none";
 
   function onOpenChange(next: boolean) {
     setOpen(next);
@@ -65,6 +72,7 @@ export function PaymentSheet({
     // abre já em "Já pagou": é o motivo mais comum de abrir (marcar pago ou receber o resto do sinal);
     // com sinal pedido, abre no sinal com o valor pedido (o mais comum é "Sinal recebido")
     if (next) setPick(payment.state === "deposit_requested" ? pickOf(payment) : { ...pickOf(payment), choice: "full" });
+    if (next) setTellClient(true);
   }
 
   function save() {
@@ -77,7 +85,7 @@ export function PaymentSheet({
     setBadAmount(false);
     const before = toInput(pickOf(payment));
     start(async () => {
-      const res = await updatePayment({ id, ...input }).catch(() => null);
+      const res = await updatePayment({ id, ...input, notifyClient: canTell && tellClient }).catch(() => null);
       if (!res?.ok) {
         setError(res && !res.ok ? res.code : "NETWORK");
         return;
@@ -126,6 +134,12 @@ export function PaymentSheet({
             ) : null}
             <div className="grid gap-3">
               <PaymentFields value={pick} onChange={setPick} totalCents={total} amountError={badAmount} />
+              {canTell ? (
+                <label className="flex items-center justify-between gap-3 rounded-2xl bg-soft px-4 py-3 text-sm font-semibold">
+                  <span>Avisar a cliente no WhatsApp</span>
+                  <Switch checked={tellClient} onChange={setTellClient} label="Avisar a cliente no WhatsApp" />
+                </label>
+              ) : null}
               {error ? (
                 <p role="alert" className="rounded-2xl bg-fail-bg px-4 py-3 text-sm font-semibold text-fail">
                   {messageFor(error)}

@@ -205,6 +205,8 @@ export const appointments = pgTable(
     rescheduleNoticeAt: timestamp("reschedule_notice_at", { withTimezone: true }),
     /** Aviso de cancelamento pendente: sai a partir daqui (depois do Desfazer); null = nada a mandar */
     cancelNoticeAt: timestamp("cancel_notice_at", { withTimezone: true }),
+    /** Aviso de sinal recebido pendente: sai (e confirma o horário) a partir daqui, depois do Desfazer */
+    depositNoticeAt: timestamp("deposit_notice_at", { withTimezone: true }),
     /** Horário que a cliente conhece (da última mensagem); igual ao atual = não há o que avisar */
     notifiedStartsAt: timestamp("notified_starts_at", { withTimezone: true }),
     /** Desconto do agendamento: "pct" (value = %) ou "brl" (value = centavos). price_cents já vem descontado. */
