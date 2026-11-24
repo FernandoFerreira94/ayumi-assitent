@@ -91,6 +91,24 @@ d("confirmação do agendamento x 1º aviso (Postgres real)", () => {
     await admin`update appointments set status = 'cancelled' where id = ${id}`;
   });
 
+  it("sinal pendente: sem 1/2/3 mesmo na janela, e o Pix copia e cola vai numa 2ª mensagem", async () => {
+    const { sendBookingMessage } = await import("@/features/messaging/booking-send");
+    await admin`update tenants set pix_key = 'salao@pix.com', address_city = 'São José dos Campos' where id = ${T}`;
+    const id = await appt(3);
+    await admin`update appointments set deposit_requested_cents = 3000 where id = ${id}`;
+    sent.length = 0;
+    expect(await sendBookingMessage(T, id, now)).toBe("sent");
+    expect(sent).toHaveLength(2);
+    expect(sent[0]).toMatch(/^Oi! Reservei seu horário de Gel/);
+    expect(sent[0]).toContain("O Pix copia e cola vai na próxima mensagem.");
+    expect(sent[0]).not.toContain("Responda com o número:");
+    expect(sent[1]).toMatch(/^000201.*540530\.00.*6304[0-9A-F]{4}$/);
+    expect((await admin`select reminder_sent_at from appointments where id = ${id}`)[0].reminder_sent_at).toBeNull();
+    expect(await admin`select body from messages where appointment_id = ${id}`).toHaveLength(2);
+    await admin`update tenants set pix_key = null where id = ${T}`;
+    await admin`update appointments set status = 'cancelled' where id = ${id}`;
+  });
+
   it("cancelar, faltar ou concluir apaga a resposta guardada da noite (não sai às 6h com data velha)", async () => {
     const { setStatus } = await import("@/features/appointments/core");
     const { withTenant } = await import("@/db/client");

@@ -14,6 +14,7 @@ import { sessionUseSql } from "@/features/wallet/packages";
 import { parseSessionUse } from "@/features/wallet/session-use";
 import { OPTIONS } from "@/features/reminders/text";
 import { asFirstReminder } from "./reschedule-send";
+import { pixCopyPaste } from "@/features/wallet/pix-brcode";
 
 /** sent = a cliente recebeu; failed = o WhatsApp não enviou; skipped = nada a enviar (sem WhatsApp configurado) */
 export type BookingMessageResult = "sent" | "failed" | "skipped";
@@ -36,6 +37,7 @@ export async function sendBookingMessage(
         fullName: tenants.clientNameFull,
         pixKey: tenants.pixKey,
         address: tenants.address,
+        city: tenants.addressCity,
         packageLine: tenants.packageLine,
         first: tenants.firstReminder,
         hours: tenants.reminderHours,
@@ -69,10 +71,10 @@ export async function sendBookingMessage(
     if (!a || a.optedOut || a.startsAt <= now) return "skipped";
     const calendarUrl = inviteUrl(tenantId, appointmentId);
     // Sinal pedido que o crédito da cliente ainda não cobriu: vai com o valor e o Pix
-    const deposit =
-      a.depositRequestedCents && a.paidCents < a.depositRequestedCents
-        ? { cents: a.depositRequestedCents - a.paidCents, pixKey: t?.pixKey }
-        : null;
+    const left = a.depositRequestedCents && a.paidCents < a.depositRequestedCents ? a.depositRequestedCents - a.paidCents : 0;
+    // Pix "copia e cola" com o valor: vai sozinho numa 2ª mensagem (null = chave não reconhecida; só a chave em texto)
+    const code = left ? pixCopyPaste({ key: t?.pixKey, name: t?.name, city: t?.city, cents: left }) : null;
+    const deposit = left ? { cents: left, pixKey: t?.pixKey, copyPaste: !!code } : null;
     // Sessão do pacote ("Sessão 3 de 6 do seu pacote"), se a dona deixou ligado em Ajustes > Mensagens
     const session = t?.packageLine ? parseSessionUse(a.session) : null;
     // Pago ao agendar ("Já recebi"/pagou tudo): uma linha de recibo, sem pedir nada
@@ -116,6 +118,24 @@ export async function sendBookingMessage(
     }).catch((e) =>
       console.error(JSON.stringify({ level: "warn", msg: "booking_message_record_failed", ...errCode(e) })),
     );
+    // 2ª mensagem só com o código, para a cliente segurar e copiar inteiro. Falha aqui não muda nada: a chave já foi
+    if (code) {
+      const second = await sendDirect(port, a.phone, code);
+      if (second.ok)
+        await withTenant(tenantId, (tx) =>
+          recordMessage(tx, tenantId, {
+            clientId: a.clientId,
+            appointmentId,
+            direction: "out",
+            kind: "auto_reply",
+            body: code,
+            externalId: second.data.id,
+          }),
+        ).catch((e) =>
+          console.error(JSON.stringify({ level: "warn", msg: "booking_pix_record_failed", ...errCode(e) })),
+        );
+      else console.error(JSON.stringify({ level: "warn", msg: "booking_pix_failed", code: second.code }));
+    }
     return "sent";
   } catch (e) {
     console.error(JSON.stringify({ level: "warn", msg: "booking_message_error", ...errCode(e) }));
