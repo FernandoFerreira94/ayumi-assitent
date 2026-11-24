@@ -23,13 +23,15 @@ export const AUTO_DONE_REASON = "Recebido ao concluir";
 
 /**
  * Quanto do atendimento já está pago, em SQL (mesma regra de `rules.appointmentPaid`), para as listas da agenda
- * e do Financeiro sem buscar o extrato inteiro.
+ * e do Financeiro sem buscar o extrato inteiro. `paidCentsOf` serve ao SQL cru (claims do worker).
  */
-export const paidCentsSql = sql<number>`coalesce((
+export const paidCentsOf = (id: SQL) => sql`coalesce((
   select sum(case when l.kind in ('payment', 'credit_use', 'session_reserve') then l.amount_cents
                   when l.kind in ('refund', 'credit_in', 'retained', 'session_return') then -l.amount_cents else 0 end)
-  from client_ledger l where l.appointment_id = ${appointments.id}
-), 0)`.mapWith(Number);
+  from client_ledger l where l.appointment_id = ${id}
+), 0)`;
+
+export const paidCentsSql = sql<number>`${paidCentsOf(sql`${appointments.id}`)}`.mapWith(Number);
 
 /** Dinheiro que entrou no caixa no período (pagamentos menos devoluções), pela data do movimento. */
 export async function cashInRange(tx: Tx, [from, to]: [Date, Date]): Promise<number> {

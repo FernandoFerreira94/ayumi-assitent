@@ -22,7 +22,16 @@ import { forceSyncExternalCalendars } from "@/features/blocks/external-sync";
 import { dayRange, isDateStr, toInstant, todayStr } from "@/lib/dates";
 import { freeSlots, weekdayOf } from "@/features/hours/slots";
 import type { Outcome } from "@/features/wallet/rules";
-import { editAppointment, insertAppointment, listDay, moveAppointment, setPayment, setStatus } from "./core";
+import {
+  afterPaymentChange,
+  depositPending,
+  editAppointment,
+  insertAppointment,
+  listDay,
+  moveAppointment,
+  setPayment,
+  setStatus,
+} from "./core";
 import { PAYMENT_METHODS, parsePayment } from "./payment";
 import { dayVersion } from "./version";
 import { bookingOptions, type BookingOptions } from "./options";
@@ -334,6 +343,8 @@ const paymentInput = z.object({
   method: z.enum(PAYMENT_METHODS).nullable().optional(),
   /** Sinal (parte do total), em centavos; sem = pagou tudo */
   amountCents: z.number().int().positive().max(10_000_000).nullable().optional(),
+  /** Sinal pedido que agora foi recebido: avisar a cliente no WhatsApp (sai depois do Desfazer) */
+  notifyClient: z.boolean().optional(),
 });
 
 /** Marca ou desmarca o pagamento da cliente (no detalhe do atendimento ou no Financeiro). */
@@ -342,19 +353,24 @@ export async function updatePayment(input: {
   paid: boolean;
   method?: string | null;
   amountCents?: number | null;
+  notifyClient?: boolean;
 }): Promise<ActionResult> {
   const { tenantId, userId } = await requireTenant();
   const p = paymentInput.safeParse(input);
   if (!p.success) return fail("VALIDATION");
   try {
-    const res = await withTenant(tenantId, (tx) =>
-      setPayment(
+    const res = await withTenant(tenantId, async (tx) => {
+      const wasPending = await depositPending(tx, p.data.id);
+      const r = await setPayment(
         tx,
         p.data.id,
         p.data.paid ? { method: p.data.method ?? null, amountCents: p.data.amountCents ?? null } : null,
         userId,
-      ),
-    );
+      );
+      // Sinal pedido coberto agora: confirma o horário e, com o aviso ligado, a cliente recebe "Recebi seu sinal"
+      if (r.ok) await afterPaymentChange(tx, p.data.id, wasPending, p.data.notifyClient === true);
+      return r;
+    });
     if (!res.ok) return res;
     revalidatePath("/agenda");
     revalidatePath("/agendamentos");

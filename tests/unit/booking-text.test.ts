@@ -47,12 +47,41 @@ describe("mensagem ao agendar", () => {
     const t = bookingText({ ...a, deposit: { cents: 3000, pixKey: "salao@pix.com" }, calendarUrl: "https://x/c" }, eve, {
       template: "Oi, {nome}!",
     });
-    expect(t).toMatch(/^Oi, Maria!\n\nPara garantir o seu horário, o sinal é de R\$\s30,00\.\nPix: salao@pix\.com\n/);
+    expect(t).toMatch(/^Oi, Maria!\n\nPara confirmar, falta só o sinal de R\$\s30,00\.\nPix: salao@pix\.com\n/);
     expect(t.indexOf("Pix:")).toBeLessThan(t.indexOf("📲"));
   });
   it("sem chave Pix, pede o sinal sem a linha do Pix", () => {
     const t = bookingText({ ...a, deposit: { cents: 3000, pixKey: null } }, eve);
-    expect(t).toContain("o sinal é de");
+    expect(t).toContain("falta só o sinal de");
     expect(t).not.toContain("Pix:");
+  });
+  it("com sinal pendente, o texto padrão diz Reservei e não diz agendado nem confirmado", () => {
+    const t = bookingText({ ...a, deposit: { cents: 3000, pixKey: "x" } }, eve);
+    expect(t.startsWith("Oi! Reservei seu horário de Gel 💜")).toBe(true);
+    expect(t).not.toMatch(/agendado|confirmado|Te espero/);
+    expect(t).toMatch(/Pode me mandar o comprovante por aqui/);
+  });
+  it("pago ao agendar ganha a linha do recibo; sem sinal pendente", () => {
+    expect(bookingText({ ...a, paid: { cents: 3000, full: false } }, eve)).toMatch(/✅ Sinal de R\$\s30,00 recebido\.$/);
+    expect(bookingText({ ...a, paid: { cents: 12050, full: true } }, eve)).toMatch(/✅ Pagamento recebido\.$/);
+  });
+});
+
+describe("sinal nos avisos e sinal recebido", () => {
+  const start = a.startsAt;
+  it("1º e 2º aviso com sinal pendente lembram o valor e o Pix, sem 1/2/3", async () => {
+    const { reminderText, secondReminderText } = await import("@/features/reminders/text");
+    const dep = { ...a, deposit: { cents: 3000, pixKey: "salao@pix.com" } };
+    for (const t of [reminderText(dep, eve), secondReminderText(dep, eve)]) {
+      expect(t).toMatch(/Lembrando que falta o sinal de R\$\s30,00 para confirmar\.\nPix: salao@pix\.com$/);
+      expect(t).not.toContain("Responda com o número");
+      expect(t).not.toContain("Pode me confirmar");
+    }
+  });
+  it("sinal recebido confirma com o valor e o horário", async () => {
+    const { depositReceivedText } = await import("@/features/reminders/text");
+    expect(depositReceivedText({ ...a, startsAt: start, receivedCents: 3000 }, eve)).toMatch(
+      /^Recebi seu sinal de R\$\s30,00 💜\nSeu horário de Gel amanhã às 14:30 está confirmado\. Te espero com carinho!$/,
+    );
   });
 });

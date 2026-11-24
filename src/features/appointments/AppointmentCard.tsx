@@ -149,6 +149,7 @@ export function AppointmentCard({ id, time, date, start: startHHMM, minutes, cli
           price={price}
           payment={payment}
           nested={inSheet}
+          canNotify={canTell}
           triggerClassName={`flex min-h-11 items-center gap-2 rounded-xl px-3 text-left text-sm font-bold ${
             payment.state === "unpaid"
               ? "bg-soft text-primary-text"

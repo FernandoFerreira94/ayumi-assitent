@@ -233,6 +233,12 @@ export function BookingSteps(p: BookingStepsProps) {
             : null,
         deposit:
           pay.choice === "request" && depositCents ? { cents: depositCents, pixKey: extras?.message.pixKey } : null,
+        paid:
+          pay.choice === "full"
+            ? { cents: totalCents, full: true }
+            : pay.choice === "deposit" && depositCents
+              ? { cents: depositCents, full: depositCents >= totalCents }
+              : null,
       },
       new Date(),
       { template: extras?.message.template, name: extras?.message.name, fullName: extras?.message.fullName },
