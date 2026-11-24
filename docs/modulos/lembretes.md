@@ -26,11 +26,11 @@
 - Cancelar, falta ou concluir apagam `pending_reply` (resposta da noite não sai com data velha).
 - Mudou aqui: Redeploy do **worker** também.
 - Testes: `tests/db/nudge.test.ts`, `tests/unit/reminder-text.test.ts`, `nudge.test.ts`, `booking-text.test.ts`.
-- Opt-out: cliente que responde só `SAIR`/`PARAR`/`PARE`/`STOP` ganha `clients.opted_out_at` (`replies.parseOptOut`, tratado no `inbound.ts` antes da IA) e sai da confirmação (`booking-send`) e do 1º/2º aviso (`claimDue`/`claimNudges` filtram); `VOLTAR` desfaz. Resposta automática uma vez, fora do silêncio 21h–6h. Mensagem manual da dona continua saindo.
+- Opt-out: cliente que responde só `SAIR`/`PARAR`/`PARE`/`STOP` ganha `clients.opted_out_at` (`replies.parseOptOut`, tratado no `inbound.ts` antes da IA) e sai da confirmação (`booking-send`) e do 1º/2º aviso (`claimDue`/`claimNudges` filtram); `VOLTAR` desfaz. Resposta automática uma vez, na hora, mesmo à noite (24/11: sem ela a cliente não sabe se valeu). Mensagem manual da dona continua saindo.
 
 ## Regras de tempo (conferidas no código em 17/11)
 - 1º aviso: `tenants.reminder_hours` (padrão 24 h antes); pode ser desligado (`tenants.first_reminder`, migration `0030`). Sem 1º aviso, o 2º vira o único lembrete.
-- 2º aviso: `tenants.second_reminder_hours` (padrão 3 h; null = desligado). Só sai para quem recebeu o 1º há pelo menos 2 h e antes da janela do 2º (ou, sem 1º aviso, para agendamento criado antes da janela). Confirmadas recebem só lembrete; pendentes recebem pedido de confirmação (`nudge.claimNudges`).
+- 2º aviso: `tenants.second_reminder_hours` (padrão 3 h; null = desligado). Só sai para quem recebeu o 1º há pelo menos 2 h e antes da janela do 2º (ou, sem 1º aviso, para agendamento criado antes da janela). Confirmadas recebem só lembrete; pendentes recebem pedido de confirmação (`nudge.claimNudges`). Desde 24/11 o 1º aviso faz o mesmo: quem já confirmou recebe `DEFAULT_REMINDER_CONFIRMED`, sem 1/2/3 (`claimDue` devolve `confirmed`).
 - Silêncio: 21h–6h no fuso do estúdio (`reminders/quiet.ts`), vale para 2º aviso e respostas automáticas.
 - Não respondeu (push à dona): 60 min depois do 2º aviso, ou 120 min depois do 1º quando não há 2º (`no-reply.ts`).
 - Respostas da noite: a resposta automática para quem escreveu no silêncio fica em `appointments.pending_reply` (migration `0029_pending_reply`) e sai na primeira rodada depois das 6h (`messaging/pending.sendPendingReplies`, chamada pelo `runReminders`). Desde 23/11 guarda só o pedido (`@confirm`/`@cancel`/`@reschedule`, `messaging/pending-rules`); o texto é montado na hora de sair ("hoje" certo) e não sai se o status já não é o que a cliente pediu ou o horário passou. Texto antigo sai como está.
@@ -39,3 +39,11 @@
 - `tenants.reschedule_notice` (padrão ligado) e `reschedule_template` (null = `text.DEFAULT_RESCHEDULE`, sem {nome}, com 📍 {endereco} que some sem endereço). Texto: `text.rescheduleText` + link do convite ("Atualize na sua agenda").
 - Dentro da janela do 1º aviso e pendente de confirmação: o aviso vai com 1/2/3 e grava `reminder_sent_at` (vale como 1º aviso; `reschedule-send.asFirstReminder`).
 - `runReminders` chama `sendDueRescheduleNotices` antes do 1º aviso (rede de segurança do arraste; falha temporária volta em 5 min, `RETRY_MS`). Desconectado/número recusado não repete. Mensagem gravada como `kind = reminder` (não gasta o limite de respostas da IA). Fluxo completo em `agenda.md`.
+
+## Textos (24/11, auditoria das mensagens)
+- Doc da auditoria e catálogo de mensagens: `/mnt/project-files/auditoria-mensagens/auditoria-mensagens-whatsapp.md` (pasta do projeto).
+- Ao agendar diz "está **agendado**", nunca "confirmado" (quem confirma é a cliente no 1º aviso). Rótulo em Ajustes: "Texto ao agendar". Horário que já passou não recebe mensagem (`booking-send`).
+- 1º aviso padrão termina em "Pode me confirmar?" + 1/2/3.
+- Respostas a 1/2/3 sem nome e na 1ª pessoa (`replies.ackText(intent, quando)`): "Prontinho! Seu horário de … está confirmado 💜", "Recebi seu pedido para cancelar/remarcar … Já te chamo por aqui …".
+- Linha do pacote: "✨ Última sessão do seu pacote" quando n = total (> 1).
+- Nova tentativa do aviso de cancelamento não sai de madrugada (`quiet.nextSendable`).

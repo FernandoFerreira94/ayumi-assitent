@@ -42,8 +42,8 @@ test("Endereço: campo obrigatório vazio mostra o erro e não fecha o sheet", a
 
 test("Mensagens: salvar volta para a lista de Ajustes", async ({ page }) => {
   await page.goto("/ajustes/mensagens");
-  await expect(page.getByRole("textbox", { name: "Texto do agendamento confirmado" })).toHaveValue(
-    /^Oi! Seu agendamento/,
+  await expect(page.getByRole("textbox", { name: "Texto ao agendar" })).toHaveValue(
+    /^Oi! Seu horário de \{servico\} está agendado/,
   );
   await page.getByRole("button", { name: "Salvar mensagens" }).click();
   await expect(page).toHaveURL(/\/ajustes$/);

@@ -6,6 +6,7 @@ import { cancelText } from "@/features/reminders/text";
 import { errCode, log } from "@/lib/log";
 import { MessagingOfflineError, MessagingRejectedError, sendFailReason, type MessagingPort } from "./port";
 import { recordMessage } from "./store";
+import { nextSendable } from "@/features/reminders/quiet";
 
 const RETRY_MS = 5 * 60_000;
 
@@ -79,7 +80,8 @@ export async function sendCancelNotice(
       if (e instanceof MessagingRejectedError) return "invalid_number";
       await tx
         .update(appointments)
-        .set({ cancelNoticeAt: new Date(now.getTime() + RETRY_MS) })
+        // A nova tentativa não sai de madrugada (o cancelamento foi da dona, mas a tentativa é automática)
+        .set({ cancelNoticeAt: nextSendable(new Date(now.getTime() + RETRY_MS)) })
         .where(eq(appointments.id, appointmentId));
       return "retry";
     }

@@ -83,7 +83,7 @@ export function parseSessionUse(raw: unknown): SessionUse | null {
 
 /** Linha sutil na mensagem de WhatsApp (sem valores nem nome do pacote): "✨ Sessão 3 de 6 do seu pacote". */
 export const sessionMessageLine = (u: Pick<SessionUse, "n" | "total">) =>
-  `✨ Sessão ${u.n} de ${u.total} do seu pacote`;
+  u.total > 1 && u.n === u.total ? "✨ Última sessão do seu pacote" : `✨ Sessão ${u.n} de ${u.total} do seu pacote`;
 
 /** "Sessão 3 de 6 · restam 3" (cartão e agendar). */
 export const sessionUseText = (u: Pick<SessionUse, "n" | "total" | "left">) =>

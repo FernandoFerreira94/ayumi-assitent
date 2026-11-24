@@ -3,15 +3,21 @@ import { sessionMessageLine } from "@/features/wallet/session-use";
 import { addDays, formatBRL, formatTime, todayStr } from "@/lib/dates";
 
 /**
- * Textos que o Bubbly manda pelo WhatsApp: ao agendar, no 1º aviso e no 2º aviso. A dona edita os três em
+ * Textos que o Bubbly manda pelo WhatsApp: ao agendar, no 1º e 2º aviso, ao remarcar e ao cancelar. A dona edita os três em
  * Ajustes; as {chaves} viram os dados do horário. Arquivo sem banco para a prévia em Ajustes rodar no navegador.
  */
 
-/** Mensagem de agendamento confirmado (sai ao criar o agendamento). Sem endereço cadastrado, as linhas 📍/🗺️ somem. */
+/**
+ * Mensagem ao agendar (sai ao criar o agendamento). Diz "agendado", não "confirmado": quem confirma é a cliente,
+ * no 1º aviso. Sem endereço cadastrado, as linhas 📍/🗺️ somem.
+ */
 export const DEFAULT_BOOKING =
-  "Oi! Seu agendamento de {servico} está confirmado 💜\n📅 {dia}\n🕒 {hora}\n📍 {endereco}\n🗺️ {mapa}\n\nTe esperamos com carinho!";
-/** 1º aviso: pede a confirmação do horário. */
+  "Oi! Seu horário de {servico} está agendado 💜\n📅 {dia}\n🕒 {hora}\n📍 {endereco}\n🗺️ {mapa}\n\nTe espero com carinho!";
+/** 1º aviso para quem ainda não confirmou: pede a confirmação (vai com as opções 1/2/3). */
 export const DEFAULT_REMINDER =
+  "Oi! Passando para lembrar do seu horário de {servico} {dia} às {hora} 😊 Pode me confirmar?";
+/** 1º aviso para quem já confirmou (a dona marcou ou a cliente respondeu antes): só lembra, sem opções. */
+export const DEFAULT_REMINDER_CONFIRMED =
   "Oi! Passando para lembrar do seu horário de {servico} {dia} às {hora}. Te espero com carinho! 💜";
 /** 2º aviso para quem ainda não confirmou (vai com as opções 1/2/3). */
 export const DEFAULT_SECOND =
@@ -124,7 +130,7 @@ const withSession = (template: string, a: MessageData) =>
 export const calendarLine = (url: string) => `📲 Salve na sua agenda: ${url}`;
 
 /**
- * Mensagem de agendamento confirmado. Não pede resposta: quem pergunta são os avisos. Com link do convite,
+ * Mensagem ao agendar. Não pede resposta: quem pergunta são os avisos. Com link do convite,
  * a linha "Salve na sua agenda" vai no lugar de {agenda} ou, sem a chave, no fim (vale para textos já editados).
  */
 export function bookingText(a: MessageData, now: Date, salon: SalonMessageOpts = {}): string {
@@ -139,10 +145,16 @@ export function bookingText(a: MessageData, now: Date, salon: SalonMessageOpts =
   return fill(withLink, a, salon, dayLabel(a.startsAt, now)).replace(/\n{3,}/g, "\n\n");
 }
 
-/** 1º aviso. As opções 1/2/3 vão sempre no fim, mesmo com texto personalizado. */
-export function reminderText(a: MessageData, now: Date, salon: SalonMessageOpts = {}): string {
-  const body = fill(withSession(salon.template?.trim() || DEFAULT_REMINDER, a), a, salon, dayWord(a.startsAt, now));
-  return [body, ...OPTIONS].join("\n");
+/**
+ * 1º aviso. Quem ainda não confirmou recebe as opções 1/2/3 no fim (mesmo com texto personalizado); quem já
+ * confirmou recebe só o lembrete (com o padrão do app, sem o "Pode me confirmar?").
+ */
+export function reminderText(a: MessageData, now: Date, salon: SalonMessageOpts = {}, confirmed = false): string {
+  const custom = salon.template?.trim();
+  const usesDefault = !custom || custom === DEFAULT_REMINDER;
+  const template = confirmed && usesDefault ? DEFAULT_REMINDER_CONFIRMED : custom || DEFAULT_REMINDER;
+  const body = fill(withSession(template, a), a, salon, dayWord(a.startsAt, now));
+  return confirmed ? body : [body, ...OPTIONS].join("\n");
 }
 
 /**

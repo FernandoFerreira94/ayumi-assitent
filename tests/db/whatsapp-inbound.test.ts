@@ -74,7 +74,7 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     const [a] = await admin`select status, reply_at from appointments where id = ${A}`;
     expect(a.status).toBe("confirmed");
     expect(a.reply_at).not.toBeNull();
-    expect(sent.at(-1)).toContain("+5511987655555|Oba, Bia! Seu horário de amanhã às 10:00 está confirmado");
+    expect(sent.at(-1)).toContain("+5511987655555|Prontinho! Seu horário de amanhã às 10:00 está confirmado");
     const conv = await admin`select direction, kind, intent from messages where client_id = ${C} order by created_at`;
     expect(conv.map((m) => `${m.direction}:${m.kind}:${m.intent ?? ""}`)).toEqual([
       "in:client:confirm",
@@ -221,7 +221,7 @@ d("resposta da cliente pelo WhatsApp (Postgres real)", () => {
     expect((await admin`select pending_reply from appointments where id = ${A}`)[0].pending_reply).toBe("@confirm");
     const six = new Date("2026-11-11T09:00:00Z");
     expect(await withTenant(T, (tx) => sendPendingReplies(tx, deps.portFor(), six))).toMatchObject({ sent: 1 });
-    const body = "Oba, Bia! Seu horário de hoje às 10:00 está confirmado 💜 Te espero com carinho!";
+    const body = "Prontinho! Seu horário de hoje às 10:00 está confirmado 💜 Te espero com carinho!";
     expect(sent).toEqual([`+5511987655555|${body}`]);
     expect((await admin`select pending_reply from appointments where id = ${A}`)[0].pending_reply).toBeNull();
     expect(

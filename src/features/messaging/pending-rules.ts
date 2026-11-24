@@ -22,12 +22,12 @@ export const pendingMarker = (intent: Intent) => `@${intent}`;
  */
 export function pendingText(
   stored: string,
-  a: { status: string; startsAt: Date; clientName: string; fullName: boolean },
+  a: { status: string; startsAt: Date },
   now: Date,
 ): string | null {
   if (!stored.startsWith("@")) return stored;
   const intent = stored.slice(1) as Intent;
   if (!INTENTS.includes(intent)) return null;
   if (a.status !== STATUS_FOR[intent] || a.startsAt <= now) return null;
-  return ackText(intent, a.clientName, a.fullName, slotLabel(a.startsAt, now));
+  return ackText(intent, slotLabel(a.startsAt, now));
 }
