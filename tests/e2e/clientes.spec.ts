@@ -57,9 +57,12 @@ test("tocar no nome abre o cartão da cliente com histórico e ações", async (
 
 test("o sino abre um diálogo no meio da tela e, sem respostas de clientes, fica em dia", async ({ page }) => {
   await page.goto("/agenda");
-  await page.getByRole("button", { name: /^Notificações/ }).click();
   const dialog = page.getByRole("dialog", { name: "Notificações" });
-  await expect(dialog).toBeVisible();
+  // Antes da hidratação o toque não abre o diálogo: repete até abrir
+  await expect(async () => {
+    await page.getByRole("button", { name: /^Notificações/ }).click({ timeout: 1000 });
+    await expect(dialog).toBeVisible({ timeout: 1000 });
+  }).toPass();
   // O sino só avisa confirmou, cancelar, remarcar, não respondeu e WhatsApp caído: conta nova não tem nada
   await expect(dialog.getByText("Tudo em dia por aqui.")).toBeVisible();
   await expect(dialog.getByRole("button", { name: "Marcar todas como lidas" })).toHaveCount(0);
