@@ -84,3 +84,18 @@ export function parseIcsEvents(text: string, from: Date, to: Date): IcloudEvent[
   }
   return out.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
 }
+
+/** Nome do calendário (X-WR-CALNAME), como aparece no iPhone. Null se o ICS não diz. */
+export function icsCalendarName(text: string): string | null {
+  // linhas dobradas (RFC 5545) voltam a ser uma; só o cabeçalho interessa
+  const head = text.slice(0, 20_000).replace(/\r?\n[ \t]/g, "");
+  const m = /^X-WR-CALNAME(?:;[^:\r\n]*)?:(.*)$/im.exec(head);
+  if (!m) return null;
+  const name = m[1]
+    .replace(/\\n/gi, " ")
+    .replace(/\\([,;\\])/g, "$1")
+    .replace(/[\u0000-\u001f\u007f]/g, "")
+    .trim()
+    .slice(0, 60);
+  return name || null;
+}

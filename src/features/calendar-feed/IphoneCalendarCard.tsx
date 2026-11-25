@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/Switch";
 import { ICLOUD_STEPS } from "./icloud-guide";
 import { detectPlatform } from "@/features/install/platform";
 import { normalizeIcloudUrl } from "./icloud-url";
+import { ICLOUD_SYNC_ERROR, readLine, type IcloudCalendarView } from "./icloud-view";
 import {
   calendarLinkStatus,
   createCalendarLink,
@@ -146,6 +147,56 @@ const OUT_STEPS: { icon: IconName; label: string }[] = [
 ];
 
 /**
+ * Calendários do iPhone ligados: nome, o que veio na última leitura (ou o erro, em vermelho) e Tirar.
+ * Um toque em Tirar já tira (o calendário volta colando o link de novo).
+ */
+function IcloudList({
+  cals,
+  busy,
+  onRemove,
+}: {
+  cals: IcloudCalendarView[];
+  busy: string | null;
+  onRemove: (id: string) => void;
+}) {
+  return (
+    <ul className="grid gap-2" aria-label="Calendários do iPhone ligados">
+      {cals.map((c) => {
+        const removing = busy === c.id;
+        return (
+          <li
+            key={c.id}
+            className={`flex items-center gap-3 rounded-2xl px-4 py-3 ${c.syncError ? "bg-fail-bg" : "bg-ok-bg"}`}
+          >
+            <Icon
+              name={c.syncError ? "alert" : "checkCircle"}
+              size={22}
+              className={c.syncError ? "shrink-0 text-fail" : "shrink-0 text-ok"}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-bold">{c.name ?? "Calendário do iPhone"}</p>
+              <p className={`text-sm font-semibold ${c.syncError ? "text-fail" : "text-ok"}`} role="status">
+                {c.syncError ? ICLOUD_SYNC_ERROR[c.syncError] : readLine(c.syncedAt, c.eventCount)}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => onRemove(c.id)}
+              disabled={busy !== null}
+              aria-busy={removing}
+              aria-label={`Parar de ler ${c.name ?? "este calendário"}`}
+              className="min-h-11 shrink-0 px-1 text-sm font-bold text-fail disabled:opacity-60"
+            >
+              {removing ? "Tirando…" : "Tirar"}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/**
  * Calendário do iPhone (iCloud): link assinado só de leitura com os agendamentos.
  * Quem usa o Google Agenda já vê tudo pelo Google; o sheet avisa para não usar os dois e duplicar.
  */
@@ -153,7 +204,7 @@ export function IphoneCalendarCard({
   enabled: initialEnabled,
   hideNames: initialHide,
   googleConnected,
-  icloudOn: initialIcloud,
+  icloudCalendars: initialCals,
   subscribed: initialSubscribed = false,
 }: {
   enabled: boolean;
@@ -161,14 +212,17 @@ export function IphoneCalendarCard({
   googleConnected: boolean;
   /** O iPhone já leu o link atual (assinou). */
   subscribed?: boolean;
-  /** Já lê um calendário do iCloud (o link em si nunca vem para a tela). */
-  icloudOn: boolean;
+  /** Calendários do iCloud já ligados (o link em si nunca vem para a tela). */
+  icloudCalendars: IcloudCalendarView[];
 }) {
   const side = useSheetSide();
   const [enabled, setEnabled] = useState(initialEnabled);
-  const [icloudOn, setIcloudOn] = useState(initialIcloud);
+  const [cals, setCals] = useState(initialCals);
+  const icloudOn = cals.length > 0;
+  /** Com calendário ligado, o campo de colar só aparece ao tocar em "Adicionar outro calendário". */
+  const [adding, setAdding] = useState(false);
   const [icloudUrl, setIcloudUrl] = useState("");
-  const [icloudBusy, setIcloudBusy] = useState<null | "save" | "remove">(null);
+  const [icloudBusy, setIcloudBusy] = useState<null | "save" | string>(null);
   const [icloudErr, setIcloudErr] = useState(false);
   const [open, setOpen] = useState(false);
   const [confirmAllOff, setConfirmAllOff] = useState(false);
@@ -179,7 +233,7 @@ export function IphoneCalendarCard({
   const [busy, setBusy] = useState<null | "create" | "hide" | "off">(null);
   const [confirmOff, setConfirmOff] = useState(false);
   // Abre na direção que já está ligada; sem nada ligado, trazer do iPhone (o uso mais comum).
-  const [tab, setTab] = useState<Tab>(initialEnabled && !initialIcloud ? "out" : "in");
+  const [tab, setTab] = useState<Tab>(initialEnabled && !initialCals.length ? "out" : "in");
   const [copied, setCopied] = useState(false);
   const [subscribed, setSubscribed] = useState(initialSubscribed);
   const [added, setAdded] = useState(false);
@@ -303,22 +357,27 @@ export function IphoneCalendarCard({
       setIcloudErr(res?.code === "ICLOUD_LINK_INVALID");
       return notify.error(res ? res.code : "NETWORK", () => void saveIcloud(link));
     }
-    setIcloudOn(true);
+    const cal = res.data;
+    const again = cals.some((c) => c.id === cal.id);
+    setCals((list) => (again ? list.map((c) => (c.id === cal.id ? cal : c)) : [...list, cal]));
     setIcloudUrl("");
-    const n = res.data.count;
+    setAdding(false);
+    const n = cal.eventCount;
     notify.success(
-      "Calendário do iPhone ligado",
-      n ? `${n} evento${n === 1 ? "" : "s"} na agenda, em cinza.` : "Os eventos aparecem na agenda em cinza.",
+      `${cal.name ? `“${cal.name}”` : "Calendário"} ${again ? "lido de novo" : "ligado"}`,
+      n
+        ? `${n} evento${n === 1 ? "" : "s"} na agenda, em cinza.`
+        : "Nenhum evento com horário nos próximos meses. Os novos aparecem em cinza.",
     );
   }
 
-  async function removeIcloud() {
-    setIcloudBusy("remove");
-    const res = await removeIcloudCalendar().catch(() => null);
+  async function removeIcloud(id: string) {
+    setIcloudBusy(id);
+    const res = await removeIcloudCalendar(id).catch(() => null);
     setIcloudBusy(null);
-    if (!res?.ok) return notify.error(res ? res.code : "NETWORK", removeIcloud);
-    setIcloudOn(false);
-    notify.success("Eventos do iPhone tirados da agenda");
+    if (!res?.ok) return notify.error(res ? res.code : "NETWORK", () => void removeIcloud(id));
+    setCals((list) => list.filter((c) => c.id !== id));
+    notify.success("Eventos desse calendário tirados da agenda");
   }
 
   /** Interruptor desligado: para as duas direções (link para o iPhone e leitura do iCloud). */
@@ -333,7 +392,7 @@ export function IphoneCalendarCard({
       setEnabled(false);
       setUrl(null);
     }
-    if (b?.ok) setIcloudOn(false);
+    if (b?.ok) setCals([]);
     if (!a?.ok || !b?.ok) {
       const bad = !a?.ok ? a : b;
       return notify.error(bad && !bad.ok ? bad.code : "NETWORK", allOff);
@@ -347,7 +406,8 @@ export function IphoneCalendarCard({
 
   let hint = "Traga a agenda do iPhone para o app e veja os agendamentos no Calendário.";
   if (icloudOn && enabled) hint = "Ligado nas duas direções.";
-  else if (icloudOn) hint = "Ligado. Os eventos do iPhone aparecem na agenda, em cinza.";
+  else if (icloudOn)
+    hint = `Ligado. ${cals.length > 1 ? `${cals.length} calendários do iPhone` : "Os eventos do iPhone"} na agenda, em cinza.`;
   else if (enabled) hint = "Ligado. Os agendamentos aparecem no Calendário do iPhone.";
   else if (googleConnected) hint = "Você já vê pelo Google Agenda. Toque para ver como.";
 
@@ -624,28 +684,25 @@ export function IphoneCalendarCard({
                 <h3 className="text-center text-base font-bold">Trazer a agenda do iPhone para o app</h3>
 
                 {icloudOn ? (
-                  <div
-                    className="grid gap-2 rounded-2xl bg-ok-bg px-4 py-3 text-sm font-semibold text-ok"
-                    role="status"
+                  <IcloudList cals={cals} busy={icloudBusy} onRemove={(id) => void removeIcloud(id)} />
+                ) : null}
+                {icloudOn && !adding ? (
+                  <button
+                    type="button"
+                    onClick={() => setAdding(true)}
+                    disabled={icloudBusy !== null}
+                    className="btn-glass flex min-h-12 items-center justify-center gap-2 rounded-full px-5 text-sm font-bold text-primary-text disabled:opacity-60"
                   >
-                    <p className="flex items-center gap-2 font-bold">
-                      <Icon name="checkCircle" size={20} />
-                      Lendo o calendário do iPhone
-                    </p>
-                    <p>Eventos em cinza na agenda. Com nome de cliente, viram agendamento num toque.</p>
-                    <button
-                      type="button"
-                      onClick={() => void removeIcloud()}
-                      disabled={icloudBusy !== null}
-                      aria-busy={icloudBusy === "remove"}
-                      className="min-h-11 justify-self-start px-1 text-sm font-bold text-fail disabled:opacity-60"
-                    >
-                      {icloudBusy === "remove" ? "Parando…" : "Parar de ler"}
-                    </button>
-                  </div>
+                    <Icon name="plus" size={18} />
+                    Adicionar outro calendário
+                  </button>
                 ) : (
                   <>
                     <StepGuide steps={ICLOUD_STEPS} label="Como pegar o link no iPhone" />
+                    <Note icon="calendar">
+                      Tem mais de um calendário (Pessoal, Trabalho…)? Cada link traz um. Ligue um, depois toque em{" "}
+                      <b>Adicionar outro calendário</b>.
+                    </Note>
                     {ios ? (
                       <a
                         href="calshow:"
@@ -720,6 +777,20 @@ export function IphoneCalendarCard({
                         {icloudBusy === "save" ? <span className="spin" aria-hidden="true" /> : null}
                         {icloudBusy === "save" ? "Lendo o calendário…" : "Ligar"}
                       </button>
+                      {adding ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAdding(false);
+                            setIcloudUrl("");
+                            setIcloudErr(false);
+                          }}
+                          disabled={icloudBusy !== null}
+                          className="min-h-11 text-sm font-bold text-muted disabled:opacity-60"
+                        >
+                          Cancelar
+                        </button>
+                      ) : null}
                       <Note icon="lock">Só leitura: o app nunca muda seu iPhone. Não envie o link para ninguém.</Note>
                     </form>
                   </>

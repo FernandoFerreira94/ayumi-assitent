@@ -11,6 +11,7 @@
 - Auth: `lib/auth.ts` (Better Auth, escopos Google), `lib/auth-client.ts`.
 
 ## Dados
+- Última leitura da agenda: `tenants.google_synced_at`, `google_event_count`, `google_sync_error` ('reconnect' | 'failed'), gravados em `importExternalEvents`; o `GoogleCard` mostra "Agenda principal · Lido às HH:MM · N eventos" (migration 0061). Só a agenda **principal** da conta ligada é lida.
 - Tokens nas tabelas do Better Auth (`account`, migration `0002_auth.sql`), `appointments.google_event_id`, `blocks` com `source='google'`.
 
 ## Ligações

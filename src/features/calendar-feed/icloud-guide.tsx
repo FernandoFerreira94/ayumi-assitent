@@ -154,7 +154,7 @@ export const ICLOUD_STEPS: GuideStep[] = [
     art: <InfoButton />,
     text: (
       <>
-        Toque no <b>(i)</b> do calendário do salão.
+        Toque no <b>(i)</b> do calendário que quer trazer (ex.: <b>Trabalho</b>).
       </>
     ),
   },
