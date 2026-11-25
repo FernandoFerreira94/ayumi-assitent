@@ -1,6 +1,7 @@
 import "server-only";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { getDb, withTenant } from "@/db/client";
+import { tenants } from "@/db/schema";
 import {
   revokeToken,
   googleCalendar,
@@ -106,10 +107,21 @@ export async function importExternalEvents(tenantId: string, force = false): Pro
     const day = 86_400_000;
     const from = new Date(Date.now() - PAST_DAYS * day);
     const to = new Date(Date.now() + FUTURE_DAYS * day);
-    await withTenant(tenantId, (tx) => importGoogleEvents(tx, tenantId, googleCalendarReader(token), from, to));
+    await withTenant(tenantId, async (tx) => {
+      const count = await importGoogleEvents(tx, tenantId, googleCalendarReader(token), from, to);
+      await tx
+        .update(tenants)
+        .set({ googleSyncedAt: new Date(), googleEventCount: count, googleSyncError: null })
+        .where(eq(tenants.id, tenantId));
+    });
   } catch (e) {
     lastImport.delete(tenantId); // tenta de novo na próxima tela
     console.error("google_import_failed", { error: e instanceof Error ? e.message : String(e) });
+    // guarda só o tipo, para a linha de status em Ajustes
+    const kind = e instanceof GoogleAuthError ? "reconnect" : "failed";
+    await withTenant(tenantId, (tx) =>
+      tx.update(tenants).set({ googleSyncError: kind }).where(eq(tenants.id, tenantId)),
+    ).catch(() => undefined);
   }
 }
 

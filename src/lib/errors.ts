@@ -25,6 +25,7 @@ export const ERROR_MESSAGES = {
   ICLOUD_NOT_FOUND: "O iCloud não achou esse calendário. Confira se o Calendário Público continua ligado no iPhone.",
   ICLOUD_FAILED: "Não conseguimos ler o calendário do iPhone agora. Tente de novo em instantes.",
   ICLOUD_TOO_BIG: "Esse calendário tem eventos demais. Use um calendário só para a agenda do salão.",
+  ICLOUD_LIMIT: "Você já ligou 10 calendários do iPhone. Tire um antes de ligar outro.",
   API_TOKEN_LIMIT: "Você já tem 3 chaves ligadas. Desligue uma antes de criar outra.",
   CLIPBOARD: "Não deu para copiar. Segure o texto e escolha Copiar.",
   SUPPORT_RATE_LIMITED: "Você mandou muitas mensagens seguidas. Espere um pouco que a gente já responde.",

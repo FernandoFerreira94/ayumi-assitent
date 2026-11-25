@@ -71,8 +71,14 @@ export const tenants = pgTable("tenants", {
   calendarHideNames: boolean("calendar_hide_names").notNull().default(false),
   /** Última leitura do link pelo calendário (iPhone); null = link novo ainda não assinado */
   calendarFetchedAt: timestamp("calendar_fetched_at", { withTimezone: true }),
-  /** Link público (webcal/https) de um calendário do iCloud, lido só para trazer eventos; null = desligado. Nunca logar. */
+  /** Antigo link único do iCloud. Sem uso desde a 0061: os links ficam em icloud_calendars. */
   icloudCalendarUrl: text("icloud_calendar_url"),
+  /** Última leitura do Google Agenda que deu certo (linha de status em Ajustes) */
+  googleSyncedAt: timestamp("google_synced_at", { withTimezone: true }),
+  /** Eventos que vieram na última leitura do Google */
+  googleEventCount: integer("google_event_count"),
+  /** null = ok; "reconnect" = entrar de novo no Google; "failed" = outra falha */
+  googleSyncError: text("google_sync_error").$type<"reconnect" | "failed">(),
   /** Horas antes do horário do segundo aviso (para quem não respondeu); null = só um aviso */
   secondReminderHours: integer("second_reminder_hours").default(3),
   /** Antigo interruptor de valor. Sem uso: o valor agora é a chave {valor} no texto de agendamento */
@@ -269,7 +275,29 @@ export const blocks = pgTable("blocks", {
   externalUid: text("external_uid"),
   /** Evento de fora que virou atendimento: escondido e não ocupa mais o horário. */
   convertedAt: timestamp("converted_at", { withTimezone: true }),
+  /** Calendário do iCloud de onde veio (cada calendário só refaz os seus). */
+  icloudCalendarId: uuid("icloud_calendar_id").references(() => icloudCalendars.id, { onDelete: "cascade" }),
 });
+
+/** Calendários do iCloud lidos pelo link público (um por calendário: Pessoal, Trabalho…). Link nunca vai para a tela. */
+export const icloudCalendars = pgTable(
+  "icloud_calendars",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    url: text("url").notNull(),
+    /** Nome lido do próprio calendário (X-WR-CALNAME) */
+    name: text("name"),
+    eventCount: integer("event_count").notNull().default(0),
+    syncedAt: timestamp("synced_at", { withTimezone: true }),
+    /** null = ok; senão o tipo do erro da última leitura */
+    syncError: text("sync_error").$type<"not_found" | "failed" | "too_big" | "not_calendar">(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique("icloud_calendars_tenant_id_url_key").on(t.tenantId, t.url)],
+);
 
 export const workingHours = pgTable(
   "working_hours",

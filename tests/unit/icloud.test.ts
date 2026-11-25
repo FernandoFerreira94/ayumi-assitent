@@ -99,3 +99,22 @@ describe("parseIcsEvents", () => {
     expect(() => parseIcsEvents("<html>oi</html>", from, to)).toThrow();
   });
 });
+
+describe("nome do calendário e linha de status", () => {
+  it("lê X-WR-CALNAME com escape e linha dobrada", async () => {
+    const { icsCalendarName } = await import("@/features/calendar-feed/icloud");
+    expect(icsCalendarName("BEGIN:VCALENDAR\r\nX-WR-CALNAME:Trabalho\\, salão\r\nEND:VCALENDAR")).toBe(
+      "Trabalho, salão",
+    );
+    expect(icsCalendarName("BEGIN:VCALENDAR\r\nX-WR-CALNAME:Tra\r\n balho\r\nEND:VCALENDAR")).toBe("Trabalho");
+    expect(icsCalendarName("BEGIN:VCALENDAR\r\nEND:VCALENDAR")).toBeNull();
+  });
+  it("readLine: hoje só a hora; outro dia com a data; plural", async () => {
+    const { readLine } = await import("@/features/calendar-feed/icloud-view");
+    const now = new Date("2026-11-25T01:00:00Z"); // 24/11 22:00 em SP
+    expect(readLine("2026-11-25T00:58:00Z", 12, now)).toBe("Lido às 21:58 · 12 eventos na agenda");
+    expect(readLine("2026-11-25T00:58:00Z", 1, now)).toBe("Lido às 21:58 · 1 evento na agenda");
+    expect(readLine(null, null, now)).toBe("Ainda não lido");
+    expect(readLine("2026-11-22T12:00:00Z", 0, now)).toMatch(/^Lido em .+ às 09:00 · 0 eventos na agenda$/);
+  });
+});

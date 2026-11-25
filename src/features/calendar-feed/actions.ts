@@ -5,12 +5,13 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { withTenant } from "@/db/client";
-import { tenants } from "@/db/schema";
+import { icloudCalendars, tenants } from "@/db/schema";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
 import { normalizeIcloudUrl } from "./icloud";
-import { clearIcloudEvents } from "./icloud-import";
-import { IcloudFetchError, resetIcloudThrottle, syncIcloud } from "./icloud-server";
+import { clearIcloudEvents, clearOrphanIcloudEvents } from "./icloud-import";
+import { IcloudFetchError, readIcloud, resetIcloudThrottle, storeIcloudRead } from "./icloud-server";
+import type { IcloudCalendarView } from "./icloud-view";
 import { hashToken, newToken } from "./token";
 
 async function baseUrl() {
@@ -86,40 +87,64 @@ const ICLOUD_ERR = {
   not_calendar: "ICLOUD_LINK_INVALID",
 } as const;
 
-/** Liga a leitura do Calendário do iPhone: valida o link, lê uma vez (se falhar, não salva) e grava. */
-export async function saveIcloudCalendar(raw: string): Promise<ActionResult<{ count: number }>> {
+/** Quantos calendários do iCloud um estúdio pode ligar (Pessoal, Trabalho, …). */
+const ICLOUD_MAX = 10;
+
+/**
+ * Liga mais um calendário do iPhone: valida o link, lê uma vez (se falhar, não salva) e grava.
+ * O mesmo link de novo só lê de novo. Devolve o nome lido do calendário e quantos eventos vieram.
+ */
+export async function saveIcloudCalendar(raw: string): Promise<ActionResult<IcloudCalendarView>> {
   const p = z.string().max(1000).safeParse(raw);
   const url = p.success ? normalizeIcloudUrl(p.data) : null;
   if (!url) return fail("ICLOUD_LINK_INVALID", "url");
   const { tenantId } = await requireTenant();
   try {
-    const count = await syncIcloud(tenantId, url);
-    await withTenant(tenantId, (tx) =>
-      tx.update(tenants).set({ icloudCalendarUrl: url }).where(eq(tenants.id, tenantId)),
-    );
+    const read = await readIcloud(url);
+    const view = await withTenant(tenantId, async (tx) => {
+      const existing = await tx.select({ id: icloudCalendars.id, url: icloudCalendars.url }).from(icloudCalendars);
+      const same = existing.find((c) => c.url === url);
+      if (!same && existing.length >= ICLOUD_MAX) return null;
+      const id =
+        same?.id ??
+        (await tx.insert(icloudCalendars).values({ tenantId, url }).returning({ id: icloudCalendars.id }))[0].id;
+      const count = await storeIcloudRead(tx, tenantId, id, read);
+      return { id, name: read.name, eventCount: count, syncedAt: new Date().toISOString(), syncError: null };
+    });
+    if (!view) return fail("ICLOUD_LIMIT");
     resetIcloudThrottle(tenantId);
-    revalidatePath("/agenda");
-    revalidatePath("/calendario");
-    revalidatePath("/vagas");
-    return ok({ count });
+    revalidateAgenda();
+    return ok(view);
   } catch (e) {
     return fail(e instanceof IcloudFetchError ? ICLOUD_ERR[e.kind] : "UNKNOWN");
   }
 }
 
-/** Para de ler o Calendário do iPhone e tira da agenda o que veio de lá. */
-export async function removeIcloudCalendar(): Promise<ActionResult> {
+/** Para de ler um calendário do iPhone (ou todos, sem `id`) e tira da agenda o que veio dele. */
+export async function removeIcloudCalendar(id?: string): Promise<ActionResult> {
+  const p = z.string().uuid().optional().safeParse(id);
+  if (!p.success) return fail("VALIDATION");
   const { tenantId } = await requireTenant();
   try {
     await withTenant(tenantId, async (tx) => {
-      await tx.update(tenants).set({ icloudCalendarUrl: null }).where(eq(tenants.id, tenantId));
-      await clearIcloudEvents(tx);
+      if (p.data) {
+        // o cascade de blocks.icloud_calendar_id tira os eventos dele
+        await tx.delete(icloudCalendars).where(eq(icloudCalendars.id, p.data));
+        await clearOrphanIcloudEvents(tx);
+      } else {
+        await tx.delete(icloudCalendars);
+        await clearIcloudEvents(tx);
+      }
     });
-    revalidatePath("/agenda");
-    revalidatePath("/calendario");
-    revalidatePath("/vagas");
+    revalidateAgenda();
     return ok();
   } catch {
     return fail("UNKNOWN");
   }
+}
+
+function revalidateAgenda() {
+  revalidatePath("/agenda");
+  revalidatePath("/calendario");
+  revalidatePath("/vagas");
 }

@@ -66,6 +66,39 @@ test("Ajustes: o interruptor abre o passo a passo e recusa link que não é do i
   await expect(sheet.getByText("Use o link do Compartilhar Link do iCloud.")).toBeVisible();
 });
 
+test("Ajustes: vários calendários do iPhone em lista, com o que veio e o erro de cada um", async ({
+  page,
+  context,
+}) => {
+  const { sql, tid } = await tenantOf(await context.cookies());
+  await sql`insert into icloud_calendars (tenant_id,url,name,event_count,synced_at,sync_error,created_at) values
+    (${tid},'https://p01-caldav.icloud.com/published/2/pe2e','Pessoal',3,now(),null,now() - interval '1 minute'),
+    (${tid},'https://p01-caldav.icloud.com/published/2/te2e','Trabalho',0,null,'not_found',now())`;
+  await sql.end();
+  await page.goto("/ajustes/calendarios");
+  const sw = page.getByRole("switch", { name: "Calendário do iPhone" });
+  await expect(sw).toBeChecked();
+  // tocar no texto abre o sheet (o interruptor ligado pergunta se desliga)
+  await page.getByText("Ligado. 2 calendários do iPhone na agenda, em cinza.").click();
+  const sheet = page.getByRole("dialog", { name: "Calendário do iPhone" });
+  const list = sheet.getByRole("list", { name: "Calendários do iPhone ligados" });
+  await expect(list.getByText("Pessoal")).toBeVisible();
+  await expect(list.getByText(/Lido às \d\d:\d\d · 3 eventos na agenda/)).toBeVisible();
+  await expect(list.getByText("Trabalho")).toBeVisible();
+  await expect(list.getByText(/Link parou de funcionar/)).toBeVisible();
+  if (process.env.SHOT_DIR) await page.screenshot({ path: `${process.env.SHOT_DIR}/1-lista.png` });
+  // o campo de colar só aparece ao pedir outro calendário
+  await expect(sheet.getByLabel("Link do calendário")).toHaveCount(0);
+  await sheet.getByRole("button", { name: "Adicionar outro calendário" }).click();
+  await expect(sheet.getByLabel("Link do calendário")).toBeVisible();
+  if (process.env.SHOT_DIR) await page.screenshot({ path: `${process.env.SHOT_DIR}/2-adicionar.png`, fullPage: true });
+  await sheet.getByRole("button", { name: "Cancelar" }).click();
+  await sheet.getByRole("button", { name: "Parar de ler Trabalho" }).click();
+  await expect(page.getByText("Eventos desse calendário tirados da agenda")).toBeVisible();
+  await expect(list.getByText("Trabalho")).toHaveCount(0);
+  await expect(list.getByText("Pessoal")).toBeVisible();
+});
+
 test("Calendário (mês): eventos de fora aparecem cinza todos os dias e o toque abre o dia", async ({
   page,
   context,
