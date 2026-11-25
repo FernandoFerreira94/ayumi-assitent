@@ -5,7 +5,7 @@ O código já está pronto e testado com simulações. Falta configurar o que s�
 ## 1. Google (login + Agenda)
 
 1. Google Cloud Console → novo projeto → **APIs e serviços** → ativar **Google Calendar API**.
-2. **Tela de consentimento OAuth**: tipo externo, adicionar os e-mails de teste (Yumi e o seu). Escopo: `.../auth/calendar`.
+2. **Tela de consentimento OAuth**: tipo externo, adicionar os e-mails de teste (Yumi e o seu). Escopos: `.../auth/calendar.events` e `.../auth/contacts.readonly`.
 3. **Credenciais** → ID do cliente OAuth (aplicativo da Web).
    - URI de redirecionamento: `https://<seu-domínio>/api/auth/callback/google` (e `http://localhost:3000/api/auth/callback/google` para testes).
 4. Guardar `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`.

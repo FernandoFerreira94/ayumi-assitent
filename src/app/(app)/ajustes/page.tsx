@@ -8,6 +8,7 @@ import { SettingsGroup, SettingsRow } from "@/features/settings/SettingsList";
 import { loadSettingsSummary } from "@/features/settings/summary";
 import { ReplayTourButton } from "@/features/tour/ReplayTourButton";
 import { UpdateButton } from "@/features/update/UpdateButton";
+import { PRIVACY_URL, TERMS_URL } from "@/lib/legal";
 import { requireTenant } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Ajustes" };
@@ -53,6 +54,18 @@ export default async function AjustesPage() {
           <UpdateButton />
           <InstallGuide />
           <ReplayTourButton />
+          {/* Mesmo rodapé do login; abre o site público em outra aba para não sair do app. */}
+          <nav
+            aria-label="Documentos legais"
+            className="flex justify-center gap-5 pt-2 text-xs font-semibold text-muted"
+          >
+            <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="min-h-11 content-center">
+              Política de privacidade
+            </a>
+            <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="min-h-11 content-center">
+              Termos
+            </a>
+          </nav>
         </div>
       </div>
     </PageShell>

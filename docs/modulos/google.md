@@ -9,6 +9,7 @@
 - UI: `GoogleCard.tsx` (`/ajustes/calendarios`; volta do OAuth cai lá), `RetrySyncButton.tsx`, `actions.disconnectGoogle`/`retrySync`.
 - Desconectar com o Google como única entrada: `disconnectGoogle` devolve `VALIDATION`; o card troca o aviso por "Crie uma senha antes de desconectar" + botão que abre `CreatePasswordSheet.tsx` → `actions.createPassword` (Better Auth `setPassword`, cria a conta `credential`). Depois o desconectar funciona e o login vira e-mail + senha. No sheet, o botão Criar senha só libera quando as duas senhas batem e têm o mínimo (`lib/password.ts` `passwordPairState`, mesmo `PASSWORD_MIN` do zod); aviso vermelho/verde com `aria-live`. Testes: `tests/unit/google-create-password.test.ts`, `tests/unit/password-pair.test.tsx`. Aviso de falha: `appointments/sync-warning.ts`.
 - Auth: `lib/auth.ts` (Better Auth, escopos Google), `lib/auth-client.ts`.
+- Escopos (25/11/2026): só `calendar.events` + `contacts.readonly` (`scope.ts`), para a verificação do Google. O app só usa `calendars/primary/events` (listar, criar, atualizar, apagar); NÃO chamar `calendarList`, `calendars` nem `settings` sem pedir escopo novo. `hasCalendarScope` aceita `calendar.events` e o antigo `calendar` (contas que já autorizaram). Mudou escopo? Atualizar a seção 5 de `site/public/privacidade.html`.
 
 ## Dados
 - Tokens nas tabelas do Better Auth (`account`, migration `0002_auth.sql`), `appointments.google_event_id`, `blocks` com `source='google'`.
