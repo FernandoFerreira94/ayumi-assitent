@@ -153,4 +153,27 @@ test("criar Pague 3 leve 4, vender na ficha e agendar usando a sessão", async (
   const guia = page.getByRole("dialog", { name: "Como funciona" });
   await expect(guia).toContainText("Cancelou com 24h ou mais");
   await expect(guia).toContainText("Crédito nunca vence");
+  await page.keyboard.press("Escape");
+
+  // Desativar não exclui: vai para "Fora do ar" com o selo; editar e excluir (nunca vendido = apaga de vez)
+  await page.goto("/planos?aba=pacotes");
+  await vitrine.getByRole("button", { name: "Desativar Natal" }).click();
+  await expect(page.getByText("Pacote desativado")).toBeVisible();
+  const fora = vitrine.getByRole("region", { name: "Pacotes fora do ar" });
+  await expect(fora.getByRole("listitem", { name: "Natal: Desativado" })).toBeVisible();
+  await shot(page, "planos-4-desativado");
+  await fora.getByRole("button", { name: "Editar Natal" }).click();
+  const editar = page.getByRole("dialog", { name: "Editar pacote" });
+  await editar.getByRole("textbox", { name: "Nome" }).fill("Natal VIP");
+  await editar.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByText("Pacote salvo")).toBeVisible();
+  await fora.getByRole("button", { name: "Excluir Natal VIP" }).click();
+  const excluir = page.getByRole("dialog", { name: "Excluir Natal VIP?" });
+  await expect(excluir).toContainText("Ninguém comprou ainda");
+  await excluir.getByLabel("Digite excluir para confirmar").fill("excluir");
+  await excluir.getByRole("button", { name: "Excluir pacote" }).click();
+  await expect(page.getByText("Pacote excluído", { exact: true })).toBeVisible();
+  await expect(vitrine.getByRole("listitem", { name: /Natal VIP/ })).toHaveCount(0);
+  // O vendido continua ativo e à venda
+  await expect(vitrine.getByRole("listitem", { name: "Pague 3 leve 4 Esmaltação: Ativo" })).toBeVisible();
 });

@@ -83,7 +83,7 @@ d("promoção de desconto no agendamento (Postgres real)", () => {
     await withTenant(T, (tx) => core.setStatus(tx, b.data.id, "cancelled"));
     const c2 = await book(cli[2]!);
     expect(c2.ok && c2.data.promotion?.used).toBe(2);
-    await withTenant(T, (tx) => promos.endPromotion(tx, id));
+    await withTenant(T, (tx) => promos.deletePromotion(tx, id));
   });
 
   it("não entra sem pedir, com desconto digitado, pausada ou antes de começar", async () => {
@@ -97,13 +97,13 @@ d("promoção de desconto no agendamento (Postgres real)", () => {
     await withTenant(T, (tx) => promos.setPromotionPaused(tx, id, false));
     const back = await book(cli[3]!);
     expect(back.ok && back.data.promotion?.offCents).toBe(1000);
-    await withTenant(T, (tx) => promos.endPromotion(tx, id));
+    await withTenant(T, (tx) => promos.deletePromotion(tx, id));
     expect(await withTenant(T, (tx) => promos.setPromotionPaused(tx, id, true))).toBe(false);
 
     const later = (await create(null, { startsOn: "2099-01-01" }))!;
     const early = await book(cli[4]!);
     expect(early.ok && early.data.promotion).toBe(null);
-    await withTenant(T, (tx) => promos.endPromotion(tx, later));
+    await withTenant(T, (tx) => promos.deletePromotion(tx, later));
   });
 
   it("corrida: 3 agendando ao mesmo tempo numa promoção de 1 vaga, só 1 ganha", async () => {
@@ -119,6 +119,46 @@ d("promoção de desconto no agendamento (Postgres real)", () => {
     expect(res.filter((r) => r.ok && r.data.promotion).length).toBe(1);
     const [{ n }] = await admin`select count(*)::int as n from appointments where promotion_id = ${id}`;
     expect(n).toBe(1);
+  });
+
+  it("desativar não exclui; reativar volta; editar e excluir usada só esconde", async () => {
+    const id = (await create(null))!;
+    const [{ id: c9 }] =
+      await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'E1','+5511977000009') returning id`;
+    expect(await withTenant(T, (tx) => promos.setPromotionPaused(tx, id, true))).toBe(true);
+    expect((await withTenant(T, (tx) => promos.listPromotions(tx))).find((p) => p.id === id)?.paused).toBe(true);
+    // o antigo "Encerrar" (ended_at) reativa também
+    await admin`update promotions set ended_at = now() where id = ${id}`;
+    expect(await withTenant(T, (tx) => promos.setPromotionPaused(tx, id, false))).toBe(true);
+    const [row] = await admin`select paused, ended_at from promotions where id = ${id}`;
+    expect(row).toMatchObject({ paused: false, ended_at: null });
+
+    const edited = await withTenant(T, (tx) =>
+      promos.updatePromotion(tx, id, {
+        name: "Natal 2",
+        discount: { kind: "brl", value: 700 },
+        serviceIds: [unha, pe],
+        startsOn: null,
+        endsOn: null,
+        maxClients: 3,
+      }),
+    );
+    expect(edited).toBe(true);
+    const a = await book(c9);
+    expect(a.ok && a.data.promotion?.offCents).toBe(700);
+
+    expect(await withTenant(T, (tx) => promos.deletePromotion(tx, id))).toBe("archived");
+    expect((await withTenant(T, (tx) => promos.listPromotions(tx))).some((p) => p.id === id)).toBe(false);
+    const [kept] = await admin`select deleted_at, paused from promotions where id = ${id}`;
+    expect(kept.deleted_at).not.toBe(null);
+    if (!a.ok) throw new Error();
+    const [appt] = await admin`select promotion_id, discount_cents from appointments where id = ${a.data.id}`;
+    expect(appt).toMatchObject({ promotion_id: id, discount_cents: 700 });
+    expect(await withTenant(T, (tx) => promos.setPromotionPaused(tx, id, false))).toBe(false);
+
+    const unused = (await create(null, { startsOn: "2099-01-01" }))!;
+    expect(await withTenant(T, (tx) => promos.deletePromotion(tx, unused))).toBe("deleted");
+    expect((await admin`select id from promotions where id = ${unused}`).length).toBe(0);
   });
 
   it("outro estúdio não vê a promoção (RLS)", async () => {

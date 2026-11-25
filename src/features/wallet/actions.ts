@@ -11,17 +11,18 @@ import { parseDiscount } from "@/features/appointments/pricing";
 import { formatShortDate, todayStr } from "@/lib/dates";
 import { getWalletSettings, refundCredit, saveWalletSettings } from "./core";
 import {
-  archiveTemplate,
   clientPackageList,
   createTemplate,
+  deleteTemplate,
   listTemplates,
   sellPackage,
   setTemplatePaused,
+  updateTemplate,
   type SellRefusal,
 } from "./packages";
-import { createPromotion, endPromotion, listPromotions, setPromotionPaused } from "./promotions";
+import { createPromotion, deletePromotion, listPromotions, setPromotionPaused, updatePromotion } from "./promotions";
 import { parsePromotionDraft } from "./promotion-rules";
-import { parsePackageDraft, parsePolicy } from "./rules";
+import { isDeleteWord, parseOfferEdit, parsePackageDraft, parsePolicy, type DeleteOutcome } from "./rules";
 import type { PackageOnHand } from "./session-use";
 import { promotionView, templateView, type PromotionView, type TemplateView } from "./views";
 
@@ -135,12 +136,79 @@ export async function createPackageTemplateAction(input: {
   }
 }
 
-/** Tira o modelo da venda; quem já comprou continua com o pacote. */
-export async function archivePackageTemplateAction(id: string): Promise<ActionResult> {
+/** Edita nome, período e limite do pacote à venda (ex.: um vencido ganha um período novo). */
+export async function updatePackageTemplateAction(input: {
+  id: string;
+  name: string;
+  startsOn?: string;
+  endsOn?: string;
+  maxClients?: string;
+}): Promise<ActionResult> {
   const { tenantId } = await requireTenant();
-  if (!z.string().uuid().safeParse(id).success) return fail("VALIDATION");
+  if (!z.string().uuid().safeParse(input.id).success) return fail("VALIDATION");
+  const parsed = parseOfferEdit(input);
+  if (!parsed.ok) return fail("VALIDATION", parsed.field);
   try {
-    await withTenant(tenantId, (tx) => archiveTemplate(tx, id));
+    const done = await withTenant(tenantId, (tx) => updateTemplate(tx, input.id, parsed.edit));
+    if (!done) return fail("NOT_FOUND");
+    revalidatePath("/planos");
+    return ok();
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+/**
+ * Excluir pacote ou promoção. Só com a palavra digitada (conferida aqui também). Nunca usado = apaga de vez;
+ * já vendido/usado = sai da lista e para de valer, e o histórico das clientes fica.
+ */
+export async function deleteOfferAction(input: {
+  target: "promotion" | "package";
+  id: string;
+  confirm: string;
+}): Promise<ActionResult<{ outcome: DeleteOutcome }>> {
+  const { tenantId } = await requireTenant();
+  const p = z
+    .object({ target: z.enum(["promotion", "package"]), id: z.string().uuid(), confirm: z.string().max(40) })
+    .safeParse(input);
+  if (!p.success || !isDeleteWord(p.data.confirm)) return fail("VALIDATION", "confirm");
+  try {
+    const outcome = await withTenant(tenantId, async (tx) => {
+      await lockTenant(tx, tenantId);
+      return p.data.target === "package" ? deleteTemplate(tx, p.data.id) : deletePromotion(tx, p.data.id);
+    });
+    if (!outcome) return fail("NOT_FOUND");
+    revalidatePath("/ajustes", "layout");
+    revalidatePath("/planos");
+    return ok({ outcome });
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+/** Edita a promoção de desconto. Quem já usou guarda o desconto do próprio agendamento. */
+export async function updatePromotionAction(input: {
+  id: string;
+  name?: string;
+  discountKind: string;
+  discountValue: string;
+  serviceIds: string[];
+  startsOn?: string;
+  endsOn?: string;
+  maxClients?: string;
+}): Promise<ActionResult> {
+  const { tenantId } = await requireTenant();
+  if (!z.string().uuid().safeParse(input.id).success) return fail("VALIDATION");
+  const parsed = parsePromotionDraft({
+    ...input,
+    discount: parseDiscount(input.discountKind, input.discountValue),
+    serviceIds: Array.isArray(input.serviceIds) ? input.serviceIds.map(String) : [],
+  });
+  if (!parsed.ok) return fail("VALIDATION", parsed.field);
+  try {
+    const done = await withTenant(tenantId, (tx) => updatePromotion(tx, input.id, parsed.draft));
+    if (done === false) return fail("VALIDATION", "serviceIds");
+    if (done === null) return fail("NOT_FOUND");
     revalidatePath("/ajustes", "layout");
     revalidatePath("/planos");
     return ok();
@@ -227,29 +295,27 @@ export async function createPromotionAction(input: {
   }
 }
 
-/** Pausar, retomar ou encerrar uma promoção de desconto ou pausar/retomar a venda de um pacote. */
+/** Desativar ou reativar uma promoção de desconto ou a venda de um pacote (nunca exclui). */
 export async function promotionControlAction(input: {
   target: "promotion" | "package";
   id: string;
-  action: "pause" | "resume" | "end";
+  action: "pause" | "resume";
 }): Promise<ActionResult> {
   const { tenantId } = await requireTenant();
   const p = z
     .object({
       target: z.enum(["promotion", "package"]),
       id: z.string().uuid(),
-      action: z.enum(["pause", "resume", "end"]),
+      action: z.enum(["pause", "resume"]),
     })
     .safeParse(input);
-  if (!p.success || (p.data.target === "package" && p.data.action === "end")) return fail("VALIDATION");
+  if (!p.success) return fail("VALIDATION");
   const { target, id, action } = p.data;
   try {
     const done = await withTenant(tenantId, async (tx) =>
       target === "package"
         ? setTemplatePaused(tx, id, action === "pause")
-        : action === "end"
-          ? endPromotion(tx, id)
-          : setPromotionPaused(tx, id, action === "pause"),
+        : setPromotionPaused(tx, id, action === "pause"),
     );
     if (!done) return fail("NOT_FOUND");
     revalidatePath("/ajustes", "layout");

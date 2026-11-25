@@ -11,12 +11,12 @@ import { fieldToCents } from "@/features/appointments/PaymentFields";
 import { formatBRL } from "@/lib/dates";
 import { messageFor, type ErrorCode } from "@/lib/errors";
 import {
-  archivePackageTemplateAction,
   createPackageTemplateAction,
   loadPackageTemplates,
-  promotionControlAction,
   sellPackageAction,
+  updatePackageTemplateAction,
 } from "./actions";
+import { DeleteOffer, isLive, splitByLive, StatusBadge, statusLabel, ToggleOffer } from "./OfferControls";
 import { parseDiscount } from "@/features/appointments/pricing";
 import { packageFacts, type SalonInfo } from "./promo-text";
 import {
@@ -28,7 +28,6 @@ import {
   referenceService,
   serviceNames,
   type PackageKind,
-  type PromoStatus,
 } from "./rules";
 import { ShareTextPanel, ShareTextSheet } from "./ShareText";
 import type { TemplateView } from "./views";
@@ -45,18 +44,10 @@ const sheet = (side: ReturnType<typeof useSheetSide>) =>
 
 type Svc = { id: string; name: string; priceCents: number };
 
-const STATUS: Record<PromoStatus, { label: string; cls: string } | null> = {
-  running: null,
-  scheduled: { label: "Agendada", cls: "bg-soft text-primary-text" },
-  ended: { label: "Encerrada", cls: "bg-fail-bg text-fail" },
-  sold_out: { label: "Esgotada", cls: "bg-fail-bg text-fail" },
-  paused: { label: "Pausada", cls: "bg-wait-bg text-wait" },
-};
-
 const pill = "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold";
 
-/** Selos do pacote: sessões, serviços, economia, período e vagas. */
-function PackageChips({ t, cap = true }: { t: TemplateView; cap?: boolean }) {
+/** Selos do pacote: sessões, serviços, economia, período e vagas (`status` acrescenta o selo de situação). */
+function PackageChips({ t, cap = true, status = false }: { t: TemplateView; cap?: boolean; status?: boolean }) {
   const when = t.endsOn ? `até ${dayMonth(t.endsOn)}` : t.startsOn ? `a partir de ${dayMonth(t.startsOn)}` : null;
   return (
     <span className="flex flex-wrap gap-1.5">
@@ -81,7 +72,7 @@ function PackageChips({ t, cap = true }: { t: TemplateView; cap?: boolean }) {
           {t.soldClients}/{t.maxClients} clientes
         </span>
       ) : null}
-      {STATUS[t.status] ? <span className={`${pill} ${STATUS[t.status]!.cls}`}>{STATUS[t.status]!.label}</span> : null}
+      {status && t.status !== "running" ? <StatusBadge status={t.status} g="o" /> : null}
     </span>
   );
 }
@@ -125,7 +116,52 @@ export function CapBar({ used, max, label }: { used: number; max: number | null;
   );
 }
 
-/** Ajustes > Pagamentos > Pacotes: cartões curtos com selos; criar é um passo a passo de 3 telas. */
+/** "O que acontece" com o pacote à venda, em uma frase, conforme a situação. */
+function packageHappens(t: TemplateView): string {
+  switch (t.status) {
+    case "running":
+      return "Funcionando: aparece em Vender pacote.";
+    case "scheduled":
+      return "Ainda não começou: entra na venda no dia de início.";
+    case "paused":
+      return "Desativado: não aparece em Vender pacote. Quem comprou continua com as sessões.";
+    case "sold_out":
+      return "Esgotado: chegou no limite de clientes. Edite o limite para vender mais.";
+    case "ended":
+      return "Vencido: o período de venda acabou. Edite as datas para vender de novo.";
+  }
+}
+
+function TemplateCard({ t, salon }: { t: TemplateView; salon: SalonInfo }) {
+  const live = isLive(t.status);
+  return (
+    <li
+      aria-label={`${t.name}: ${statusLabel(t.status, "o")}`}
+      className={`grid gap-2 rounded-2xl px-4 py-3 ${live ? "bg-soft" : "border border-dashed border-line bg-surface/60"}`}
+    >
+      <div className="flex items-start gap-3">
+        <div className="grid min-w-0 flex-1 gap-1">
+          <StatusBadge status={t.status} g="o" />
+          <p className={`font-bold ${live ? "" : "text-muted"}`}>{t.name}</p>
+        </div>
+        <span className={live ? "" : "opacity-60"}>
+          <PriceTag full={t.fullCents} price={t.pricedCents} />
+        </span>
+      </div>
+      <PackageChips t={t} cap={false} />
+      <CapBar used={t.soldClients} max={t.maxClients} label="compraram" />
+      <p className="text-sm font-semibold text-muted">{packageHappens(t)}</p>
+      <div className="flex flex-wrap items-center gap-2">
+        {live ? <ShareTextSheet title={t.name} facts={t.facts} salon={salon} /> : null}
+        <ToggleOffer target="package" id={t.id} title={t.name} paused={t.paused} g="o" />
+        <EditTemplateSheet t={t} />
+        <DeleteOffer target="package" id={t.id} title={t.name} used={t.soldClients} />
+      </div>
+    </li>
+  );
+}
+
+/** Planos > Pacotes: ativos em cima; desativados, vencidos e esgotados embaixo, sempre à vista. */
 export function PackageTemplates({
   templates,
   services,
@@ -137,76 +173,195 @@ export function PackageTemplates({
   validDays: number;
   salon: SalonInfo;
 }) {
-  const [pending, start] = useTransition();
+  const { live, off } = splitByLive(templates);
   return (
     <div className="glass grid gap-3 rounded-[1.75rem] p-5">
-      <TileTitle as="h2" icon="ticket" tint="lavender">
-        Pacotes à venda
-      </TileTitle>
-      {templates.length === 0 ? (
+      <div className="flex items-center justify-between gap-2">
+        <TileTitle as="h2" icon="ticket" tint="lavender">
+          Pacotes à venda
+        </TileTitle>
+        {templates.length ? (
+          <span className={`${pill} ${live.length ? "bg-ok-bg text-ok" : "bg-surface"}`}>
+            {live.filter((t) => t.status === "running").length} à venda
+          </span>
+        ) : null}
+      </div>
+      {live.length === 0 ? (
         <div className="grid gap-2 rounded-2xl bg-soft px-4 py-4 text-center">
-          <p className="font-bold">Nenhum pacote ainda</p>
-          <p className="text-sm font-semibold text-muted">Ex.: pague 3 esmaltações, leve 4.</p>
+          <p className="font-bold">{templates.length ? "Nenhum pacote ativo" : "Nenhum pacote ainda"}</p>
+          <p className="text-sm font-semibold text-muted">
+            {templates.length ? "Reative um abaixo ou crie outro." : "Ex.: pague 3 esmaltações, leve 4."}
+          </p>
         </div>
       ) : (
         <ul className="grid gap-2">
-          {templates.map((t) => (
-            <li
-              key={t.id}
-              className={`grid gap-2 rounded-2xl bg-soft px-4 py-3 ${t.status === "ended" || t.status === "sold_out" ? "opacity-70" : ""}`}
-            >
-              <div className="flex items-start gap-3">
-                <p className="min-w-0 flex-1 font-bold">{t.name}</p>
-                <PriceTag full={t.fullCents} price={t.pricedCents} />
-              </div>
-              <PackageChips t={t} cap={false} />
-              <CapBar used={t.soldClients} max={t.maxClients} label="compraram" />
-              <div className="flex flex-wrap items-center gap-2">
-                <ShareTextSheet title={t.name} facts={t.facts} salon={salon} />
-                {t.status === "running" || t.status === "paused" ? (
-                  <button
-                    type="button"
-                    disabled={pending}
-                    aria-label={`${t.paused ? "Retomar" : "Pausar"} a venda de ${t.name}`}
-                    onClick={() =>
-                      start(async () => {
-                        const r = await promotionControlAction({
-                          target: "package",
-                          id: t.id,
-                          action: t.paused ? "resume" : "pause",
-                        }).catch(() => null);
-                        if (r?.ok) notify.success(t.paused ? "Venda retomada" : "Venda pausada");
-                        else notify.error(r && !r.ok ? r.code : "NETWORK");
-                      })
-                    }
-                    className="btn-glass flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm font-bold"
-                  >
-                    <Icon name={t.paused ? "play" : "pause"} size={16} className="text-primary-text" />
-                    {t.paused ? "Retomar" : "Pausar"}
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  disabled={pending}
-                  aria-label={`Tirar ${t.name} da venda`}
-                  onClick={() =>
-                    start(async () => {
-                      const r = await archivePackageTemplateAction(t.id).catch(() => null);
-                      if (r?.ok) notify.success("Pacote tirado da venda");
-                      else notify.error(r && !r.ok ? r.code : "NETWORK");
-                    })
-                  }
-                  className="ml-auto min-h-11 px-2 text-sm font-bold text-fail"
-                >
-                  Tirar da venda
-                </button>
-              </div>
-            </li>
+          {live.map((t) => (
+            <TemplateCard key={t.id} t={t} salon={salon} />
           ))}
         </ul>
       )}
       <NewTemplateSheet services={services} validDays={validDays} salon={salon} />
+      {off.length ? (
+        <section aria-label="Pacotes fora do ar" className="grid gap-2">
+          <h3 className="flex items-center gap-2 pt-1 text-sm font-bold text-muted">
+            Fora do ar
+            <span className="rounded-full bg-surface px-2 py-0.5 text-xs tabular-nums">{off.length}</span>
+          </h3>
+          <ul className="grid gap-2">
+            {off.map((t) => (
+              <TemplateCard key={t.id} t={t} salon={salon} />
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </div>
+  );
+}
+
+const EDIT_BAD: Record<string, string> = {
+  name: "Dê um nome de até 80 letras.",
+  endsOn: "O fim vem depois do começo.",
+  startsOn: "Confira a data de início.",
+  maxClients: "De 1 a 10.000 clientes.",
+};
+
+/**
+ * Editar pacote à venda: nome, período e limite (ex.: um vencido ganha datas novas). Sessões e preço ficam como
+ * estão, porque quem já comprou guarda a cópia; para mudar isso, crie outro pacote.
+ */
+function EditTemplateSheet({ t }: { t: TemplateView }) {
+  const side = useSheetSide();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(t.name);
+  const [startsOn, setStartsOn] = useState(t.startsOn ?? "");
+  const [endsOn, setEndsOn] = useState(t.endsOn ?? "");
+  const [cap, setCap] = useState(t.maxClients === null ? "" : String(t.maxClients));
+  const [bad, setBad] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorCode | null>(null);
+  const [pending, start] = useTransition();
+
+  function onOpenChange(next: boolean) {
+    setOpen(next);
+    if (next) {
+      setName(t.name);
+      setStartsOn(t.startsOn ?? "");
+      setEndsOn(t.endsOn ?? "");
+      setCap(t.maxClients === null ? "" : String(t.maxClients));
+      setBad(null);
+      setError(null);
+    }
+  }
+
+  function save() {
+    setBad(null);
+    setError(null);
+    start(async () => {
+      const r = await updatePackageTemplateAction({ id: t.id, name, startsOn, endsOn, maxClients: cap }).catch(
+        () => null,
+      );
+      if (!r?.ok) {
+        if (r && !r.ok && r.code === "VALIDATION" && r.field) setBad(r.field);
+        else setError(r && !r.ok ? r.code : "NETWORK");
+        return;
+      }
+      notify.success("Pacote salvo");
+      setOpen(false);
+    });
+  }
+
+  return (
+    <Drawer.Root direction={side} open={open} onOpenChange={onOpenChange} repositionInputs={false}>
+      <Drawer.Trigger
+        aria-label={`Editar ${t.name}`}
+        className="btn-glass flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm font-bold"
+      >
+        <Icon name="pencil" size={16} className="text-primary-text" />
+        {t.status === "ended" ? "Editar datas" : "Editar"}
+      </Drawer.Trigger>
+      <Drawer.Portal>
+        <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
+        <Drawer.Content className={sheet(side)}>
+          <SidePanelClose />
+          <div className={SHEET_SCROLL}>
+            <Drawer.Title className="text-xl font-bold">Editar pacote</Drawer.Title>
+            <Drawer.Description className="pb-4 text-sm font-semibold text-muted">
+              {t.sessionsTotal} {t.sessionsTotal === 1 ? "sessão" : "sessões"} · {formatBRL(t.pricedCents)}. Sessões e
+              preço não mudam aqui: quem comprou fica como comprou.
+            </Drawer.Description>
+            <div className="grid gap-4">
+              <label className="grid gap-1.5">
+                <span className="text-sm font-bold">Nome</span>
+                <input
+                  value={name}
+                  maxLength={80}
+                  onChange={(e) => setName(e.target.value)}
+                  aria-invalid={bad === "name"}
+                  className={field}
+                />
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="grid min-w-0 gap-1.5">
+                  <span className="text-sm font-bold">Vende a partir de</span>
+                  <input
+                    type="date"
+                    value={startsOn}
+                    onChange={(e) => setStartsOn(e.target.value)}
+                    aria-invalid={bad === "startsOn"}
+                    className={`${field} min-w-0 px-3`}
+                  />
+                </label>
+                <label className="grid min-w-0 gap-1.5">
+                  <span className="text-sm font-bold">Vende até</span>
+                  <input
+                    type="date"
+                    value={endsOn}
+                    min={startsOn || undefined}
+                    onChange={(e) => setEndsOn(e.target.value)}
+                    aria-invalid={bad === "endsOn"}
+                    className={`${field} min-w-0 px-3`}
+                  />
+                </label>
+              </div>
+              <label className="grid gap-1.5">
+                <span className="text-sm font-bold">Limite de clientes (vazio = sem limite)</span>
+                <input
+                  inputMode="numeric"
+                  value={cap}
+                  placeholder="Sem limite"
+                  onChange={(e) => setCap(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                  aria-invalid={bad === "maxClients"}
+                  className={field}
+                />
+                {t.soldClients ? (
+                  <span className="text-sm font-semibold text-muted">
+                    {t.soldClients} {t.soldClients === 1 ? "cliente já comprou" : "clientes já compraram"}.
+                  </span>
+                ) : null}
+              </label>
+            </div>
+            {bad && EDIT_BAD[bad] ? (
+              <p role="alert" className="mt-3 text-sm font-semibold text-fail">
+                {EDIT_BAD[bad]}
+              </p>
+            ) : null}
+            {error ? (
+              <p role="alert" className="mt-3 rounded-2xl bg-fail-bg px-4 py-3 text-sm font-semibold text-fail">
+                {messageFor(error)}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              onClick={save}
+              disabled={pending}
+              className="btn-tint mt-5 flex min-h-13 w-full items-center justify-center gap-2 rounded-full px-5 font-bold disabled:opacity-70"
+            >
+              {pending ? <span className="spin" aria-hidden="true" /> : null}
+              {pending ? "Salvando…" : "Salvar"}
+            </button>
+          </div>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.Root>
   );
 }
 
@@ -791,9 +946,7 @@ export function SellPackageSheet({
       }}
       repositionInputs={false}
     >
-      <Drawer.Trigger className={triggerClassName}>
-        Vender pacote
-      </Drawer.Trigger>
+      <Drawer.Trigger className={triggerClassName}>Vender pacote</Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
         <Drawer.Content className={sheet(side)}>
