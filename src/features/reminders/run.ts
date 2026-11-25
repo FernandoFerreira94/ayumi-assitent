@@ -5,6 +5,7 @@ import type { MessagingPort } from "@/features/messaging/port";
 import { sendPendingReplies } from "@/features/messaging/pending";
 import { sendDueCancelNotices } from "@/features/messaging/cancel-send";
 import { sendDueDepositNotices } from "@/features/messaging/deposit-send";
+import { sendDueBookingRetries } from "@/features/messaging/booking-send";
 import { sendDueRescheduleNotices } from "@/features/messaging/reschedule-send";
 import type { PushPort } from "@/features/push/port";
 import { getReminderSettings, sendReminders, type ReminderRun } from "./core";
@@ -45,9 +46,14 @@ export async function runReminders(
         console.error(JSON.stringify({ level: "warn", msg: "deposit_tenant_failed", tenant: t.id, ...errCode(e) }));
         return { sent: 0, failed: 0 };
       });
+      // Mensagens de agendamento que falharam por instabilidade (rede, 5xx): nova tentativa, antes do 1º aviso
+      const bs = await sendDueBookingRetries(t.id, now).catch((e) => {
+        console.error(JSON.stringify({ level: "warn", msg: "booking_retry_tenant_failed", tenant: t.id, ...errCode(e) }));
+        return { sent: 0, failed: 0 };
+      });
       const r = await withTenant(t.id, (tx) => sendReminders(tx, port, now));
-      r.sent += rs.sent + cs.sent + ds.sent;
-      r.failed += rs.failed + cs.failed + ds.failed;
+      r.sent += rs.sent + cs.sent + ds.sent + bs.sent;
+      r.failed += rs.failed + cs.failed + ds.failed + bs.failed;
       // Reforço único de confirmação (mesma rodada de 5 min); falha aqui não derruba o lembrete
       const n = await withTenant(t.id, (tx) => sendNudges(tx, port, now)).catch((e) => {
         console.error(JSON.stringify({ level: "warn", msg: "nudge_tenant_failed", tenant: t.id, ...errCode(e) }));

@@ -8,6 +8,7 @@ import { DEFAULT_REMINDER_HOURS } from "@/features/reminders/core";
 import { log, errCode } from "@/lib/log";
 import { MessagingOfflineError, MessagingRejectedError, sendFailReason, type MessagingPort } from "./port";
 import { recordMessage } from "./store";
+import { paidCentsSql } from "@/features/wallet/core";
 import type { RescheduleNoticeResult } from "./reschedule-result";
 
 /** Falha temporária (rede, 5xx): o aviso volta para a fila e o worker tenta de novo depois deste tempo. */
@@ -52,6 +53,7 @@ export async function sendRescheduleNotice(
         notifiedStartsAt: appointments.notifiedStartsAt,
         status: appointments.status,
         priceCents: appointments.priceCents,
+        paidCents: paidCentsSql,
       })
       .from(appointments)
       .innerJoin(clients, eq(clients.id, appointments.clientId))

@@ -3,10 +3,15 @@ import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 const sent = vi.hoisted(() => [] as string[]);
-const seq = vi.hoisted(() => ({ n: 0 }));
+const seq = vi.hoisted(() => ({ n: 0, failNext: false }));
 vi.mock("@/features/messaging/evolution", () => ({
   messagingForInstance: () => ({
     sendText: async (_to: string, text: string) => {
+      if (seq.failNext) {
+        seq.failNext = false;
+        const { MessagingTransientError } = await import("@/features/messaging/port");
+        throw new MessagingTransientError("503");
+      }
       sent.push(text);
       return { id: `bk${++seq.n}` };
     },
@@ -107,6 +112,39 @@ d("confirmação do agendamento x 1º aviso (Postgres real)", () => {
     expect(await admin`select body from messages where appointment_id = ${id}`).toHaveLength(2);
     await admin`update tenants set pix_key = null where id = ${T}`;
     await admin`update appointments set status = 'cancelled' where id = ${id}`;
+  });
+
+  it("1ª mensagem automática da cliente conta do SAIR; as seguintes não", async () => {
+    const { sendBookingMessage } = await import("@/features/messaging/booking-send");
+    const [{ id: C2 }] =
+      await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Nova','+5511987650000') returning id`;
+    const mk = async (h: number) =>
+      (
+        await admin`insert into appointments (tenant_id,client_id,service_id,starts_at,ends_at,price_cents,status)
+        values (${T},${C2},${S},${at(h)},${at(h + 1)},10000,'pending_confirmation') returning id`
+      )[0].id as string;
+    sent.length = 0;
+    expect(await sendBookingMessage(T, await mk(100), now)).toBe("sent");
+    expect(await sendBookingMessage(T, await mk(120), now)).toBe("sent");
+    expect(sent[0]).toContain("Se preferir não receber lembretes, é só responder SAIR.");
+    expect(sent[1]).not.toContain("SAIR");
+  });
+
+  it("falha por instabilidade: o worker tenta de novo em 5 min; recusado não repete", async () => {
+    const { sendBookingMessage, sendDueBookingRetries } = await import("@/features/messaging/booking-send");
+    const id = await appt(80);
+    seq.failNext = true;
+    expect(await sendBookingMessage(T, id, now)).toBe("failed");
+    const [{ booking_retry_at }] = await admin`select booking_retry_at from appointments where id = ${id}`;
+    expect(booking_retry_at).not.toBeNull();
+    sent.length = 0;
+    // Antes da hora nada; depois, sai uma vez e limpa
+    expect(await sendDueBookingRetries(T, now)).toEqual({ sent: 0, failed: 0 });
+    const later = new Date(now.getTime() + 6 * 60_000);
+    expect(await sendDueBookingRetries(T, later)).toEqual({ sent: 1, failed: 0 });
+    expect(await sendDueBookingRetries(T, later)).toEqual({ sent: 0, failed: 0 });
+    expect(sent).toHaveLength(1);
+    expect((await admin`select booking_retry_at from appointments where id = ${id}`)[0].booking_retry_at).toBeNull();
   });
 
   it("cancelar, faltar ou concluir apaga a resposta guardada da noite (não sai às 6h com data velha)", async () => {

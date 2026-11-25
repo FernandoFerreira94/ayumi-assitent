@@ -48,3 +48,21 @@ describe("toast do aviso de remarcação", () => {
       expect(rescheduleNoticeToast(r, "Maria")).toBeNull();
   });
 });
+
+describe("cancelamento e remarcação com dinheiro já pago", () => {
+  const a = { client: "Bia", service: "Gel", startsAt: new Date("2026-11-11T17:30:00Z") };
+  const eve = new Date("2026-11-10T15:00:00Z");
+  it("cancelamento usa o texto da dona e avisa o crédito, sem falar de sinal retido", async () => {
+    const { cancelText } = await import("@/features/reminders/text");
+    expect(cancelText(a, eve)).toMatch(/^Oi! Seu horário de Gel \(amanhã, dia 11\/11, às 14:30\) foi cancelado\./);
+    expect(cancelText(a, eve, { template: "Cancelado: {servico} {hora}" })).toBe("Cancelado: Gel 14:30");
+    const t = cancelText({ ...a, creditCents: 3000 }, eve);
+    expect(t).toMatch(/O valor de R\$\s30,00 que você já tinha pago ficou como crédito para o seu próximo horário 💜$/);
+    expect(t).not.toMatch(/retid/i);
+  });
+  it("remarcação com algo pago avisa que continua valendo", async () => {
+    const { rescheduleText } = await import("@/features/reminders/text");
+    expect(rescheduleText({ ...a, paidCents: 3000 }, eve)).toContain("O que você já pagou continua valendo para o novo horário 💜");
+    expect(rescheduleText(a, eve)).not.toContain("continua valendo");
+  });
+});

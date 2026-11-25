@@ -13,7 +13,9 @@ import { saveMessages } from "./actions";
 import type { MessageSettings } from "./core";
 import {
   bookingText,
+  cancelText,
   DEFAULT_BOOKING,
+  DEFAULT_CANCEL,
   DEFAULT_REMINDER,
   DEFAULT_RESCHEDULE,
   DEFAULT_SECOND,
@@ -241,6 +243,20 @@ export function MessagesForm({
             note="Se o horário novo já estiver na hora do 1º aviso, as opções 1, 2 e 3 vão no fim e ele vale como o 1º aviso."
           />
         </div>
+      </Step>
+
+      <Step
+        title="Ao cancelar"
+        hint="Sai quando você cancela com “Avisar a cliente” ligado, depois do Desfazer. Se o que ela pagou virar crédito, uma linha avisa o valor."
+      >
+        <TemplateField
+          name="cancelTemplate"
+          label="Texto do aviso de cancelamento"
+          initial={settings.cancelTemplate}
+          fallback={DEFAULT_CANCEL}
+          invalid={err === "cancelTemplate"}
+          preview={(template) => cancelText(SAMPLE, sampleNow, { ...salon, template })}
+        />
       </Step>
 
       <Step
