@@ -86,14 +86,20 @@ test("Faltou fica desligado antes do horário, com a dica", async ({ page }) => 
 
 test("Faltou mostra Desfazer e volta ao status anterior", async ({ page }) => {
   await prepara(page);
-  // Só dá para marcar falta depois do horário: agenda num dia que já passou
+  // Só dá para marcar falta depois do horário: agenda num dia que já passou.
+  // Ao abrir a agenda o sistema conclui o que já terminou, então a falta sai pelo "Trocar status".
   const dia = addDays(todayStr(), -1);
   await agenda(page, dia, "10:00");
+  await page.reload();
 
   await page.getByRole("button", { name: /Ana Lima, Escova, 10:00/ }).click();
-  await page.getByRole("button", { name: "Mais ações" }).click();
+  await expect(page.getByText("Escova · Concluído pelo sistema").first()).toBeVisible();
+  await page.getByRole("button", { name: "Trocar status" }).click();
   await page.getByRole("button", { name: "Faltou" }).click();
   await expect(page.getByText("Marcado como faltou")).toBeVisible();
   await page.getByRole("button", { name: "Desfazer" }).click();
-  await expect(page.getByText("Aguardando confirmação").first()).toBeVisible();
+  // Volta a concluído (o Faltou fecha a ficha; o aviso confirma) e a troca feita pela dona tira o "pelo sistema"
+  await expect(page.getByText("Concluído", { exact: true }).first()).toBeVisible();
+  await page.getByRole("button", { name: /Ana Lima, Escova, 10:00/ }).click();
+  await expect(page.getByText("Escova · Concluído", { exact: true }).first()).toBeVisible();
 });

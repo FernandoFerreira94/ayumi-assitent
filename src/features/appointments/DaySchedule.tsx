@@ -88,6 +88,7 @@ export async function DaySchedule({
     notes: r.notes,
     payment: paymentView(r),
     session: parseSessionUse(r.session),
+    autoDone: r.status === "done" && r.autoDoneAt !== null,
   }));
   const blocks = dayBlocks.map((b) => {
     const external: ExternalSource | undefined = b.source === "google" || b.source === "icloud" ? b.source : undefined;

@@ -244,6 +244,8 @@ export async function setStatus(
   createdBy?: string | null,
   /** Cancelar avisando a cliente no WhatsApp ("Avisar a cliente?", ligado por padrão na tela) */
   notifyClient = false,
+  /** Data da baixa ao concluir (a conclusão automática usa o fim do atendimento, não a hora da rodada) */
+  paidAt?: Date,
 ): Promise<ActionResult<{ wallet: Outcome | null }>> {
   const [before] = await tx
     .select({ startsAt: appointments.startsAt, status: appointments.status })
@@ -262,6 +264,8 @@ export async function setStatus(
         .set({
           status,
           ...returnFields,
+          // Troca de status (da dona ou o Desfazer) tira o "Concluído pelo sistema"; a conclusão automática regrava depois
+          autoDoneAt: null,
           ...(CLOSED.has(status) ? { pendingReply: null } : {}),
           // Aviso de cancelamento: só para horário futuro; qualquer outro status (Desfazer) cancela o aviso
           cancelNoticeAt:
@@ -290,6 +294,7 @@ export async function setStatus(
           amountCents: rest,
           method: a.paymentMethod,
           reason: AUTO_DONE_REASON,
+          occurredAt: paidAt,
         });
     } else await reverseAppointmentPayments(tx, id, createdBy, { onlyAuto: true, reason: "Saiu de concluído" });
     // Cancelar/faltar: o pago vira crédito (ou o sinal fica); voltar desfaz
@@ -433,7 +438,40 @@ export const SCHEDULE_RESET = {
   cancelAskedAt: null,
   aiHandoffAt: null,
   pendingReply: null,
+  autoDoneAt: null,
 };
+
+/** Só conclui sozinho o que terminou nestes dias: o atraso antigo (antes da função existir) fica para a dona. */
+export const AUTO_DONE_LOOKBACK_DAYS = 7;
+const AUTO_DONE_OPEN: Status[] = ["pending_confirmation", "confirmed"];
+
+/**
+ * Conclui o que já terminou e ninguém fechou (aguardando ou confirmado), do jeito do "Concluir" da tela: baixa do
+ * que faltava (na data do fim), retorno, pacote. "Pediu para remarcar" fica para a dona. Nada sai no WhatsApp.
+ * Roda no worker (5 min) e ao abrir a agenda; `skip locked` evita que os dois concluam o mesmo atendimento.
+ */
+export async function autoConcludePast(tx: Tx, now: Date = new Date()): Promise<number> {
+  const since = new Date(now.getTime() - AUTO_DONE_LOOKBACK_DAYS * 86_400_000);
+  const due = await tx
+    .select({ id: appointments.id, endsAt: appointments.endsAt })
+    .from(appointments)
+    .where(
+      and(
+        inArray(appointments.status, AUTO_DONE_OPEN),
+        lt(appointments.endsAt, now),
+        gte(appointments.endsAt, since),
+      ),
+    )
+    .for("update", { skipLocked: true });
+  let done = 0;
+  for (const a of due) {
+    const r = await setStatus(tx, a.id, "done", now, null, false, a.endsAt);
+    if (!r.ok) continue;
+    await tx.update(appointments).set({ autoDoneAt: now }).where(eq(appointments.id, a.id));
+    done++;
+  }
+  return done;
+}
 
 /**
  * Muda começo e fim de um atendimento (arrastar na agenda). Com o aviso esperando o Desfazer ("later"), o estado das
@@ -510,6 +548,7 @@ export async function editAppointment(
       endsAt: appointments.endsAt,
       serviceId: appointments.serviceId,
       priceCents: appointments.priceCents,
+      status: appointments.status,
     })
     .from(appointments)
     .where(eq(appointments.id, id));
@@ -551,9 +590,14 @@ export async function editAppointment(
               }
             : {}),
           ...(moved ? { ...SCHEDULE_RESET, ...noticeFields(notice, startsAt) } : {}),
+          // Remarcar um concluído ("Trocar status"): o retorno marcado ao concluir não vale mais
+          ...(moved && a.status === "done" ? { returnDueOn: null, returnSkippedAt: null } : {}),
         })
         .where(eq(appointments.id, id)),
     );
+    // ...e a baixa automática do concluir é anulada, como em qualquer saída de concluído
+    if (moved && a.status === "done")
+      await reverseAppointmentPayments(tx, id, null, { onlyAuto: true, reason: "Saiu de concluído" });
     if (newService) await writeServices(tx, tenantId, id, [newService]);
     return ok({ moved });
   } catch (e) {
@@ -585,6 +629,7 @@ export function listDay(tx: Tx, [from, to]: [Date, Date]) {
       paymentMethod: appointments.paymentMethod,
       paidCents: paidCentsSql,
       depositRequestedCents: appointments.depositRequestedCents,
+      autoDoneAt: appointments.autoDoneAt,
       session: sessionUseSql(appointments.id, appointments.clientPackageId, appointments.startsAt),
       serviceParts,
     })

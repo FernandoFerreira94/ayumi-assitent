@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
+import { concludePastOnOpen } from "@/features/appointments/auto-done-run";
 import { DaySchedule } from "@/features/appointments/DaySchedule";
 import { TodayFab } from "@/features/calendar/CalendarBar";
 import { parseView } from "@/features/calendar/grid";
@@ -20,6 +21,7 @@ export default async function CalendarioPage({ searchParams }: PageProps<"/calen
   const view = parseView({ v: str("v"), y: str("y"), m: str("m"), d: str("d") }, today, isDateStr);
   if (view.kind !== "day") return null;
   const { tenantId } = await requireTenant();
+  await concludePastOnOpen(tenantId);
   return (
     <>
       <DaySchedule tenantId={tenantId} date={view.date} withStrip calendar />

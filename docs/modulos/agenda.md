@@ -55,6 +55,13 @@
 - UI `DepositAgenda.tsx`: 4 caixas de resumo que também filtram, período, busca, lista por dia; tocar abre o `AppointmentCard` numa folha (Sinal recebido, Confirmar etc.). `?periodo=` e `?sinal=` (deposit|requested|none|paid) abrem filtrado; a URL acompanha sem recarregar.
 - Ações da agenda revalidam `/agendamentos` junto com `/agenda`. Testes: `tests/unit/deposit-list.test.ts`, `tests/e2e/agendamentos.spec.ts`.
 
+## Conclusão automática (24/11)
+
+- `core.autoConcludePast`: aguardando/confirmado cujo fim passou (últimos `AUTO_DONE_LOOKBACK_DAYS` = 7 dias) vira concluído pelo mesmo `setStatus` do botão (baixa do resto com data = fim do atendimento, retorno, pacote). "Pediu para remarcar" fica para a dona. Sem WhatsApp. `for update skip locked` evita conclusão dupla.
+- Roda no worker (fila `auto-done`, a cada 5 min, `auto-done-run.runAutoDone`) e ao abrir `/agenda` e `/calendario` (`concludePastOnOpen`, falha não derruba a tela).
+- Coluna `appointments.auto_done_at` (migration 0064): cartão mostra "Concluído pelo sistema"; qualquer `setStatus` ou remarcação zera.
+- Concluído ganha "Trocar status" no `AppointmentCard` (Remarcar, Faltou, Cancelar). Remarcar um concluído anula a baixa automática e o retorno (`editAppointment`). Teste: `tests/db/auto-done.test.ts`.
+
 ## Cuidados
 
 - **Faltou só depois do início** (19/11): `appointments/no-show.ts` (`canMarkNoShow`). `core.setStatus` recusa `no_show` antes de `starts_at` com `NO_SHOW_TOO_EARLY` (vale para `updateStatus` e o lote). No `AppointmentCard` (agenda, Pendências, detalhe, celular e desktop) o botão fica desligado com "Faltou: disponível a partir das HH:MM" e liga sozinho na hora.

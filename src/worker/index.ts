@@ -5,6 +5,7 @@ import { runReminders } from "@/features/reminders/run";
 import { pushFromEnv } from "@/features/push/webpush";
 import { runOwnerNotices } from "@/features/owner-notices/run";
 import { runRetention } from "@/features/retention/run";
+import { runAutoDone } from "@/features/appointments/auto-done-run";
 import { collectDigest, notifyAdmins } from "@/features/admin/alerts";
 import { digestAlert } from "@/features/admin/alerts-text";
 import { adminIds } from "@/features/admin/access";
@@ -20,6 +21,7 @@ const PUSH_QUEUE = "push-pendencias";
 const NOTICES_QUEUE = "owner-notices";
 const RETENTION_QUEUE = "retention";
 const ADMIN_DIGEST_QUEUE = "admin-digest";
+const AUTO_DONE_QUEUE = "auto-done";
 const log = ({
   level,
   msg,
@@ -57,6 +59,13 @@ async function main() {
     if (!push) return log({ level: "warn", msg: "owner_notices_skipped", reason: "VAPID não configurado" });
     const r = await runOwnerNotices(push);
     if (r.kinds.length || r.failed) log({ level: r.failed ? "warn" : "info", msg: "owner_notices_run", ...r });
+  });
+  // Conclui sozinho o que já terminou e ninguém fechou ("Concluído pelo sistema"); não manda WhatsApp
+  await boss.createQueue(AUTO_DONE_QUEUE);
+  await boss.schedule(AUTO_DONE_QUEUE, "*/5 * * * *");
+  await boss.work(AUTO_DONE_QUEUE, async () => {
+    const r = await runAutoDone();
+    if (r.done || r.failed) log({ level: r.failed ? "warn" : "info", msg: "auto_done_run", ...r });
   });
   // Limpeza diária (LGPD/Marco Civil): registro de acesso > 200 dias e conversas > 12 meses
   await boss.createQueue(RETENTION_QUEUE);
