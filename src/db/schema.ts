@@ -532,6 +532,8 @@ export const promotions = pgTable("promotions", {
   maxClients: smallint("max_clients"),
   paused: boolean("paused").notNull().default(false),
   endedAt: timestamp("ended_at", { withTimezone: true }),
+  /** excluída pela dona depois de usada: some da lista e para de valer; a linha fica para o histórico (0062) */
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

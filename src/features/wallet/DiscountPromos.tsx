@@ -8,9 +8,10 @@ import { Icon, TileTitle } from "@/components/ui/Icon";
 import { applyDiscount, parseDiscount, type DiscountKind } from "@/features/appointments/pricing";
 import { formatBRL } from "@/lib/dates";
 import { messageFor, type ErrorCode } from "@/lib/errors";
-import { createPromotionAction, promotionControlAction } from "./actions";
+import { createPromotionAction, updatePromotionAction } from "./actions";
+import { DeleteOffer, isLive, splitByLive, StatusBadge, statusLabel, ToggleOffer } from "./OfferControls";
 import { CapBar, NameField } from "./PackageSheets";
-import { promotionFacts, promotionOffer, type PromotionStatus } from "./promotion-rules";
+import { promotionFacts, promotionOffer } from "./promotion-rules";
 import { capText, periodText, type SalonInfo } from "./promo-text";
 import { ShareTextPanel, ShareTextSheet } from "./ShareText";
 import type { PromotionView } from "./views";
@@ -22,55 +23,46 @@ const chip =
 const field = "min-h-12 w-full rounded-2xl border border-line bg-surface px-4 text-base";
 const pill = "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold";
 
-const STATUS: Record<PromotionStatus, { label: string; cls: string }> = {
-  running: { label: "Valendo", cls: "bg-ok-bg text-ok" },
-  scheduled: { label: "Agendada", cls: "bg-soft text-primary-text" },
-  paused: { label: "Pausada", cls: "bg-wait-bg text-wait" },
-  sold_out: { label: "Esgotada", cls: "bg-fail-bg text-fail" },
-  ended: { label: "Encerrada", cls: "bg-fail-bg text-fail" },
-};
-
 /** "O que acontece" com a promoção, em uma frase, conforme a situação. */
 function whatHappens(p: PromotionView): string {
   switch (p.status) {
     case "running":
       return p.left === null
-        ? "Entra sozinha ao agendar os serviços da promoção."
-        : `Entra sozinha ao agendar. Ao chegar em ${p.maxClients} clientes, encerra sozinha.`;
+        ? "Funcionando: entra sozinha ao agendar os serviços da promoção."
+        : `Funcionando: entra sozinha ao agendar. Ao chegar em ${p.maxClients} clientes, esgota.`;
     case "scheduled":
-      return "Ainda não começou: entra no dia de início.";
+      return "Ainda não começou: entra sozinha no dia de início.";
     case "paused":
-      return "Pausada: não entra em agendamento novo até você retomar.";
+      return "Desativada: não entra em agendamento novo até você reativar. Quem já agendou mantém o desconto.";
     case "sold_out":
-      return "Chegou no limite. Se alguém cancelar, a vaga volta.";
+      return "Esgotada: chegou no limite. Se alguém cancelar, a vaga volta; ou edite o limite.";
     case "ended":
-      return "Encerrada. Quem já agendou mantém o desconto.";
+      return "Vencida: o período acabou. Edite as datas para usar de novo.";
   }
 }
 
-function PromoCard({ p, salon }: { p: PromotionView; salon: SalonInfo }) {
-  const [pending, start] = useTransition();
-  const [confirmEnd, setConfirmEnd] = useState(false);
+function PromoCard({ p, salon, services }: { p: PromotionView; salon: SalonInfo; services: Svc[] }) {
   const title = p.name ?? p.offer;
-  const act = (action: "pause" | "resume" | "end", done: string) =>
-    start(async () => {
-      const r = await promotionControlAction({ target: "promotion", id: p.id, action }).catch(() => null);
-      if (r?.ok) notify.success(done);
-      else notify.error(r && !r.ok ? r.code : "NETWORK");
-      setConfirmEnd(false);
-    });
-  const live = p.status !== "ended";
+  const live = isLive(p.status);
+  const off = p.paused || p.ended;
   return (
-    <li className={`grid gap-2 rounded-2xl bg-soft px-4 py-3 ${live ? "" : "opacity-75"}`}>
+    <li
+      aria-label={`${title}: ${statusLabel(p.status, "a")}`}
+      className={`grid gap-2 rounded-2xl px-4 py-3 ${live ? "bg-soft" : "border border-dashed border-line bg-surface/60"}`}
+    >
       <div className="flex items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="font-bold">{title}</p>
+        <div className="grid min-w-0 flex-1 gap-1">
+          <StatusBadge status={p.status} g="a" />
+          <p className={`font-bold ${live ? "" : "text-muted"}`}>{title}</p>
           {p.name ? <p className="text-sm font-semibold text-muted">{p.offer}</p> : null}
         </div>
-        <span className="shrink-0 text-2xl font-bold tabular-nums text-primary-text">−{p.label}</span>
+        <span
+          className={`shrink-0 text-2xl font-bold tabular-nums ${live ? "text-primary-text" : "text-muted line-through decoration-2"}`}
+        >
+          −{p.label}
+        </span>
       </div>
       <span className="flex flex-wrap gap-1.5">
-        <span className={`${pill} ${STATUS[p.status].cls}`}>{STATUS[p.status].label}</span>
         {p.period ? (
           <span className={`${pill} bg-surface`}>
             <Icon name="calendar" size={13} className="text-primary-text" />
@@ -86,59 +78,17 @@ function PromoCard({ p, salon }: { p: PromotionView; salon: SalonInfo }) {
       </span>
       <CapBar used={p.used} max={p.maxClients} label="usaram" />
       <p className="text-sm font-semibold text-muted">{whatHappens(p)}</p>
-      {live ? (
-        confirmEnd ? (
-          <div className="grid gap-2 rounded-2xl bg-fail-bg px-3 py-3" role="group" aria-label="Confirmar encerrar">
-            <p className="text-sm font-bold text-fail">Encerrar de vez? Não dá para voltar.</p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirmEnd(false)}
-                className="btn-glass min-h-11 flex-1 rounded-full px-4 text-sm font-bold"
-              >
-                Não
-              </button>
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => act("end", "Promoção encerrada")}
-                className="min-h-11 flex-1 rounded-full bg-fail px-4 text-sm font-bold text-white disabled:opacity-60"
-              >
-                Sim, encerrar
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-wrap items-center gap-2">
-            <ShareTextSheet title={title} facts={p.facts} salon={salon} />
-            {p.status !== "sold_out" ? (
-              <button
-                type="button"
-                disabled={pending}
-                aria-label={`${p.paused ? "Retomar" : "Pausar"} ${title}`}
-                onClick={() => (p.paused ? act("resume", "Promoção retomada") : act("pause", "Promoção pausada"))}
-                className="btn-glass flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm font-bold"
-              >
-                <Icon name={p.paused ? "play" : "pause"} size={16} className="text-primary-text" />
-                {p.paused ? "Retomar" : "Pausar"}
-              </button>
-            ) : null}
-            <button
-              type="button"
-              aria-label={`Encerrar ${title}`}
-              onClick={() => setConfirmEnd(true)}
-              className="ml-auto min-h-11 px-2 text-sm font-bold text-fail"
-            >
-              Encerrar
-            </button>
-          </div>
-        )
-      ) : null}
+      <div className="flex flex-wrap items-center gap-2">
+        {live ? <ShareTextSheet title={title} facts={p.facts} salon={salon} /> : null}
+        <ToggleOffer target="promotion" id={p.id} title={title} paused={off} g="a" />
+        <NewPromotionSheet services={services} salon={salon} edit={p} />
+        <DeleteOffer target="promotion" id={p.id} title={title} used={p.used} />
+      </div>
     </li>
   );
 }
 
-/** Ajustes > Pagamentos > Promoções de desconto: o que está valendo, quantas usaram e o que dá para fazer. */
+/** Planos > Promoções: ativas em cima; desativadas, vencidas e esgotadas embaixo, sempre à vista. */
 export function DiscountPromos({
   promotions,
   services,
@@ -148,8 +98,7 @@ export function DiscountPromos({
   services: Svc[];
   salon: SalonInfo;
 }) {
-  const live = promotions.filter((p) => p.status !== "ended");
-  const ended = promotions.filter((p) => p.status === "ended");
+  const { live, off } = splitByLive(promotions);
   const running = live.filter((p) => p.status === "running").length;
   return (
     <div className="glass grid gap-3 rounded-[1.75rem] p-5">
@@ -157,8 +106,10 @@ export function DiscountPromos({
         <TileTitle as="h2" icon="percent" tint="lavender">
           Promoções de desconto
         </TileTitle>
-        {live.length ? (
-          <span className={`${pill} ${running ? "bg-ok-bg text-ok" : "bg-surface"}`}>{running} valendo</span>
+        {promotions.length ? (
+          <span className={`${pill} ${running ? "bg-ok-bg text-ok" : "bg-surface"}`}>
+            {running} {running === 1 ? "ativa" : "ativas"}
+          </span>
         ) : null}
       </div>
       <p className="text-sm font-semibold text-muted">
@@ -166,36 +117,42 @@ export function DiscountPromos({
       </p>
       {live.length === 0 ? (
         <div className="grid gap-1 rounded-2xl bg-soft px-4 py-4 text-center">
-          <p className="font-bold">Nenhuma promoção valendo</p>
-          <p className="text-sm font-semibold text-muted">Crie uma para Natal, Black Friday ou o mês fraco.</p>
+          <p className="font-bold">Nenhuma promoção ativa</p>
+          <p className="text-sm font-semibold text-muted">
+            {off.length ? "Reative uma abaixo ou crie outra." : "Crie uma para Natal, Black Friday ou o mês fraco."}
+          </p>
         </div>
       ) : (
         <ul className="grid gap-2">
           {live.map((p) => (
-            <PromoCard key={p.id} p={p} salon={salon} />
+            <PromoCard key={p.id} p={p} salon={salon} services={services} />
           ))}
         </ul>
       )}
       <NewPromotionSheet services={services} salon={salon} />
+      {off.length ? (
+        <section aria-label="Promoções fora do ar" className="grid gap-2">
+          <h3 className="flex items-center gap-2 pt-1 text-sm font-bold text-muted">
+            Fora do ar
+            <span className="rounded-full bg-surface px-2 py-0.5 text-xs tabular-nums">{off.length}</span>
+          </h3>
+          <ul className="grid gap-2">
+            {off.map((p) => (
+              <PromoCard key={p.id} p={p} salon={salon} services={services} />
+            ))}
+          </ul>
+        </section>
+      ) : null}
       <details className="rounded-2xl bg-soft px-4 py-3 text-sm font-semibold">
         <summary className="min-h-8 cursor-pointer font-bold">Como funciona</summary>
         <ul className="mt-2 grid list-disc gap-1 pl-5 text-muted">
           <li>Na hora de agendar, a folha mostra a promoção e já aplica. Dá para desligar ali.</li>
           <li>Vale 1 vez por cliente. Cancelou? A vaga volta.</li>
           <li>Não soma com desconto digitado à mão nem com sessão de pacote.</li>
-          <li>Pausar tira do ar até você retomar. Encerrar é de vez.</li>
+          <li>Desativar tira do ar e continua na lista; Reativar volta. Vencida? Edite as datas.</li>
+          <li>Excluir pede para digitar &quot;excluir&quot;. Quem já agendou mantém o desconto.</li>
         </ul>
       </details>
-      {ended.length ? (
-        <details className="rounded-2xl px-1 text-sm">
-          <summary className="min-h-10 cursor-pointer font-bold text-muted">Encerradas ({ended.length})</summary>
-          <ul className="mt-2 grid gap-2">
-            {ended.map((p) => (
-              <PromoCard key={p.id} p={p} salon={salon} />
-            ))}
-          </ul>
-        </details>
-      ) : null}
     </div>
   );
 }
@@ -210,7 +167,12 @@ const BAD_TEXT: Record<string, string> = {
   name: "Até 60 letras.",
 };
 
-function NewPromotionSheet({ services, salon }: { services: Svc[]; salon: SalonInfo }) {
+/** Valor do desconto como a dona digita: "20" ou "15,00". */
+const rawDiscount = (d: PromotionView["discount"]) =>
+  d.kind === "pct" ? String(d.value) : (d.value / 100).toFixed(2).replace(".", ",");
+
+/** Criar promoção ou, com `edit`, editar a existente (mesmo passo a passo, já preenchido). */
+function NewPromotionSheet({ services, salon, edit }: { services: Svc[]; salon: SalonInfo; edit?: PromotionView }) {
   const side = useSheetSide();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
@@ -222,12 +184,21 @@ function NewPromotionSheet({ services, salon }: { services: Svc[]; salon: SalonI
   const [startsOn, setStartsOn] = useState("");
   const [endsOn, setEndsOn] = useState("");
   const [name, setName] = useState("");
+  /** serviços que a promoção tinha e hoje estão pausados/excluídos: entram na lista para poder tirar */
+  const choices = edit
+    ? [
+        ...services,
+        ...edit.serviceIds
+          .filter((id) => !services.some((s) => s.id === id))
+          .map((id) => edit.services.find((s) => s.id === id) ?? { id, name: "Serviço pausado", priceCents: 0 }),
+      ]
+    : services;
   const [bad, setBad] = useState<string | null>(null);
   const [error, setError] = useState<ErrorCode | null>(null);
   const [created, setCreated] = useState<{ title: string; facts: ReturnType<typeof promotionFacts> } | null>(null);
   const [pending, start] = useTransition();
 
-  const picked = services.filter((s) => serviceIds.includes(s.id));
+  const picked = choices.filter((s) => serviceIds.includes(s.id));
   const discount = parseDiscount(kind, raw);
   const valid = !!discount && discount !== "invalid" && (discount.kind === "brl" || discount.value <= 99);
   const max = limited ? Number(cap) || null : null;
@@ -242,6 +213,16 @@ function NewPromotionSheet({ services, salon }: { services: Svc[]; salon: SalonI
       setBad(null);
       setError(null);
       setCreated(null);
+      if (edit) {
+        setKind(edit.discount.kind);
+        setRaw(rawDiscount(edit.discount));
+        setServiceIds(edit.serviceIds);
+        setLimited(edit.maxClients !== null);
+        setCap(String(edit.maxClients ?? 30));
+        setStartsOn(edit.startsOn ?? "");
+        setEndsOn(edit.endsOn ?? "");
+        setName(edit.name ?? "");
+      }
     }
   }
 
@@ -262,7 +243,7 @@ function NewPromotionSheet({ services, salon }: { services: Svc[]; salon: SalonI
     setBad(null);
     setError(null);
     start(async () => {
-      const r = await createPromotionAction({
+      const input = {
         name,
         discountKind: kind,
         discountValue: raw,
@@ -270,7 +251,10 @@ function NewPromotionSheet({ services, salon }: { services: Svc[]; salon: SalonI
         startsOn,
         endsOn,
         maxClients: limited ? cap : "",
-      }).catch(() => null);
+      };
+      const r = await (edit ? updatePromotionAction({ ...input, id: edit.id }) : createPromotionAction(input)).catch(
+        () => null,
+      );
       if (!r?.ok) {
         if (r && !r.ok && r.code === "VALIDATION") {
           setBad(r.field ?? "discount");
@@ -279,6 +263,11 @@ function NewPromotionSheet({ services, salon }: { services: Svc[]; salon: SalonI
         return;
       }
       if (!valid) return;
+      if (edit) {
+        notify.success("Promoção salva");
+        setOpen(false);
+        return;
+      }
       setCreated({
         title:
           name.trim() ||
@@ -306,12 +295,22 @@ function NewPromotionSheet({ services, salon }: { services: Svc[]; salon: SalonI
 
   return (
     <Drawer.Root direction={side} open={open} onOpenChange={onOpenChange} repositionInputs={false}>
-      <Drawer.Trigger
-        disabled={!services.length}
-        className="btn-tint flex min-h-12 items-center justify-center gap-2 rounded-full px-5 font-bold disabled:opacity-60"
-      >
-        Criar promoção de desconto
-      </Drawer.Trigger>
+      {edit ? (
+        <Drawer.Trigger
+          aria-label={`Editar ${edit.name ?? edit.offer}`}
+          className="btn-glass flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm font-bold"
+        >
+          <Icon name="pencil" size={16} className="text-primary-text" />
+          {edit.status === "ended" ? "Editar datas" : "Editar"}
+        </Drawer.Trigger>
+      ) : (
+        <Drawer.Trigger
+          disabled={!services.length}
+          className="btn-tint flex min-h-12 items-center justify-center gap-2 rounded-full px-5 font-bold disabled:opacity-60"
+        >
+          Criar promoção de desconto
+        </Drawer.Trigger>
+      )}
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/30" />
         <Drawer.Content
@@ -323,7 +322,9 @@ function NewPromotionSheet({ services, salon }: { services: Svc[]; salon: SalonI
         >
           <SidePanelClose />
           <div className={SHEET_SCROLL}>
-            <Drawer.Title className="text-xl font-bold">{created ? "Promoção criada!" : "Nova promoção"}</Drawer.Title>
+            <Drawer.Title className="text-xl font-bold">
+              {created ? "Promoção criada!" : edit ? "Editar promoção" : "Nova promoção"}
+            </Drawer.Title>
             <Drawer.Description className="pb-3 text-sm font-semibold text-muted">
               {created
                 ? `${created.title} já está valendo. Agora é divulgar.`
@@ -392,7 +393,7 @@ function NewPromotionSheet({ services, salon }: { services: Svc[]; salon: SalonI
                         role="group"
                         aria-label="Serviços da promoção"
                       >
-                        {services.map((s) => (
+                        {choices.map((s) => (
                           <button
                             key={s.id}
                             type="button"
@@ -535,7 +536,7 @@ function NewPromotionSheet({ services, salon }: { services: Svc[]; salon: SalonI
                       className="btn-tint flex min-h-13 flex-1 items-center justify-center gap-2 rounded-full px-5 font-bold disabled:opacity-70"
                     >
                       {pending ? <span className="spin" aria-hidden="true" /> : null}
-                      {pending ? "Criando…" : "Criar promoção"}
+                      {pending ? (edit ? "Salvando…" : "Criando…") : edit ? "Salvar" : "Criar promoção"}
                     </button>
                   )}
                 </div>

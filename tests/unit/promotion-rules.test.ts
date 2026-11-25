@@ -19,7 +19,8 @@ describe("promoção de desconto: situação", () => {
     expect(promotionStatus(base, "2030-12-01", 30)).toBe("sold_out");
     expect(promotionStatus({ ...base, paused: true }, "2030-12-01", 30)).toBe("sold_out");
     expect(promotionStatus({ ...base, endsOn: "2030-11-30" }, "2030-12-01", 0)).toBe("ended");
-    expect(promotionStatus({ ...base, ended: true }, "2030-12-01", 0)).toBe("ended");
+    expect(promotionStatus({ ...base, ended: true }, "2030-12-01", 0)).toBe("paused");
+    expect(promotionStatus({ ...base, paused: true, endsOn: "2030-11-30" }, "2030-12-01", 0)).toBe("ended");
     expect(promotionStatus({ ...base, maxClients: null }, "2030-12-01", 999)).toBe("running");
   });
 });
@@ -114,5 +115,35 @@ describe("promoção de desconto: formulário e texto", () => {
     const t = promoText(facts, { name: "Estúdio", address: null, instagram: null }, "status", formatBRL);
     expect(t).toContain("R$ 10,00 de desconto em Mão ou Pé");
     expect(t).not.toContain("De R$");
+  });
+});
+
+describe("planos: editar e excluir", () => {
+  it("lê a edição do pacote (nome, período e limite)", async () => {
+    const { parseOfferEdit } = await import("@/features/wallet/rules");
+    expect(parseOfferEdit({ name: " Natal ", startsOn: "2030-12-01", endsOn: "2030-12-31", maxClients: "30" })).toEqual(
+      {
+        ok: true,
+        edit: { name: "Natal", startsOn: "2030-12-01", endsOn: "2030-12-31", maxClients: 30 },
+      },
+    );
+    expect(parseOfferEdit({ name: "X", startsOn: "", endsOn: "", maxClients: "" })).toEqual({
+      ok: true,
+      edit: { name: "X", startsOn: null, endsOn: null, maxClients: null },
+    });
+    expect(parseOfferEdit({ name: "" })).toEqual({ ok: false, field: "name" });
+    expect(parseOfferEdit({ name: "X", startsOn: "2030-12-02", endsOn: "2030-12-01" })).toEqual({
+      ok: false,
+      field: "endsOn",
+    });
+    expect(parseOfferEdit({ name: "X", maxClients: "0" })).toEqual({ ok: false, field: "maxClients" });
+  });
+
+  it("excluir só com a palavra digitada", async () => {
+    const { isDeleteWord } = await import("@/features/wallet/rules");
+    expect(isDeleteWord("excluir")).toBe(true);
+    expect(isDeleteWord(" EXCLUIR ")).toBe(true);
+    expect(isDeleteWord("excluí")).toBe(false);
+    expect(isDeleteWord("")).toBe(false);
   });
 });

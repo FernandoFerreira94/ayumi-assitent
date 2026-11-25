@@ -21,11 +21,14 @@ export type PromotionCore = {
   ended: boolean;
 };
 
-/** Situação hoje. Encerrada (à mão ou pelo fim do período) e esgotada vêm antes de pausada. */
+/**
+ * Situação hoje: "ended" = vencida (passou do fim do período), "paused" = desativada pela dona (o antigo
+ * "Encerrar", `ended`, conta como desativada e volta ao reativar). Vencida e esgotada vêm antes de desativada.
+ */
 export function promotionStatus(p: Omit<PromotionCore, "discount" | "serviceIds">, today: string, used: number) {
-  if (p.ended || (p.endsOn && today > p.endsOn)) return "ended" as const;
+  if (p.endsOn && today > p.endsOn) return "ended" as const;
   if (p.maxClients !== null && used >= p.maxClients) return "sold_out" as const;
-  if (p.paused) return "paused" as const;
+  if (p.paused || p.ended) return "paused" as const;
   if (p.startsOn && today < p.startsOn) return "scheduled" as const;
   return "running" as const;
 }
