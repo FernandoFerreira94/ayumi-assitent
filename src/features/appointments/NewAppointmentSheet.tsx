@@ -2,8 +2,9 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Drawer } from "vaul";
-import { SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
+import { SHEET_SCROLL, SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
 import type { PickerOption } from "@/components/ui/LetterPicker";
+import { Icon } from "@/components/ui/Icon";
 import { LoadingRegion, Skeleton } from "@/components/ui/Skeleton";
 import { formatBRL, formatDayTitle } from "@/lib/dates";
 import { notify } from "@/components/feedback/toast";
@@ -15,7 +16,8 @@ import { BookingOverlay, type Booking, type Step } from "./BookingOverlay";
 import { BookingSteps } from "./BookingSteps";
 import type { ServiceOption } from "./options";
 import { warnSync } from "./sync-warning";
-import { createAppointment } from "./actions";
+import { ServiceForm } from "@/features/services/ServiceForm";
+import { createAppointment, loadBookingOptions } from "./actions";
 
 /** Mesmo com resposta instantânea a Bolha trabalha um pouco, para a tela não piscar. */
 const MIN_MS = 900;
@@ -45,7 +47,7 @@ function flash(id: string) {
 export function NewAppointmentSheet({
   date,
   clients,
-  services,
+  services: servicesProp,
   openKey,
   time,
   timeTapped = true,
@@ -88,14 +90,40 @@ export function NewAppointmentSheet({
   const [formKey, setFormKey] = useState(0);
   const runId = useRef(0);
   const lastData = useRef<FormData | null>(null);
+  /** Serviços recarregados depois de criar o primeiro aqui mesmo (a lista que veio estava vazia). */
+  const [fresh, setFresh] = useState<ServiceOption[] | null>(null);
+  /** Formulário de "Criar serviço" aberto dentro da folha, no lugar do aviso. */
+  const [creating, setCreating] = useState(false);
+  const [serviceKey, setServiceKey] = useState(0);
+  const [reloading, setReloading] = useState(false);
   const [prevKey, setPrevKey] = useState(openKey);
   if (openKey !== prevKey) {
     setPrevKey(openKey);
     setOpen(true);
     setBooking(null);
+    setFresh(null);
+    setCreating(false);
   }
+  const services = fresh && fresh.length > 0 ? fresh : servicesProp;
   const loading = clients === null || services === null;
   const missing = !loading && (clients.length === 0 || services.length === 0);
+  const noServices = !loading && services.length === 0;
+  const noClients = !loading && clients.length === 0;
+
+  /** Serviço criado aqui: busca a lista de novo e, se já dá para agendar, a folha vira o agendar. */
+  async function reloadServices() {
+    setReloading(true);
+    const res = await loadBookingOptions();
+    setReloading(false);
+    if (!res.ok) {
+      notify.error(res.code, () => void reloadServices());
+      return;
+    }
+    setFresh(res.data.services);
+    setCreating(false);
+    if (res.data.services.length === 0)
+      notify.info("Serviço fora do agendar", "Ligue \"Disponível para agendar\" no serviço para escolher aqui.");
+  }
   // O botão Agendar fica fora do <form> (no rodapé fixo) e aponta para ele pelo id
   const formDomId = useId();
   const working = booking !== null && booking.result === null;
@@ -268,12 +296,61 @@ export function NewAppointmentSheet({
                   </div>
                 </LoadingRegion>
               </div>
+            ) : missing && creating && noServices ? (
+              // Cria o serviço aqui mesmo, sem sair do agendar; ao salvar volta para o agendar já com ele
+              <div className={`${SHEET_SCROLL} pt-6`}>
+                <button
+                  type="button"
+                  onClick={() => setCreating(false)}
+                  className="mb-2 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-primary"
+                >
+                  <span aria-hidden="true">‹</span>
+                  Voltar
+                </button>
+                <p className="text-xl font-bold">Novo serviço</p>
+                <p className="pb-4 pt-1 text-sm font-semibold text-muted">
+                  Preencha nome, duração e preço. Depois é só escolher no agendar.
+                </p>
+                {reloading ? (
+                  <LoadingRegion label="Atualizando serviços">
+                    <div className="grid gap-3">
+                      <Skeleton className="h-12 w-full rounded-2xl" />
+                      <Skeleton className="h-13 w-full rounded-2xl" />
+                    </div>
+                  </LoadingRegion>
+                ) : (
+                  <ServiceForm
+                    key={serviceKey}
+                    services={[]}
+                    onSaved={() => void reloadServices()}
+                    onDuplicate={() => undefined}
+                    onDelete={() => undefined}
+                  />
+                )}
+              </div>
             ) : missing ? (
               <div className="px-5 pt-6 pb-[max(env(safe-area-inset-bottom),20px)] md:px-0">
                 <p className="text-xl font-bold">Novo agendamento</p>
                 <p className="pt-1 text-sm font-semibold text-muted">
-                  Cadastre ao menos uma cliente (em Clientes) e um serviço (em Serviços).
+                  {noServices && noClients
+                    ? "Para agendar, cadastre ao menos um serviço e uma cliente (em Clientes)."
+                    : noServices
+                      ? "Para agendar, cadastre ao menos um serviço."
+                      : "Cadastre ao menos uma cliente (em Clientes)."}
                 </p>
+                {noServices ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setServiceKey((k) => k + 1);
+                      setCreating(true);
+                    }}
+                    className="btn-tint mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-6 text-base font-bold"
+                  >
+                    <Icon name="plus" size={18} />
+                    Criar serviço
+                  </button>
+                ) : null}
               </div>
             ) : (
               // Fica montado por trás da Bolha: se der erro, a folha volta preenchida
