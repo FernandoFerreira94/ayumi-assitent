@@ -98,6 +98,8 @@ test("Faltou mostra Desfazer e volta ao status anterior", async ({ page }) => {
   await page.getByRole("button", { name: "Faltou" }).click();
   await expect(page.getByText("Marcado como faltou")).toBeVisible();
   await page.getByRole("button", { name: "Desfazer" }).click();
-  // Volta a concluído; a troca feita pela dona tira o "pelo sistema"
+  // Volta a concluído (o Faltou fecha a ficha; o aviso confirma) e a troca feita pela dona tira o "pelo sistema"
+  await expect(page.getByText("Concluído", { exact: true }).first()).toBeVisible();
+  await page.getByRole("button", { name: /Ana Lima, Escova, 10:00/ }).click();
   await expect(page.getByText("Escova · Concluído", { exact: true }).first()).toBeVisible();
 });
