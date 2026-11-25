@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useId, useRef, useState } from "react";
 import { Drawer } from "vaul";
 import { SHEET_SCROLL, SidePanelClose, sheetClass, useSheetSide } from "@/components/ui/AdaptiveSheet";
@@ -16,8 +17,12 @@ import { BookingOverlay, type Booking, type Step } from "./BookingOverlay";
 import { BookingSteps } from "./BookingSteps";
 import type { ServiceOption } from "./options";
 import { warnSync } from "./sync-warning";
-import { ServiceForm } from "@/features/services/ServiceForm";
 import { createAppointment, loadBookingOptions } from "./actions";
+
+/** Só carrega quando a dona toca em "Criar serviço" (caso raro): não pesa na folha de agendar. */
+const ServiceForm = dynamic(() => import("@/features/services/ServiceForm").then((m) => m.ServiceForm), {
+  loading: () => <Skeleton className="h-64 w-full rounded-2xl" />,
+});
 
 /** Mesmo com resposta instantânea a Bolha trabalha um pouco, para a tela não piscar. */
 const MIN_MS = 900;
