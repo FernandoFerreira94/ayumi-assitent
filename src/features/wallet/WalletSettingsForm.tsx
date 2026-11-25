@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/Switch";
 import type { ActionResult } from "@/lib/errors";
 import { saveWalletSettingsAction } from "./actions";
 import type { WalletSettings } from "./core";
+import { normalizePixKey } from "./pix-brcode";
 
 // 16px: abaixo disso o iPhone dá zoom ao tocar no campo
 const sel = "min-h-11 rounded-full border border-line bg-white px-3 text-base font-semibold";
@@ -26,6 +27,8 @@ const hoursLabel = (h: number) => (h === 0 ? "qualquer antecedência" : h === 1 
 export function WalletSettingsForm({ settings }: { settings: WalletSettings }) {
   const [lateKeeps, setLateKeeps] = useState(settings.lateCancelKeepsDeposit);
   const [noShowKeeps, setNoShowKeeps] = useState(settings.noShowKeepsDeposit);
+  const [pix, setPix] = useState(settings.pixKey ?? "");
+  const pixOk = !pix.trim() || normalizePixKey(pix) !== null;
   const [noShowSession, setNoShowSession] = useState(settings.noShowUsesSession);
   const [notice, setNotice] = useState(settings.cancelNoticeHours);
   const [state, action, pending] = useActionState(async (prev: ActionResult | null, fd: FormData) => {
@@ -143,14 +146,19 @@ export function WalletSettingsForm({ settings }: { settings: WalletSettings }) {
           <input
             id="pix-key"
             name="pixKey"
-            defaultValue={settings.pixKey ?? ""}
+            value={pix}
+            onChange={(e) => setPix(e.target.value)}
             maxLength={140}
             autoComplete="off"
             placeholder="CPF, e-mail, telefone…"
             aria-invalid={bad === "pixKey"}
             className="min-h-12 rounded-2xl border border-line bg-white px-4 text-base"
           />
-          <span className="text-sm font-semibold text-muted">Opcional. Vai na mensagem do sinal.</span>
+          <span className="text-sm font-semibold text-muted">
+            {pixOk
+              ? "Opcional. Vai na mensagem do sinal, com o Pix copia e cola já com o valor."
+              : "Não reconheci o tipo da chave: a cliente recebe só a chave em texto, sem o copia e cola."}
+          </span>
         </label>
       </Card>
 

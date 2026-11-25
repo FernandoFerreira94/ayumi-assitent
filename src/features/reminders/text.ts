@@ -33,6 +33,9 @@ export const TEMPLATE_MAX = 600;
 export const REMINDER_VARS = ["nome", "servico", "dia", "hora", "valor", "salao", "endereco", "mapa"] as const;
 type Var = (typeof REMINDER_VARS)[number];
 
+/** Uma vez, na 1ª mensagem automática que a cliente recebe: como parar (menos denúncia de spam e LGPD). */
+export const OPT_OUT_HINT = "Se preferir não receber lembretes, é só responder SAIR.";
+
 /** Opções que vão sempre no fim dos avisos: é por elas que o webhook entende a resposta (messaging/replies.ts). */
 export const OPTIONS = ["", "Responda com o número:", "1 - Confirmo", "2 - Cancelar", "3 - Reagendar"];
 
@@ -73,7 +76,7 @@ export type MessageData = {
   /** Link do convite (.ics) para a cliente salvar na agenda; só na mensagem de agendamento */
   calendarUrl?: string | null;
   /** Sinal pedido que ainda falta (centavos) e a chave Pix do salão: na mensagem de agendamento e nos avisos */
-  deposit?: { cents: number; pixKey?: string | null } | null;
+  deposit?: { cents: number; pixKey?: string | null; copyPaste?: boolean } | null;
   /** Já pago ao agendar ("Já recebi"): vira uma linha "✅ Sinal recebido" / "✅ Pagamento recebido" */
   paid?: { cents: number; full: boolean } | null;
   /** Sessão de pacote deste horário ("3 de 6"): vira uma linha sutil (Ajustes > Mensagens liga/desliga) */
@@ -116,11 +119,12 @@ function fill(rawTemplate: string, a: MessageData, salon: SalonMessageOpts, day:
 }
 
 /** Pedido do sinal: valor e Pix. Vai sempre (mesmo com texto editado), antes do link do convite. */
-export function depositLines(cents: number, pixKey?: string | null): string {
+export function depositLines(cents: number, pixKey?: string | null, copyPaste = false): string {
   const pix = pixKey?.trim();
   return [
     `Para confirmar, falta só o sinal de ${formatBRL(cents)}.`,
     pix ? `Pix: ${pix}` : null,
+    pix && copyPaste ? "O Pix copia e cola vai na próxima mensagem." : null,
     "Pode me mandar o comprovante por aqui 😊",
   ]
     .filter(Boolean)
@@ -155,7 +159,7 @@ export function bookingText(a: MessageData, now: Date, salon: SalonMessageOpts =
   // Texto padrão com sinal pendente diz "Reservei" (quem confirma é o sinal); texto da dona é respeitado
   const base = withSession(salon.template?.trim() || (pending ? DEFAULT_BOOKING_DEPOSIT : DEFAULT_BOOKING), a);
   const template = pending
-    ? `${base}\n\n${depositLines(a.deposit!.cents, a.deposit!.pixKey)}`
+    ? `${base}\n\n${depositLines(a.deposit!.cents, a.deposit!.pixKey, a.deposit!.copyPaste)}`
     : a.paid?.cents
       ? `${base}\n\n${paidLine(a.paid)}`
       : base;
@@ -217,8 +221,10 @@ export const calendarUpdateLine = (url: string) => `📲 Atualize na sua agenda:
  * Aviso de remarcação. Não pede resposta (o lembrete do horário novo pede). O link do convite vai no lugar de
  * {agenda} ou no fim, como na mensagem de agendamento.
  */
-export function rescheduleText(a: MessageData, now: Date, salon: SalonMessageOpts = {}): string {
-  const template = salon.template?.trim() || DEFAULT_RESCHEDULE;
+export function rescheduleText(a: MessageData & { paidCents?: number }, now: Date, salon: SalonMessageOpts = {}): string {
+  const raw = salon.template?.trim() || DEFAULT_RESCHEDULE;
+  // Já pagou algo (sinal): avisa que continua valendo, antes do link
+  const template = a.paidCents ? `${raw}\n\nO que você já pagou continua valendo para o novo horário 💜` : raw;
   const line = a.calendarUrl ? calendarUpdateLine(a.calendarUrl) : "";
   const withLink = template.includes("{agenda}")
     ? template.replace(/\{agenda\}/g, line)
@@ -232,8 +238,13 @@ export function rescheduleText(a: MessageData, now: Date, salon: SalonMessageOpt
 export const DEFAULT_CANCEL =
   "Oi! Seu horário de {servico} ({dia}, às {hora}) foi cancelado. Se quiser marcar outro dia, é só me chamar 💜";
 
-export function cancelText(a: MessageData, now: Date, salon: SalonMessageOpts = {}): string {
-  return fill(DEFAULT_CANCEL, a, salon, dayLabel(a.startsAt, now));
+/** Linha automática quando o que a cliente pagou virou crédito (nunca fala de sinal retido: isso é conversa da dona). */
+export const creditLine = (cents: number) =>
+  `O valor de ${formatBRL(cents)} que você já tinha pago ficou como crédito para o seu próximo horário 💜`;
+
+export function cancelText(a: MessageData & { creditCents?: number }, now: Date, salon: SalonMessageOpts = {}): string {
+  const body = fill(salon.template?.trim() || DEFAULT_CANCEL, a, salon, dayLabel(a.startsAt, now));
+  return a.creditCents ? `${body}\n\n${creditLine(a.creditCents)}` : body;
 }
 
 /** Sinal recebido (a dona marcou "Sinal recebido" com "Avisar a cliente" ligado). Confirma o horário; não pede resposta. */

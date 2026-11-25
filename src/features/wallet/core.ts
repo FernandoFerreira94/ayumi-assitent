@@ -79,6 +79,11 @@ export function appointmentMoves(tx: Tx, appointmentIds: string[]): Promise<Move
 }
 
 /** Movimentos ainda valendo (não anulados) de um atendimento, dos tipos pedidos; `only` filtra mais. */
+/** Quanto do que a cliente pagou virou crédito ao cancelar este horário (vai no aviso de cancelamento). */
+export async function creditFromAppointment(tx: Tx, appointmentId: string): Promise<number> {
+  return (await liveMoves(tx, appointmentId, ["credit_in"])).reduce((s, m) => s + m.amountCents, 0);
+}
+
 async function liveMoves(tx: Tx, appointmentId: string, kinds: LedgerKind[], only?: SQL) {
   const rev = alias(clientLedger, "rev");
   return tx

@@ -7,6 +7,7 @@ import { errCode, log } from "@/lib/log";
 import { MessagingOfflineError, MessagingRejectedError, sendFailReason, type MessagingPort } from "./port";
 import { recordMessage } from "./store";
 import { nextSendable } from "@/features/reminders/quiet";
+import { creditFromAppointment } from "@/features/wallet/core";
 
 const RETRY_MS = 5 * 60_000;
 
@@ -53,10 +54,17 @@ export async function sendCancelNotice(
     if (!a || a.status !== "cancelled" || a.startsAt <= now) return "none";
     if (a.optedOut) return "opted_out";
     const [t] = await tx
-      .select({ name: tenants.name, fullName: tenants.clientNameFull })
+      .select({ name: tenants.name, fullName: tenants.clientNameFull, template: tenants.cancelTemplate, address: tenants.address })
       .from(tenants)
       .where(eq(tenants.id, tenantId));
-    const text = cancelText(a, now, { name: t?.name, fullName: t?.fullName });
+    // O que ela já tinha pago e virou crédito vai numa linha; sinal retido nunca aparece (é conversa da dona)
+    const creditCents = await creditFromAppointment(tx, appointmentId);
+    const text = cancelText({ ...a, creditCents }, now, {
+      name: t?.name,
+      fullName: t?.fullName,
+      template: t?.template,
+      address: t?.address,
+    });
     try {
       const res = await port.sendText(a.phone, text);
       // Já saiu: falha ao gravar na conversa não pode virar "não enviada"

@@ -192,6 +192,8 @@ export type MessageSettings = ReminderSettings & {
   /** Aviso à cliente quando a dona remarca (ligado por padrão) e o texto dele (null = padrão) */
   rescheduleOn: boolean;
   rescheduleTemplate: string | null;
+  /** Texto do aviso de cancelamento (null = padrão) */
+  cancelTemplate: string | null;
   /** Linha "Sessão 3 de 6 do seu pacote" na confirmação e nos avisos (ligada por padrão) */
   packageLine: boolean;
 };
@@ -208,6 +210,7 @@ export async function getMessageSettings(tx: Tx): Promise<MessageSettings> {
       secondTemplate: tenants.secondReminderTemplate,
       rescheduleOn: tenants.rescheduleNotice,
       rescheduleTemplate: tenants.rescheduleTemplate,
+      cancelTemplate: tenants.cancelTemplate,
       packageLine: tenants.packageLine,
     })
     .from(tenants);
@@ -221,6 +224,7 @@ export async function getMessageSettings(tx: Tx): Promise<MessageSettings> {
     secondTemplate: row?.secondTemplate ?? null,
     rescheduleOn: row?.rescheduleOn ?? true,
     rescheduleTemplate: row?.rescheduleTemplate ?? null,
+    cancelTemplate: row?.cancelTemplate ?? null,
     packageLine: row?.packageLine ?? true,
   };
 }
@@ -238,6 +242,7 @@ export const saveMessageSettings = (tx: Tx, tenantId: string, s: MessageSettings
       secondReminderTemplate: s.secondTemplate,
       rescheduleNotice: s.rescheduleOn,
       rescheduleTemplate: s.rescheduleTemplate,
+      cancelTemplate: s.cancelTemplate,
       packageLine: s.packageLine,
     })
     .where(eq(tenants.id, tenantId));

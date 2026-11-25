@@ -65,6 +65,8 @@ export const tenants = pgTable("tenants", {
   packageLine: boolean("package_line").notNull().default(true),
   /** Texto do aviso de remarcação; null = o padrão do app */
   rescheduleTemplate: text("reschedule_template"),
+  /** Texto do aviso de cancelamento; null = o padrão do app */
+  cancelTemplate: text("cancel_template"),
   /** SHA-256 do token do link de calendário assinado (Calendário do iPhone); null = link desligado */
   calendarTokenHash: text("calendar_token_hash").unique(),
   /** No link do calendário, título sem o nome da cliente (só o serviço) */
@@ -213,6 +215,8 @@ export const appointments = pgTable(
     cancelNoticeAt: timestamp("cancel_notice_at", { withTimezone: true }),
     /** Aviso de sinal recebido pendente: sai (e confirma o horário) a partir daqui, depois do Desfazer */
     depositNoticeAt: timestamp("deposit_notice_at", { withTimezone: true }),
+    /** Mensagem de agendamento que falhou por instabilidade: o worker tenta de novo a partir daqui */
+    bookingRetryAt: timestamp("booking_retry_at", { withTimezone: true }),
     /** Horário que a cliente conhece (da última mensagem); igual ao atual = não há o que avisar */
     notifiedStartsAt: timestamp("notified_starts_at", { withTimezone: true }),
     /** Desconto do agendamento: "pct" (value = %) ou "brl" (value = centavos). price_cents já vem descontado. */

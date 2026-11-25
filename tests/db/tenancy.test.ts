@@ -434,6 +434,7 @@ d("lembretes (núcleo)", () => {
       secondTemplate: null,
       rescheduleOn: true,
       rescheduleTemplate: null,
+      cancelTemplate: null,
       packageLine: true,
     };
     const admin = postgres(url!, { max: 1 });
