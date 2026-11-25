@@ -7,6 +7,7 @@ export default function Loading() {
       <LoadingRegion label="Carregando clientes">
         <Skeleton className="mb-1 ml-1 mt-2 h-9 w-40" />
         <Skeleton className="mb-4 ml-1 h-4 w-24" />
+        <Skeleton className="mb-3 ml-1 h-8 w-48" />
         <Skeleton className="mb-3 h-11 rounded-2xl" />
         <div className="mb-4 flex gap-2">
           {[64, 96, 150].map((w, i) => (

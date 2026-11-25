@@ -43,6 +43,12 @@ export async function searchClients(tx: Tx, q: string) {
     .limit(200);
 }
 
+/** Total de clientes do salão (RLS isola por salão), sem as anonimizadas: um `count`, sem carregar a lista. */
+export async function countClients(tx: Tx): Promise<number> {
+  const [r] = await tx.select({ n: count() }).from(clients).where(isNull(clients.anonymizedAt));
+  return r?.n ?? 0;
+}
+
 export async function updateClientRow(tx: Tx, id: string, input: ClientInput): Promise<ActionResult> {
   try {
     const rows = await tx.transaction(async (sp) =>

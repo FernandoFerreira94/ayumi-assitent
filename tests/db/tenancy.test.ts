@@ -96,6 +96,24 @@ d("clientes (núcleo)", () => {
     expect(await withTenant(T, (tx) => searchClients(tx, "(11) 91111"))).toHaveLength(1);
     expect(await withTenant(T, (tx) => searchClients(tx, "zzz"))).toHaveLength(0);
   });
+
+  it("conta só as clientes do salão, sem as anonimizadas", async () => {
+    const { withTenant } = await import("@/db/client");
+    const { insertClient, countClients } = await import("@/features/clients/core");
+    const admin = postgres(url!, { max: 1 });
+    await admin`truncate tenants cascade`;
+    const [{ id: A }] = await admin`insert into tenants (name) values ('Estúdio A') returning id`;
+    const [{ id: B }] = await admin`insert into tenants (name) values ('Estúdio B') returning id`;
+    await withTenant(A, (tx) => insertClient(tx, A, { name: "Ana", phone: "+5511911110001" }));
+    const bia = await withTenant(A, (tx) => insertClient(tx, A, { name: "Bia", phone: "+5511911110002" }));
+    await withTenant(B, (tx) => insertClient(tx, B, { name: "Cris", phone: "+5511911110003" }));
+    if (!bia.ok) throw new Error("insert");
+    await admin`update clients set anonymized_at = now() where id = ${bia.data.id}`;
+    await admin.end();
+
+    expect(await withTenant(A, (tx) => countClients(tx))).toBe(1);
+    expect(await withTenant(B, (tx) => countClients(tx))).toBe(1);
+  });
 });
 
 d("agendamentos (núcleo)", () => {
@@ -164,12 +182,18 @@ d("agendamento com vários serviços e desconto", () => {
     expect((row!.endsAt.getTime() - row!.startsAt.getTime()) / 60_000).toBe(90);
     // Um intervalo só, o maior
     expect((row!.blockedUntil.getTime() - row!.endsAt.getTime()) / 60_000).toBe(15);
-    const [saved] = await admin`select service_id, discount_kind, discount_value, discount_cents from appointments where id=${a.data.id}`;
+    const [saved] =
+      await admin`select service_id, discount_kind, discount_value, discount_cents from appointments where id=${a.data.id}`;
     expect(saved).toMatchObject({ service_id: S1, discount_kind: "pct", discount_value: 10, discount_cents: 1500 });
 
     // Serviço pausado ou de outro estúdio não entra
     const bad = await withTenant(T, (tx) =>
-      insertAppointment(tx, T, { clientId: C, serviceIds: [S1, "00000000-0000-4000-8000-000000000000"], date: "2026-11-13", time: "09:00" }),
+      insertAppointment(tx, T, {
+        clientId: C,
+        serviceIds: [S1, "00000000-0000-4000-8000-000000000000"],
+        date: "2026-11-13",
+        time: "09:00",
+      }),
     );
     expect(bad).toMatchObject({ ok: false, code: "VALIDATION" });
 
@@ -202,7 +226,10 @@ d("expediente (núcleo)", () => {
       null,
       { opens: "10:00", closes: "16:00", breakStart: null, breakEnd: null },
       { opens: "09:00", closes: "18:00", breakStart: "12:00", breakEnd: "13:00" },
-      null, null, null, null,
+      null,
+      null,
+      null,
+      null,
     ];
     await withTenant(T, (tx) => saveHours(tx, T, week));
     expect(await withTenant(T, (tx) => getHours(tx))).toEqual(week);
@@ -399,7 +426,16 @@ d("lembretes (núcleo)", () => {
   it("respeita a antecedência configurada pelo estúdio", async () => {
     const { withTenant } = await import("@/db/client");
     const { sendReminders, getReminderHours, saveMessageSettings } = await import("@/features/reminders/core");
-    const texts = { first: true, fullName: false, bookingTemplate: null, reminderTemplate: null, secondTemplate: null, rescheduleOn: true, rescheduleTemplate: null, packageLine: true };
+    const texts = {
+      first: true,
+      fullName: false,
+      bookingTemplate: null,
+      reminderTemplate: null,
+      secondTemplate: null,
+      rescheduleOn: true,
+      rescheduleTemplate: null,
+      packageLine: true,
+    };
     const admin = postgres(url!, { max: 1 });
     await admin`truncate tenants cascade`;
     const [{ id: T }] = await admin`insert into tenants (name) values ('Estúdio H') returning id`;
