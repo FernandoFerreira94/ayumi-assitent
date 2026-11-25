@@ -235,7 +235,7 @@ export const appointments = pgTable(
     promotionId: uuid("promotion_id"),
     /** Sinal pedido à cliente ao agendar, em centavos (migration 0055); só vira caixa ao marcar recebido */
     depositRequestedCents: integer("deposit_requested_cents"),
-    /** Concluído sozinho pelo sistema depois do fim (migration 0061); a dona trocar o status zera */
+    /** Concluído sozinho pelo sistema depois do fim (migration 0064); a dona trocar o status zera */
     autoDoneAt: timestamp("auto_done_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
