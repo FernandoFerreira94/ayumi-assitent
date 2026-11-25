@@ -180,12 +180,15 @@ export async function clientHistorySummary(
         done: sql<number>`count(*) filter (where ${appointments.status} = 'done')`.mapWith(Number),
         noShows: sql<number>`count(*) filter (where ${appointments.status} = 'no_show')`.mapWith(Number),
         cancelled: sql<number>`count(*) filter (where ${appointments.status} = 'cancelled')`.mapWith(Number),
-        spent: sql<number>`coalesce(sum(${appointments.priceCents}) filter (where ${appointments.status} = 'done'), 0)`.mapWith(
-          Number,
-        ),
+        spent:
+          sql<number>`coalesce(sum(${appointments.priceCents}) filter (where ${appointments.status} = 'done'), 0)`.mapWith(
+            Number,
+          ),
         first: sql<string | null>`min(${appointments.startsAt})`,
         last: sql<string | null>`max(${appointments.startsAt}) filter (where ${appointments.status} = 'done')`,
-        next: sql<string | null>`min(${appointments.startsAt}) filter (where ${appointments.status} not in ('cancelled', 'done', 'no_show') and ${appointments.startsAt} >= ${at}::timestamptz)`,
+        next: sql<
+          string | null
+        >`min(${appointments.startsAt}) filter (where ${appointments.status} not in ('cancelled', 'done', 'no_show') and ${appointments.startsAt} >= ${at}::timestamptz)`,
       })
       .from(appointments)
       .where(eq(appointments.clientId, clientId)),

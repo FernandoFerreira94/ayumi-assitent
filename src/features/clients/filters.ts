@@ -21,7 +21,12 @@ type Row = { id: string; createdAt: Date };
 const DAY = 86_400_000;
 export const daysSince = (d: Date, now: Date) => Math.floor((now.getTime() - d.getTime()) / DAY);
 
-export function applyClientFilter<T extends Row>(rows: T[], stats: Map<string, Stats>, f: ClientFilter, now: Date): T[] {
+export function applyClientFilter<T extends Row>(
+  rows: T[],
+  stats: Map<string, Stats>,
+  f: ClientFilter,
+  now: Date,
+): T[] {
   const st = (id: string) => stats.get(id);
   if (f === "sumidas")
     return rows
@@ -36,7 +41,7 @@ export function applyClientFilter<T extends Row>(rows: T[], stats: Map<string, S
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   return rows
     .filter((r) => (st(r.id)?.visits ?? 0) > 0)
-    .sort((a, b) => (st(b.id)!.visits - st(a.id)!.visits) || st(b.id)!.spentCents - st(a.id)!.spentCents)
+    .sort((a, b) => st(b.id)!.visits - st(a.id)!.visits || st(b.id)!.spentCents - st(a.id)!.spentCents)
     .slice(0, LOYAL_TOP);
 }
 
