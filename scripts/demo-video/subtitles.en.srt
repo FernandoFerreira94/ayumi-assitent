@@ -1,0 +1,107 @@
+1
+00:00:00,000 --> 00:00:06,000
+This is Bubbly (bubbly.app.br), a scheduling app for beauty salons.
+
+2
+00:00:06,000 --> 00:00:11,000
+The homepage links to our Privacy Policy.
+
+3
+00:00:11,000 --> 00:00:16,000
+The login page links to our Privacy Policy and Terms of Service.
+
+4
+00:00:16,000 --> 00:00:20,000
+The user clicks “Sign in with Google” (Entrar com Google).
+
+5
+00:00:20,000 --> 00:00:35,000
+The user signs in with a Google test account.
+
+6
+00:00:35,000 --> 00:00:43,000
+Consent screen: Bubbly requests Google Sign-In, calendar.events and contacts.readonly.
+
+7
+00:00:43,000 --> 00:00:49,000
+The user grants access and returns to Bubbly.
+
+8
+00:00:49,000 --> 00:01:09,000
+calendar.events: we create a test appointment for a fictitious client.
+
+9
+00:01:09,000 --> 00:01:19,000
+Bubbly writes the appointment to the user's Google Calendar as an event.
+
+10
+00:01:19,000 --> 00:01:34,000
+When the appointment time is changed in Bubbly…
+
+11
+00:01:34,000 --> 00:01:44,000
+…the same Google Calendar event is updated.
+
+12
+00:01:44,000 --> 00:01:56,000
+When the appointment is cancelled in Bubbly…
+
+13
+00:01:56,000 --> 00:02:06,000
+…the event is removed from Google Calendar.
+
+14
+00:02:06,000 --> 00:02:18,000
+Existing Google Calendar events (e.g. “Dentist”) appear in Bubbly only as busy time, so clients cannot book over them.
+
+15
+00:02:18,000 --> 00:02:26,000
+contacts.readonly: Clients › Import › From Google Contacts.
+
+16
+00:02:26,000 --> 00:02:36,000
+The user picks which contacts to import as clients.
+
+17
+00:02:36,000 --> 00:02:42,000
+Only the selected contacts are copied into Bubbly.
+
+18
+00:02:42,000 --> 00:02:52,000
+Google Contacts is read-only for Bubbly: nothing changes in the user's Google account.
+
+19
+00:02:52,000 --> 00:02:58,000
+Settings shows links to the Privacy Policy and Terms at the bottom.
+
+20
+00:02:58,000 --> 00:03:08,000
+The Privacy Policy has a section on how Bubbly uses Google user data.
+
+21
+00:03:08,000 --> 00:03:18,000
+Settings › Calendars: the user can disconnect Google Calendar at any time.
+
+22
+00:03:18,000 --> 00:03:26,000
+Reconnecting asks for consent again.
+
+23
+00:03:26,000 --> 00:03:34,000
+Same consent screen, same scopes.
+
+24
+00:03:34,000 --> 00:03:40,000
+Google Calendar is connected again.
+
+25
+00:03:40,000 --> 00:03:50,000
+Privacy Policy › Google user data: bubbly.app.br/privacidade#google.
+
+26
+00:03:50,000 --> 00:04:00,000
+My profile › Delete my account removes the account and its data. Not completed in this demo.
+
+27
+00:04:00,000 --> 00:04:04,000
+Thank you.
