@@ -22,7 +22,7 @@ d("conclusão automática da agenda (Postgres real)", () => {
   });
   afterAll(async () => admin.end());
 
-  /** Atendimento de 1 h começando `h` horas a partir de agora. */
+  /** Atendimento de 1 h começando `h` horas a partir de agora. Cada teste usa horários próprios: o banco não deixa dois atendimentos se sobreporem. */
   const appt = async (h: number, status = "confirmed") =>
     (
       await admin`insert into appointments (tenant_id,client_id,service_id,starts_at,ends_at,price_cents,status)
@@ -65,9 +65,9 @@ d("conclusão automática da agenda (Postgres real)", () => {
     const { withTenant, autoConcludePast, AUTO_DONE_LOOKBACK_DAYS } = await lib();
     const future = await appt(2);
     const ongoing = await appt(-0.5);
-    const resched = await appt(-3, "reschedule_requested");
+    const resched = await appt(-8, "reschedule_requested");
     const old = await appt(-(AUTO_DONE_LOOKBACK_DAYS * 24 + 5));
-    const noShow = await appt(-3, "no_show");
+    const noShow = await appt(-10, "no_show");
     expect(await withTenant(T, (tx) => autoConcludePast(tx, now))).toBe(0);
     expect((await row(future)).status).toBe("confirmed");
     expect((await row(ongoing)).status).toBe("confirmed");
@@ -78,7 +78,7 @@ d("conclusão automática da agenda (Postgres real)", () => {
 
   it("trocar para Faltou anula a baixa automática e tira o selo do sistema", async () => {
     const { withTenant, autoConcludePast, setStatus } = await lib();
-    const id = await appt(-4);
+    const id = await appt(-12);
     await withTenant(T, (tx) => autoConcludePast(tx, now));
     const res = await withTenant(T, (tx) => setStatus(tx, id, "no_show", now));
     expect(res.ok).toBe(true);
@@ -91,7 +91,7 @@ d("conclusão automática da agenda (Postgres real)", () => {
   it("remarcar um concluído volta a aguardar e anula a baixa", async () => {
     const { withTenant, autoConcludePast, editAppointment } = await lib();
     const { todayStr, addDays } = await import("@/lib/dates");
-    const id = await appt(-6);
+    const id = await appt(-14);
     await withTenant(T, (tx) => autoConcludePast(tx, now));
     const res = await withTenant(T, (tx) =>
       editAppointment(tx, T, id, { date: addDays(todayStr(), 3), time: "10:00", serviceId: S }, "skip"),
@@ -105,7 +105,7 @@ d("conclusão automática da agenda (Postgres real)", () => {
 
   it("rodada do worker passa por todos os estúdios", async () => {
     const { runAutoDone } = await lib();
-    await appt(-2);
+    await appt(-16);
     expect(await runAutoDone(now)).toEqual({ done: 1, failed: 0 });
   });
 });
