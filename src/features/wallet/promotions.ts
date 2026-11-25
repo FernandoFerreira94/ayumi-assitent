@@ -3,6 +3,7 @@ import type { Tx } from "@/db/client";
 import { appointments, promotions, services } from "@/db/schema";
 import type { Discount } from "@/features/appointments/pricing";
 import { bestPromotion, promotionStatus, type PromotionDraft, type PromotionStatus } from "./promotion-rules";
+import type { DeleteOutcome } from "./rules";
 
 /**
  * Promoções de desconto no agendamento (0054). Sempre dentro de `withTenant` (RLS). Aplicar no agendamento
@@ -37,9 +38,13 @@ async function usedBy(tx: Tx, ids: string[]): Promise<Map<string, number>> {
   return new Map(rows.map((r) => [r.id!, Number(r.n)]));
 }
 
-/** Todas as promoções (as encerradas por último), com os serviços e quantas clientes usaram. */
+/** Promoções não excluídas, com os serviços e quantas clientes usaram. */
 export async function listPromotions(tx: Tx): Promise<PromotionRow[]> {
-  const rows = await tx.select().from(promotions).orderBy(asc(promotions.createdAt));
+  const rows = await tx
+    .select()
+    .from(promotions)
+    .where(isNull(promotions.deletedAt))
+    .orderBy(asc(promotions.createdAt));
   if (!rows.length) return [];
   const ids = [...new Set(rows.flatMap((r) => r.serviceIds))];
   const [svcs, used] = await Promise.all([
@@ -92,24 +97,62 @@ export async function createPromotion(tx: Tx, tenantId: string, d: PromotionDraf
   return row?.id ?? null;
 }
 
-/** Pausa ou retoma (só as não encerradas). false = não achou. */
+/** Desativa ou reativa (reativar também tira o antigo "Encerrar"). false = não achou ou foi excluída. */
 export async function setPromotionPaused(tx: Tx, id: string, paused: boolean): Promise<boolean> {
   const r = await tx
     .update(promotions)
-    .set({ paused })
-    .where(and(eq(promotions.id, id), isNull(promotions.endedAt)))
+    .set(paused ? { paused } : { paused, endedAt: null })
+    .where(and(eq(promotions.id, id), isNull(promotions.deletedAt)))
     .returning({ id: promotions.id });
   return r.length > 0;
 }
 
-/** Encerra de vez (fica no histórico com quantas usaram). */
-export async function endPromotion(tx: Tx, id: string): Promise<boolean> {
+/**
+ * Edita a promoção (desconto, serviços, período, limite, nome). Quem já usou guarda o desconto em R$ no próprio
+ * agendamento, então nada muda para trás. null = não achou; false = algum serviço não é do salão ou está pausado.
+ */
+export async function updatePromotion(tx: Tx, id: string, d: PromotionDraft): Promise<boolean | null> {
+  const svcs = await tx
+    .select({ id: services.id })
+    .from(services)
+    .where(and(inArray(services.id, d.serviceIds), eq(services.active, true)));
+  if (svcs.length !== d.serviceIds.length) return false;
   const r = await tx
     .update(promotions)
-    .set({ endedAt: new Date() })
-    .where(and(eq(promotions.id, id), isNull(promotions.endedAt)))
+    .set({
+      name: d.name,
+      discountKind: d.discount.kind,
+      discountValue: d.discount.value,
+      serviceIds: d.serviceIds,
+      startsOn: d.startsOn,
+      endsOn: d.endsOn,
+      maxClients: d.maxClients,
+    })
+    .where(and(eq(promotions.id, id), isNull(promotions.deletedAt)))
     .returning({ id: promotions.id });
-  return r.length > 0;
+  return r.length ? true : null;
+}
+
+/**
+ * Excluir (a dona digitou "excluir"). Nunca usada em agendamento (nem cancelado): apaga de vez. Já usada: some
+ * da lista e para de valer (`deleted_at`); os agendamentos guardam o desconto e a ligação. null = não achou.
+ */
+export async function deletePromotion(tx: Tx, id: string): Promise<DeleteOutcome | null> {
+  const [used] = await tx
+    .select({ id: appointments.id })
+    .from(appointments)
+    .where(eq(appointments.promotionId, id))
+    .limit(1);
+  if (!used) {
+    const r = await tx.delete(promotions).where(eq(promotions.id, id)).returning({ id: promotions.id });
+    return r.length ? "deleted" : null;
+  }
+  const r = await tx
+    .update(promotions)
+    .set({ deletedAt: new Date(), paused: true })
+    .where(and(eq(promotions.id, id), isNull(promotions.deletedAt)))
+    .returning({ id: promotions.id });
+  return r.length ? "archived" : null;
 }
 
 export type PickedPromotion = {
@@ -132,7 +175,7 @@ export async function pickPromotion(
   const rows = await tx
     .select()
     .from(promotions)
-    .where(and(isNull(promotions.endedAt), eq(promotions.paused, false)));
+    .where(and(isNull(promotions.endedAt), isNull(promotions.deletedAt), eq(promotions.paused, false)));
   if (!rows.length) return null;
   const ids = rows.map((r) => r.id);
   const [used, mine] = await Promise.all([

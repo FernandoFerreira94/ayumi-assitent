@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { sql } from "drizzle-orm";
 import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
@@ -51,12 +52,12 @@ d("eventos do iPhone (Postgres real)", () => {
       { uid: "dup-appt", title: "Maria", startsAt: at(4), endsAt: at(5) },
       { uid: "dup-google", title: "Reunião", startsAt: at(6), endsAt: at(7) },
     ];
-    expect(await db.withTenant(A, (tx) => imp.importIcloudEvents(tx, A, evs, from, to))).toBe(2);
+    expect(await db.withTenant(A, (tx) => imp.importIcloudEvents(tx, A, null, evs, from, to))).toBe(2);
     expect((await rows(A)).map((r) => r.external_uid)).toEqual(["e1", "e2"]);
 
     // e1 mudou de título e e2 foi apagado no iPhone
     await db.withTenant(A, (tx) =>
-      imp.importIcloudEvents(tx, A, [{ ...evs[0], title: "Maria Souza - corte" }], from, to),
+      imp.importIcloudEvents(tx, A, null, [{ ...evs[0], title: "Maria Souza - corte" }], from, to),
     );
     const after = await rows(A);
     expect(after.map((r) => [r.external_uid, r.reason])).toEqual([["e1", "Maria Souza - corte"]]);
@@ -75,9 +76,9 @@ d("eventos do iPhone (Postgres real)", () => {
     expect(listed.some((b) => b.id === id)).toBe(false);
 
     await db.withTenant(A, (tx) =>
-      imp.importIcloudEvents(tx, A, [{ uid: "e1", title: "Maria", startsAt: at(0), endsAt: at(1) }], from, to),
+      imp.importIcloudEvents(tx, A, null, [{ uid: "e1", title: "Maria", startsAt: at(0), endsAt: at(1) }], from, to),
     );
-    await db.withTenant(A, (tx) => imp.importIcloudEvents(tx, A, [], from, to));
+    await db.withTenant(A, (tx) => imp.importIcloudEvents(tx, A, null, [], from, to));
     const [r] = await rows(A);
     expect(r.external_uid).toBe("e1");
     expect(r.converted_at).not.toBeNull();
@@ -87,6 +88,41 @@ d("eventos do iPhone (Postgres real)", () => {
     const [{ id }] =
       await admin`insert into blocks (tenant_id,starts_at,ends_at,source) values (${A},${at(10)},${at(11)},'app') returning id`;
     expect(await db.withTenant(A, (tx) => blocksCore.convertExternalBlock(tx, id))).toBe(false);
+  });
+
+  it("vários calendários: cada um só refaz e apaga os seus; tirar um leva só os eventos dele", async () => {
+    const [{ id: pessoal }] =
+      await admin`insert into icloud_calendars (tenant_id,url,name) values (${A},'https://p01-caldav.icloud.com/published/2/p','Pessoal') returning id`;
+    const [{ id: trabalho }] =
+      await admin`insert into icloud_calendars (tenant_id,url,name) values (${A},'https://p01-caldav.icloud.com/published/2/t','Trabalho') returning id`;
+    await db.withTenant(A, (tx) =>
+      imp.importIcloudEvents(
+        tx,
+        A,
+        pessoal,
+        [{ uid: "p1", title: "Academia", startsAt: at(20), endsAt: at(21) }],
+        from,
+        to,
+      ),
+    );
+    await db.withTenant(A, (tx) =>
+      imp.importIcloudEvents(
+        tx,
+        A,
+        trabalho,
+        [{ uid: "t1", title: "Plantão", startsAt: at(22), endsAt: at(23) }],
+        from,
+        to,
+      ),
+    );
+    // o Trabalho vazio não apaga o Pessoal
+    await db.withTenant(A, (tx) => imp.importIcloudEvents(tx, A, trabalho, [], from, to));
+    expect((await rows(A)).map((r) => r.external_uid)).toEqual(["e1", "p1"]);
+    // outro estúdio não vê os calendários
+    const seen = await db.withTenant(B, (tx) => tx.execute(sql`select id from icloud_calendars`));
+    expect(seen).toHaveLength(0);
+    await admin`delete from icloud_calendars where id=${pessoal}`;
+    expect((await rows(A)).map((r) => r.external_uid)).toEqual(["e1"]);
   });
 
   it("desligar tira só o que veio do iPhone", async () => {

@@ -8,8 +8,16 @@ import type { IcloudEvent } from "./icloud";
  * - mesmo começo e fim de um atendimento do app ou de um evento do Google já importado: não duplica
  * - o que sumiu do iPhone na janela é apagado (a janela inteira é refeita); o que mudou é atualizado
  * - evento que já virou atendimento (converted_at) continua escondido
+ * - cada calendário (`calendarId`) só apaga os seus; null = eventos de antes da 0061, sem calendário
  */
-export async function importIcloudEvents(tx: Tx, tenantId: string, fetched: IcloudEvent[], from: Date, to: Date) {
+export async function importIcloudEvents(
+  tx: Tx,
+  tenantId: string,
+  calendarId: string | null,
+  fetched: IcloudEvent[],
+  from: Date,
+  to: Date,
+) {
   const [appts, google] = await Promise.all([
     tx
       .select({ s: appointments.startsAt, e: appointments.endsAt })
@@ -33,11 +41,12 @@ export async function importIcloudEvents(tx: Tx, tenantId: string, fetched: Iclo
         reason: e.title,
         source: "icloud",
         externalUid: e.uid,
+        icloudCalendarId: calendarId,
       })
       .onConflictDoUpdate({
         target: [blocks.tenantId, blocks.externalUid],
         targetWhere: isNotNull(blocks.externalUid),
-        set: { startsAt: e.startsAt, endsAt: e.endsAt, reason: e.title },
+        set: { startsAt: e.startsAt, endsAt: e.endsAt, reason: e.title, icloudCalendarId: calendarId },
       });
   }
   const keep = events.map((e) => e.uid);
@@ -46,6 +55,7 @@ export async function importIcloudEvents(tx: Tx, tenantId: string, fetched: Iclo
     .where(
       and(
         eq(blocks.source, "icloud"),
+        calendarId ? eq(blocks.icloudCalendarId, calendarId) : isNull(blocks.icloudCalendarId),
         isNull(blocks.convertedAt),
         lt(blocks.startsAt, to),
         gt(blocks.endsAt, from),
@@ -57,3 +67,9 @@ export async function importIcloudEvents(tx: Tx, tenantId: string, fetched: Iclo
 
 /** Desligou o calendário do iPhone: some tudo o que veio de lá (o que virou atendimento continua atendimento). */
 export const clearIcloudEvents = (tx: Tx) => tx.delete(blocks).where(eq(blocks.source, "icloud"));
+
+/** Eventos antigos (de antes da 0061) que ficaram sem calendário e não viraram atendimento: saem da agenda. */
+export const clearOrphanIcloudEvents = (tx: Tx) =>
+  tx
+    .delete(blocks)
+    .where(and(eq(blocks.source, "icloud"), isNull(blocks.icloudCalendarId), isNull(blocks.convertedAt)));

@@ -54,4 +54,32 @@ d("excluir cliente (Postgres real)", () => {
     const list = await withTenant(T, (tx) => core.searchClients(tx, ""));
     expect(list.map((x) => x.id)).not.toContain(id);
   });
+
+  it("em lote: apaga quem não tem histórico, anonimiza quem tem e ignora outro salão", async () => {
+    const [{ id: O }] = await admin`insert into tenants (name) values ('Outro') returning id`;
+    const [{ id: fresh }] =
+      await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Nova','+5511900000011') returning id`;
+    const [{ id: seen }] =
+      await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Antiga','+5511900000012') returning id`;
+    const [{ id: other }] =
+      await admin`insert into clients (tenant_id,name,phone_e164) values (${O},'De outro','+5511900000013') returning id`;
+    await admin`insert into appointments (tenant_id,client_id,service_id,starts_at,ends_at,price_cents,status)
+      values (${T},${seen},${S},'2099-10-01T12:00:00Z','2099-10-01T13:00:00Z',10000,'confirmed')`;
+
+    const p = await withTenant(T, (tx) => core.bulkDeletePreview(tx, [fresh, seen, other]));
+    expect(p).toEqual({ found: 2, anonymize: 1, future: 1 });
+
+    const r = await withTenant(T, (tx) => core.deleteClientRows(tx, [fresh, seen, other, fresh]));
+    expect(r).toEqual({ removed: 1, anonymized: 1, failed: 1 });
+    expect(await admin`select id from clients where id = ${fresh}`).toHaveLength(0);
+    const [c] = await admin`select name, anonymized_at from clients where id = ${seen}`;
+    expect(c.name).toBe("Cliente removida");
+    expect(c.anonymized_at).not.toBeNull();
+    // a cliente do outro salão não foi tocada
+    const [o] = await admin`select name from clients where id = ${other}`;
+    expect(o.name).toBe("De outro");
+    // já anonimizada não conta de novo
+    const again = await withTenant(T, (tx) => core.deleteClientRows(tx, [seen]));
+    expect(again).toEqual({ removed: 0, anonymized: 0, failed: 1 });
+  });
 });

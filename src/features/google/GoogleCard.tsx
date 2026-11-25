@@ -8,6 +8,7 @@ import { TileTitle } from "@/components/ui/Icon";
 import { disconnectGoogle } from "./actions";
 import { CreatePasswordSheet } from "./CreatePasswordSheet";
 import { Switch } from "@/components/ui/Switch";
+import { readLine } from "@/features/calendar-feed/icloud-view";
 
 /**
  * Liga a conta Google à conta do app para os agendamentos irem para o Google Agenda.
@@ -28,8 +29,11 @@ export function GoogleCard({
   failed,
   errorCode,
   email,
+  status,
 }: {
   connected: boolean;
+  /** Última leitura da agenda do Google (linha de status abaixo do texto). */
+  status?: { syncedAt: string | null; count: number | null; error: "reconnect" | "failed" | null };
   failed: boolean;
   errorCode?: string;
   /** E-mail de login: mostrado ao criar a senha e salvo pelo iPhone junto com ela. */
@@ -180,10 +184,29 @@ export function GoogleCard({
             Google Agenda
           </TileTitle>
           <p className={`text-sm font-semibold ${failed ? "text-fail" : "text-muted"}`}>{hint}</p>
+          {connected && !failed && status ? <GoogleStatus status={status} /> : null}
         </div>
         <Switch checked={connected} onChange={toggle} busy={pending} label="Google Agenda" />
       </div>
       {sheet}
     </>
+  );
+}
+
+/** O que entrou do Google: lê só a agenda principal da conta ligada. Erro em vermelho com o que fazer. */
+function GoogleStatus({ status }: { status: NonNullable<Parameters<typeof GoogleCard>[0]["status"]> }) {
+  if (status.error === "reconnect")
+    return (
+      <p className="mt-1 text-sm font-bold text-fail" role="status">
+        O Google pediu acesso de novo: desligue e ligue o interruptor.
+      </p>
+    );
+  return (
+    <p className="mt-1 text-sm font-semibold text-muted" role="status">
+      Agenda principal ·{" "}
+      {status.error === "failed"
+        ? "não deu para ler agora, tentamos de novo sozinhos"
+        : readLine(status.syncedAt, status.count)}
+    </p>
   );
 }

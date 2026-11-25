@@ -15,6 +15,7 @@ import { deleteClient, loadClientCard, updateClient, type ClientCard } from "./a
 import { formatBRL } from "@/lib/dates";
 import { useClientSelection } from "./ClientsDesk";
 import { HistorySheet } from "./HistorySheet";
+import { CheckMark, useBulk } from "./BulkSelect";
 
 const input = "min-h-13 w-full rounded-2xl border px-4 text-base font-semibold";
 /** Largura de cada botão revelado. */
@@ -52,6 +53,7 @@ export function ClientRow({
 }) {
   const selection = useClientSelection();
   const selected = selection?.selectedId === client.id;
+  const bulk = useBulk();
   const [x, setX] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -117,6 +119,28 @@ export function ClientRow({
 
   const close = () => move(0);
   const ease = dragging ? "none" : "transform 0.32s var(--spring), width 0.32s var(--spring)";
+
+  // Modo seleção: a linha inteira marca/desmarca (sem deslizar, sem abrir ficha nem conversa)
+  if (bulk?.on) {
+    const on = bulk.isSelected(client.id);
+    return (
+      <li className="relative overflow-hidden rounded-2xl">
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={on}
+          onClick={() => bulk.toggle(client.id)}
+          className={`glass flex min-h-16 w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition-transform active:scale-[0.99] ${on ? "outline-2 -outline-offset-2 outline-primary" : ""}`}
+        >
+          <CheckMark on={on} />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-bold">{client.name}</span>
+            <span className="block text-sm font-semibold text-muted">{client.phone}</span>
+          </span>
+        </button>
+      </li>
+    );
+  }
 
   return (
     <li ref={self} className="relative overflow-hidden rounded-2xl">
