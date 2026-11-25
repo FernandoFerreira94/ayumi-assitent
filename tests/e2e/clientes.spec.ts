@@ -67,3 +67,41 @@ test("o sino abre um diálogo no meio da tela e, sem respostas de clientes, fica
   await expect(dialog.getByText("Tudo em dia por aqui.")).toBeVisible();
   await expect(dialog.getByRole("button", { name: "Marcar todas como lidas" })).toHaveCount(0);
 });
+
+test("Selecionar: escolhe várias, confirma e exclui em lote", async ({ page }) => {
+  await page.goto("/clientes");
+  for (const [nome, tel] of [
+    ["Ana Lima", "11911110001"],
+    ["Bruna Reis", "11911110002"],
+    ["Carla Dias", "11911110003"],
+  ]) {
+    await page.getByRole("button", { name: "Nova cliente" }).click();
+    await page.getByLabel("Nome").fill(nome);
+    await page.getByLabel("WhatsApp").fill(tel);
+    await page.getByRole("button", { name: "Salvar" }).click();
+    await expect(page.getByText("Cliente cadastrada").first()).toBeVisible();
+  }
+
+  await page.getByTestId("select-toggle").click();
+  await page.getByRole("checkbox", { name: /Ana Lima/ }).click();
+  await page.getByRole("checkbox", { name: /Bruna Reis/ }).click();
+  await expect(page.getByTestId("select-count")).toHaveText("2 selecionadas");
+  await page.getByRole("button", { name: "Selecionar todas (3)" }).click();
+  await expect(page.getByTestId("select-count")).toHaveText("3 selecionadas");
+  await page.getByRole("button", { name: "Limpar" }).click();
+  await page.getByRole("checkbox", { name: /Ana Lima/ }).click();
+  await page.getByRole("checkbox", { name: /Carla Dias/ }).click();
+
+  await page.getByRole("toolbar").getByRole("button", { name: "Excluir" }).click();
+  await expect(page.getByRole("heading", { name: "Excluir 2 clientes?" })).toBeVisible();
+  await expect(page.getByTestId("bulk-preview")).toContainText("saem de vez");
+  await expect(page.getByText("Não dá para desfazer.")).toBeVisible();
+  await page.getByTestId("bulk-confirm").click();
+
+  await expect(page.getByText("2 clientes excluídas")).toBeVisible();
+  await expect(page.getByText("Bruna Reis")).toBeVisible();
+  await expect(page.getByText("Ana Lima")).toHaveCount(0);
+  await expect(page.getByTestId("client-count")).toHaveText("1 cliente no total");
+  // saiu do modo seleção
+  await expect(page.getByTestId("select-toggle")).toHaveText("Selecionar");
+});
