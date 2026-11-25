@@ -251,8 +251,3 @@ export function cancelText(a: MessageData & { creditCents?: number }, now: Date,
 export function depositReceivedText(a: MessageData & { receivedCents: number }, now: Date): string {
   return `Recebi seu sinal de ${formatBRL(a.receivedCents)} 💜\nSeu horário de ${a.service} ${slotLabel(a.startsAt, now)} está confirmado. Te espero com carinho!`;
 }
-
-/** Sinal recebido (a dona marcou "Sinal recebido" com "Avisar a cliente" ligado). Confirma o horário; não pede resposta. */
-export function depositReceivedText(a: MessageData & { receivedCents: number }, now: Date): string {
-  return `Recebi seu sinal de ${formatBRL(a.receivedCents)} 💜\nSeu horário de ${a.service} ${slotLabel(a.startsAt, now)} está confirmado. Te espero com carinho!`;
-}
