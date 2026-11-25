@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
 import { dayBriefing } from "@/features/appointments/briefing";
+import { concludePastOnOpen } from "@/features/appointments/auto-done-run";
 import { forecastCents, listDay, receivedCents } from "@/features/appointments/core";
 import { DaySchedule } from "@/features/appointments/DaySchedule";
 import { DayHero } from "@/features/appointments/DayHero";
@@ -27,6 +28,7 @@ export default async function PainelPage({ searchParams }: PageProps<"/agenda">)
   const today = todayStr();
   const date = typeof d === "string" && isDateStr(d) ? d : today;
   const { tenantId, userId, userName } = await requireTenant();
+  await concludePastOnOpen(tenantId);
   const rows = await withTenant(tenantId, (tx) => listDay(tx, dayRange(date)));
   const label = formatDayTitle(date);
   // Celular não carrega as caixas do desktop (nem consulta o banco para elas)

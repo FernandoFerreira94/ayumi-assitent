@@ -45,6 +45,8 @@ type Props = {
   inSheet?: boolean;
   /** Já passou (Pendências → Para fechar): a ação principal é Concluir, mesmo sem confirmação. */
   past?: boolean;
+  /** Concluído sozinho pelo sistema: o cartão avisa para a dona conferir. */
+  autoDone?: boolean;
   /**
    * Chamado quando Cancelar, Faltou ou Concluir dá certo. A folha da agenda fecha aqui: com ela aberta,
    * o fundo do vaul fica por cima do toast e o Desfazer não recebe o toque.
@@ -79,7 +81,7 @@ const LABEL: Record<Status, string> = {
   reschedule_requested: "Quer remarcar",
 };
 
-export function AppointmentCard({ id, time, date, start: startHHMM, minutes, clientId, clientName, clientPhone, serviceId, serviceName, price, status, discount, notes, payment, session, inSheet = false, past = false, onSettled }: Props) {
+export function AppointmentCard({ id, time, date, start: startHHMM, minutes, clientId, clientName, clientPhone, serviceId, serviceName, price, status, discount, notes, payment, session, inSheet = false, past = false, autoDone = false, onSettled }: Props) {
   const [pending, start] = useTransition();
   const [busy, setBusy] = useState<Status | null>(null);
   const open = status === "pending_confirmation" || status === "confirmed" || status === "reschedule_requested";
@@ -140,7 +142,7 @@ export function AppointmentCard({ id, time, date, start: startHHMM, minutes, cli
         <p className="text-sm font-bold">{price}</p>
       </div>
       <p className="text-sm font-semibold text-muted">
-        {serviceName} · {LABEL[status]}
+        {serviceName} · {status === "done" && autoDone ? "Concluído pelo sistema" : LABEL[status]}
       </p>
       {payment && status !== "cancelled" && status !== "no_show" ? (
         <PaymentSheet
@@ -288,54 +290,106 @@ export function AppointmentCard({ id, time, date, start: startHHMM, minutes, cli
               )}
             </div>
           ) : null}
-          {asking ? (
-            <div
-              id={`cancelar-${id}`}
-              role="alertdialog"
-              aria-labelledby={`cancelar-t-${id}`}
-              className="grid gap-3 rounded-2xl bg-fail-bg p-3"
-            >
-              <p id={`cancelar-t-${id}`} className="font-bold text-fail">
-                Cancelar o horário de {clientName} às {time}?
-              </p>
-              {canTell ? (
-                <label className="flex items-center justify-between gap-3 text-sm font-semibold">
-                  <span>Avisar a cliente no WhatsApp</span>
-                  <Switch checked={tellClient} onChange={setTellClient} label="Avisar a cliente no WhatsApp" />
-                </label>
-              ) : null}
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => {
-                    setAsking(false);
-                    change("cancelled", status, canTell && tellClient);
-                  }}
-                  className={`${btn} bg-fail text-white`}
-                >
-                  Cancelar horário
-                </button>
-                <button
-                  type="button"
-                  // Foco no "Voltar": um toque sem querer não cancela
-                  autoFocus
-                  onClick={() => setAsking(false)}
-                  className={`${btn} btn-glass`}
-                >
-                  Voltar
-                </button>
-              </div>
-            </div>
-          ) : null}
         </>
       ) : (
         /* Concluído, faltou ou cancelado: ainda dá para falar com a cliente */
-        <ChatSheet nested={inSheet} clientId={clientId} clientName={clientName} phone={clientPhone} triggerClassName={`${btn} ${CHAT_BUTTON}`}>
-          <ChatGlyph />
-          Mensagem no WhatsApp
-        </ChatSheet>
+        <>
+          <div className="flex flex-wrap gap-2">
+            <ChatSheet nested={inSheet} clientId={clientId} clientName={clientName} phone={clientPhone} triggerClassName={`${btn} ${CHAT_BUTTON}`}>
+              <ChatGlyph />
+              Mensagem no WhatsApp
+            </ChatSheet>
+            {/* Concluído (pelo sistema ou sem querer) ainda pode virar falta, cancelamento ou outro horário */}
+            {status === "done" ? (
+              <button
+                type="button"
+                aria-expanded={more}
+                aria-controls={`trocar-${id}`}
+                onClick={() => setMore((v) => !v)}
+                className={`${btn} btn-glass`}
+              >
+                <Icon name="more" size={18} />
+                Trocar status
+              </button>
+            ) : null}
+          </div>
+          {status === "done" && more ? (
+            <div id={`trocar-${id}`} className="flex flex-wrap gap-2">
+              <EditAppointmentSheet
+                id={id}
+                clientName={clientName}
+                serviceId={serviceId}
+                serviceName={serviceName}
+                date={date}
+                start={startHHMM}
+                minutes={minutes}
+                nested={inSheet}
+                triggerClassName={`${btn} btn-glass`}
+              />
+              <button
+                type="button"
+                disabled={pending || !noShowOk}
+                onClick={() => change("no_show", status)}
+                className={`${btn} btn-glass`}
+              >
+                <Icon name="userX" size={18} />
+                {busy === "no_show" ? "Salvando…" : "Faltou"}
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                aria-expanded={asking}
+                aria-controls={`cancelar-${id}`}
+                onClick={() => setAsking(true)}
+                className={`${btn} btn-glass`}
+              >
+                <Icon name="close" size={18} />
+                {busy === "cancelled" ? "Cancelando…" : "Cancelar"}
+              </button>
+            </div>
+          ) : null}
+        </>
       )}
+      {asking ? (
+        <div
+          id={`cancelar-${id}`}
+          role="alertdialog"
+          aria-labelledby={`cancelar-t-${id}`}
+          className="grid gap-3 rounded-2xl bg-fail-bg p-3"
+        >
+          <p id={`cancelar-t-${id}`} className="font-bold text-fail">
+            Cancelar o horário de {clientName} às {time}?
+          </p>
+          {canTell ? (
+            <label className="flex items-center justify-between gap-3 text-sm font-semibold">
+              <span>Avisar a cliente no WhatsApp</span>
+              <Switch checked={tellClient} onChange={setTellClient} label="Avisar a cliente no WhatsApp" />
+            </label>
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => {
+                setAsking(false);
+                change("cancelled", status, canTell && tellClient);
+              }}
+              className={`${btn} bg-fail text-white`}
+            >
+              Cancelar horário
+            </button>
+            <button
+              type="button"
+              // Foco no "Voltar": um toque sem querer não cancela
+              autoFocus
+              onClick={() => setAsking(false)}
+              className={`${btn} btn-glass`}
+            >
+              Voltar
+            </button>
+          </div>
+        </div>
+      ) : null}
     </li>
   );
 }

@@ -74,6 +74,8 @@ export type AgendaAppointment = Span & {
   payment: PaymentView;
   /** Sessão de pacote deste horário ("Sessão 3 de 6 · restam 3"); null = não usa pacote. */
   session?: SessionUse | null;
+  /** Concluído sozinho pelo sistema depois do fim (a dona confere e troca se precisar). */
+  autoDone?: boolean;
 };
 /** Origem do evento de fora: "google" (Google Agenda) ou "icloud" (Calendário do iPhone). Sem = bloqueio do app. */
 export type ExternalSource = "google" | "icloud";
@@ -694,6 +696,7 @@ export function AgendaDay({
                   notes={detailAppt.notes}
                   payment={detailAppt.payment}
                   session={detailAppt.session}
+                  autoDone={detailAppt.autoDone}
                   onSettled={() => setDetailId(null)}
                 />
               ) : detailBlock?.external ? (
