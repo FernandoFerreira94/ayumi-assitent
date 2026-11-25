@@ -52,3 +52,9 @@
 - Regras puras e textos em `clients/history-rules.ts` (status, cor, "Sinal R$ X · falta R$ Y", nome do movimento: Sinal/Pagamento/Pagou o pacote X/Virou crédito…). Ação `actions.loadClientHistory(id, filtro, cursor)`: resumo só na 1ª página; cliente de outro salão = `NOT_FOUND` (RLS).
 - Sem migration. "Remarcou" não tem registro próprio no banco (só o status "Pediu para remarcar"); se quiser no histórico, precisa de log de eventos.
 - Testes: `tests/unit/client-history.test.ts`, `tests/db/client-history.test.ts` (filtros, paginação sem pular, anulação, isolamento), `tests/e2e/historico.spec.ts`.
+
+## Total de clientes (25/11)
+
+- Topo de `/clientes` (celular e desktop): `clients/ClientCount.tsx` mostra o total em destaque ("128 clientes no total"); com busca, filtro ou lista cortada (limite de 200 de `searchClients`) vira "12 de 128 clientes".
+- `clients/core.countClients`: um `count(*)` sem as anonimizadas; o salão vem do RLS (`withTenant`). O tile "Clientes" do resumo no desktop usa o mesmo número (antes era o tamanho da lista, preso em 200).
+- Testes: `tests/db/tenancy.test.ts` (isolamento + anonimizada), `tests/e2e/clientes.spec.ts`.

@@ -3,7 +3,8 @@ import { connection } from "next/server";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { PageShell } from "@/components/ui/PageShell";
 import { withTenant } from "@/db/client";
-import { clientStats, listDueReturns, searchClients } from "@/features/clients/core";
+import { clientStats, countClients, listDueReturns, searchClients } from "@/features/clients/core";
+import { ClientCount } from "@/features/clients/ClientCount";
 import { ClientFilters, ClientsDesk } from "@/features/clients/ClientsDesk";
 import {
   applyClientFilter,
@@ -36,8 +37,9 @@ export default async function ClientesPage({ searchParams }: PageProps<"/cliente
   const now = new Date();
   const { tenantId } = await requireTenant();
   const today = todayStr();
-  const { all, due, statRows } = await withTenant(tenantId, async (tx) => ({
+  const { all, total, due, statRows } = await withTenant(tenantId, async (tx) => ({
     all: await searchClients(tx, q),
+    total: await countClients(tx),
     statRows: await clientStats(tx, now),
     // na busca, só a lista: "Para chamar" é para quem abre Clientes sem procurar ninguém
     due: q ? [] : await listDueReturns(tx, addDays(today, -30), addDays(today, 7)),
@@ -52,7 +54,7 @@ export default async function ClientesPage({ searchParams }: PageProps<"/cliente
     optedOut: !!c.optedOutAt,
   });
   const summary = {
-    total: all.length,
+    total,
     gone: q ? 0 : applyClientFilter(all, stats, "sumidas", now).length,
     fresh: all.filter((c) => daysSince(c.createdAt, now) <= NEW_DAYS).length,
     due: due.length,
@@ -70,6 +72,7 @@ export default async function ClientesPage({ searchParams }: PageProps<"/cliente
   return (
     <PageShell wide title="Clientes">
       <ClientsDesk clients={all.map(view)} summary={summary}>
+        <ClientCount total={total} shown={q || filter || list.length < total ? list.length : null} />
         <ClientSearch initial={q} />
         <div className="grid grid-cols-2 gap-2 pb-3">
           <ImportSheet />

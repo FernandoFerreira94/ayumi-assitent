@@ -15,6 +15,8 @@ test("cadastra cliente, avisa duplicado e busca", async ({ page }) => {
   await expect(page.getByText("Cliente cadastrada")).toBeVisible();
   await expect(page.getByText("Maria Silva")).toBeVisible();
   await expect(page.getByText("(11) 98765-4321")).toBeVisible();
+  // Total do salão em destaque no topo
+  await expect(page.getByTestId("client-count")).toHaveText("1 cliente no total");
   // Agrupada por letra, como os Contatos do iPhone
   await expect(page.getByRole("heading", { name: "M", exact: true })).toBeVisible();
 
@@ -28,6 +30,7 @@ test("cadastra cliente, avisa duplicado e busca", async ({ page }) => {
   await expect(page.getByText("Ninguém encontrada")).toBeVisible();
   await busca.fill("mar");
   await expect(page.getByText("Maria Silva")).toBeVisible();
+  await expect(page.getByTestId("client-count")).toHaveText("1 de 1 cliente");
   await expect(page).toHaveURL(/\?q=mar$/);
 });
 
