@@ -518,6 +518,45 @@ d("carteira da cliente (Postgres real)", () => {
       expect(row!.services.map((s) => s.id).sort()).toEqual([pe, svc].sort());
     });
 
+    it("editar dá período novo a um vencido; excluir vendido só tira da lista", async () => {
+      const edit = { name: "Dezembro de novo", startsOn: "2031-12-01", endsOn: "2031-12-31", maxClients: 5 };
+      expect(await withTenant(T, (tx) => pk.updateTemplate(tx, promo, edit))).toBe(true);
+      expect(await sell(fer, "2031-12-02")).toMatchObject({ ok: true });
+      expect(await withTenant(T, (tx) => pk.setTemplatePaused(tx, promo, true))).toBe(true);
+      const [{ id: gil }] =
+        await admin`insert into clients (tenant_id,name,phone_e164) values (${T},'Gil',${"+55119" + String(Date.now()).slice(-8)}) returning id`;
+      expect(await sell(gil, "2031-12-03")).toEqual({ ok: false, reason: "paused" });
+      expect((await withTenant(T, (tx) => pk.listTemplates(tx))).some((t) => t.id === promo)).toBe(true);
+
+      expect(await withTenant(T, (tx) => pk.deleteTemplate(tx, promo))).toBe("archived");
+      const [t] = await admin`select active from package_templates where id = ${promo}`;
+      expect(t.active).toBe(false);
+      const [{ n }] = await admin`select count(*)::int as n from client_packages where template_id = ${promo}`;
+      expect(n).toBe(2);
+      expect((await withTenant(T, (tx) => pk.listTemplates(tx))).some((x) => x.id === promo)).toBe(false);
+      expect(await withTenant(T, (tx) => pk.updateTemplate(tx, promo, edit))).toBe(false);
+    });
+
+    it("excluir nunca vendido apaga de vez", async () => {
+      const id = (await withTenant(T, (tx) =>
+        pk.createTemplate(tx, T, {
+          kind: "pay_x",
+          name: "Teste apagar",
+          serviceIds: [pe],
+          sessionsPaid: 1,
+          sessionsTotal: 2,
+          priceCents: 0,
+          startsOn: null,
+          endsOn: null,
+          maxClients: null,
+        }),
+      ))!;
+      expect(await withTenant(T, (tx) => pk.deleteTemplate(tx, id))).toBe("deleted");
+      const rows = await admin`select id from package_templates where id = ${id}`;
+      expect(rows.length).toBe(0);
+      expect(await withTenant(T, (tx) => pk.deleteTemplate(tx, id))).toBe(null);
+    });
+
     it("a sessão vale em qualquer serviço do pacote", async () => {
       const r = await withTenant(T, (tx) =>
         core.insertAppointment(tx, T, {

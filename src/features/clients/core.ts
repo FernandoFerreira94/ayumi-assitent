@@ -35,12 +35,20 @@ export async function searchClients(tx: Tx, q: string) {
     ? or(ilike(clients.name, `%${term}%`), digits ? ilike(clients.phoneE164, `%${digits}%`) : undefined)
     : undefined;
   // Anonimizadas (excluídas com histórico) não aparecem em listas nem seletores
-  return tx
-    .select()
-    .from(clients)
-    .where(and(isNull(clients.anonymizedAt), filter))
-    .orderBy(asc(clients.name))
-    .limit(200);
+  return (
+    tx
+      .select()
+      .from(clients)
+      .where(and(isNull(clients.anonymizedAt), filter))
+      // Sem limite: a lista, os filtros e os seletores precisam de todas (o salão tem centenas, não milhões)
+      .orderBy(asc(clients.name))
+  );
+}
+
+/** Total de clientes do salão (RLS isola por salão), sem as anonimizadas: um `count`, sem carregar a lista. */
+export async function countClients(tx: Tx): Promise<number> {
+  const [r] = await tx.select({ n: count() }).from(clients).where(isNull(clients.anonymizedAt));
+  return r?.n ?? 0;
 }
 
 export async function updateClientRow(tx: Tx, id: string, input: ClientInput): Promise<ActionResult> {
@@ -89,6 +97,62 @@ export async function deleteClientRow(tx: Tx, id: string): Promise<ActionResult>
     .set({ name: "Cliente removida", phoneE164: anonPhone(id), email: null, notes: null, anonymizedAt: new Date() })
     .where(eq(clients.id, id));
   return ok();
+}
+
+/**
+ * Antes de excluir em lote: das escolhidas, quantas existem neste salão (RLS) e ainda não foram
+ * anonimizadas, quantas serão só anonimizadas (têm histórico, mesma regra de `deleteClientRow`)
+ * e quantas têm horário marcado daqui para frente (o horário fica, como na exclusão de uma só).
+ */
+export async function bulkDeletePreview(tx: Tx, ids: string[], now = new Date()) {
+  if (ids.length === 0) return { found: 0, anonymize: 0, future: 0 };
+  const rows = await tx
+    .select({
+      id: clients.id,
+      history: sql<boolean>`(exists (select 1 from appointments a where a.client_id = clients.id)
+        or exists (select 1 from client_ledger l where l.client_id = clients.id))`,
+      future: sql<boolean>`exists (select 1 from appointments f where f.client_id = clients.id
+        and f.status <> 'cancelled' and f.starts_at > ${now.toISOString()}::timestamptz)`,
+    })
+    .from(clients)
+    .where(and(inArray(clients.id, ids), isNull(clients.anonymizedAt)));
+  return {
+    found: rows.length,
+    anonymize: rows.filter((r) => r.history).length,
+    future: rows.filter((r) => r.future).length,
+  };
+}
+
+/**
+ * Exclui várias clientes, cada uma com a regra de `deleteClientRow` (apaga ou anonimiza).
+ * Cada uma num savepoint: se uma falhar, as outras seguem. Só entram as do salão ativo (RLS)
+ * e ainda não anonimizadas; o resto conta como falha.
+ */
+export async function deleteClientRows(tx: Tx, ids: string[]) {
+  const unique = [...new Set(ids)];
+  const found = unique.length
+    ? await tx
+        .select({ id: clients.id })
+        .from(clients)
+        .where(and(inArray(clients.id, unique), isNull(clients.anonymizedAt)))
+    : [];
+  let removed = 0;
+  let anonymized = 0;
+  for (const { id } of found) {
+    try {
+      const kind = await tx.transaction(async (sp) => {
+        const res = await deleteClientRow(sp, id);
+        if (!res.ok) throw new Error(res.code);
+        const [left] = await sp.select({ id: clients.id }).from(clients).where(eq(clients.id, id));
+        return left ? "anonymized" : "removed";
+      });
+      if (kind === "removed") removed++;
+      else anonymized++;
+    } catch {
+      // savepoint desfeito: esta cliente fica como estava
+    }
+  }
+  return { removed, anonymized, failed: unique.length - removed - anonymized };
 }
 
 /** Resumo do cartão da cliente: próximo horário, última visita, quantas vezes veio, quanto gastou e faltas. */

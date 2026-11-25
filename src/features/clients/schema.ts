@@ -22,3 +22,6 @@ export const clientInput = z.object({
     .transform((v) => v || undefined),
 });
 export type ClientInput = { name: string; phone: string; email?: string; notes?: string };
+
+/** Até quantas clientes uma chamada de exclusão em lote aceita; a tela manda em partes desse tamanho. */
+export const BULK_DELETE_MAX = 200;

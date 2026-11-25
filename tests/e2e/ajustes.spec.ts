@@ -100,3 +100,13 @@ test("Mensagens: aviso ao remarcar ligado, com prévia sem o nome da cliente, e 
     "false",
   );
 });
+
+test("Ajustes tem os links de Política de privacidade e Termos do site público", async ({ page }) => {
+  await page.goto("/ajustes");
+  const legal = page.getByRole("navigation", { name: "Documentos legais" });
+  await expect(legal.getByRole("link", { name: "Política de privacidade" })).toHaveAttribute(
+    "href",
+    "https://bubbly.app.br/privacidade",
+  );
+  await expect(legal.getByRole("link", { name: "Termos" })).toHaveAttribute("href", "https://bubbly.app.br/termos");
+});

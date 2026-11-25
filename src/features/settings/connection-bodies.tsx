@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { tenants } from "@/db/schema";
 import { IphoneCalendarCard } from "@/features/calendar-feed/IphoneCalendarCard";
+import { listIcloudCalendars } from "@/features/calendar-feed/icloud-server";
 import { GoogleCard } from "@/features/google/GoogleCard";
 import { isGoogleConnected } from "@/features/google/server";
 import { LocationToggle } from "@/features/owner-notices/LocationToggle";
@@ -40,7 +41,14 @@ export async function CalendarsBody({
   googleResult?: unknown;
   googleError?: unknown;
 }) {
-  const [google, session] = await Promise.all([isGoogleConnected(tenantId), getSession()]);
+  const [google, session, [sync]] = await Promise.all([
+    isGoogleConnected(tenantId),
+    getSession(),
+    getDb()
+      .select({ at: tenants.googleSyncedAt, count: tenants.googleEventCount, error: tenants.googleSyncError })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId)),
+  ]);
   return (
     <>
       <section id="google" aria-label="Google Agenda" className="scroll-mt-6">
@@ -49,6 +57,7 @@ export async function CalendarsBody({
           failed={googleResult === "erro" || !!googleError}
           errorCode={typeof googleError === "string" ? googleError.slice(0, 60) : undefined}
           email={session?.user.email}
+          status={sync ? { syncedAt: sync.at?.toISOString() ?? null, count: sync.count, error: sync.error } : undefined}
         />
       </section>
       <IphoneCalendarBody tenantId={tenantId} google={google} />
@@ -58,15 +67,17 @@ export async function CalendarsBody({
 
 /** Cartão do Calendário do iPhone (também usado na entrada de primeiro acesso). */
 export async function IphoneCalendarBody({ tenantId, google }: { tenantId: string; google: boolean }) {
-  const [salon] = await getDb()
-    .select({
-      calendarOn: tenants.calendarTokenHash,
-      calendarHideNames: tenants.calendarHideNames,
-      calendarFetchedAt: tenants.calendarFetchedAt,
-      icloudOn: tenants.icloudCalendarUrl,
-    })
-    .from(tenants)
-    .where(eq(tenants.id, tenantId));
+  const [[salon], icloud] = await Promise.all([
+    getDb()
+      .select({
+        calendarOn: tenants.calendarTokenHash,
+        calendarHideNames: tenants.calendarHideNames,
+        calendarFetchedAt: tenants.calendarFetchedAt,
+      })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId)),
+    listIcloudCalendars(tenantId),
+  ]);
   return (
     <section id="iphone" aria-label="Calendário do iPhone" className="scroll-mt-6">
       <IphoneCalendarCard
@@ -74,7 +85,7 @@ export async function IphoneCalendarBody({ tenantId, google }: { tenantId: strin
         hideNames={salon?.calendarHideNames ?? false}
         subscribed={!!salon?.calendarOn && !!salon.calendarFetchedAt}
         googleConnected={google}
-        icloudOn={!!salon?.icloudOn}
+        icloudCalendars={icloud}
       />
     </section>
   );

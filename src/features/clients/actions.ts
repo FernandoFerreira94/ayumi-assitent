@@ -6,11 +6,19 @@ import { fail, ok, type ActionResult } from "@/lib/errors";
 import { visitHistory } from "@/features/returns/rules";
 import { formatBRL, formatDayTitle, formatMonthYear, formatShortDate, formatTime, todayStr } from "@/lib/dates";
 import { requireTenant } from "@/lib/tenant";
-import { clientSummary, deleteClientRow, HISTORY, insertClient, updateClientRow } from "./core";
+import {
+  bulkDeletePreview,
+  clientSummary,
+  deleteClientRow,
+  deleteClientRows,
+  HISTORY,
+  insertClient,
+  updateClientRow,
+} from "./core";
 import { clientMoves } from "@/features/wallet/core";
 import { clientPackageList } from "@/features/wallet/packages";
 import { walletBalance, walletStatement } from "@/features/wallet/rules";
-import { clientInput } from "./schema";
+import { BULK_DELETE_MAX, clientInput } from "./schema";
 import { clientHistoryPage, clientHistorySummary, type HistoryEvent } from "./history";
 import {
   attendanceRate,
@@ -72,6 +80,41 @@ export async function deleteClient(id: string): Promise<ActionResult> {
   }
 }
 
+const UUID = /^[0-9a-f-]{36}$/i;
+const validIds = (ids: unknown): ids is string[] =>
+  Array.isArray(ids) &&
+  ids.length > 0 &&
+  ids.length <= BULK_DELETE_MAX &&
+  ids.every((id) => typeof id === "string" && UUID.test(id));
+
+export type BulkDeletePreview = { found: number; anonymize: number; future: number };
+
+/** Para o diálogo de confirmação: quantas saem de vez, quantas viram "Cliente removida". */
+export async function previewDeleteClients(ids: string[]): Promise<ActionResult<BulkDeletePreview>> {
+  const { tenantId } = await requireTenant();
+  if (!validIds(ids)) return fail("VALIDATION");
+  try {
+    return ok(await withTenant(tenantId, (tx) => bulkDeletePreview(tx, [...new Set(ids)])));
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
+export type BulkDeleteResult = { removed: number; anonymized: number; failed: number };
+
+/** Exclusão em lote (até BULK_DELETE_MAX por vez), com resultado parcial. */
+export async function deleteClients(ids: string[]): Promise<ActionResult<BulkDeleteResult>> {
+  const { tenantId } = await requireTenant();
+  if (!validIds(ids)) return fail("VALIDATION");
+  try {
+    const res = await withTenant(tenantId, (tx) => deleteClientRows(tx, ids));
+    if (res.removed + res.anonymized > 0) revalidatePath("/clientes");
+    return ok(res);
+  } catch {
+    return fail("UNKNOWN");
+  }
+}
+
 export type ClientCard = {
   next: { when: string; service: string } | null;
   last: string | null;
@@ -106,7 +149,9 @@ export async function loadClientCard(id: string): Promise<ActionResult<ClientCar
       HISTORY,
     );
     return ok({
-      next: s.next ? { when: `${day(s.next.startsAt)} às ${formatTime(s.next.startsAt)}`, service: s.next.service } : null,
+      next: s.next
+        ? { when: `${day(s.next.startsAt)} às ${formatTime(s.next.startsAt)}`, service: s.next.service }
+        : null,
       last: s.last ? day(s.last.startsAt) : null,
       visits: s.visits,
       spentCents: s.spentCents,
@@ -125,7 +170,11 @@ export async function loadClientCard(id: string): Promise<ActionResult<ClientCar
           : null,
       wallet: {
         balanceCents: walletBalance(moves),
-        moves: walletStatement(moves).map((m) => ({ day: formatShortDate(todayStr(m.at)), label: m.label, cents: m.cents })),
+        moves: walletStatement(moves).map((m) => ({
+          day: formatShortDate(todayStr(m.at)),
+          label: m.label,
+          cents: m.cents,
+        })),
       },
       packages: pkgs
         .filter((p) => p.left > 0 && !p.expired)
@@ -195,7 +244,10 @@ function toItem(e: HistoryEvent, now: Date): HistoryItem {
       kind: "visit",
       title: e.service,
       detail: e.notes,
-      badge: { text: future && e.status !== "cancelled" ? `Marcado · ${STATUS_LABEL[e.status]}` : STATUS_LABEL[e.status], tone: statusTone(e.status, future) },
+      badge: {
+        text: future && e.status !== "cancelled" ? `Marcado · ${STATUS_LABEL[e.status]}` : STATUS_LABEL[e.status],
+        tone: statusTone(e.status, future),
+      },
       tags,
       amount: formatBRL(e.priceCents),
       amountTone: e.status === "cancelled" || e.status === "no_show" ? "muted" : null,

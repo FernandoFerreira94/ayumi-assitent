@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { eq } from "drizzle-orm";
 import { getDb, withTenant } from "@/db/client";
-import { tenants } from "@/db/schema";
+import { icloudCalendars, tenants } from "@/db/schema";
 import { getHours } from "@/features/hours/core";
 import { getReminderSettings } from "@/features/reminders/core";
 import { shellStatus } from "@/features/shell/status";
@@ -29,25 +29,25 @@ export type SettingsGroupData = { title: string; lines: SettingsLine[] };
  * Usado pela lista de `/ajustes` e pela coluna lateral das seções no desktop; `cache` evita consultar duas vezes.
  */
 export const loadSettingsSummary = cache(async (tenantId: string): Promise<SettingsGroupData[]> => {
-  const [{ whatsapp, google }, { week, reminders, replies, wallet }, [salon]] = await Promise.all([
+  const [{ whatsapp, google }, { week, reminders, replies, wallet, icloud }, [salon]] = await Promise.all([
     shellStatus(tenantId),
     withTenant(tenantId, async (tx) => ({
       week: await getHours(tx),
       reminders: await getReminderSettings(tx),
       replies: await unreadSupportReplies(tx),
       wallet: await getWalletSettings(tx),
+      icloud: (await tx.select({ id: icloudCalendars.id }).from(icloudCalendars).limit(1)).length > 0,
     })),
     getDb()
       .select({
         calendarOn: tenants.calendarTokenHash,
-        icloudOn: tenants.icloudCalendarUrl,
         locationSource: tenants.locationSource,
         address: tenants.address,
       })
       .from(tenants)
       .where(eq(tenants.id, tenantId)),
   ]);
-  const iphone = !!salon?.calendarOn || !!salon?.icloudOn;
+  const iphone = !!salon?.calendarOn || icloud;
   const avisos = [
     reminders.first ? `1º aviso ${reminders.hours}h antes` : null,
     reminders.secondHours ? `2º aviso ${reminders.secondHours}h antes` : null,

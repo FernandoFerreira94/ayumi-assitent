@@ -354,6 +354,35 @@ export function parsePackageDraft(raw: {
   return { ok: true, draft: { ...base, sessionsPaid: null, priceCents: price } };
 }
 
+export type OfferEdit = { name: string; startsOn: string | null; endsOn: string | null; maxClients: number | null };
+
+/** Editar um pacote à venda: nome, período e limite (sessões e preço ficam; quem comprou guarda a cópia). */
+export function parseOfferEdit(raw: {
+  name?: string;
+  startsOn?: string;
+  endsOn?: string;
+  maxClients?: string;
+}): { ok: true; edit: OfferEdit } | { ok: false; field: string } {
+  const name = (raw.name ?? "").trim();
+  if (name.length < 1 || name.length > 80) return { ok: false, field: "name" };
+  const startsOn = raw.startsOn?.trim() || null;
+  const endsOn = raw.endsOn?.trim() || null;
+  if (startsOn && !DAY.test(startsOn)) return { ok: false, field: "startsOn" };
+  if (endsOn && (!DAY.test(endsOn) || (startsOn && endsOn < startsOn))) return { ok: false, field: "endsOn" };
+  const capRaw = raw.maxClients?.trim();
+  const maxClients = capRaw ? Number(capRaw) : null;
+  if (maxClients !== null && (!Number.isInteger(maxClients) || maxClients < 1 || maxClients > 10_000))
+    return { ok: false, field: "maxClients" };
+  return { ok: true, edit: { name, startsOn, endsOn, maxClients } };
+}
+
+/** O que "Excluir" faz: nunca usado = apaga de vez; já vendido/usado = sai da lista e o histórico fica. */
+export type DeleteOutcome = "deleted" | "archived";
+
+/** Palavra que a dona digita para liberar o Excluir (igual ao Excluir conta). */
+export const DELETE_WORD = "excluir";
+export const isDeleteWord = (typed: string) => typed.trim().toLowerCase() === DELETE_WORD;
+
 /** Lê o formulário de Ajustes > Pagamentos. Devolve o campo errado quando algo não fecha. */
 export function parsePolicy(
   input: Record<string, string | undefined>,

@@ -9,6 +9,8 @@ import {
   packageSessionsLeft,
   promoStatus,
   referenceService,
+  type DeleteOutcome,
+  type OfferEdit,
   type PackageDraft,
 } from "./rules";
 import { chooseSession, type PickedSession } from "./session-use";
@@ -125,9 +127,40 @@ export async function createTemplate(tx: Tx, tenantId: string, d: PackageDraft):
   return row?.id ?? null;
 }
 
-/** Tira o modelo da lista de venda (os pacotes já vendidos continuam valendo). */
-export const archiveTemplate = (tx: Tx, id: string) =>
-  tx.update(packageTemplates).set({ active: false }).where(eq(packageTemplates.id, id));
+/** Edita nome, período e limite. Sessões e preço não mudam aqui (quem já comprou guarda a cópia). */
+export async function updateTemplate(tx: Tx, id: string, e: OfferEdit): Promise<boolean> {
+  const r = await tx
+    .update(packageTemplates)
+    .set({ name: e.name, startsOn: e.startsOn, endsOn: e.endsOn, maxClients: e.maxClients })
+    .where(and(eq(packageTemplates.id, id), eq(packageTemplates.active, true)))
+    .returning({ id: packageTemplates.id });
+  return r.length > 0;
+}
+
+/**
+ * Excluir (a dona digitou "excluir"). Nunca vendido: apaga de vez. Já vendido: sai da lista e da venda
+ * (`active = false`), e os pacotes das clientes continuam valendo com o histórico. null = não achou.
+ */
+export async function deleteTemplate(tx: Tx, id: string): Promise<DeleteOutcome | null> {
+  const [sold] = await tx
+    .select({ id: clientPackages.id })
+    .from(clientPackages)
+    .where(eq(clientPackages.templateId, id))
+    .limit(1);
+  if (!sold) {
+    const r = await tx
+      .delete(packageTemplates)
+      .where(eq(packageTemplates.id, id))
+      .returning({ id: packageTemplates.id });
+    return r.length ? "deleted" : null;
+  }
+  const r = await tx
+    .update(packageTemplates)
+    .set({ active: false, paused: true })
+    .where(and(eq(packageTemplates.id, id), eq(packageTemplates.active, true)))
+    .returning({ id: packageTemplates.id });
+  return r.length ? "archived" : null;
+}
 
 /** Pausa ou retoma a venda do pacote (continua na lista). */
 export async function setTemplatePaused(tx: Tx, id: string, paused: boolean): Promise<boolean> {

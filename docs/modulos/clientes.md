@@ -52,3 +52,17 @@
 - Regras puras e textos em `clients/history-rules.ts` (status, cor, "Sinal R$ X · falta R$ Y", nome do movimento: Sinal/Pagamento/Pagou o pacote X/Virou crédito…). Ação `actions.loadClientHistory(id, filtro, cursor)`: resumo só na 1ª página; cliente de outro salão = `NOT_FOUND` (RLS).
 - Sem migration. "Remarcou" não tem registro próprio no banco (só o status "Pediu para remarcar"); se quiser no histórico, precisa de log de eventos.
 - Testes: `tests/unit/client-history.test.ts`, `tests/db/client-history.test.ts` (filtros, paginação sem pular, anulação, isolamento), `tests/e2e/historico.spec.ts`.
+
+## Total de clientes (25/11)
+
+- Topo de `/clientes` (celular e desktop): `clients/ClientCount.tsx` mostra o total em destaque ("128 clientes no total"); com busca ou filtro vira "12 de 128 clientes".
+- `clients/core.countClients`: um `count(*)` sem as anonimizadas; o salão vem do RLS (`withTenant`). O tile "Clientes" do resumo no desktop usa o mesmo número.
+- Testes: `tests/db/tenancy.test.ts` (isolamento + anonimizada), `tests/e2e/clientes.spec.ts`.
+
+## Seleção e exclusão em lote (25/11)
+
+- Botão **Selecionar** no topo (celular e desktop) liga o modo seleção (`clients/BulkSelect.tsx`: `BulkProvider`, `SelectButton`, `BulkHeader`, `BulkBar`). Cada linha vira um marcador (`ClientRow` com `role="checkbox"`, sem deslizar nem abrir ficha); "Selecionar todas (N)" vale para a lista de agora (busca/filtro); escolhidas que saem da lista pela busca não são excluídas.
+- A barra de ações entra no lugar da barra de abas (`html[data-select] .tabbar` no globals.css); no desktop fica presa embaixo da coluna da lista. Ações em `ACTIONS` (hoje só Excluir).
+- Confirmação em folha: `actions.previewDeleteClients` → `core.bulkDeletePreview` (quantas saem de vez, quantas têm histórico e viram "Cliente removida", quantas têm horário marcado; o horário fica na agenda, sem lembrete). Exclusão: `actions.deleteClients` → `core.deleteClientRows`, cada cliente num savepoint com a mesma regra de `deleteClientRow`; devolve `{removed, anonymized, failed}`. Até `BULK_DELETE_MAX` = 200 por chamada (`clients/schema.ts`); a tela manda em partes.
+- **Sem limite de 200:** `searchClients` traz todas (lista, filtros e seletores do agendar). As seções por letra usam `content-visibility: auto` para não desenhar o que está fora da tela.
+- Testes: `tests/db/clients-delete.test.ts` (lote + outro salão), `tests/e2e/clientes.spec.ts`.

@@ -1,9 +1,10 @@
 import "server-only";
-import { eq } from "drizzle-orm";
-import { getDb, withTenant } from "@/db/client";
-import { tenants } from "@/db/schema";
-import { isIcloudUrl, parseIcsEvents } from "./icloud";
-import { importIcloudEvents } from "./icloud-import";
+import { asc, eq } from "drizzle-orm";
+import { withTenant, type Tx } from "@/db/client";
+import { icloudCalendars } from "@/db/schema";
+import { icsCalendarName, isIcloudUrl, parseIcsEvents } from "./icloud";
+import { clearOrphanIcloudEvents, importIcloudEvents } from "./icloud-import";
+import type { IcloudCalendarView } from "./icloud-view";
 
 const DAY = 86_400_000;
 /** Mesma janela do Google: um pouco do passado e ~6 meses à frente. */
@@ -74,36 +75,63 @@ export function icloudWindow(now = Date.now()): [Date, Date] {
   return [new Date(now - ICLOUD_WINDOW.pastDays * DAY), new Date(now + ICLOUD_WINDOW.futureDays * DAY)];
 }
 
-/** Lê o calendário e grava na agenda. Lança em falha (nada é apagado sem a lista completa). */
-export async function syncIcloud(tenantId: string, url: string, fetchImpl: typeof fetch = fetch): Promise<number> {
+/** Lê um calendário (rede + ICS), sem tocar no banco. Lança IcloudFetchError. */
+export async function readIcloud(url: string, fetchImpl: typeof fetch = fetch) {
   const text = await fetchIcloudIcs(url, fetchImpl);
   const [from, to] = icloudWindow();
-  let events;
   try {
-    events = parseIcsEvents(text, from, to);
+    return { name: icsCalendarName(text), events: parseIcsEvents(text, from, to), from, to };
   } catch {
     throw new IcloudFetchError("not_calendar");
   }
-  return withTenant(tenantId, (tx) => importIcloudEvents(tx, tenantId, events, from, to));
+}
+
+export type IcloudRead = Awaited<ReturnType<typeof readIcloud>>;
+
+/** Grava o que foi lido de um calendário e o resultado da leitura (linha de status em Ajustes). */
+export async function storeIcloudRead(tx: Tx, tenantId: string, calendarId: string, read: IcloudRead) {
+  const count = await importIcloudEvents(tx, tenantId, calendarId, read.events, read.from, read.to);
+  await tx
+    .update(icloudCalendars)
+    .set({
+      eventCount: count,
+      syncedAt: new Date(),
+      syncError: null,
+      ...(read.name ? { name: read.name } : {}),
+    })
+    .where(eq(icloudCalendars.id, calendarId));
+  return count;
 }
 
 /**
- * Traz os eventos do Calendário do iPhone para a agenda (somente leitura), junto com o Google ao abrir o dia.
- * Nunca lança: sem link ou com falha, a agenda segue com o que já tem.
+ * Traz os eventos de todos os calendários do iPhone ligados (somente leitura), junto com o Google ao abrir o dia.
+ * Um calendário com erro não segura os outros e guarda o tipo do erro para a tela. Nunca lança.
  */
 export async function importIcloudCalendar(tenantId: string, force = false): Promise<void> {
   const last = lastImport.get(tenantId) ?? 0;
   if (!force && Date.now() - last < MIN_INTERVAL_MS) return;
   lastImport.set(tenantId, Date.now());
   try {
-    // tenants não tem FORCE RLS: leitura do próprio estúdio pelo dono do banco, como em isGoogleConnected
-    const [t] = await getDb()
-      .select({ url: tenants.icloudCalendarUrl })
-      .from(tenants)
-      .where(eq(tenants.id, tenantId))
-      .limit(1);
-    if (!t?.url) return;
-    await syncIcloud(tenantId, t.url);
+    const rows = await withTenant(tenantId, (tx) =>
+      tx.select({ id: icloudCalendars.id, url: icloudCalendars.url }).from(icloudCalendars),
+    );
+    if (!rows.length) return;
+    let allOk = true;
+    for (const row of rows) {
+      try {
+        const read = await readIcloud(row.url);
+        await withTenant(tenantId, (tx) => storeIcloudRead(tx, tenantId, row.id, read));
+      } catch (e) {
+        allOk = false;
+        const kind = e instanceof IcloudFetchError ? e.kind : "failed";
+        console.error("icloud_import_failed", { error: e instanceof IcloudFetchError ? e.kind : "unknown" });
+        await withTenant(tenantId, (tx) =>
+          tx.update(icloudCalendars).set({ syncError: kind }).where(eq(icloudCalendars.id, row.id)),
+        ).catch(() => undefined);
+      }
+    }
+    if (allOk) await withTenant(tenantId, (tx) => clearOrphanIcloudEvents(tx));
+    else lastImport.delete(tenantId);
   } catch (e) {
     lastImport.delete(tenantId);
     console.error("icloud_import_failed", { error: e instanceof IcloudFetchError ? e.kind : "unknown" });
@@ -112,3 +140,20 @@ export async function importIcloudCalendar(tenantId: string, force = false): Pro
 
 /** Depois de salvar um link novo, a próxima tela importa na hora. */
 export const resetIcloudThrottle = (tenantId: string) => lastImport.delete(tenantId);
+
+/** Calendários do iCloud ligados, para a tela (sem o link). Mais antigo primeiro. */
+export async function listIcloudCalendars(tenantId: string): Promise<IcloudCalendarView[]> {
+  const rows = await withTenant(tenantId, (tx) =>
+    tx
+      .select({
+        id: icloudCalendars.id,
+        name: icloudCalendars.name,
+        eventCount: icloudCalendars.eventCount,
+        syncedAt: icloudCalendars.syncedAt,
+        syncError: icloudCalendars.syncError,
+      })
+      .from(icloudCalendars)
+      .orderBy(asc(icloudCalendars.createdAt)),
+  );
+  return rows.map((r) => ({ ...r, syncedAt: r.syncedAt?.toISOString() ?? null }));
+}

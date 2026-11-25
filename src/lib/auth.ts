@@ -7,6 +7,7 @@ import { twoFactor } from "better-auth/plugins/two-factor";
 import { Pool } from "pg";
 import { isPlatformAdmin } from "@/features/admin/access";
 import { resetPasswordEmail, RESET_LINK_MINUTES } from "@/features/auth/emails";
+import { CALENDAR_SCOPE, CONTACTS_SCOPE } from "@/features/google/scope";
 import { isEmailAllowed } from "./allowed-emails";
 import { sendEmail } from "./email";
 
@@ -60,8 +61,9 @@ export const auth = betterAuth({
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-      // Agenda do Google: lê/escreve eventos; refresh token para sincronizar em segundo plano.
-      scope: ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/contacts.readonly"],
+      // Agenda do Google só nos eventos (calendar.events) + contatos; refresh token para sincronizar em segundo plano.
+      // Vale para o login e para o linkSocial de Ajustes > Calendários e do primeiro acesso.
+      scope: [CALENDAR_SCOPE, CONTACTS_SCOPE],
       accessType: "offline",
       prompt: "consent",
     },
