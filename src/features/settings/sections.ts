@@ -11,7 +11,7 @@ export const SECTIONS = {
   // Mora no Meu perfil; a linha de Ajustes é só um atalho
   endereco: { href: "/perfil#endereco", title: "Endereço do estúdio", icon: "map", tint: "pink" },
   mensagens: { href: "/ajustes/mensagens", title: "Mensagens para a cliente", icon: "message", tint: "lavender" },
-  expediente: { href: "/ajustes/expediente", title: "Expediente", icon: "clock", tint: "orange" },
+  expediente: { href: "/ajustes/expediente", title: "Expediente", icon: "clock", tint: "teal" },
   pagamentos: { href: "/ajustes/pagamentos", title: "Pagamentos", icon: "wallet", tint: "green" },
   suporte: { href: "/ajustes/suporte", title: "Ajuda e suporte", icon: "chat", tint: "teal" },
 } as const satisfies Record<string, { href: string; title: string; icon: IconName; tint: Tint }>;
