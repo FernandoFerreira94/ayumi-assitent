@@ -51,7 +51,7 @@
 ## Sinal nas mensagens (24/11, D2/D3 da auditoria)
 - Ao agendar com sinal pendente, o padrão é `DEFAULT_BOOKING_DEPOSIT` ("Reservei seu horário…") + `depositLines` ("Para confirmar, falta só o sinal de R$ X / Pix / Pode me mandar o comprovante"). **Sem 1/2/3** mesmo dentro da janela do 1º aviso: quem confirma é o sinal.
 - Pago ao agendar ("Já recebi"/tudo): linha "✅ Sinal de R$ X recebido." ou "✅ Pagamento recebido.".
-- 1º e 2º aviso com sinal pendente (`claimDue`/`claimNudges` devolvem `depositLeft` via `wallet/core.paidCentsOf`): lembrete + "Lembrando que falta o sinal de R$ X para confirmar. Pix: …", sem 1/2/3.
+- 1º e 2º aviso com sinal pendente (`claimDue`/`claimNudges` devolvem `depositLeft` via `wallet/core.paidCentsOf`): só o lembrete, sem cobrar o sinal e sem 1/2/3 (a dona pode já ter recebido sem marcar no app; cobrar de novo vira contestação).
 - **Sinal recebido** (migration `0060`, `appointments.deposit_notice_at`): a folha de pagamento tem "Avisar a cliente no WhatsApp" (ligado, só sinal pedido e horário futuro). `updatePayment` → `appointments/core.afterPaymentChange`: sinal coberto agora + aviso = `deposit_notice_at` = agora + 15 s (`DEPOSIT_WAIT_MS`, depois do Desfazer); sem aviso = confirma na hora; qualquer outra mudança limpa. Worker `messaging/deposit-send.sendDueDepositNotices` (no `runReminders`, antes do 1º aviso) confirma o horário e manda `text.depositReceivedText` uma vez ("Recebi seu sinal de R$ X 💜 Seu horário de … está confirmado"), grava `auto_reply`. Nova tentativa não sai de madrugada.
 
 ## Confiabilidade e cancelamento (24/11, PR 6/7 da auditoria)
