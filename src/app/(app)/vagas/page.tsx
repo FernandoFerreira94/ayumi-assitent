@@ -46,7 +46,7 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
 
   if (services.length === 0) {
     return (
-      <PageShell title="Vagas">
+      <PageShell back title="Vagas">
         <EmptyState
           icon="scissors"
           title="Nenhum serviço cadastrado"
@@ -71,12 +71,14 @@ export default async function VagasPage({ searchParams }: PageProps<"/vagas">) {
   const withSlots = days.filter((d) => d.slots.length > 0);
 
   return (
-    <PageShell wide title="Vagas" subtitle="Toque num horário para agendar">
+    <PageShell back wide title="Vagas" subtitle="Toque num horário para agendar">
       <nav aria-label="Serviço" className="mb-4 flex gap-2 overflow-x-auto pb-1">
         {services.map((x) => (
           <Link
             key={x.id}
             href={`/vagas?s=${x.id}`}
+            // troca de serviço não entra no histórico: a seta de voltar sai da tela, não volta ao serviço anterior
+            replace
             aria-current={x.id === service.id ? "true" : undefined}
             className={`min-h-11 shrink-0 rounded-full px-4 py-2.5 text-sm font-bold ${x.id === service.id ? "btn-tint" : "btn-glass"}`}
           >
