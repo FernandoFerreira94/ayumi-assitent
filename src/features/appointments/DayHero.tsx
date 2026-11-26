@@ -8,6 +8,7 @@ import { setValuesHidden, useValuesHidden } from "@/features/finance/hide-values
 import { formatBRL } from "@/lib/dates";
 import { nowLine, outfitFor, weatherLine } from "@/features/owner-notices/weather";
 import type { Briefing } from "./briefing";
+import { agendaLines, HIGHLIGHT, type MascotFacts, moneyLines, rotation } from "./mascot-lines";
 
 /** Balão na tela antes de sumir sozinho. */
 const SHOW_MS = 6000;
@@ -18,27 +19,41 @@ const FIRST_MS = 700;
 
 const MASKED = "R$ •••••";
 
+/** Fala com números, horas e valores em destaque (split com grupo mantém os trechos que casam nos ímpares). */
+function Spoken({ text }: { text: string }) {
+  return text.split(HIGHLIGHT).map((part, n) => (n % 2 ? <strong key={n} className="text-primary-text">{part}</strong> : part));
+}
+
 /**
  * Topo do Painel: a Bolha (maior) com a fala do dia num balão que aparece e some sozinho, alternando as
  * informações, e à direita os ganhos do dia (recebido x o que falta) com olhinho para esconder os valores.
  * Tocar na Bolha mostra a próxima fala; tocar no balão fecha. Hoje, a roupa segue o clima de agora e as falas
- * do tempo (agora e previsão do dia) entram logo depois do resumo, alternando com as outras.
+ * do tempo (agora e previsão do dia), do dinheiro e da agenda (vagas de hoje, amanhã) alternam um assunto por vez.
  */
 export function DayHero({
   briefing,
   isToday,
   receivedCents,
   forecastCents,
+  facts,
 }: {
   briefing: Briefing;
   isToday: boolean;
   receivedCents: number;
   forecastCents: number;
+  /** Só hoje: vagas livres, amanhã e o mês (ver `loadMascotFacts`). */
+  facts?: MascotFacts;
 }) {
   const weather = useWeather();
+  const hidden = useValuesHidden() !== false;
   const sky = isToday && weather ? [nowLine(weather.now), weatherLine(weather.today)] : [];
+  const money = moneyLines(
+    { isToday, receivedCents, forecastCents, monthReceivedCents: facts?.monthReceivedCents },
+    hidden,
+  );
   const [first, ...rest] = briefing.lines;
-  const lines = first === undefined ? sky : [first, ...sky, ...rest];
+  const agenda = [...rest, ...(isToday && facts ? agendaLines(facts) : [])];
+  const lines = rotation(first, [sky, money, agenda]);
   const [i, setI] = useState(0);
   const [shown, setShown] = useState(false);
   const [hop, setHop] = useState(0);
@@ -99,7 +114,7 @@ export function DayHero({
             aria-label={`${line} Toque para fechar.`}
             className="speech speech-solid speech-glow speech-pop pointer-events-auto relative w-full rounded-3xl px-4 py-3 text-left text-sm font-semibold leading-snug"
           >
-            {line}
+            {line === undefined ? null : <Spoken text={line} />}
           </button>
         ) : null}
       </div>
