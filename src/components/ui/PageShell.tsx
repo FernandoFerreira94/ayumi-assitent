@@ -5,8 +5,8 @@ import { InstallHeaderButton } from "@/features/install/InstallGuide";
 import { pageMainClass } from "./page-main";
 
 /**
- * Telas do leque (Painel, Clientes, Vagas, Ajustes) e o Calendário são raiz: o avatar à esquerda abre o menu.
- * `back` marca as telas secundárias (abertas pelo menu ou por um atalho): a seta volta para onde a pessoa estava.
+ * As 4 telas da barra de baixo (Painel, Calendário, Finanças, Clientes) são raiz: o avatar à esquerda abre o menu.
+ * `back` marca todas as outras (abertas pelo menu ou por um atalho): a seta volta para onde a pessoa estava.
  * O sino fica sempre à direita.
  * Tablet e desktop: o menu lateral já mostra onde a pessoa está, então avatar e seta somem,
  * e o título vira 24 px alinhado à esquerda, com o subtítulo embaixo, como nas pranchas.

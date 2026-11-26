@@ -24,7 +24,7 @@ export default async function AjustesPage() {
   const groups = await loadSettingsSummary(tenantId);
 
   return (
-    <PageShell title="Ajustes" wide>
+    <PageShell back title="Ajustes" wide>
       <LegacyHashRedirect />
       <div className="md:mx-auto md:max-w-[720px] lg:mx-0 lg:grid lg:max-w-[1100px] lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
         <div>
