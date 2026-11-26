@@ -9,6 +9,7 @@ import { disconnectGoogle } from "./actions";
 import { CreatePasswordSheet } from "./CreatePasswordSheet";
 import { Switch } from "@/components/ui/Switch";
 import { readLine } from "@/features/calendar-feed/icloud-view";
+import { isNativeShell } from "@/features/install/platform";
 
 /**
  * Liga a conta Google à conta do app para os agendamentos irem para o Google Agenda.
@@ -49,6 +50,16 @@ export function GoogleCard({
 
   async function connect() {
     setPending(true);
+    // App da loja: o Google não abre dentro da WebView, então liga pelo navegador do sistema e volta pelo link do app
+    if (isNativeShell(navigator.userAgent)) {
+      const { startNativeGoogleLink } = await import("@/features/native/google-login");
+      const opened = await startNativeGoogleLink("/ajustes/calendarios", () => setPending(false));
+      if (!opened) {
+        setPending(false);
+        notify.error("NETWORK", connect);
+      }
+      return;
+    }
     const { error } = await authClient.linkSocial({
       provider: "google",
       callbackURL: "/ajustes/calendarios",

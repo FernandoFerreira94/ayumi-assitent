@@ -59,3 +59,24 @@ export function returnUrl(result: { code: string } | { error: string }): string 
   const q = "code" in result ? `code=${encodeURIComponent(result.code)}` : `error=${safeErrorCode(result.error)}`;
   return `${APP_SCHEME}://auth?${q}`;
 }
+
+/**
+ * Ligar o Google Agenda no app da loja (quem entrou com e-mail e senha). Mesmo motivo do login: o Google não abre
+ * dentro da WebView. A WebView, já com sessão, pede um token de uso único (3 min) e abre o navegador do sistema em
+ * /api/native-auth/link?token=...; lá o token vira uma sessão curta só para o linkSocial, o Google liga a conta no
+ * banco e /api/native-auth/linked devolve br.app.bubbly://google?ok=1 (ou ?error=...) e apaga a sessão do navegador.
+ * Nada de valor volta pelo link: o vínculo já está gravado, o app só recarrega a tela.
+ */
+export const LINK_COOKIE = "bubbly_native_link";
+
+export function linkReturnUrl(result: { ok: true } | { error: string }): string {
+  return `${APP_SCHEME}://google?${"ok" in result ? "ok=1" : `error=${safeErrorCode(result.error)}`}`;
+}
+
+/** Set-Cookie da resposta do Better Auth → cabeçalho Cookie para a próxima chamada interna (só nome=valor). */
+export function cookieHeaderFrom(setCookies: string[]): string {
+  return setCookies
+    .map((c) => c.split(";")[0].trim())
+    .filter((pair) => pair.includes("=") && !pair.endsWith("="))
+    .join("; ");
+}

@@ -8,7 +8,7 @@ import { APP_LINK_PREFIX } from "./links";
 
 /**
  * Só roda dentro do app da loja (casca Capacitor). Escuta os links br.app.bubbly://... que abrem o app.
- * Volta do login do Google, botão voltar do Android e toque numa notificação nativa.
+ * Volta do login e da ligação do Google Agenda, botão voltar do Android e toque numa notificação nativa.
  */
 export function NativeBridge() {
   useEffect(() => {
@@ -20,6 +20,11 @@ export function NativeBridge() {
       const { App } = await import("@capacitor/app");
       handles.push(
         await App.addListener("appUrlOpen", async ({ url }) => {
+          if (url.startsWith(`${APP_LINK_PREFIX}google`)) {
+            const { finishNativeGoogleLink } = await import("./google-login");
+            location.replace(await finishNativeGoogleLink(url));
+            return;
+          }
           if (!url.startsWith(`${APP_LINK_PREFIX}auth`)) return;
           const { finishNativeGoogleLogin } = await import("./google-login");
           const result = await finishNativeGoogleLogin(url);

@@ -48,3 +48,43 @@ export async function finishNativeGoogleLogin(link: string): Promise<{ ok: true 
   if (!res?.ok) return { ok: false, error: "EXPIRED" };
   return { ok: true };
 }
+
+const LINK_BACK_KEY = "bubbly:native-link-back";
+
+/**
+ * Liga o Google Agenda pelo navegador do sistema (quem já está logado no app). `back` é a tela que volta depois;
+ * fica guardada aqui, não no link. Resolve false se nem deu para abrir (sem rede, sessão expirada).
+ */
+export async function startNativeGoogleLink(back: string, onClosed: () => void): Promise<boolean> {
+  const res = await fetch("/api/native-auth/link-start", { method: "POST", credentials: "same-origin" }).catch(
+    () => null,
+  );
+  const body = (await res?.json().catch(() => null)) as { token?: unknown } | null;
+  if (!res?.ok || typeof body?.token !== "string") return false;
+  const { Browser } = await import("@capacitor/browser");
+  localStorage.setItem(LINK_BACK_KEY, back);
+  const closed = await Browser.addListener("browserFinished", () => {
+    void closed.remove();
+    onClosed();
+  });
+  await Browser.open({ url: `${location.origin}/api/native-auth/link?token=${encodeURIComponent(body.token)}` });
+  return true;
+}
+
+/** Link br.app.bubbly://google?ok=1 (ou ?error=...): fecha o navegador e diz para onde a WebView volta. */
+export async function finishNativeGoogleLink(link: string): Promise<string> {
+  const { Browser } = await import("@capacitor/browser");
+  await Browser.removeAllListeners().catch(() => undefined);
+  await Browser.close().catch(() => undefined);
+  const back = localStorage.getItem(LINK_BACK_KEY);
+  localStorage.removeItem(LINK_BACK_KEY);
+  return linkBackPath(back, new URL(link).searchParams.get("error"));
+}
+
+/** Só as telas que ligam o Google; o erro segue no mesmo formato do fluxo do site (?google=erro&error=...). */
+export function linkBackPath(back: string | null, error: string | null): string {
+  const base = back === "/primeiro-acesso?etapa=agenda" ? back : "/ajustes/calendarios";
+  if (!error) return base;
+  const code = /^[A-Za-z_]{1,60}$/.test(error) ? error : "UNKNOWN";
+  return `${base}${base.includes("?") ? "&" : "?"}google=erro&error=${code}`;
+}
