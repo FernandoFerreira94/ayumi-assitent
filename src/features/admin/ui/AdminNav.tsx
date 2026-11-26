@@ -67,9 +67,9 @@ export function AdminNav({ supportUnread = 0 }: { supportUnread?: number }) {
             </li>
           ))}
         </ul>
-        <Link href="/agenda" className="sidenav-link sidenav-profile" title="Voltar para o app">
-          <Icon name="calendar" size={22} />
-          <span className="sr-only xl:not-sr-only xl:flex-1">Voltar para o app</span>
+        <Link href="/agenda" className="sidenav-link sidenav-profile" title="Voltar ao Painel">
+          <Icon name="arrowLeft" size={22} />
+          <span className="sr-only xl:not-sr-only xl:flex-1">Voltar ao Painel</span>
         </Link>
         <SideNavSignOut />
       </nav>
@@ -77,6 +77,15 @@ export function AdminNav({ supportUnread = 0 }: { supportUnread?: number }) {
         aria-label="Painel do dono"
         className="sticky top-0 z-10 flex gap-1 overflow-x-auto border-b border-line bg-surface px-3 pb-2 pt-[max(env(safe-area-inset-top),8px)] md:hidden"
       >
+        {/* No celular não há menu lateral: esta é a única saída do /admin de volta ao app. */}
+        <Link
+          href="/agenda"
+          aria-label="Voltar ao Painel"
+          className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-bold text-primary-text"
+        >
+          <Icon name="arrowLeft" size={18} />
+          Painel
+        </Link>
         {ADMIN_NAV.map((i) => (
           <Link
             key={i.href}

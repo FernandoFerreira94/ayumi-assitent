@@ -199,6 +199,7 @@ const PATHS = {
     </>
   ),
   arrowRight: <path d="M4.5 12h15M14 6.5l5.5 5.5-5.5 5.5" />,
+  arrowLeft: <path d="M19.5 12h-15M10 6.5L4.5 12l5.5 5.5" />,
   lock: (
     <>
       <rect x="4.5" y="10.5" width="15" height="10" rx="3" />
