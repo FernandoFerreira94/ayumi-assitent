@@ -45,7 +45,8 @@ export async function createClient(_prev: ActionResult<{ id: string }> | null, f
   if (!parsed.success) return fail("VALIDATION", String(parsed.error.issues[0]?.path[0] ?? ""));
   try {
     const res = await withTenant(tenantId, (tx) => insertClient(tx, tenantId, parsed.data));
-    if (res.ok) revalidatePath("/clientes");
+    // Planos também lista as clientes (vender pacote)
+    if (res.ok) for (const p of ["/clientes", "/planos"]) revalidatePath(p);
     return res;
   } catch {
     return fail("UNKNOWN");

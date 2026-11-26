@@ -8,6 +8,7 @@ import { DiscountPromos } from "@/features/wallet/DiscountPromos";
 import { PackageTemplates } from "@/features/wallet/PackageSheets";
 import { listSoldPackages, listTemplates } from "@/features/wallet/packages";
 import { groupSold, planTotals } from "@/features/wallet/plan-views";
+import { PlansSetup } from "@/features/wallet/PlansSetup";
 import { PlansTabs, type PlansTab } from "@/features/wallet/PlansTabs";
 import { listPromotions } from "@/features/wallet/promotions";
 import { walletGuide } from "@/features/wallet/rules";
@@ -77,6 +78,14 @@ export default async function PlanosPage({ searchParams }: PageProps<"/planos">)
     { n: totals.promotions, label: totals.promotions === 1 ? "promoção valendo" : "promoções valendo" },
   ];
 
+  // Sem serviço não há pacote nem promoção para montar: a página vira só o aviso com o botão de cadastrar
+  if (data.svcs.length === 0)
+    return (
+      <PageShell title="Planos" wide>
+        <PlansSetup missing="service" />
+      </PageShell>
+    );
+
   return (
     <PageShell title="Planos" wide>
       <section aria-label="Resumo dos planos" className="mb-3 grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -87,8 +96,9 @@ export default async function PlanosPage({ searchParams }: PageProps<"/planos">)
           </div>
         ))}
       </section>
+      {data.people.length === 0 ? <PlansSetup missing="client" /> : null}
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <SellFromPlans clients={data.people} />
+        {data.people.length ? <SellFromPlans clients={data.people} /> : <span />}
         <WalletRulesSheet guide={walletGuide(data.settings)} />
       </div>
       <PlansTabs

@@ -12,7 +12,8 @@ import { createClient } from "./actions";
 
 const input = "min-h-13 w-full rounded-2xl border px-4 text-base font-semibold";
 
-export function NewClientSheet() {
+/** "Nova cliente" numa folha; `label` troca o texto do botão (ex.: "Cadastrar cliente" no estado vazio de Planos). */
+export function NewClientSheet({ label = "Nova cliente" }: { label?: string } = {}) {
   const side = useSheetSide();
   const device = useDeviceContacts();
   const [open, setOpen] = useState(false);
@@ -62,7 +63,7 @@ export function NewClientSheet() {
           <circle cx="10" cy="8" r="4" />
           <path d="M3 20c1.3-3.6 3.9-5.5 7-5.5 1.3 0 2.5.3 3.5.9M18 14v6M15 17h6" />
         </svg>
-        Nova cliente
+        {label}
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/25" />
