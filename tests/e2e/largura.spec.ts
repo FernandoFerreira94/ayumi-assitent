@@ -159,6 +159,15 @@ test("Planos no menu lateral: números lado a lado e as três abas", async ({ pa
   await page.goto("/agenda");
   await page.getByRole("navigation", { name: "Navegação principal" }).getByRole("link", { name: "Planos" }).click();
   await expect(page).toHaveURL(/\/planos$/);
+  // Conta nova não tem serviço: Planos mostra só o aviso, e cadastrar por ele libera o resumo e as abas
+  await expect(page.getByRole("region", { name: "Cadastre um serviço primeiro" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Resumo dos planos" })).toBeHidden();
+  await page.getByRole("button", { name: "Cadastrar serviço" }).click();
+  await page.getByRole("dialog").getByRole("textbox", { name: "Nome", exact: true }).fill("Esmaltação");
+  await page.getByRole("dialog").getByRole("textbox", { name: /Preço/ }).fill("45,00");
+  await page.getByRole("dialog").getByRole("button", { name: "Criar serviço" }).click();
+  await expect(page.getByText("Serviço criado")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Cadastre uma cliente" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Resumo dos planos" })).toContainText("clientes com pacote");
   await expect(page.getByText("Nenhuma cliente com pacote em uso")).toBeVisible();
   await page.getByRole("tab", { name: "Promoções" }).click();
