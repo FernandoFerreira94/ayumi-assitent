@@ -159,9 +159,7 @@ export async function sendReminders(tx: Tx, port: MessagingPort, now: Date): Pro
         )
         .catch((e) => console.error(JSON.stringify({ level: "warn", msg: "reminder_record_failed", ...errCode(e) })));
     } catch (e) {
-      console.error(
-        JSON.stringify({ level: "warn", msg: "reminder_send_failed", appointment: a.id, reason: sendFailReason(e) }),
-      );
+      console.error(JSON.stringify({ level: "warn", msg: "reminder_send_failed", appointment: a.id, reason: sendFailReason(e) }));
       // Recusado (número sem WhatsApp): fica marcado como tentado e não volta para a fila, senão repete a cada 5 min
       if (e instanceof MessagingRejectedError) rejected++;
       else failedIds.push(a.id);

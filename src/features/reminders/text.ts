@@ -197,7 +197,12 @@ function withAsk(body: string, a: MessageData, confirmed: boolean): string {
  * 2º aviso: lembrete perto do horário. Quem ainda não confirmou recebe as opções 1/2/3 no fim; quem já
  * confirmou recebe só o lembrete (com o padrão do app, sem o "Pode me confirmar?"). Nunca cancela sozinho.
  */
-export function secondReminderText(a: MessageData, now: Date, salon: SalonMessageOpts = {}, confirmed = false): string {
+export function secondReminderText(
+  a: MessageData,
+  now: Date,
+  salon: SalonMessageOpts = {},
+  confirmed = false,
+): string {
   const custom = salon.template?.trim();
   const usesDefault = !custom || custom === DEFAULT_SECOND;
   const quiet = confirmed || !!a.deposit?.cents;
@@ -216,11 +221,7 @@ export const calendarUpdateLine = (url: string) => `📲 Atualize na sua agenda:
  * Aviso de remarcação. Não pede resposta (o lembrete do horário novo pede). O link do convite vai no lugar de
  * {agenda} ou no fim, como na mensagem de agendamento.
  */
-export function rescheduleText(
-  a: MessageData & { paidCents?: number },
-  now: Date,
-  salon: SalonMessageOpts = {},
-): string {
+export function rescheduleText(a: MessageData & { paidCents?: number }, now: Date, salon: SalonMessageOpts = {}): string {
   const raw = salon.template?.trim() || DEFAULT_RESCHEDULE;
   // Já pagou algo (sinal): avisa que continua valendo, antes do link
   const template = a.paidCents ? `${raw}\n\nO que você já pagou continua valendo para o novo horário 💜` : raw;

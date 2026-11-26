@@ -6,14 +6,7 @@ import { withTenant } from "@/db/client";
 import { fail, ok, type ActionResult } from "@/lib/errors";
 import { requireTenant } from "@/lib/tenant";
 import { saveMessageSettings } from "./core";
-import {
-  DEFAULT_BOOKING,
-  DEFAULT_CANCEL,
-  DEFAULT_REMINDER,
-  DEFAULT_RESCHEDULE,
-  DEFAULT_SECOND,
-  TEMPLATE_MAX,
-} from "./text";
+import { DEFAULT_BOOKING, DEFAULT_CANCEL, DEFAULT_REMINDER, DEFAULT_RESCHEDULE, DEFAULT_SECOND, TEMPLATE_MAX } from "./text";
 
 const hours = z.coerce.number().int().min(1).max(72);
 const template = z
