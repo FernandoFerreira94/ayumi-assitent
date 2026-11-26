@@ -50,7 +50,6 @@ const SAMPLE: MessageData = {
   service: "Alongamento",
   startsAt: sampleStart,
   priceCents: 12000,
-  calendarUrl: "https://bubbly.app/convite.ics",
 };
 
 /**

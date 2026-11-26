@@ -18,13 +18,10 @@ describe("texto do aviso de remarcação", () => {
     expect(rescheduleText(a, now)).not.toContain("📍");
   });
 
-  it("link da agenda no fim, ou onde estiver {agenda}", () => {
-    const url = "https://x/convite.ics";
-    expect(rescheduleText({ ...a, calendarUrl: url }, now).endsWith(`📲 Atualize na sua agenda: ${url}`)).toBe(true);
-    const custom = rescheduleText({ ...a, calendarUrl: url }, now, {
-      template: "Mudou: {dia} {hora}\n{agenda}\nBeijo",
-    });
-    expect(custom).toBe(`Mudou: amanhã, dia 11/11 14:30\n📲 Atualize na sua agenda: ${url}\nBeijo`);
+  it("sem link da agenda; texto já salvo com {agenda} perde a linha", () => {
+    expect(rescheduleText(a, now)).not.toContain("agenda:");
+    const custom = rescheduleText(a, now, { template: "Mudou: {dia} {hora}\n{agenda}\nBeijo" });
+    expect(custom).toBe("Mudou: amanhã, dia 11/11 14:30\nBeijo");
   });
 
   it("texto da dona com {nome}", () => {

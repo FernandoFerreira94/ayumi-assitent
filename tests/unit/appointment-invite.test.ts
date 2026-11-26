@@ -82,24 +82,16 @@ describe("ics do convite", () => {
     expect(inviteIcs({ ...base, address: " ", cancelled: false })).not.toContain("LOCATION"));
 });
 
-describe("mensagem de agendamento com convite", () => {
-  const a = {
-    client: "Maria",
-    service: "Gel",
-    startsAt: new Date("2026-11-11T17:30:00Z"),
-    calendarUrl: "https://x.test/c.ics",
-  };
+describe("mensagem de agendamento sem link da agenda", () => {
+  const a = { client: "Maria", service: "Gel", startsAt: new Date("2026-11-11T17:30:00Z") };
   const eve = new Date("2026-11-10T15:00:00Z");
-  it("padrão: link no fim", () =>
-    expect(bookingText(a, eve)).toMatch(
-      /Te espero com carinho!\n\n📲 Salve na sua agenda: https:\/\/x\.test\/c\.ics$/,
-    ));
-  it("{agenda} decide onde entra", () =>
-    expect(bookingText(a, eve, { template: "Oi {nome}\n{agenda}\nBeijo" })).toBe(
-      "Oi Maria\n📲 Salve na sua agenda: https://x.test/c.ics\nBeijo",
-    ));
-  it("sem link, {agenda} some e nada é acrescentado", () =>
-    expect(bookingText({ ...a, calendarUrl: null }, eve, { template: "Oi {nome}\n\n{agenda}\n\nBeijo" })).toBe(
-      "Oi Maria\n\nBeijo",
-    ));
+  it("padrão: termina no texto, sem link", () => {
+    const t = bookingText(a, eve);
+    expect(t).toMatch(/Te espero com carinho!$/);
+    expect(t).not.toContain("agenda:");
+  });
+  it("texto já salvo com {agenda} numa linha só: a linha some", () =>
+    expect(bookingText(a, eve, { template: "Oi {nome}\n\n{agenda}\n\nBeijo" })).toBe("Oi Maria\n\nBeijo"));
+  it("{agenda} no meio da frase: só a chave some", () =>
+    expect(bookingText(a, eve, { template: "Oi {nome} {agenda}\nBeijo" })).toBe("Oi Maria\nBeijo"));
 });
