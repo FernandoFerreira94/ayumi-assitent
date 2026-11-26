@@ -160,7 +160,9 @@ export async function sendNudges(tx: Tx, port: MessagingPort, now: Date): Promis
         )
         .catch((e) => console.error(JSON.stringify({ level: "warn", msg: "nudge_record_failed", ...errCode(e) })));
     } catch (e) {
-      console.error(JSON.stringify({ level: "warn", msg: "nudge_send_failed", appointment: a.id, reason: sendFailReason(e) }));
+      console.error(
+        JSON.stringify({ level: "warn", msg: "nudge_send_failed", appointment: a.id, reason: sendFailReason(e) }),
+      );
       // Recusado (número sem WhatsApp): fica marcado como tentado e não volta para a fila, senão repete a cada 5 min
       if (e instanceof MessagingRejectedError) rejected++;
       else failedIds.push(a.id);

@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/Switch";
 import type { ActionResult } from "@/lib/errors";
 import { sessionMessageLine } from "@/features/wallet/session-use";
 import { saveMessages } from "./actions";
+import { MessagesHowItWorks } from "./MessagesHowItWorks";
 import type { MessageSettings } from "./core";
 import {
   bookingText,
@@ -65,7 +66,7 @@ export function MessagesForm({
 }: {
   settings: MessageSettings;
   salonName: string;
-  /** Endereço do estúdio (Ajustes > Endereço); vazio = {endereco}/{mapa} somem da mensagem */
+  /** Endereço do estúdio (Meu perfil); vazio = {endereco}/{mapa} somem da mensagem */
   address: string;
 }) {
   const router = useRouter();
@@ -94,10 +95,8 @@ export function MessagesForm({
         <TileTitle as="h2" icon="chat" tint="green">
           Mensagens no WhatsApp
         </TileTitle>
-        <p className="text-sm font-semibold text-muted">
-          O Bubbly manda a confirmação do agendamento, os avisos para a cliente confirmar o horário e o aviso quando
-          você remarca. Cancelar ou remarcar fica com você.
-        </p>
+        <p className="text-sm font-semibold text-muted">Confirmação, avisos e remarcação vão sozinhos.</p>
+        <MessagesHowItWorks />
       </div>
       <input type="hidden" name="fullName" value={fullName ? "1" : ""} />
       <input type="hidden" name="second" value={second ? "1" : ""} />
@@ -131,8 +130,7 @@ export function MessagesForm({
           ))}
         </div>
         <p className="text-sm font-semibold text-muted">
-          Vale onde o texto tiver {"{nome}"}. Contato salvo como “Maria Silva Cliente”: {"{nome}"} vira “
-          {fullName ? "Maria Silva Cliente" : "Maria"}”.
+          {"{nome}"} vira “{fullName ? "Maria Silva Cliente" : "Maria"}”.
         </p>
         {!address ? (
           <p className="text-sm font-semibold text-muted">
@@ -145,10 +143,7 @@ export function MessagesForm({
         ) : null}
       </fieldset>
 
-      <Step
-        title="Ao agendar"
-        hint="Sai assim que você cria o agendamento. Não pede resposta. Vai junto um link para a cliente salvar o horário na agenda dela: no fim, ou onde você puser {agenda}."
-      >
+      <Step title="Ao agendar" hint="Sai ao criar o agendamento.">
         <TemplateField
           name="bookingTemplate"
           label="Texto ao agendar"
@@ -161,7 +156,7 @@ export function MessagesForm({
 
       <Step
         title="1º aviso"
-        hint="Pede para a cliente confirmar o horário."
+        hint="Pede a confirmação do horário."
         aside={<Switch checked={firstOn} onChange={setFirstOn} label="Enviar o 1º aviso" />}
       >
         {/* Desligado, horas e texto continuam guardados (e enviados no form) para quando ela ligar de novo */}
@@ -182,20 +177,15 @@ export function MessagesForm({
               fallback={DEFAULT_REMINDER}
               invalid={err === "reminderTemplate"}
               preview={(template) => reminderText(SAMPLE, sampleNow, { ...salon, template })}
-              note="As opções 1, 2 e 3 vão sempre no fim: é por elas que o app entende a resposta."
+              note="As opções 1, 2 e 3 vão sempre no fim."
             />
           </div>
         </div>
-        {!firstOn && !second ? (
-          <p className="text-sm font-semibold text-muted">
-            Com os dois avisos desligados, a cliente recebe só a mensagem do agendamento.
-          </p>
-        ) : null}
       </Step>
 
       <Step
         title="2º aviso"
-        hint="Lembrete perto do horário. Quem já confirmou recebe sem as opções 1, 2 e 3."
+        hint="Lembrete perto do horário."
         aside={<Switch checked={second} onChange={setSecond} label="Enviar um segundo aviso" />}
       >
         {second ? (
@@ -228,7 +218,7 @@ export function MessagesForm({
 
       <Step
         title="Ao remarcar"
-        hint="Sai quando você muda o dia ou o horário (no arraste, depois do Desfazer). Vai com o mesmo link da agenda, que atualiza o horário salvo pela cliente."
+        hint="Sai ao mudar o dia ou o horário."
         aside={<Switch checked={rescheduleOn} onChange={setRescheduleOn} label="Avisar a cliente ao remarcar" />}
       >
         {/* Desligado, o texto continua guardado para quando ela ligar de novo */}
@@ -240,15 +230,11 @@ export function MessagesForm({
             fallback={DEFAULT_RESCHEDULE}
             invalid={err === "rescheduleTemplate"}
             preview={(template) => rescheduleText(SAMPLE, sampleNow, { ...salon, template })}
-            note="Se o horário novo já estiver na hora do 1º aviso, as opções 1, 2 e 3 vão no fim e ele vale como o 1º aviso."
           />
         </div>
       </Step>
 
-      <Step
-        title="Ao cancelar"
-        hint="Sai quando você cancela com “Avisar a cliente” ligado, depois do Desfazer. Se o que ela pagou virar crédito, uma linha avisa o valor."
-      >
+      <Step title="Ao cancelar" hint="Sai ao cancelar com “Avisar a cliente” ligado.">
         <TemplateField
           name="cancelTemplate"
           label="Texto do aviso de cancelamento"
@@ -261,7 +247,7 @@ export function MessagesForm({
 
       <Step
         title="Sessão do pacote"
-        hint="Quando o horário usa um pacote, a confirmação e os avisos ganham uma linha curta no fim, sem valores."
+        hint="Uma linha curta no fim, sem valores."
         aside={<Switch checked={packageLine} onChange={setPackageLine} label="Mostrar a sessão do pacote" />}
       >
         {packageLine ? (

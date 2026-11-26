@@ -48,7 +48,9 @@ export async function runReminders(
       });
       // Mensagens de agendamento que falharam por instabilidade (rede, 5xx): nova tentativa, antes do 1º aviso
       const bs = await sendDueBookingRetries(t.id, now).catch((e) => {
-        console.error(JSON.stringify({ level: "warn", msg: "booking_retry_tenant_failed", tenant: t.id, ...errCode(e) }));
+        console.error(
+          JSON.stringify({ level: "warn", msg: "booking_retry_tenant_failed", tenant: t.id, ...errCode(e) }),
+        );
         return { sent: 0, failed: 0 };
       });
       const r = await withTenant(t.id, (tx) => sendReminders(tx, port, now));

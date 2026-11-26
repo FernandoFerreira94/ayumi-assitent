@@ -17,9 +17,9 @@ describe("seções de Ajustes", () => {
     expect(legacyTarget("#toString")).toBeNull();
     expect(legacyTarget("#qualquer")).toBeNull();
   });
-  it("toda seção mora embaixo de /ajustes (endereço é atalho para o Meu perfil)", () => {
-    for (const [k, s] of Object.entries(SECTIONS))
-      expect(s.href).toMatch(k === "endereco" ? /^\/perfil#endereco$/ : /^\/ajustes\/[a-z]+$/);
+  it("toda seção mora embaixo de /ajustes (endereço fica só no Meu perfil)", () => {
+    for (const s of Object.values(SECTIONS)) expect(s.href).toMatch(/^\/ajustes\/[a-z]+$/);
+    expect(SECTIONS).not.toHaveProperty("endereco");
   });
   it("ícone do Expediente na lista tem a mesma cor do título da tela (HoursForm: clock teal)", () => {
     expect(SECTIONS.expediente).toMatchObject({ icon: "clock", tint: "teal" });
