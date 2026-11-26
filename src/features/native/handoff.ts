@@ -7,6 +7,9 @@ import {
   CHALLENGE_COOKIE,
   CODE_TTL_MS,
   codeKey,
+  cookieHeaderFrom,
+  LINK_COOKIE,
+  linkReturnUrl,
   isChallenge,
   newCode,
   returnUrl,
@@ -15,6 +18,7 @@ import {
 } from "./handoff-core";
 
 const FINISH = "/api/native-auth/finish";
+const LINKED = "/api/native-auth/linked";
 
 function readCookie(req: Request, name: string): string | null {
   const raw = req.headers.get("cookie") ?? "";
@@ -120,7 +124,10 @@ export async function exchangeNativeCode(req: Request): Promise<Response> {
  * próprio é bloqueado em alguns navegadores sem um toque). Também apaga a sessão e o challenge deste navegador.
  */
 function backToApp(result: { code: string } | { error: string }, req?: Request): Response {
-  const href = returnUrl(result);
+  return backToAppPage(returnUrl(result), CHALLENGE_COOKIE, req);
+}
+
+function backToAppPage(href: string, flowCookie: string, req?: Request): Response {
   const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Bubbly</title>
 <style>html,body{margin:0;height:100%;background:#F8F7FC;font-family:-apple-system,system-ui,Roboto,sans-serif;color:#2A2140}
@@ -135,10 +142,61 @@ a{display:inline-block;margin-top:16px;font-size:16px;font-weight:600;color:#fff
       "Referrer-Policy": "no-referrer",
     },
   });
-  res.headers.append("Set-Cookie", `${CHALLENGE_COOKIE}=; Path=/api; Max-Age=0; HttpOnly; Secure; SameSite=Lax`);
+  res.headers.append("Set-Cookie", `${flowCookie}=; Path=/api; Max-Age=0; HttpOnly; Secure; SameSite=Lax`);
   for (const name of req ? cookieNames(req) : []) {
     if (name.includes("better-auth"))
       res.headers.append("Set-Cookie", `${name}=; Path=/; Max-Age=0; Secure; SameSite=Lax`);
   }
   return res;
+}
+
+/** Ligar o Google, passo 1 (WebView com sessão): token de uso único que o navegador do sistema troca por sessão. */
+export async function startNativeLink(req: Request): Promise<Response> {
+  const session = await auth.api.getSession({ headers: req.headers });
+  if (!session) return Response.json({ ok: false, error: "UNAUTHORIZED" }, { status: 401 });
+  try {
+    const { token } = await auth.api.generateOneTimeToken({ headers: req.headers });
+    return Response.json({ ok: true, token }, { headers: { "Cache-Control": "no-store" } });
+  } catch (e) {
+    log("error", "native_link_start_failed", errCode(e));
+    return Response.json({ ok: false, error: "UNKNOWN" }, { status: 500 });
+  }
+}
+
+/** Ligar o Google, passo 2 (navegador do sistema): token → sessão curta → linkSocial com o escopo da agenda. */
+export async function openNativeLink(req: Request): Promise<Response> {
+  const url = new URL(req.url);
+  // O Google volta para o domínio oficial: o cookie de state do linkSocial tem de nascer lá
+  const canonical = canonicalRedirect(req.headers.get("x-forwarded-host") ?? req.headers.get("host"), url);
+  if (canonical) return Response.redirect(canonical, 302);
+  const token = url.searchParams.get("token");
+  if (!token || token.length > 200) return backToAppPage(linkReturnUrl({ error: "INVALID_REQUEST" }), LINK_COOKIE, req);
+  try {
+    const verified = await auth.api.verifyOneTimeToken({ body: { token }, headers: req.headers, asResponse: true });
+    if (!verified.ok) return backToAppPage(linkReturnUrl({ error: "EXPIRED" }), LINK_COOKIE, req);
+    const sessionCookies = verified.headers.getSetCookie();
+    const headers = new Headers(req.headers);
+    headers.set("cookie", cookieHeaderFrom(sessionCookies));
+    const res = await auth.api.linkSocialAccount({
+      body: { provider: "google", callbackURL: LINKED, errorCallbackURL: LINKED, disableRedirect: true },
+      headers,
+      asResponse: true,
+    });
+    const body = (await res.json().catch(() => null)) as { url?: unknown } | null;
+    if (!res.ok || typeof body?.url !== "string")
+      return backToAppPage(linkReturnUrl({ error: "UNKNOWN" }), LINK_COOKIE, req);
+    const out = new Response(null, { status: 302, headers: { Location: body.url, "Cache-Control": "no-store" } });
+    for (const c of [...sessionCookies, ...res.headers.getSetCookie()]) out.headers.append("Set-Cookie", c);
+    out.headers.append("Set-Cookie", `${LINK_COOKIE}=1; Path=/api; Max-Age=600; HttpOnly; Secure; SameSite=Lax`);
+    return out;
+  } catch (e) {
+    log("error", "native_link_open_failed", errCode(e));
+    return backToAppPage(linkReturnUrl({ error: "UNKNOWN" }), LINK_COOKIE, req);
+  }
+}
+
+/** Ligar o Google, passo 3 (navegador, volta do Google): devolve ao app e apaga a sessão curta deste navegador. */
+export function finishNativeLink(req: Request): Response {
+  const error = new URL(req.url).searchParams.get("error");
+  return backToAppPage(linkReturnUrl(error ? { error } : { ok: true }), LINK_COOKIE, req);
 }

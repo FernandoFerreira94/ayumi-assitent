@@ -9,6 +9,7 @@ import { authClient } from "@/lib/auth-client";
 import type { Day } from "@/features/hours/slots";
 import { useInstall } from "@/features/install/useInstall";
 import { detectPlatform } from "@/features/install/platform";
+import { isNativeShell } from "@/features/install/platform";
 import { nativePushPlatform } from "@/features/native/push";
 import { locationGranted } from "@/features/owner-notices/device-location";
 import { enableDeviceLocation } from "@/features/owner-notices/enable-location";
@@ -239,6 +240,16 @@ function CalendarScreen({ failed, onIphone, onSkip }: { failed: boolean; onIphon
 
   async function connect() {
     setBusy(true);
+    // App da loja: liga pelo navegador do sistema (o Google não abre na WebView) e volta para esta etapa
+    if (isNativeShell(navigator.userAgent)) {
+      const { startNativeGoogleLink } = await import("@/features/native/google-login");
+      const opened = await startNativeGoogleLink("/primeiro-acesso?etapa=agenda", () => setBusy(false));
+      if (!opened) {
+        setBusy(false);
+        notify.error("NETWORK", () => void connect());
+      }
+      return;
+    }
     const { error } = await authClient.linkSocial({
       provider: "google",
       callbackURL: "/primeiro-acesso?etapa=agenda",
