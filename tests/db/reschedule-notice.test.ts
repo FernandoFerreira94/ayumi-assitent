@@ -87,17 +87,15 @@ d("aviso de remarcação no WhatsApp (Postgres real)", () => {
     expect(m).toMatchObject({ kind: "reminder", direction: "out" });
   });
 
-  it("leva o mesmo link do convite do agendamento (atualiza o evento que a cliente salvou)", async () => {
+  it("não leva link da agenda, mesmo com o convite configurado", async () => {
     vi.stubEnv("BETTER_AUTH_URL", "https://app.test");
     vi.stubEnv("BETTER_AUTH_SECRET", "segredo-de-teste-segredo-de-teste");
     try {
-      const { inviteUrl } = await import("@/features/calendar-feed/invite-token");
       const id = await insert("2030-03-09T13:00:00Z");
       await edit(id, "2030-03-09", "16:00");
       expect(await flush(id)).toBe("sent");
-      const url = inviteUrl(T, id)!;
-      expect(url).toMatch(/^https:\/\/app\.test\/api\/agenda\/convite\/.+\.ics$/);
-      expect(sent[0].text).toContain(`📲 Atualize na sua agenda: ${url}`);
+      expect(sent[0].text).not.toContain("agenda:");
+      expect(sent[0].text).not.toContain(".ics");
     } finally {
       vi.unstubAllEnvs();
     }

@@ -2,7 +2,6 @@ import { and, eq, isNotNull, lte, sql } from "drizzle-orm";
 import type { Tx } from "@/db/client";
 import { appointments, clients, services, tenants } from "@/db/schema";
 import { SCHEDULE_RESET, serviceLabel } from "@/features/appointments/core";
-import { inviteUrl } from "@/features/calendar-feed/invite-token";
 import { OPTIONS, rescheduleText } from "@/features/reminders/text";
 import { DEFAULT_REMINDER_HOURS } from "@/features/reminders/core";
 import { log, errCode } from "@/lib/log";
@@ -85,7 +84,7 @@ export async function sendRescheduleNotice(
       if (a.optedOut) return "opted_out";
       // Estúdio sem WhatsApp do próprio número: não envia
       if (!port) return "no_whatsapp";
-      const body = rescheduleText({ ...a, calendarUrl: inviteUrl(tenantId, appointmentId) }, now, {
+      const body = rescheduleText(a, now, {
         template: t.template,
         name: t.name,
         fullName: t.fullName,

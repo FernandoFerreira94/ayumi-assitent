@@ -73,8 +73,6 @@ export type MessageData = {
   service: string;
   startsAt: Date;
   priceCents?: number | null;
-  /** Link do convite (.ics) para a cliente salvar na agenda; só na mensagem de agendamento */
-  calendarUrl?: string | null;
   /** Sinal pedido que ainda falta (centavos) e a chave Pix do salão: na mensagem de agendamento e nos avisos */
   deposit?: { cents: number; pixKey?: string | null; copyPaste?: boolean } | null;
   /** Já pago ao agendar ("Já recebi"): vira uma linha "✅ Sinal recebido" / "✅ Pagamento recebido" */
@@ -99,9 +97,22 @@ function dropEmptyAddressLines(template: string, address: string): string {
     .join("\n");
 }
 
+/**
+ * {agenda} era o lugar do link "Salve na sua agenda", que saiu das mensagens (26/11). Textos já salvos com a chave
+ * perdem a linha que só tinha ela; no meio de uma frase, a chave some.
+ */
+function dropAgendaKey(template: string): string {
+  return template
+    .split("\n")
+    .filter((l) => !/\{agenda\}/.test(l) || /[\p{L}\p{N}]/u.test(l.replace(/\{agenda\}/g, "")))
+    .join("\n")
+    .replace(/[ \t]*\{agenda\}/g, "")
+    .replace(/\n{3,}/g, "\n\n");
+}
+
 function fill(rawTemplate: string, a: MessageData, salon: SalonMessageOpts, day: string): string {
   const address = salon.address?.trim() || "";
-  const template = dropEmptyAddressLines(rawTemplate, address);
+  const template = dropEmptyAddressLines(dropAgendaKey(rawTemplate), address);
   const values: Record<Var, string> = {
     nome: clientCall(a.client, salon.fullName),
     servico: a.service,
@@ -118,7 +129,7 @@ function fill(rawTemplate: string, a: MessageData, salon: SalonMessageOpts, day:
     .trim();
 }
 
-/** Pedido do sinal: valor e Pix. Vai sempre (mesmo com texto editado), antes do link do convite. */
+/** Pedido do sinal: valor e Pix. Vai sempre (mesmo com texto editado), no fim da mensagem de agendamento. */
 export function depositLines(cents: number, pixKey?: string | null, copyPaste = false): string {
   const pix = pixKey?.trim();
   return [
@@ -147,13 +158,7 @@ const paidLine = (p: { cents: number; full: boolean }) =>
 const withSession = (template: string, a: MessageData) =>
   a.session ? `${template}\n\n${sessionMessageLine(a.session)}` : template;
 
-/** Linha do convite: vai no fim, ou onde a dona puser {agenda}. */
-export const calendarLine = (url: string) => `📲 Salve na sua agenda: ${url}`;
-
-/**
- * Mensagem ao agendar. Não pede resposta: quem pergunta são os avisos. Com link do convite,
- * a linha "Salve na sua agenda" vai no lugar de {agenda} ou, sem a chave, no fim (vale para textos já editados).
- */
+/** Mensagem ao agendar. Não pede resposta: quem pergunta são os avisos. */
 export function bookingText(a: MessageData, now: Date, salon: SalonMessageOpts = {}): string {
   const pending = !!a.deposit?.cents;
   // Texto padrão com sinal pendente diz "Reservei" (quem confirma é o sinal); texto da dona é respeitado
@@ -163,13 +168,7 @@ export function bookingText(a: MessageData, now: Date, salon: SalonMessageOpts =
     : a.paid?.cents
       ? `${base}\n\n${paidLine(a.paid)}`
       : base;
-  const line = a.calendarUrl ? calendarLine(a.calendarUrl) : "";
-  const withLink = template.includes("{agenda}")
-    ? template.replace(/\{agenda\}/g, line)
-    : line
-      ? `${template}\n\n${line}`
-      : template;
-  return fill(withLink, a, salon, dayLabel(a.startsAt, now)).replace(/\n{3,}/g, "\n\n");
+  return fill(template, a, salon, dayLabel(a.startsAt, now));
 }
 
 /**
@@ -214,24 +213,12 @@ export function secondReminderText(
 export const DEFAULT_RESCHEDULE =
   "Oi! Seu horário de {servico} foi remarcado 💜\n📅 {dia}\n🕒 {hora}\n📍 {endereco}\n\nQualquer dúvida, é só me chamar!";
 
-/** Linha do convite no aviso de remarcação: o mesmo link atualiza o evento que a cliente já salvou. */
-export const calendarUpdateLine = (url: string) => `📲 Atualize na sua agenda: ${url}`;
-
-/**
- * Aviso de remarcação. Não pede resposta (o lembrete do horário novo pede). O link do convite vai no lugar de
- * {agenda} ou no fim, como na mensagem de agendamento.
- */
+/** Aviso de remarcação. Não pede resposta (o lembrete do horário novo pede). */
 export function rescheduleText(a: MessageData & { paidCents?: number }, now: Date, salon: SalonMessageOpts = {}): string {
   const raw = salon.template?.trim() || DEFAULT_RESCHEDULE;
-  // Já pagou algo (sinal): avisa que continua valendo, antes do link
+  // Já pagou algo (sinal): avisa que continua valendo
   const template = a.paidCents ? `${raw}\n\nO que você já pagou continua valendo para o novo horário 💜` : raw;
-  const line = a.calendarUrl ? calendarUpdateLine(a.calendarUrl) : "";
-  const withLink = template.includes("{agenda}")
-    ? template.replace(/\{agenda\}/g, line)
-    : line
-      ? `${template}\n\n${line}`
-      : template;
-  return fill(withLink, a, salon, dayLabel(a.startsAt, now)).replace(/\n{3,}/g, "\n\n");
+  return fill(template, a, salon, dayLabel(a.startsAt, now));
 }
 
 /** Aviso de cancelamento (quando a dona deixa "Avisar a cliente" ligado). Não pede resposta. */

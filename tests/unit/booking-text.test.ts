@@ -43,12 +43,12 @@ describe("mensagem ao agendar", () => {
       "Fica em , perto do mercado",
     );
   });
-  it("sinal pedido vai com valor e Pix, mesmo com texto editado, antes do link do convite", () => {
-    const t = bookingText({ ...a, deposit: { cents: 3000, pixKey: "salao@pix.com" }, calendarUrl: "https://x/c" }, eve, {
+  it("sinal pedido vai com valor e Pix no fim, mesmo com texto editado", () => {
+    const t = bookingText({ ...a, deposit: { cents: 3000, pixKey: "salao@pix.com" } }, eve, {
       template: "Oi, {nome}!",
     });
     expect(t).toMatch(/^Oi, Maria!\n\nPara confirmar, falta só o sinal de R\$\s30,00\.\nPix: salao@pix\.com\n/);
-    expect(t.indexOf("Pix:")).toBeLessThan(t.indexOf("📲"));
+    expect(t).toMatch(/comprovante por aqui 😊$/);
   });
   it("sem chave Pix, pede o sinal sem a linha do Pix", () => {
     const t = bookingText({ ...a, deposit: { cents: 3000, pixKey: null } }, eve);

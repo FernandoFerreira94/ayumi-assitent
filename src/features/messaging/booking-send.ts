@@ -7,7 +7,6 @@ import { messagingForInstance } from "./evolution";
 import { sendDirect } from "./send";
 import { recordMessage } from "./store";
 import { serviceLabel } from "@/features/appointments/core";
-import { inviteUrl } from "@/features/calendar-feed/invite-token";
 import { errCode } from "@/lib/log";
 import { paidCentsSql } from "@/features/wallet/core";
 import { sessionUseSql } from "@/features/wallet/packages";
@@ -76,7 +75,6 @@ export async function sendBookingMessage(
     // Cliente respondeu SAIR: nada automático. Horário que já passou (atendimento lançado depois) não avisa ninguém
     if (!a || a.optedOut || a.startsAt <= now) return "skipped";
     if (a.status !== "pending_confirmation" && a.status !== "confirmed") return "skipped";
-    const calendarUrl = inviteUrl(tenantId, appointmentId);
     // Sinal pedido que o crédito da cliente ainda não cobriu: vai com o valor e o Pix
     const left = a.depositRequestedCents && a.paidCents < a.depositRequestedCents ? a.depositRequestedCents - a.paidCents : 0;
     // Pix "copia e cola" com o valor: vai sozinho numa 2ª mensagem (null = chave não reconhecida; só a chave em texto)
@@ -86,7 +84,7 @@ export async function sendBookingMessage(
     const session = t?.packageLine ? parseSessionUse(a.session) : null;
     // Pago ao agendar ("Já recebi"/pagou tudo): uma linha de recibo, sem pedir nada
     const paid = !deposit && a.paidCents > 0 ? { cents: a.paidCents, full: a.paidCents >= a.priceCents } : null;
-    const body = bookingText({ ...a, calendarUrl, deposit, session, paid }, now, {
+    const body = bookingText({ ...a, deposit, session, paid }, now, {
       template: t?.template,
       name: t?.name,
       fullName: t?.fullName,

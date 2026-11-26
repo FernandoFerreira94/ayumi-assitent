@@ -36,7 +36,7 @@
 - Respostas da noite: a resposta automática para quem escreveu no silêncio fica em `appointments.pending_reply` (migration `0029_pending_reply`) e sai na primeira rodada depois das 6h (`messaging/pending.sendPendingReplies`, chamada pelo `runReminders`). Desde 23/11 guarda só o pedido (`@confirm`/`@cancel`/`@reschedule`, `messaging/pending-rules`); o texto é montado na hora de sair ("hoje" certo) e não sai se o status já não é o que a cliente pediu ou o horário passou. Texto antigo sai como está.
 
 ## Aviso ao remarcar (23/11)
-- `tenants.reschedule_notice` (padrão ligado) e `reschedule_template` (null = `text.DEFAULT_RESCHEDULE`, sem {nome}, com 📍 {endereco} que some sem endereço). Texto: `text.rescheduleText` + link do convite ("Atualize na sua agenda").
+- `tenants.reschedule_notice` (padrão ligado) e `reschedule_template` (null = `text.DEFAULT_RESCHEDULE`, sem {nome}, com 📍 {endereco} que some sem endereço). Texto: `text.rescheduleText` (sem link de agenda desde 26/11; `{agenda}` em texto salvo some).
 - Dentro da janela do 1º aviso e pendente de confirmação: o aviso vai com 1/2/3 e grava `reminder_sent_at` (vale como 1º aviso; `reschedule-send.asFirstReminder`).
 - `runReminders` chama `sendDueRescheduleNotices` antes do 1º aviso (rede de segurança do arraste; falha temporária volta em 5 min, `RETRY_MS`). Desconectado/número recusado não repete. Mensagem gravada como `kind = reminder` (não gasta o limite de respostas da IA). Fluxo completo em `agenda.md`.
 

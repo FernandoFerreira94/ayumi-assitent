@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/Icon";
 const TOPICS = [
   {
     title: "Ao agendar",
-    text: "Sai assim que você cria o agendamento e não pede resposta. Vai junto um link para a cliente salvar o horário na agenda dela: no fim, ou onde você puser {agenda}.",
+    text: "Sai assim que você cria o agendamento e não pede resposta.",
   },
   {
     title: "1º aviso",
