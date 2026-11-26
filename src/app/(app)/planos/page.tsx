@@ -81,7 +81,7 @@ export default async function PlanosPage({ searchParams }: PageProps<"/planos">)
   // Sem serviço não há pacote nem promoção para montar: a página vira só o aviso com o botão de cadastrar
   if (data.svcs.length === 0)
     return (
-      <PageShell title="Planos" wide>
+      <PageShell back title="Planos" wide>
         <PlansSetup missing="service" />
       </PageShell>
     );
