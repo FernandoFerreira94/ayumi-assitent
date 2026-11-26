@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Mascot } from "@/components/brand/Mascot";
+import { useWeather } from "@/components/brand/useWeather";
 import { Icon } from "@/components/ui/Icon";
 import { setValuesHidden, useValuesHidden } from "@/features/finance/hide-values";
 import { formatBRL } from "@/lib/dates";
+import { nowLine, outfitFor, weatherLine } from "@/features/owner-notices/weather";
 import type { Briefing } from "./briefing";
 
 /** Balão na tela antes de sumir sozinho. */
@@ -19,7 +21,8 @@ const MASKED = "R$ •••••";
 /**
  * Topo do Painel: a Bolha (maior) com a fala do dia num balão que aparece e some sozinho, alternando as
  * informações, e à direita os ganhos do dia (recebido x o que falta) com olhinho para esconder os valores.
- * Tocar na Bolha mostra a próxima fala; tocar no balão fecha.
+ * Tocar na Bolha mostra a próxima fala; tocar no balão fecha. Hoje, a roupa segue o clima de agora e as falas
+ * do tempo (agora e previsão do dia) entram logo depois do resumo, alternando com as outras.
  */
 export function DayHero({
   briefing,
@@ -32,7 +35,10 @@ export function DayHero({
   receivedCents: number;
   forecastCents: number;
 }) {
-  const lines = briefing.lines;
+  const weather = useWeather();
+  const sky = isToday && weather ? [nowLine(weather.now), weatherLine(weather.today)] : [];
+  const [first, ...rest] = briefing.lines;
+  const lines = first === undefined ? sky : [first, ...sky, ...rest];
   const [i, setI] = useState(0);
   const [shown, setShown] = useState(false);
   const [hop, setHop] = useState(0);
@@ -72,7 +78,12 @@ export function DayHero({
       >
         {/* key muda a cada toque: remonta e a animação de pulo roda de novo */}
         <span key={hop} className={hop ? "mascot-hop" : "mascot-float"}>
-          <Mascot size={80} mood={shown ? mood : briefing.mood} idle />
+          <Mascot
+            size={80}
+            mood={shown ? mood : briefing.mood}
+            weather={isToday && weather ? outfitFor(weather.now) : undefined}
+            idle
+          />
         </span>
       </button>
 
@@ -86,7 +97,7 @@ export function DayHero({
             type="button"
             onClick={() => setShown(false)}
             aria-label={`${line} Toque para fechar.`}
-            className="speech speech-solid speech-pop pointer-events-auto relative w-full rounded-3xl px-4 py-3 text-left text-sm font-semibold leading-snug"
+            className="speech speech-solid speech-glow speech-pop pointer-events-auto relative w-full rounded-3xl px-4 py-3 text-left text-sm font-semibold leading-snug"
           >
             {line}
           </button>
