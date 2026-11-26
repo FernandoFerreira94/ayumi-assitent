@@ -18,7 +18,7 @@ import { serviceInput } from "./schema";
 
 // Toda tela que lista serviços
 const revalidate = () => {
-  for (const p of ["/servicos", "/agenda", "/calendario", "/vagas"]) revalidatePath(p);
+  for (const p of ["/servicos", "/agenda", "/calendario", "/vagas", "/planos"]) revalidatePath(p);
 };
 
 const uuid = z.string().uuid();

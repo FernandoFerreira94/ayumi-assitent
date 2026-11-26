@@ -82,6 +82,7 @@
 - **Tudo de pacote e promoção num lugar só:** `/planos` (menu lateral, menu do avatar e `NAV_ITEMS`, ícone `planos`). Topo com 4 números (clientes com pacote em uso, sessões a usar, pacotes à venda, promoções valendo; `plan-views.planTotals`), botão **Vender pacote** (`SoldPackages.SellFromPlans` → `SellPackageSheet` com `clients`: pergunta "Para quem?" com busca na mesma folha) e "Como funciona".
 - **Abas** (`PlansTabs`, `?aba=pacotes|promocoes`, troca sem recarregar e grava na URL): **Clientes** (`SoldPackages`: cada pacote vendido com N restam de M, barra de usadas, validade, próximo horário e "Ver ficha"; Acabando no topo; Acabou/Venceu em "Encerrados"; dados de `packages.listSoldPackages`, grupos de `plan-views.groupSold`/`soldState`), **Pacotes** (`PackageTemplates`) e **Promoções** (`DiscountPromos`).
 - **Ajustes > Pagamentos** ficou só com as regras e um atalho "Pacotes e promoções → Planos"; `?aba=pacotes` redireciona para `/planos?aba=pacotes`. `PaymentsTabs` saiu. Ações de pacote/promoção revalidam `/planos`.
+- **Estado vazio** (`wallet/PlansSetup`): sem serviço, a página mostra só o aviso "Cadastre um serviço primeiro" com o botão que abre `NewServiceSheet`; com serviço e sem cliente, mostra o aviso "Cadastre uma cliente" (`NewClientSheet` com `label`) e esconde "Vender pacote". Criar serviço ou cliente revalida `/planos`, e o aviso some sozinho.
 
 ## Desativar, editar e excluir em Planos (25/11)
 
