@@ -78,7 +78,7 @@ export default async function PlanosPage({ searchParams }: PageProps<"/planos">)
   ];
 
   return (
-    <PageShell title="Planos" wide>
+    <PageShell back title="Planos" wide>
       <section aria-label="Resumo dos planos" className="mb-3 grid grid-cols-2 gap-3 md:grid-cols-4">
         {stats.map((s) => (
           <div key={s.label} className="glass grid gap-0.5 rounded-3xl px-4 py-3">

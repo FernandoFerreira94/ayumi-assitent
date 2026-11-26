@@ -27,10 +27,18 @@ test("as abas navegam e marcam a aba atual", async ({ page }) => {
 });
 
 test("as telas principais mostram o avatar do menu, sem seta", async ({ page }) => {
-  for (const href of ["/agenda", "/calendario", "/financeiro", "/clientes", "/vagas", "/ajustes"]) {
+  for (const href of ["/agenda", "/calendario", "/financeiro", "/clientes"]) {
     await page.goto(href);
     await expect(page.getByRole("button", { name: "Abrir menu" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Voltar", exact: true })).toHaveCount(0);
+  }
+});
+
+test("telas fora da barra de baixo mostram a seta no lugar do avatar", async ({ page }) => {
+  for (const href of ["/vagas", "/ajustes", "/planos", "/servicos"]) {
+    await page.goto(href);
+    await expect(page.getByRole("link", { name: "Voltar", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Abrir menu" })).toHaveCount(0);
   }
 });
 
