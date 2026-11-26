@@ -1,12 +1,10 @@
 import { expect, test } from "./fixtures";
 
-test("Endereço do estúdio: atalho de Ajustes leva ao Meu perfil, cadastra no sheet e volta na lista", async ({
-  page,
-}) => {
+test("Endereço do estúdio: não aparece em Ajustes, cadastra no Meu perfil pelo sheet", async ({ page }) => {
   await page.goto("/ajustes");
-  await expect(page.locator("#ajuste-endereco")).toContainText("Cadastrar");
-  await page.locator("#ajuste-endereco").click();
-  await expect(page).toHaveURL(/\/perfil#endereco$/);
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.locator("#ajuste-endereco")).toHaveCount(0);
+  await page.goto("/perfil#endereco");
   await expect(page.getByRole("heading", { level: 1, name: "Meu perfil" })).toBeVisible();
 
   await page.getByRole("button", { name: "Cadastrar endereço" }).click();
@@ -26,8 +24,6 @@ test("Endereço do estúdio: atalho de Ajustes leva ao Meu perfil, cadastra no s
   const line = "Rua das Flores, 430, Sala 2 - Centro, São José dos Campos - SP, 12245-000";
   await expect(page.getByText(line)).toBeVisible();
   await expect(page.getByRole("link", { name: "Ver no mapa" })).toHaveAttribute("href", /google\.com\/maps/);
-  await page.goto("/ajustes");
-  await expect(page.locator("#ajuste-endereco")).toContainText("Rua das Flores, 430");
 });
 
 test("Endereço: campo obrigatório vazio mostra o erro e não fecha o sheet", async ({ page }) => {

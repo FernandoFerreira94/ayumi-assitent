@@ -10,11 +10,7 @@ export function AiRepliesForm() {
       <TileTitle as="h2" icon="sparkles" tint="pink">
         Leitura das respostas
       </TileTitle>
-      <p className="text-sm font-semibold text-muted">
-        A IA lê o que a cliente responde ao aviso, entende se ela confirmou, quer cancelar ou remarcar, e avisa você.
-        Cancelar, remarcar e qualquer dúvida ficam com você, e a cliente recebe um aviso de que você continua a
-        conversa.
-      </p>
+      <p className="text-sm font-semibold text-muted">A IA lê a resposta da cliente ao aviso e avisa você.</p>
     </div>
   );
 }
