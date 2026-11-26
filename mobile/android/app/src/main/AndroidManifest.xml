@@ -50,4 +50,8 @@
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
     <!-- Android 13+: avisos (pendências, respostas das clientes) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Avisos do dia (tempo e feriados da cidade): a WebView pede a localização só com o app aberto, nunca em segundo plano -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-feature android:name="android.hardware.location" android:required="false" />
 </manifest>

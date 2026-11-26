@@ -49,7 +49,7 @@
 	<string>Main</string>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
-		<string>armv7</string>
+		<string>arm64</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
@@ -66,6 +66,10 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Para mostrar o tempo e os feriados da sua cidade nos avisos do dia. A localização só é usada para descobrir a cidade.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Para você escolher contatos da agenda e cadastrá-los como clientes. Só quem você marcar é salvo no Bubbly.</string>
 	<!-- Volta do login do Google (navegador do sistema → br.app.bubbly://auth?code=...) -->
