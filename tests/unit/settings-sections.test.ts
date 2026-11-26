@@ -21,6 +21,9 @@ describe("seções de Ajustes", () => {
     for (const [k, s] of Object.entries(SECTIONS))
       expect(s.href).toMatch(k === "endereco" ? /^\/perfil#endereco$/ : /^\/ajustes\/[a-z]+$/);
   });
+  it("ícone do Expediente na lista tem a mesma cor do título da tela (HoursForm: clock teal)", () => {
+    expect(SECTIONS.expediente).toMatchObject({ icon: "clock", tint: "teal" });
+  });
   it("resumo do expediente", () => {
     expect(hoursSummary([null, open, open, open, open, open, null])).toBe("Seg a Sex");
     expect(hoursSummary(Array(7).fill(open))).toBe("Todos os dias");
