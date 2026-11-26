@@ -102,6 +102,61 @@ export async function forecastToday(c: Coords, f: typeof fetch = fetch): Promise
   }
 }
 
+/** Tempo deste momento: escolhe a roupa da Bolha e uma das falas do balão. */
+export type WeatherNow = { code: number; temp: number; isDay: boolean };
+
+const isWet = (code: number) => (code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code >= 95;
+const isSnow = (code: number) => (code >= 71 && code <= 77) || code === 85 || code === 86;
+
+/**
+ * Roupa do clima (MascotWeather) pelo tempo de agora. Chuva ganha de tudo (o guarda-chuva é o que se nota),
+ * depois frio e calor; óculos de sol só de dia com céu aberto. undefined = desenho de sempre.
+ */
+export function outfitFor(n: WeatherNow): "rain" | "cold" | "hot" | "sun" | undefined {
+  if (isWet(n.code)) return "rain";
+  if (isSnow(n.code) || n.temp <= 15) return "cold";
+  if (n.temp >= 30) return "hot";
+  if (n.isDay && n.code <= 1) return "sun";
+  return undefined;
+}
+
+/** "Agora está com chuva e 19° aí 🌧️" */
+export const nowLine = (n: WeatherNow) =>
+  `Agora está com ${skyLabel(n.code)} e ${Math.round(n.temp)}° aí ${weatherEmoji(n.code, !n.isDay)}`;
+
+/** Tempo de agora e resumo de hoje no lugar do aparelho (fuso do próprio lugar); null = não deu para saber. */
+export async function forecastNow(
+  c: Coords,
+  f: typeof fetch = fetch,
+): Promise<{ now: WeatherNow; today: Forecast } | null> {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${c.latitude}&longitude=${c.longitude}&current=weather_code,temperature_2m,is_day&daily=weather_code,temperature_2m_min,temperature_2m_max,precipitation_probability_max&timezone=auto&forecast_days=1`;
+    const res = await f(url, { signal: AbortSignal.timeout(TIMEOUT) });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      current?: { weather_code?: number; temperature_2m?: number; is_day?: number };
+      daily?: {
+        weather_code?: number[];
+        temperature_2m_min?: number[];
+        temperature_2m_max?: number[];
+        precipitation_probability_max?: (number | null)[];
+      };
+    };
+    const cur = data.current;
+    const d = data.daily;
+    const [code, temp] = [cur?.weather_code, cur?.temperature_2m];
+    const [dCode, min, max] = [d?.weather_code?.[0], d?.temperature_2m_min?.[0], d?.temperature_2m_max?.[0]];
+    if (code === undefined || temp === undefined || dCode === undefined || min === undefined || max === undefined)
+      return null;
+    return {
+      now: { code, temp, isDay: cur?.is_day !== 0 },
+      today: { code: dCode, min, max, rain: d?.precipitation_probability_max?.[0] ?? 0 },
+    };
+  } catch {
+    return null;
+  }
+}
+
 export const UF_NAMES: Record<string, string> = {
   AC: "Acre",
   AL: "Alagoas",

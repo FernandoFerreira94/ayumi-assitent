@@ -1566,6 +1566,42 @@ button {
     transform: scale(0.6) translateX(-10px);
   }
 }
+/*
+ * Balão do Painel com "corrente" de luz: a borda é um degradê girando nas cores do mascote escolhido
+ * (--m-rim-0 a 4: roxo, lilás, rosa, framboesa e violeta na Bolha). O fundo pinta só o miolo (padding-box)
+ * e o degradê aparece na faixa da borda transparente. Com movimento reduzido, a borda fica parada.
+ */
+@property --speech-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.speech-glow {
+  border: 2px solid transparent;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    conic-gradient(
+        from var(--speech-angle),
+        var(--m-rim-0),
+        var(--m-rim-1),
+        var(--m-rim-2),
+        var(--m-rim-3),
+        var(--m-rim-4),
+        var(--m-rim-0)
+      )
+      border-box;
+  animation: speech-current 3.5s linear infinite;
+}
+.speech-glow.speech-pop {
+  animation:
+    speech-pop 0.42s var(--spring) both,
+    speech-current 3.5s linear infinite;
+}
+@keyframes speech-current {
+  to {
+    --speech-angle: 360deg;
+  }
+}
 /* Rosca dos ganhos do dia: o arco cresce ao abrir */
 .earn-arc {
   transition: stroke-dasharray 0.6s var(--ease);
@@ -1578,6 +1614,8 @@ button {
 }
 @media (prefers-reduced-motion: reduce) {
   .speech-pop,
+  .speech-glow,
+  .speech-glow.speech-pop,
   .earn-arc {
     animation: none;
     transition: none;
@@ -2672,7 +2710,9 @@ textarea {
     font-weight: 700;
     color: var(--on-primary);
     background: linear-gradient(135deg, var(--accent), var(--primary));
-    box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent);
+    box-shadow:
+      0 0 0 2px var(--surface),
+      0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent);
   }
 }
 @keyframes sidenav-icon-pop {
