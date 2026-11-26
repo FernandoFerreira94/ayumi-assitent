@@ -10,6 +10,7 @@ import { forecastCents, listDay, receivedCents } from "@/features/appointments/c
 import { DaySchedule } from "@/features/appointments/DaySchedule";
 import { DayHero } from "@/features/appointments/DayHero";
 import { AgendaTabs } from "@/features/dashboard/AgendaTabs";
+import { loadMascotFacts } from "@/features/dashboard/mascot-facts";
 import { BoxSkeleton, DeskKpis, DeskNext, DeskSide, DeskWeek } from "@/features/dashboard/Desk";
 import { PlatformNotices } from "@/features/support/ui/PlatformNotices";
 import { dayRange, formatDayTitle, greeting, isDateStr, todayStr } from "@/lib/dates";
@@ -29,7 +30,10 @@ export default async function PainelPage({ searchParams }: PageProps<"/agenda">)
   const date = typeof d === "string" && isDateStr(d) ? d : today;
   const { tenantId, userId, userName } = await requireTenant();
   await concludePastOnOpen(tenantId);
-  const rows = await withTenant(tenantId, (tx) => listDay(tx, dayRange(date)));
+  const [rows, facts] = await Promise.all([
+    withTenant(tenantId, (tx) => listDay(tx, dayRange(date))),
+    date === today ? loadMascotFacts(tenantId) : undefined,
+  ]);
   const label = formatDayTitle(date);
   // Celular não carrega as caixas do desktop (nem consulta o banco para elas)
   const desk = userAgent({ headers: await headers() }).device.type !== "mobile";
@@ -46,6 +50,7 @@ export default async function PainelPage({ searchParams }: PageProps<"/agenda">)
             isToday={date === today}
             receivedCents={receivedCents(rows)}
             forecastCents={forecastCents(rows)}
+            facts={facts}
           />
         </div>
         {desk ? (
