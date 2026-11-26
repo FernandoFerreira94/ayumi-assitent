@@ -3,6 +3,7 @@ import { PageShell } from "@/components/ui/PageShell";
 import { InstallGuide } from "@/features/install/InstallGuide";
 import { CalendarsBody, NotificationsBody, WhatsAppBody } from "@/features/settings/connection-bodies";
 import { ConnectionsAccordion } from "@/features/settings/ConnectionsAccordion";
+import { LaunchNotice } from "@/features/launch/LaunchNotice";
 import { LegacyHashRedirect } from "@/features/settings/LegacyHashRedirect";
 import { SettingsGroup, SettingsRow } from "@/features/settings/SettingsList";
 import { loadSettingsSummary } from "@/features/settings/summary";
@@ -28,6 +29,7 @@ export default async function AjustesPage() {
       <LegacyHashRedirect />
       <div className="md:mx-auto md:max-w-[720px] lg:mx-0 lg:grid lg:max-w-[1100px] lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
         <div>
+          <LaunchNotice className="mb-5" />
           {groups.map((g) =>
             g.title === "Conexões" ? (
               <ConnectionsAccordion

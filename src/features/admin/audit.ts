@@ -17,6 +17,7 @@ export type AdminAction =
   | "view_notices"
   | "view_unclear"
   | "unclear_labeled"
+  | "view_feedback"
   | "notice_created"
   | "notice_ended"
   | "sessions_revoked"
@@ -38,6 +39,7 @@ export const ADMIN_ACTION_LABEL: Record<AdminAction, string> = {
   view_notices: "Abriu avisos",
   view_unclear: "Abriu respostas não entendidas",
   unclear_labeled: "Rotulou respostas não entendidas",
+  view_feedback: "Abriu o feedback do lançamento",
   notice_created: "Publicou um aviso",
   notice_ended: "Encerrou um aviso",
   sessions_revoked: "Encerrou outras sessões",

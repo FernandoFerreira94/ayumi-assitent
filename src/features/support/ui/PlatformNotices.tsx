@@ -1,26 +1,30 @@
 import Link from "next/link";
 import { withTenant } from "@/db/client";
+import { FeedbackCard } from "@/features/launch/FeedbackCard";
+import { needsFeedback } from "@/features/launch/feedback-core";
 import { errCode, log } from "@/lib/log";
 import { liveNoticesFor, unreadSupportReplies } from "../core";
 import type { PlatformNotice } from "../rules";
 import { NoticeCard } from "./NoticeCard";
 
 /**
- * Topo do Painel: avisos do dono (manutenção, novidade) e "o suporte respondeu". Falha aqui nunca derruba o
+ * Topo do Painel: avisos do dono (manutenção, novidade), "o suporte respondeu" e o cartão de feedback do lançamento. Falha aqui nunca derruba o
  * Painel: sem dados, não mostra nada.
  */
 export async function PlatformNotices({ tenantId, userId }: { tenantId: string; userId: string }) {
   let notices: PlatformNotice[] = [];
   let replies = 0;
+  let askFeedback = false;
   try {
-    ({ notices, replies } = await withTenant(tenantId, async (tx) => ({
+    ({ notices, replies, askFeedback } = await withTenant(tenantId, async (tx) => ({
       notices: await liveNoticesFor(tx, userId),
       replies: await unreadSupportReplies(tx),
+      askFeedback: await needsFeedback(tx, tenantId, userId),
     })));
   } catch (e) {
     log("warn", "platform_notices_failed", errCode(e));
   }
-  if (!notices.length && !replies) return null;
+  if (!notices.length && !replies && !askFeedback) return null;
   return (
     <div className="mb-4 grid gap-2">
       {replies ? (
@@ -35,6 +39,7 @@ export async function PlatformNotices({ tenantId, userId }: { tenantId: string; 
       {notices.map((n) => (
         <NoticeCard key={n.id} id={n.id} title={n.title} body={n.body} tone={n.tone} />
       ))}
+      {askFeedback ? <FeedbackCard /> : null}
     </div>
   );
 }

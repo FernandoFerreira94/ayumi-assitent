@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Mascot } from "@/components/brand/Mascot";
 import { notify } from "@/components/feedback/toast";
+import { LaunchNotice } from "@/features/launch/LaunchNotice";
 import { Icon } from "@/components/ui/Icon";
 import { authClient } from "@/lib/auth-client";
 import type { Day } from "@/features/hours/slots";
@@ -426,6 +427,7 @@ function DoneScreen({
           <SummaryItem key={r.key} icon={icons[r.key]} label={r.label} status={r.status} ok={r.ok} />
         ))}
       </ul>
+      <LaunchNotice className="w-full" />
     </EntryScreen>
   );
 }
