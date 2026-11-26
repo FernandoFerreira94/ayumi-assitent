@@ -54,6 +54,8 @@ describe("mensagem ao agendar", () => {
     const t = bookingText({ ...a, deposit: { cents: 3000, pixKey: null } }, eve);
     expect(t).toContain("falta só o sinal de");
     expect(t).not.toContain("Pix:");
+    expect(t).not.toContain("comprovante");
+    expect(t).toMatch(/Já te passo por aqui como fazer o pagamento 😊$/);
   });
   it("com sinal pendente, o texto padrão diz Reservei e não diz agendado nem confirmado", () => {
     const t = bookingText({ ...a, deposit: { cents: 3000, pixKey: "x" } }, eve);
@@ -69,11 +71,11 @@ describe("mensagem ao agendar", () => {
 
 describe("sinal nos avisos e sinal recebido", () => {
   const start = a.startsAt;
-  it("1º e 2º aviso com sinal pendente lembram o valor e o Pix, sem 1/2/3", async () => {
+  it("1º e 2º aviso com sinal pendente só lembram o horário: sem cobrar o sinal e sem 1/2/3", async () => {
     const { reminderText, secondReminderText } = await import("@/features/reminders/text");
     const dep = { ...a, deposit: { cents: 3000, pixKey: "salao@pix.com" } };
     for (const t of [reminderText(dep, eve), secondReminderText(dep, eve)]) {
-      expect(t).toMatch(/Lembrando que falta o sinal de R\$\s30,00 para confirmar\.\nPix: salao@pix\.com$/);
+      expect(t).not.toMatch(/sinal|Pix/i);
       expect(t).not.toContain("Responda com o número");
       expect(t).not.toContain("Pode me confirmar");
     }

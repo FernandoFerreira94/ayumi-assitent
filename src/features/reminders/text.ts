@@ -136,16 +136,9 @@ export function depositLines(cents: number, pixKey?: string | null, copyPaste = 
     `Para confirmar, falta só o sinal de ${formatBRL(cents)}.`,
     pix ? `Pix: ${pix}` : null,
     pix && copyPaste ? "O Pix copia e cola vai na próxima mensagem." : null,
-    "Pode me mandar o comprovante por aqui 😊",
+    // Sem chave a cliente não tem como pagar ainda: quem manda a forma de pagamento é o estúdio
+    pix ? "Pode me mandar o comprovante por aqui 😊" : "Já te passo por aqui como fazer o pagamento 😊",
   ]
-    .filter(Boolean)
-    .join("\n");
-}
-
-/** Sinal ainda pendente no 1º/2º aviso: lembra o valor e o Pix (o sinal é a confirmação, então sem 1/2/3). */
-export function depositReminderLines(cents: number, pixKey?: string | null): string {
-  const pix = pixKey?.trim();
-  return [`Lembrando que falta o sinal de ${formatBRL(cents)} para confirmar.`, pix ? `Pix: ${pix}` : null]
     .filter(Boolean)
     .join("\n");
 }
@@ -184,12 +177,13 @@ export function reminderText(a: MessageData, now: Date, salon: SalonMessageOpts 
 }
 
 /**
- * Fim dos avisos: sinal pendente lembra o valor e o Pix e não pede 1/2/3 (quem confirma é o sinal); confirmado
- * só lembra; o resto pede a confirmação com as opções.
+ * Fim dos avisos: sinal pendente só lembra o horário, sem cobrar o sinal nem pedir 1/2/3. Quem confirma é o
+ * sinal, e a dona pode já ter recebido sem marcar no app: cobrar de novo vira contestação. Confirmado só lembra;
+ * o resto pede a confirmação com as opções.
  */
 function withAsk(body: string, a: MessageData, confirmed: boolean): string {
-  if (a.deposit?.cents) return `${body}\n\n${depositReminderLines(a.deposit.cents, a.deposit.pixKey)}`;
-  return confirmed ? body : [body, ...OPTIONS].join("\n");
+  if (a.deposit?.cents || confirmed) return body;
+  return [body, ...OPTIONS].join("\n");
 }
 
 /**
