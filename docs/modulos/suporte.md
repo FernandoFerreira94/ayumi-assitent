@@ -25,3 +25,8 @@
 - Push nunca leva nome de salão nem trecho da conversa (passa pela Apple/Google).
 - Mensagens somem junto com o salão (cascade). Ainda sem retenção própria: entra com a política de LGPD.
 - O retorno da cliente usou só a `0042`; 0043-0044 seguem vagos (não reaproveitar, ver AGENTS.md).
+
+## Lançamento grátis (`features/launch/`)
+- `launch.ts`: texto único do aviso "grátis no lançamento" (`LAUNCH_NOTICE`, mostrado por `LaunchNotice` no login, no primeiro acesso e em Ajustes) e `isFounder` (estúdio criado antes de `BILLING_STARTS_AT`; sem data marcada, todos são fundadores). Sem coluna no banco.
+- Feedback: `feedback.ts` (regras puras: 3 perguntas, `feedbackInput`, `shouldAskFeedback` com 7 dias a partir de `tenants.created_at`, `summarizeFeedback` com média e NPS), `feedback-core.ts` (`needsFeedback`, `saveFeedback`, dentro de `withTenant`), `actions.ts` (`sendLaunchFeedback`, `skipLaunchFeedback`), `FeedbackCard.tsx` (mostrado por `PlatformNotices` no topo do Painel), `feedback-admin.ts` + `app/admin/feedback` (lista e resumo, registro `view_feedback`).
+- Tabela `launch_feedback(tenant_id, user_id, helps, missing, score 0–10, skipped)` (migration `0065_launch_feedback.sql`): uma linha por pessoa do estúdio, "Agora não" também grava para o cartão não voltar. RLS por salão; `app_user` só SELECT e INSERT. Some com o salão e com a conta (cascade).
