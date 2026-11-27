@@ -4,7 +4,7 @@ HTML/CSS estático em `public/`, servido pelo Caddy (`Caddyfile`, `Dockerfile`).
 
 - Railway: serviço `bubbly-site` (projeto do app). Root Directory `/site`, watch `/site/**`,
   start `caddy run --config /etc/caddy/Caddyfile --adapter caddyfile`, healthcheck `/`.
-  As configurações ficam no serviço (o `railway.json` da raiz do repo é do app e não vale aqui).
+  Essas configurações estão em `.railway/railway.ts` (aplicadas com `railway config apply`).
 - Domínios: `bubbly.app.br` e `www.bubbly.app.br` (www redireciona para o raiz no Caddy). DNS na Cloudflare, nuvem cinza.
 - Botões apontam para `https://app.bubbly.app.br`.
 - **Privacidade e Termos moram aqui** (`public/privacidade.html`, `public/termos.html`, estilo `css/legal.css`). O app redireciona `/privacidade` e `/termos` para cá (`next.config.ts`). São as URLs do Branding do Google OAuth: integração, escopo ou dado novo => atualizar o texto (seção 5 da privacidade = dados do Google, Uso Limitado).

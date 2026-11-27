@@ -55,7 +55,7 @@ Comando de release/deploy: `pnpm db:migrate` antes de `pnpm start`.
 - Google Contatos: ative a **People API** no Google Cloud e inclua o escopo `contacts.readonly` na tela de consentimento. Quem já conectou o Google antes precisa sair e entrar de novo para dar a nova permissão.
 
 ## Deploy no Railway
-`railway.json` já define build (`pnpm build`), start com migração (`pnpm db:migrate && pnpm start`) e healthcheck em `/api/health`. O serviço worker usa o mesmo repositório, mas com **Settings > Config-as-code > Railway Config File = `/railway.worker.json`** (start `pnpm worker`, sem healthcheck). Sem isso o `railway.json` do app valeria também para o worker.
+A configuração dos serviços fica em `.railway/railway.ts` (Infrastructure as Code). App: build `pnpm build`, start com migração (`pnpm db:migrate && pnpm start`), healthcheck em `/api/health`. Worker (`distinguished-acceptance`): mesmo repositório, start `pnpm worker`, sem healthcheck; o restart "Always" fica no painel (o IaC não controla). O deploy não lê esse arquivo: depois de mudar, rode `railway config plan` e, se não houver nada para destruir, `railway config apply`. No Windows, antes, defina `$env:_` com o caminho do `railway.exe` (ex.: `C:\nvm4w\nodejs\node_modules\@railway\cli\bin\railway.exe`), senão o SDK não acha o CLI.
 Variáveis do app: `DATABASE_URL` (`${{Postgres.DATABASE_URL}}`), `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` (a URL pública), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `ALLOWED_EMAILS`.
 
 ## WhatsApp por estúdio
