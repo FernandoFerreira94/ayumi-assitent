@@ -87,14 +87,14 @@ São 241 PRs mergeados (#1 a #248), todos em novembro de 2026.
 
 | # | Item | Por quê | Dono | Depende de |
 |---|---|---|---|---|
-| B1 | **Definir como o público entra.** Hoje só entra quem está em `ALLOWED_EMAILS` (lista vazia = ninguém) | Sem isso o teste público não começa | Fernando decide; Claude implementa | Regra de lançamento (requisitos legais) |
+| B1 | **Como o público entra: decidido "liberado geral" (27/11).** Até lá `ALLOWED_EMAILS` continua valendo; o cadastro só abre quando todos os outros bloqueantes estiverem resolvidos e o Google aprovar a verificação | Sem isso o teste público não começa | Claude implementa a abertura no dia; Fernando dá o OK | B2 a B8 resolvidos |
 | B2 | **Verificação do Google OAuth (M6).** Enviada em 27/11, **em análise** | Até aprovar: limite de 100 usuários, tela "app não verificado" e o token da Agenda vence a cada 7 dias (a sincronização cai toda semana) | Google analisa; Fernando responde pedidos de ajuste | Resposta do Google (dias a semanas) |
 | B3 | **Backup diário com restauração testada (M9).** `scripts/backup.ts` existe, mas não há Cron nem Bucket no IaC, e o dump não é cifrado | Perda de dados sem volta | Claude coloca no IaC e cifra o dump; Fernando cria o bucket e as variáveis `BACKUP_*` | Bucket S3-compatível |
-| B4 | **Trocar o contato de suporte/DPO** em `src/lib/legal.ts` (`SUPPORT_EMAIL`), `site/public/privacidade.html` e `termos.html`, que ainda citam o Gmail pessoal | Requisito LGPD e da verificação do Google | Claude troca o texto | Nada: `suporte@bubbly.app.br` já funciona (27/11) |
+| B4 | **Trocar o contato de suporte/DPO** em `src/lib/legal.ts` (`SUPPORT_EMAIL`), `site/public/privacidade.html` e `termos.html`, que ainda citam o Gmail pessoal. **Feito no PR #250 (rascunho), com a âncora `#excluir`** | Requisito LGPD e da verificação do Google | Fernando aprova o merge | — |
 | B7 | **Conta de demonstração para o revisor da Play.** Detalhes do login já preenchidos no Play Console (27/11); a confirmar se a conta existe em produção com dados de exemplo e está em `ALLOWED_EMAILS` | A Play exige credencial de acesso na revisão | Fernando confirma; Claude ajuda com dados de exemplo se faltar | — |
 | B8 | **Ficha da Play:** Segurança dos dados (contatos, localização, push, IA), URL de privacidade e URL de exclusão de conta | Sem ficha completa não há teste nem publicação | Fernando preenche (classificação Livre e público-alvo 18+ já feitos); Claude cria a âncora `#excluir` na página de privacidade | Conta Play (Organização evita a regra de 12 testadores por 14 dias) |
-| B5 | **Confirmar variáveis de produção no Railway** (web e worker): `RESEND_API_KEY`, `EMAIL_FROM` com domínio verificado, `ANTHROPIC_API_KEY`, `FCM_SERVICE_ACCOUNT`, `ANDROID_CERT_SHA256`, e que `EVOLUTION_INSTANCE` foi apagada | "Esqueci a senha", IA e push dependem delas | Fernando (ou Claude via MCP do Railway, com OK) | — |
-| B6 | **Confirmar que a main está no ar** e a migration 0065 foi aplicada | O start roda `db:migrate`, mas não foi conferido; havia redeploy web+worker pendente | Claude via MCP do Railway, com OK | — |
+| B5 | **Variáveis de produção (conferido 27/11).** No web estão e-mail (`RESEND_API_KEY`, `EMAIL_FROM`), IA (`ANTHROPIC_API_KEY`) e push (`VAPID_*`, `FCM_SERVICE_ACCOUNT`); `EVOLUTION_INSTANCE` não existe mais. **Falta `ANDROID_CERT_SHA256`** (App Links); `APPLE_TEAM_ID`, `APNS_KEY` e `APNS_KEY_ID` entram com a Apple | Sem ela, links do app Android abrem no navegador | Fernando copia o SHA-256 da assinatura na Play; Claude grava | Play Console (assinatura do app) |
+| B6 | ~~Confirmar que a main está no ar e a migration 0065 foi aplicada~~ **Conferido 27/11:** web e worker no commit do #248 (main); a migração rodou sem erro no start | — | — | — |
 
 ### Desejáveis (antes ou logo após abrir)
 
@@ -129,9 +129,7 @@ São 241 PRs mergeados (#1 a #248), todos em novembro de 2026.
 
 ## A confirmar
 
-- Se o deploy atual está no ar e se a migration 0065 foi aplicada.
-- Se existe Cron de backup no painel e se um restore já foi testado.
-- Quais variáveis estão de fato no Railway (web e worker).
+- Se um restore de backup já foi testado (27/11: não há Cron nem bucket de backup no Railway).
 - Se o domínio de envio do Resend está verificado.
 - Status das contas Play (Organização) e Apple.
 - Se os limites em memória (B1) e a limpeza de logs de erro (B5) foram tratados.
