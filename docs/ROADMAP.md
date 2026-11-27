@@ -87,9 +87,11 @@ São 241 PRs mergeados (#1 a #248), todos em novembro de 2026.
 | # | Item | Por quê | Dono | Depende de |
 |---|---|---|---|---|
 | B1 | **Definir como o público entra.** Hoje só entra quem está em `ALLOWED_EMAILS` (lista vazia = ninguém) | Sem isso o teste público não começa | Fernando decide; Claude implementa | Regra de lançamento (requisitos legais) |
-| B2 | **Verificação do Google OAuth (M6)** | Sem ela aparece "app não verificado" e há limite de 100 usuários | Fernando | Vídeo do PR #233; privacidade e termos já no ar |
-| B3 | **Backup diário com restauração testada (M9).** `scripts/backup.ts` existe, mas não há Cron de backup no IaC | Perda de dados sem volta | Claude coloca no IaC; Fernando cria o bucket e as variáveis `BACKUP_*` | Bucket S3-compatível |
-| B4 | **Trocar o contato de suporte/DPO.** `site/public/privacidade.html` ainda cita o Gmail pessoal | Requisito LGPD e da verificação do Google | Claude troca o texto | `suporte@bubbly.app.br` funcionando |
+| B2 | **Verificação do Google OAuth (M6).** App em modo Teste (`docs/modulos/google.md`) | Em modo Teste: limite de 100 usuários, tela "app não verificado" e o token da Agenda vence a cada 7 dias (a sincronização cai toda semana) | Fernando publica "Em produção" e envia; Claude no roteiro | Vídeo do PR #233; domínio no Search Console; URIs e People API conferidas |
+| B3 | **Backup diário com restauração testada (M9).** `scripts/backup.ts` existe, mas não há Cron nem Bucket no IaC, e o dump não é cifrado | Perda de dados sem volta | Claude coloca no IaC e cifra o dump; Fernando cria o bucket e as variáveis `BACKUP_*` | Bucket S3-compatível |
+| B4 | **Trocar o contato de suporte/DPO** em `src/lib/legal.ts` (`SUPPORT_EMAIL`), `site/public/privacidade.html` e `termos.html`, que ainda citam o Gmail pessoal | Requisito LGPD e da verificação do Google | Claude troca o texto | `suporte@bubbly.app.br` funcionando |
+| B7 | **Conta de demonstração para o revisor da Play.** Com cadastro só pelo Google e `ALLOWED_EMAILS`, o revisor não entra | A Play exige credencial de acesso na revisão | Claude prepara conta com senha e dados de exemplo; Fernando inclui em `ALLOWED_EMAILS` | — |
+| B8 | **Ficha da Play:** Segurança dos dados (contatos, localização, push, IA), classificação etária, URL de privacidade e URL de exclusão de conta | Sem ficha completa não há teste nem publicação | Fernando preenche; Claude cria a âncora `#excluir` na página de privacidade | Conta Play (Organização evita a regra de 12 testadores por 14 dias) |
 | B5 | **Confirmar variáveis de produção no Railway** (web e worker): `RESEND_API_KEY`, `EMAIL_FROM` com domínio verificado, `ANTHROPIC_API_KEY`, `FCM_SERVICE_ACCOUNT`, `ANDROID_CERT_SHA256`, e que `EVOLUTION_INSTANCE` foi apagada | "Esqueci a senha", IA e push dependem delas | Fernando (ou Claude via MCP do Railway, com OK) | — |
 | B6 | **Confirmar que a main está no ar** e a migration 0065 foi aplicada | O start roda `db:migrate`, mas não foi conferido; havia redeploy web+worker pendente | Claude via MCP do Railway, com OK | — |
 
@@ -101,6 +103,12 @@ São 241 PRs mergeados (#1 a #248), todos em novembro de 2026.
 | Limite de uso compartilhado (M3/B1): limite nas importações e contador fora da memória | Claude | Hoje o limite do Better Auth fica em memória |
 | Completar o `.env.example` com todas as variáveis (faltam `ANTHROPIC_API_KEY`, `EVOLUTION_*`, `SENTRY_*`, `VAPID_*`, `ADMIN_USER_IDS`, `ANDROID_CERT_SHA256`, `BACKUP_*`) | Claude | Só nomes, nunca valores |
 | Monitorar desconexões do WhatsApp (API não oficial) | Claude | O termo já avisa do risco |
+| Incluir Firebase/FCM (e APNs, quando houver iOS) na lista de operadores da política de privacidade | Claude | O Android já usa FCM |
+| Remover ou justificar `WRITE_CONTACTS` no AndroidManifest (sem uso de escrita) | Claude | Evita pergunta da Play |
+| Fechar o proxy TCP público 5432 dos Postgres no Railway, se ninguém usa de fora | Fernando | `.railway/railway.ts` |
+| Confirmar que `BETTER_AUTH_SECRET` e a chave da Evolution foram trocados (foram colados no chat em 05/11) | Fernando | Achado B6 da auditoria |
+| CSP com nonce em vez de `'unsafe-inline'` | Claude | Funciona hoje, mas é mais fraca |
+| Publicação automática na Play no `codemagic.yaml` | Claude | O primeiro upload é manual de qualquer jeito |
 | Fuso por salão (B3) | Claude | Necessário só para venda fora de SP |
 | Resend: domínio de envio verificado | Fernando | A confirmar |
 | INPI: registro da marca Bubbly | Fernando | A confirmar se já foi iniciado |
