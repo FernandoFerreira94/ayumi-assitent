@@ -25,7 +25,7 @@ export default defineRailway(() => {
   const distinguishedAcceptance = service("distinguished-acceptance", {
     source: ayumiAssitent,
     build: { buildCommand: "pnpm build", buildEnvironment: "V3", builder: "RAILPACK" },
-    // Worker de filas (antes em railway.worker.json). Sem healthcheck: não serve HTTP.
+    // Worker de filas. Sem healthcheck: não serve HTTP.
     // Restart policy ALWAYS não existe no DSL de IaC; continua definida no painel do Railway.
     start: "pnpm worker",
     replicas: { "us-east4-eqdc4a": 1 },
