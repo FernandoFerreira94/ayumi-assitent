@@ -32,8 +32,11 @@ export default defineRailway(() => {
   });
   const bubblySite = service("bubbly-site", {
     source: github("FernandoFerreira94/ayumi-assitent", { branch: "main", checkSuites: false, rootDirectory: "/site" }),
-    // Site estático em Caddy: build e start vêm do Dockerfile (a imagem não tem pnpm).
+    // Site estático em Caddy: build pelo Dockerfile (a imagem não tem pnpm); start e healthcheck iguais ao painel.
     build: { buildEnvironment: "V3", builder: "DOCKERFILE", dockerfilePath: "Dockerfile", watchPatterns: ["/site/**"] },
+    start: "caddy run --config /etc/caddy/Caddyfile --adapter caddyfile",
+    healthcheck: "/",
+    healthcheckTimeout: 30,
     replicas: { "us-east4-eqdc4a": 1 },
     domains: ["bubbly.app.br", "www.bubbly.app.br"],
   });
