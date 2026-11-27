@@ -1,7 +1,7 @@
 # Roadmap do Bubbly
 
 > Fonte única de "o que já foi feito, o que está andando e o que falta" para colocar o Bubbly em **teste público**.
-> Atualizado em **27/11/2026**, a partir da main (`dd9bf73`, PR #248), dos PRs mergeados e abertos, da auditoria de segurança de 13/11 (`../bubbly-auditoria/auditoria-seguranca-producao.md`) e dos tópicos do projeto.
+> Atualizado em **27/11/2026 (tarde)**, a partir da main (`dd9bf73`, PR #248), dos PRs mergeados e abertos, da auditoria de segurança de 13/11 (`../bubbly-auditoria/auditoria-seguranca-producao.md`) e dos tópicos do projeto.
 > O que não deu para confirmar está marcado como **a confirmar**. Ao concluir um item, mova-o para "Feito" com o número do PR.
 
 ## Regras já decididas
@@ -35,7 +35,9 @@ São 241 PRs mergeados (#1 a #248), todos em novembro de 2026.
 | App Android | Casca Capacitor, login Google, contatos, AAB assinado, Google Agenda pelo navegador | #146, #154, #155, #243, #244 |
 | Codemagic | Builds Android no plano grátis (`mac_mini_m2`), grupo `firebase` com `GOOGLE_SERVICES_JSON`; workflows `android-debug`, `android-release`, `ios-testflight` | #246, #248 |
 | Lançamento | Suporte no app, tour de primeiro acesso, "Grátis durante o lançamento", regra de fundadora, cartão de feedback/NPS | #152, #198, #240 |
-| Avisos de deploy | Avisos de deploy e erro via ntfy (tópico concluído em 27/11) | a confirmar nº do PR |
+| Avisos de deploy | Avisos de deploy e erro via ntfy, funcionando (27/11) | sem PR no repo |
+| Suporte | `suporte@bubbly.app.br` criado no Cloudflare Email Routing, encaminhando para o Gmail (27/11) | — |
+| Google Play (início) | App criado no Play Console; Detalhes do login (conta de revisão) preenchidos; classificação Livre; público-alvo 18+ (27/11) | — |
 
 ### Auditoria de segurança de 13/11: situação na main
 
@@ -53,7 +55,7 @@ São 241 PRs mergeados (#1 a #248), todos em novembro de 2026.
 | M3 limites de uso | ◐ Parcial (cota de mensagens; limite por IP só nas rotas de senha) |
 | M4 registro de acesso | ✓ Corrigido |
 | M5 retenção | ✓ Corrigido |
-| M6 verificação do Google | ✗ Pendente |
+| M6 verificação do Google | ◐ Enviada em 27/11, em análise |
 | M7 equipe com papéis | ✗ Pendente (depois do lançamento) |
 | M8 CI parado | ✓ Corrigido |
 | M9 backup com restauração testada | ✗ Pendente |
@@ -69,10 +71,9 @@ São 241 PRs mergeados (#1 a #248), todos em novembro de 2026.
 
 | Item | Onde está | Próximo passo | Dono |
 |---|---|---|---|
-| E-mail `suporte@bubbly.app.br` | Cloudflare Email Routing; MX nulo já removido | Clicar em **Add missing records** e criar a rota `suporte` → Gmail, confirmar o link de verificação | Fernando |
-| Google Play | App criado em 27/11; build AAB e `GOOGLE_SERVICES_JSON` no Codemagic já na main | Ficha da loja, Segurança dos dados (contatos), teste interno; conta como Organização (a confirmar) | Fernando, Claude ajuda nos textos |
-| Verificação do Google OAuth | PR #233 (rascunho): roteiro e legendas do vídeo | Gravar o vídeo (`scripts/demo-video/record.ts`) e enviar no Google Cloud | Fernando grava/envia, Claude no roteiro |
-| Sign in with Apple | Decidido login pelo navegador; passos anotados na memória do projeto; branch local vazia | Aguardar conta Apple (01/12), depois Team ID, App ID, Services ID, chave .p8, configuração e botão | Fernando (conta), depois Claude |
+| Google Play | App criado em 27/11; Detalhes do login, classificação Livre e público-alvo 18+ preenchidos; build AAB e `GOOGLE_SERVICES_JSON` no Codemagic já na main | Ficha da loja, Segurança dos dados (contatos), teste interno; conta como Organização (a confirmar) | Fernando, Claude ajuda nos textos |
+| Verificação do Google OAuth | **Enviada em 27/11, em análise.** Vídeo: https://youtu.be/T9kCGY7M5Vs. Escopos `calendar.events` e `contacts.readonly`. Justificativa conferida com o código: público são salões, estúdios e profissionais de beleza; o app cria, atualiza e apaga eventos dos agendamentos e lê a agenda principal para horário ocupado; excluir a conta apaga clientes e dados do Google | Aguardar o Google (dias a semanas) e responder se pedirem ajuste; fechar o PR #233 depois | Fernando acompanha o e-mail do Google |
+| Sign in with Apple | Decidido login pelo navegador; passos anotados na memória do projeto; branch local vazia | Aguardar conta Apple (só no dia 01/12), depois Team ID, App ID, Services ID, chave .p8, configuração e botão | Fernando (conta), depois Claude |
 | Pagamentos (Mercado Pago) e plano Empresa | Plano em `docs/superpowers/plans/2026-11-15-pagamentos-planos-empresa.md` (não versionado) | Aprovar decisões do plano; implementar perto do fim dos 30 dias grátis | Claude, com OK do Fernando |
 | Equipe com várias profissionais | PR #175 (rascunho, parado desde 18/11) | Retomar depois dos pagamentos | Claude |
 | Desktop/tablet Fases 2, 3a, 3b | PRs #135, #136, #143 (rascunho, parados desde 15–17/11) | Provavelmente superados por #168–180: revisar e fechar | Fernando decide |
@@ -87,11 +88,11 @@ São 241 PRs mergeados (#1 a #248), todos em novembro de 2026.
 | # | Item | Por quê | Dono | Depende de |
 |---|---|---|---|---|
 | B1 | **Definir como o público entra.** Hoje só entra quem está em `ALLOWED_EMAILS` (lista vazia = ninguém) | Sem isso o teste público não começa | Fernando decide; Claude implementa | Regra de lançamento (requisitos legais) |
-| B2 | **Verificação do Google OAuth (M6).** App em modo Teste (`docs/modulos/google.md`) | Em modo Teste: limite de 100 usuários, tela "app não verificado" e o token da Agenda vence a cada 7 dias (a sincronização cai toda semana) | Fernando publica "Em produção" e envia; Claude no roteiro | Vídeo do PR #233; domínio no Search Console; URIs e People API conferidas |
+| B2 | **Verificação do Google OAuth (M6).** Enviada em 27/11, **em análise** | Até aprovar: limite de 100 usuários, tela "app não verificado" e o token da Agenda vence a cada 7 dias (a sincronização cai toda semana) | Google analisa; Fernando responde pedidos de ajuste | Resposta do Google (dias a semanas) |
 | B3 | **Backup diário com restauração testada (M9).** `scripts/backup.ts` existe, mas não há Cron nem Bucket no IaC, e o dump não é cifrado | Perda de dados sem volta | Claude coloca no IaC e cifra o dump; Fernando cria o bucket e as variáveis `BACKUP_*` | Bucket S3-compatível |
-| B4 | **Trocar o contato de suporte/DPO** em `src/lib/legal.ts` (`SUPPORT_EMAIL`), `site/public/privacidade.html` e `termos.html`, que ainda citam o Gmail pessoal | Requisito LGPD e da verificação do Google | Claude troca o texto | `suporte@bubbly.app.br` funcionando |
-| B7 | **Conta de demonstração para o revisor da Play.** Com cadastro só pelo Google e `ALLOWED_EMAILS`, o revisor não entra | A Play exige credencial de acesso na revisão | Claude prepara conta com senha e dados de exemplo; Fernando inclui em `ALLOWED_EMAILS` | — |
-| B8 | **Ficha da Play:** Segurança dos dados (contatos, localização, push, IA), classificação etária, URL de privacidade e URL de exclusão de conta | Sem ficha completa não há teste nem publicação | Fernando preenche; Claude cria a âncora `#excluir` na página de privacidade | Conta Play (Organização evita a regra de 12 testadores por 14 dias) |
+| B4 | **Trocar o contato de suporte/DPO** em `src/lib/legal.ts` (`SUPPORT_EMAIL`), `site/public/privacidade.html` e `termos.html`, que ainda citam o Gmail pessoal | Requisito LGPD e da verificação do Google | Claude troca o texto | Nada: `suporte@bubbly.app.br` já funciona (27/11) |
+| B7 | **Conta de demonstração para o revisor da Play.** Detalhes do login já preenchidos no Play Console (27/11); a confirmar se a conta existe em produção com dados de exemplo e está em `ALLOWED_EMAILS` | A Play exige credencial de acesso na revisão | Fernando confirma; Claude ajuda com dados de exemplo se faltar | — |
+| B8 | **Ficha da Play:** Segurança dos dados (contatos, localização, push, IA), URL de privacidade e URL de exclusão de conta | Sem ficha completa não há teste nem publicação | Fernando preenche (classificação Livre e público-alvo 18+ já feitos); Claude cria a âncora `#excluir` na página de privacidade | Conta Play (Organização evita a regra de 12 testadores por 14 dias) |
 | B5 | **Confirmar variáveis de produção no Railway** (web e worker): `RESEND_API_KEY`, `EMAIL_FROM` com domínio verificado, `ANTHROPIC_API_KEY`, `FCM_SERVICE_ACCOUNT`, `ANDROID_CERT_SHA256`, e que `EVOLUTION_INSTANCE` foi apagada | "Esqueci a senha", IA e push dependem delas | Fernando (ou Claude via MCP do Railway, com OK) | — |
 | B6 | **Confirmar que a main está no ar** e a migration 0065 foi aplicada | O start roda `db:migrate`, mas não foi conferido; havia redeploy web+worker pendente | Claude via MCP do Railway, com OK | — |
 
@@ -118,7 +119,7 @@ São 241 PRs mergeados (#1 a #248), todos em novembro de 2026.
 
 | Item | Quando | Dono |
 |---|---|---|
-| Apple Developer (Organização) | **01/12** | Fernando |
+| Apple Developer (Organização) | **01/12** (não antes) | Fernando |
 | Sign in with Apple, App Store Connect, `APP_STORE_APPLE_ID` no Codemagic, TestFlight | Depois de 01/12 | Fernando + Claude |
 | Cobrança via Mercado Pago, `BILLING_STARTS_AT` com data | ~30 dias após o lançamento | Claude, com OK do Fernando |
 | Equipe com papéis (M7, PR #175) | Depois da cobrança | Claude |
@@ -132,7 +133,6 @@ São 241 PRs mergeados (#1 a #248), todos em novembro de 2026.
 - Se existe Cron de backup no painel e se um restore já foi testado.
 - Quais variáveis estão de fato no Railway (web e worker).
 - Se o domínio de envio do Resend está verificado.
-- Status do Google OAuth (modo teste ou produção; envio feito ou não).
 - Status das contas Play (Organização) e Apple.
 - Se os limites em memória (B1) e a limpeza de logs de erro (B5) foram tratados.
 - Se o Sentry tem DSN em produção e o que contém `ADMIN_USER_IDS`.
